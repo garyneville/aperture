@@ -17,11 +17,15 @@ describe('workflow assembly', () => {
   it('wraps bundled adapters with an explicit top-level return', async () => {
     const code = await bundleAdapter('prepare-alt-locations', ADAPTERS['prepare-alt-locations']);
     expect(code).toContain('return (() => {');
-    expect(code).toContain('return __photoBriefAdapter.run({ $, $input });');
+    expect(code).toContain('globalThis.__photoBriefResult_prepare_alt_locations = run({ $, $input });');
+    expect(code).toContain('return __photoBriefResult;');
+    expect(code).not.toContain('__photoBriefAdapter.run({ $, $input })');
   });
 
   it('assembles runnable code node output for prepare alt locations', async () => {
     const workflowJson = await assembleWorkflow();
+    expect(workflowJson).not.toContain('__photoBriefAdapter.run(');
+
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
     tempDirs.push(tmpDir);
 

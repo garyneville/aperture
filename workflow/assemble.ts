@@ -6,7 +6,7 @@
  */
 import { build } from 'esbuild';
 import { readFileSync, writeFileSync } from 'fs';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, basename } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,13 +27,21 @@ export const ADAPTERS: Record<string, string> = {
 
 export async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
   const absPath = resolve(ROOT, entryPoint);
+  const resultKey = `__photoBriefResult_${name.replace(/[^a-z0-9]+/gi, '_')}`;
 
   const result = await build({
-    entryPoints: [absPath],
+    stdin: {
+      contents: [
+        `import { run as adapterRun } from './${basename(absPath)}';`,
+        `globalThis.${resultKey} = adapterRun({ $, $input });`,
+      ].join('\n'),
+      loader: 'ts',
+      resolveDir: dirname(absPath),
+      sourcefile: `${name}.entry.ts`,
+    },
     bundle: true,
     write: false,
     format: 'iife',
-    globalName: '__photoBriefAdapter',
     target: 'es2020',
     platform: 'browser',
     treeShaking: true,
@@ -43,8 +51,11 @@ export async function bundleAdapter(name: string, entryPoint: string): Promise<s
 
   return [
     'return (() => {',
+    `  delete globalThis.${resultKey};`,
     code,
-    '  return __photoBriefAdapter.run({ $, $input });',
+    `  const __photoBriefResult = globalThis.${resultKey};`,
+    `  delete globalThis.${resultKey};`,
+    '  return __photoBriefResult;',
     '})();',
   ].join('\n');
 }
