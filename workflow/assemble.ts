@@ -17,6 +17,7 @@ export const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-wo
 export const ADAPTERS: Record<string, string> = {
   'prepare-azimuth': 'src/adapters/n8n/prepare-azimuth.adapter.ts',
   'aggregate-azimuth': 'src/adapters/n8n/aggregate-azimuth.adapter.ts',
+  'build-score-input': 'src/adapters/n8n/build-score-input.adapter.ts',
   'score-hours': 'src/adapters/n8n/score-hours.adapter.ts',
   'best-windows': 'src/adapters/n8n/best-windows.adapter.ts',
   'prepare-alt-locations': 'src/adapters/n8n/prepare-alt-locations.adapter.ts',

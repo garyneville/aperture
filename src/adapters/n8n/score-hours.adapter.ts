@@ -2,25 +2,28 @@ import { scoreAllDays } from '../../core/score-hours.js';
 import { getPhotoWeatherLat, getPhotoWeatherLon } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
-export function run({ $ }: N8nRuntime) {
-  const w = $('HTTP: Weather').first().json;
-  const aq = $('HTTP: Air Quality').first().json;
-  const metarRaw = $('HTTP: METAR').first().json;
-  const shData = $('HTTP: SunsetHue').first().json;
-  const ensData = $('HTTP: Ensemble').first().json;
-  const azimuthData = $('Code: Aggregate Azimuth').first().json || {};
-  const ppData = $('HTTP: Precip Prob').first().json;
+const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [] } };
+const EMPTY_HOURLY = { hourly: { time: [] } };
+
+export function run({ $input }: N8nRuntime) {
+  const input = (() => {
+    try {
+      return $input.first().json ?? {};
+    } catch {
+      return {};
+    }
+  })();
 
   const result = scoreAllDays({
     lat: getPhotoWeatherLat(),
     lon: getPhotoWeatherLon(),
-    weather: w,
-    airQuality: aq,
-    metarRaw,
-    sunsetHue: shData,
-    ensemble: ensData,
-    azimuthByPhase: azimuthData.byPhase || {},
-    precipProb: ppData,
+    weather: input.weather ?? EMPTY_WEATHER,
+    airQuality: input.airQuality ?? EMPTY_HOURLY,
+    metarRaw: input.metarRaw ?? [],
+    sunsetHue: input.sunsetHue ?? [],
+    ensemble: input.ensemble ?? EMPTY_HOURLY,
+    azimuthByPhase: input.azimuthByPhase ?? {},
+    precipProb: input.precipProb ?? EMPTY_HOURLY,
   }, new Date());
 
   return [{ json: result }];
