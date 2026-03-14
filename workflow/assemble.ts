@@ -27,50 +27,26 @@ const ADAPTERS: Record<string, string> = {
 
 async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
   const absPath = resolve(ROOT, entryPoint);
-  let source = readFileSync(absPath, 'utf-8');
-
-  // Convert ES import declarations to require() calls so esbuild treats the file
-  // as a CommonJS script (not an ESM module), allowing top-level `return`.
-  // Handles: import { a, b } from 'path'  and  import X from 'path'
-  source = source.replace(
-    /import\s+\{([^}]+)\}\s+from\s+['"]([^'"]+)['"]\s*;?/g,
-    (_, names, path) => `const {${names}} = require('${path}');`,
-  );
-  source = source.replace(
-    /import\s+(\w+)\s+from\s+['"]([^'"]+)['"]\s*;?/g,
-    (_, name, path) => `const ${name} = require('${path}');`,
-  );
-
-  // Strip TypeScript `declare const` lines (n8n globals like $ and $input).
-  // These can span multiple lines when they contain complex type annotations.
-  source = source.replace(/^declare\s+const\s+.+$/gm, '');
-
-  // Strip `import type` statements (type-only imports)
-  source = source.replace(/import\s+type\s+[^;]+;/g, '');
 
   const result = await build({
-    stdin: {
-      contents: source,
-      loader: 'ts',
-      resolveDir: dirname(absPath),
-      sourcefile: absPath,
-    },
+    entryPoints: [absPath],
     bundle: true,
     write: false,
     format: 'iife',
+    globalName: '__photoBriefAdapter',
     target: 'es2020',
-    platform: 'node',
+    platform: 'browser',
     treeShaking: true,
   });
 
-  let code = result.outputFiles[0].text;
+  const code = result.outputFiles[0].text.trim();
 
-  // esbuild IIFE wraps everything in (() => { ... })();
-  // Strip that wrapper so the code runs at top-level in n8n's sandbox.
-  code = code.replace(/^\(\(\) => \{\n?/, '');
-  code = code.replace(/\n?\}\)\(\);\s*$/, '');
-
-  return code.trim();
+  return [
+    'return (() => {',
+    code,
+    '  return __photoBriefAdapter.run({ $, $input });',
+    '})();',
+  ].join('\n');
 }
 
 async function main() {

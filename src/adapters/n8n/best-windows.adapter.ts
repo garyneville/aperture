@@ -1,9 +1,8 @@
 import { bestWindows } from '../../core/best-windows.js';
+import type { N8nRuntime } from './types.js';
 
-declare const $input: { first(): { json: any }; all(): { json: any }[] };
-
-const { todayHours, dailySummary, metarNote } = $input.first().json;
-
-const result = bestWindows({ todayHours, dailySummary, metarNote });
-
-return [{ json: result }];
+export function run({ $input }: N8nRuntime) {
+  const { todayHours, dailySummary, metarNote } = $input.first().json;
+  const result = bestWindows({ todayHours, dailySummary, metarNote });
+  return [{ json: result }];
+}
