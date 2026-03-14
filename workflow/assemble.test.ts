@@ -67,29 +67,48 @@ describe('workflow assembly', () => {
     writeWorkflow(workflowJson, outputPath);
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const weatherConnections = data.connections['HTTP: Weather']?.main?.[0] ?? [];
+    expect(weatherConnections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ node: 'HTTP: Air Quality', index: 0 }),
+      expect.objectContaining({ node: 'Code: Wrap Weather', index: 0 }),
+    ]));
+
     const ensembleConnection = data.connections['HTTP: Ensemble']?.main?.[0]?.[0];
-    expect(ensembleConnection?.node).toBe('Code: Build Score Input');
+    expect(ensembleConnection?.node).toBe('Code: Wrap Ensemble');
+
+    const finalMergeConnection = data.connections['Merge: Score Input 6']?.main?.[0]?.[0];
+    expect(finalMergeConnection?.node).toBe('Code: Build Score Input');
 
     const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Build Score Input');
     expect(node).toBeTruthy();
+    expect(node.parameters.jsCode).not.toContain('HTTP: Weather');
+    expect(node.parameters.jsCode).not.toContain('HTTP: Air Quality');
+    expect(node.parameters.jsCode).not.toContain('HTTP: METAR');
+    expect(node.parameters.jsCode).not.toContain('HTTP: SunsetHue');
+    expect(node.parameters.jsCode).not.toContain('HTTP: Precip Prob');
+    expect(node.parameters.jsCode).not.toContain('Code: Aggregate Azimuth');
+    expect(node.parameters.jsCode).not.toContain('HTTP: Ensemble');
 
     const fn = new Function('$', '$input', node.parameters.jsCode);
     const result = fn(
-      (nodeName: string) => ({
-        first: () => ({
-          json: {
-            'HTTP: Weather': { hourly: { time: ['2026-03-14T06:00'] }, daily: { sunrise: ['2026-03-14T06:15'], sunset: ['2026-03-14T18:12'] } },
-            'HTTP: Air Quality': { hourly: { time: ['2026-03-14T06:00'] } },
-            'HTTP: METAR': [{ rawOb: 'EGNM 140620Z CAVOK' }],
-            'HTTP: SunsetHue': [{ time: '2026-03-14T18:12:00Z', type: 'sunset', quality: 0.7 }],
-            'HTTP: Precip Prob': { hourly: { time: ['2026-03-14T06:00'], precipitation_probability: [10] } },
-            'Code: Aggregate Azimuth': { byPhase: { sunrise: { '2026-03-14T06:15': { occlusionRisk: 12 } }, sunset: {} } },
-          }[nodeName],
-        }),
+      () => ({
+        first: () => {
+          throw new Error('unexpected selector lookup');
+        },
         all: () => [],
       }),
       {
-        first: () => ({ json: { hourly: { time: ['2026-03-14T06:00'], cloudcover_member_0: [25] } } }),
+        first: () => ({
+          json: {
+            weather: { hourly: { time: ['2026-03-14T06:00'] }, daily: { sunrise: ['2026-03-14T06:15'], sunset: ['2026-03-14T18:12'] } },
+            airQuality: { hourly: { time: ['2026-03-14T06:00'] } },
+            metarRaw: [{ rawOb: 'EGNM 140620Z CAVOK' }],
+            sunsetHue: [{ time: '2026-03-14T18:12:00Z', type: 'sunset', quality: 0.7 }],
+            precipProb: { hourly: { time: ['2026-03-14T06:00'], precipitation_probability: [10] } },
+            ensemble: { hourly: { time: ['2026-03-14T06:00'], cloudcover_member_0: [25] } },
+            azimuthByPhase: { sunrise: { '2026-03-14T06:15': { occlusionRisk: 12 } }, sunset: {} },
+          },
+        }),
         all: () => [],
       },
     );

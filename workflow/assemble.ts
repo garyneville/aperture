@@ -15,8 +15,15 @@ export const SKELETON_PATH = resolve(ROOT, 'workflow', 'skeleton.json');
 export const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-workflows', 'photography-weather-brief.json');
 
 export const ADAPTERS: Record<string, string> = {
+  'wrap-weather': 'src/adapters/n8n/wrap-weather.adapter.ts',
+  'wrap-air-quality': 'src/adapters/n8n/wrap-air-quality.adapter.ts',
+  'wrap-precip-prob': 'src/adapters/n8n/wrap-precip-prob.adapter.ts',
+  'wrap-metar': 'src/adapters/n8n/wrap-metar.adapter.ts',
+  'wrap-sunset-hue': 'src/adapters/n8n/wrap-sunset-hue.adapter.ts',
   'prepare-azimuth': 'src/adapters/n8n/prepare-azimuth.adapter.ts',
   'aggregate-azimuth': 'src/adapters/n8n/aggregate-azimuth.adapter.ts',
+  'wrap-azimuth': 'src/adapters/n8n/wrap-azimuth.adapter.ts',
+  'wrap-ensemble': 'src/adapters/n8n/wrap-ensemble.adapter.ts',
   'build-score-input': 'src/adapters/n8n/build-score-input.adapter.ts',
   'score-hours': 'src/adapters/n8n/score-hours.adapter.ts',
   'best-windows': 'src/adapters/n8n/best-windows.adapter.ts',

@@ -462,6 +462,201 @@
         1540,
         700
       ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-weather__"
+      },
+      "id": "a1b2c3d4-0025-0025-0025-000000000025",
+      "name": "Code: Wrap Weather",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-air-quality__"
+      },
+      "id": "a1b2c3d4-0026-0026-0026-000000000026",
+      "name": "Code: Wrap Air Quality",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-precip-prob__"
+      },
+      "id": "a1b2c3d4-0027-0027-0027-000000000027",
+      "name": "Code: Wrap Precip Prob",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-metar__"
+      },
+      "id": "a1b2c3d4-0028-0028-0028-000000000028",
+      "name": "Code: Wrap METAR",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-sunset-hue__"
+      },
+      "id": "a1b2c3d4-0029-0029-0029-000000000029",
+      "name": "Code: Wrap SunsetHue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1060
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0030-0030-0030-000000000030",
+      "name": "Merge: Score Input 1",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        880,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0031-0031-0031-000000000031",
+      "name": "Merge: Score Input 2",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1100,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0032-0032-0032-000000000032",
+      "name": "Merge: Score Input 3",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1320,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0033-0033-0033-000000000033",
+      "name": "Merge: Score Input 4",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1540,
+        900
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-azimuth__"
+      },
+      "id": "a1b2c3d4-0034-0034-0034-000000000034",
+      "name": "Code: Wrap Azimuth",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-ensemble__"
+      },
+      "id": "a1b2c3d4-0035-0035-0035-000000000035",
+      "name": "Code: Wrap Ensemble",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0036-0036-0036-000000000036",
+      "name": "Merge: Score Input 5",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1760,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0037-0037-0037-000000000037",
+      "name": "Merge: Score Input 6",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        760
+      ]
     }
   ],
   "connections": {
@@ -483,6 +678,11 @@
             "node": "HTTP: Air Quality",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code: Wrap Weather",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -494,6 +694,11 @@
             "node": "HTTP: Precip Prob",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code: Wrap Air Quality",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -503,6 +708,11 @@
         [
           {
             "node": "HTTP: SunsetHue",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Wrap METAR",
             "type": "main",
             "index": 0
           }
@@ -641,6 +851,11 @@
             "node": "Code: Prepare Azimuth Samples",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code: Wrap SunsetHue",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -652,6 +867,11 @@
             "node": "HTTP: METAR",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code: Wrap Precip Prob",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -660,7 +880,7 @@
       "main": [
         [
           {
-            "node": "Code: Build Score Input",
+            "node": "Code: Wrap Ensemble",
             "type": "main",
             "index": 0
           }
@@ -705,6 +925,154 @@
         [
           {
             "node": "HTTP: Ensemble",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Wrap Azimuth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Weather": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Air Quality": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 1": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Precip Prob": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 2": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap METAR": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 3",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 3": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap SunsetHue": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 4",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 4": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Azimuth": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Ensemble": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 5",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 5": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 6",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 6": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Score Input",
             "type": "main",
             "index": 0
           }
