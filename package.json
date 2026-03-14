@@ -7,7 +7,8 @@
     "build": "node --loader ts-node/esm workflow/assemble.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "verify:workflow": "npm run build && git diff --exit-code -- ../../ansible/files/n8n-workflows/photography-weather-brief.json"
   },
   "devDependencies": {
     "esbuild": "^0.25.0",

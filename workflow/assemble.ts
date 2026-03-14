@@ -10,11 +10,11 @@ import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT = resolve(__dirname, '..');
-const SKELETON_PATH = resolve(ROOT, 'workflow', 'skeleton.json');
-const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-workflows', 'photography-weather-brief.json');
+export const ROOT = resolve(__dirname, '..');
+export const SKELETON_PATH = resolve(ROOT, 'workflow', 'skeleton.json');
+export const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-workflows', 'photography-weather-brief.json');
 
-const ADAPTERS: Record<string, string> = {
+export const ADAPTERS: Record<string, string> = {
   'prepare-azimuth': 'src/adapters/n8n/prepare-azimuth.adapter.ts',
   'aggregate-azimuth': 'src/adapters/n8n/aggregate-azimuth.adapter.ts',
   'score-hours': 'src/adapters/n8n/score-hours.adapter.ts',
@@ -25,7 +25,7 @@ const ADAPTERS: Record<string, string> = {
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',
 };
 
-async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
+export async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
   const absPath = resolve(ROOT, entryPoint);
 
   const result = await build({
@@ -49,15 +49,12 @@ async function bundleAdapter(name: string, entryPoint: string): Promise<string> 
   ].join('\n');
 }
 
-async function main() {
-  console.log('Reading skeleton...');
+export async function assembleWorkflow(): Promise<string> {
   const skeleton = readFileSync(SKELETON_PATH, 'utf-8');
   let output = skeleton;
 
   for (const [name, entry] of Object.entries(ADAPTERS)) {
     const placeholder = `__ADAPTER_${name}__`;
-    console.log(`  Bundling ${name}...`);
-
     const bundled = await bundleAdapter(name, entry);
 
     // The placeholder is inside a JSON string value, so we need to JSON-escape
@@ -79,11 +76,25 @@ async function main() {
     throw new Error(`Assembled output is not valid JSON: ${e}`);
   }
 
-  writeFileSync(OUTPUT_PATH, output, 'utf-8');
+  return output;
+}
+
+export function writeWorkflow(output: string, outputPath = OUTPUT_PATH) {
+  writeFileSync(outputPath, output, 'utf-8');
+}
+
+async function main() {
+  console.log('Reading skeleton...');
+  const output = await assembleWorkflow();
+  writeWorkflow(output);
   console.log(`\nAssembled workflow written to:\n  ${OUTPUT_PATH}`);
 }
 
-main().catch(err => {
-  console.error('Assembly failed:', err);
-  process.exit(1);
-});
+const isEntrypoint = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isEntrypoint) {
+  main().catch(err => {
+    console.error('Assembly failed:', err);
+    process.exit(1);
+  });
+}
