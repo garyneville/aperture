@@ -116,6 +116,7 @@ const C = {
 };
 
 const FONT = "Roboto, 'Noto Sans', 'Segoe UI', Helvetica, Arial, sans-serif";
+const UTILITY_GLYPHS = '<span aria-hidden="true">&#x1F697; / &#x1F6B6;</span>';
 
 /* ------------------------------------------------------------------ */
 /*  HTML builder helpers                                               */
@@ -160,6 +161,11 @@ function metricRun(items: Array<{ label: string; value: string | number; tone?: 
   return items
     .map(item => `<span style="display:inline;color:${C.ink};"><span style="font-weight:700;color:${item.tone || C.primary};">${esc(item.label)}</span> ${esc(item.value)}</span>`)
     .join(`<span style="color:${C.subtle};"> &middot; </span>`);
+}
+
+function daylightUtilityLine(cw: CarWash): string {
+  const utilityWindow = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
+  return `${UTILITY_GLYPHS} Daylight utility: ${esc(utilityWindow)} <span style="color:${C.subtle};">&middot;</span> Wind ${esc(String(cw.wind))}km/h <span style="color:${C.subtle};">&middot;</span> Rain ${esc(String(cw.pp))}% <span style="color:${C.subtle};">&middot;</span> Temp ${esc(String(cw.tmp ?? '-'))}C`;
 }
 
 function moonDescriptor(moonPct: number): string {
@@ -275,7 +281,7 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
     { label: 'Visibility', value: `${h.visK ?? '-'}km`, tone: C.secondary },
     { label: 'Wind', value: `${h.wind ?? '-'}km/h`, tone: C.tertiary },
     { label: 'Rain', value: `${h.pp ?? '-'}%`, tone: C.error },
-    ...(h.tpw ? [{ label: 'TPW', value: `${h.tpw}mm`, tone: C.primary }] : []),
+    ...(h.tpw ? [{ label: 'Moisture', value: `${h.tpw}mm`, tone: C.primary }] : []),
   ]);
   const tags = (w.tops || []).length
     ? `<div style="Margin-top:8px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`
@@ -380,21 +386,19 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
-    const utilityWindow = day.carWash.start !== '\u2014' ? `${day.carWash.start}-${day.carWash.end}` : '\u2014';
-    const utilityLine = `🚗 / 🚶 Daylight utility: ${utilityWindow} · Wind ${day.carWash.wind}km/h · Rain ${day.carWash.pp}% · Temp ${day.carWash.tmp}C`;
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
       <div style="Margin-top:6px;">${scorePill(day.headlineScore ?? day.photoScore)}</div>
       <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
       <div style="Margin-top:8px;">
-        ${metricChip('AM', (day.amScore ?? 0) + (day.amConfidence && day.amConfidence !== 'unknown' ? ' \u00b7 ' + (day.amConfidence === 'high' ? '\u00b1' : day.amConfidence === 'medium' ? '~' : '?') : ''), scoreState(day.amScore ?? 0).fg)}
-        ${metricChip('PM', (day.pmScore ?? 0) + (day.pmConfidence && day.pmConfidence !== 'unknown' ? ' \u00b7 ' + (day.pmConfidence === 'high' ? '\u00b1' : day.pmConfidence === 'medium' ? '~' : '?') : ''), scoreState(day.pmScore ?? 0).fg)}
+        ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
+        ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
         ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
       </div>
       ${conf ? `<div style="Margin-top:8px;">${confidencePill(day)}</div>` : ''}
 
       ${altLine ? `<div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(utilityLine)}</div>
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
     `);
   }));
 }
@@ -410,7 +414,7 @@ function daylightUtilityTodayCard(todayCarWash: CarWash): string {
   return card(`
     <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Daylight utility</div>
     <div style="Margin-top:4px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
-    <div style="Margin-top:8px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">🚗 / 🚶 ${esc(window)}</div>
+    <div style="Margin-top:8px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${UTILITY_GLYPHS} ${esc(window)}</div>
     <div style="Margin-top:8px;">
       ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
       ${metricChip('Rain', `${cw.pp}%`, C.error)}
@@ -619,16 +623,16 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows)}</td>
           </tr>
-          ${spacer(6)}
-          <tr>
-            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
-          </tr>
           ${spacer(10)}
           <tr>
             <td>${sectionTitle('Alternatives')}</td>
           </tr>
           <tr>
             <td>${alternativeSection(altLocations, noAltsMsg)}</td>
+          </tr>
+          ${spacer(6)}
+          <tr>
+            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
           </tr>
           ${spacer(10)}
           <tr>
