@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "sourceMap": false,
+    "lib": ["ES2020"]
+  },
+  "include": ["src/core/**/*.ts", "workflow/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src/adapters"]
+}
