@@ -156,6 +156,12 @@ function metricChip(label: string, value: string | number, tone?: string): strin
   return `<span class="chip" style="display:inline-block;margin:2px 4px 0 0;padding:3px 7px;border-radius:8px;background:${C.surfaceVariant};border:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.25;color:${C.ink};"><span style="font-weight:700;color:${toneColor};">${esc(label)}</span> ${esc(value)}</span>`;
 }
 
+function metricRun(items: Array<{ label: string; value: string | number; tone?: string }>): string {
+  return items
+    .map(item => `<span style="display:inline;color:${C.ink};"><span style="font-weight:700;color:${item.tone || C.primary};">${esc(item.label)}</span> ${esc(item.value)}</span>`)
+    .join(`<span style="color:${C.subtle};"> &middot; </span>`);
+}
+
 function moonDescriptor(moonPct: number): string {
   if (moonPct <= 5) return 'New-ish';
   if (moonPct <= 35) return 'Crescent';
@@ -254,13 +260,13 @@ function windowCard(w: Window, index: number): string {
   const notes: string[] = [];
   if (w.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
   if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular rays ${h.crepuscular}/100.`);
-  const chips = [
-    metricChip('Cloud high', `${h.ch ?? '-'}%`, C.primary),
-    metricChip('Visibility', `${h.visK ?? '-'}km`, C.secondary),
-    metricChip('Wind', `${h.wind ?? '-'}km/h`, C.tertiary),
-    metricChip('Rain', `${h.pp ?? '-'}%`, C.error),
-    h.tpw ? metricChip('TPW', `${h.tpw}mm`, C.primary) : '',
-  ].join('');
+  const metricLine = metricRun([
+    { label: 'Cloud high', value: `${h.ch ?? '-'}%`, tone: C.primary },
+    { label: 'Visibility', value: `${h.visK ?? '-'}km`, tone: C.secondary },
+    { label: 'Wind', value: `${h.wind ?? '-'}km/h`, tone: C.tertiary },
+    { label: 'Rain', value: `${h.pp ?? '-'}%`, tone: C.error },
+    ...(h.tpw ? [{ label: 'TPW', value: `${h.tpw}mm`, tone: C.primary }] : []),
+  ]);
   const tags = (w.tops || []).length
     ? `<div style="Margin-top:8px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`
     : '';
@@ -272,7 +278,7 @@ function windowCard(w: Window, index: number): string {
     <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(w.label)}</div>
     <div style="Margin:4px 0 0;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(w.start)}-${esc(w.end)}</div>
     <div style="Margin-top:8px;">${scorePill(w.peak)}</div>
-    <div style="Margin-top:8px;">${chips}</div>
+    <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${metricLine}</div>
     ${tags}
     ${noteBlock}
   `, '', index === 0 ? `border-top:4px solid ${scoreState(w.peak).fg};` : '');
@@ -358,8 +364,11 @@ function alternativeSection(
 function photoForecastCards(dailySummary: DaySummary[]): string {
   return listRows(dailySummary.map(day => {
     const conf = confidenceDetail(day);
+    const bestAltHour = day.bestAlt?.isAstroWin
+      ? day.bestAlt.bestAstroHour
+      : day.bestAlt?.bestDayHour;
     const altLine = day.bestAlt
-      ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${day.bestAlt.bestDayHour ? ` at ${day.bestAlt.bestDayHour}` : ''}`
+      ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>

@@ -118,6 +118,46 @@ export interface BestWindowsOutput {
 
 const PHOTO_THRESHOLD = 48;
 
+function uniqueTags(tags: string[]): string[] {
+  return [...new Set(tags.filter(Boolean))];
+}
+
+function headlineTagsForWindow(window: Window): string {
+  const tags: string[] = [];
+  const lowerLabel = window.label.toLowerCase();
+
+  if (lowerLabel.includes('astro')) tags.push('astrophotography');
+  if (lowerLabel.includes('golden')) tags.push('golden hour');
+  if (lowerLabel.includes('blue')) tags.push('blue hour');
+  if (lowerLabel.includes('mist')) tags.push('atmospheric');
+
+  tags.push(...(window.tops || []));
+
+  return uniqueTags(tags).slice(0, 2).join(', ');
+}
+
+function alignTodaySummaryWithWindow(
+  dailySummary: DailySummary[],
+  windows: Window[],
+): DailySummary[] {
+  if (!dailySummary.length || !windows.length) return dailySummary;
+
+  const [topWindow, ...restWindows] = windows;
+  const topHour = topWindow.hours?.find(hour => hour.score === topWindow.peak) || topWindow.hours?.[0];
+  const summaryTags = headlineTagsForWindow(topWindow);
+
+  if (!topHour) return dailySummary;
+
+  return [
+    {
+      ...dailySummary[0],
+      bestPhotoHour: topHour.hour || topWindow.start,
+      bestTags: summaryTags || dailySummary[0].bestTags,
+    },
+    ...dailySummary.slice(1),
+  ];
+}
+
 export function groupWindows(hrs: ScoredHour[], threshold = 45): Omit<Window, 'label'>[] {
   const wins: Omit<Window, 'label'>[] = [];
   let cur: Omit<Window, 'label'> | null = null;
@@ -230,14 +270,15 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     ...w,
     label: labelWindow(w, sunrise, sunset),
   }));
+  const alignedDailySummary = alignTodaySummaryWithWindow(dailySummary, labelledWindows);
 
-  const todayHeadline = dailySummary[0]?.headlineScore ?? dailySummary[0]?.photoScore ?? 0;
+  const todayHeadline = alignedDailySummary[0]?.headlineScore ?? alignedDailySummary[0]?.photoScore ?? 0;
   const todayBestScore = labelledWindows.length
     ? Math.max(labelledWindows[0].peak, todayHeadline)
     : todayHeadline;
   const dontBother = todayBestScore < PHOTO_THRESHOLD;
 
-  const todayCarWash = dailySummary[0]?.carWash || {
+  const todayCarWash = alignedDailySummary[0]?.carWash || {
     score: 0, rating: '\u274c', label: 'No good window',
     start: '\u2014', end: '\u2014', wind: 0, pp: 0, tmp: 0,
   };
@@ -247,7 +288,7 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     dontBother,
     todayBestScore,
     todayCarWash,
-    dailySummary,
+    dailySummary: alignedDailySummary,
     metarNote,
     sunrise,
     sunset,
