@@ -45,7 +45,7 @@ describe('workflow assembly', () => {
         all: () => [],
       }),
       {
-        first: () => ({ json: {} }),
+        first: () => ({ json: { todayBestScore: 61 } }),
         all: () => [],
       },
     );
@@ -53,6 +53,7 @@ describe('workflow assembly', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(8);
     expect(result[0]?.json?.name).toBe('Bolton Abbey');
+    expect(result[0]?.json?.leedsContext?.todayBestScore).toBe(61);
     expect(result[0]?.json?.url).toContain('timezone=Europe%2FLondon');
     expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
@@ -102,6 +103,99 @@ describe('workflow assembly', () => {
         precipProb: { hourly: { time: ['2026-03-14T06:00'], precipitation_probability: [10] } },
         ensemble: { hourly: { time: ['2026-03-14T06:00'], cloudcover_member_0: [25] } },
         azimuthByPhase: { sunrise: { '2026-03-14T06:15': { occlusionRisk: 12 } }, sunset: {} },
+      },
+    }]);
+  });
+
+  it('assembles score-alternatives code that consumes only merged workflow input', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const altWeatherConnection = data.connections['HTTP: Alt Weather']?.main?.[0]?.[0];
+    expect(altWeatherConnection?.node).toBe('Merge: Alt Weather Context');
+    expect(altWeatherConnection?.index).toBe(1);
+
+    const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Score Alternatives');
+    expect(node).toBeTruthy();
+    expect(node.parameters.jsCode).not.toContain('Code: Prepare Alt Locations');
+    expect(node.parameters.jsCode).not.toContain('Code: Best Windows');
+
+    const fn = new Function('$', '$input', node.parameters.jsCode);
+    const result = fn(
+      () => ({
+        first: () => {
+          throw new Error('unexpected selector lookup');
+        },
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            name: 'Bolton Abbey',
+            lat: 53.984,
+            lon: -1.878,
+            driveMins: 35,
+            types: ['mist', 'atmospheric'],
+            darkSky: false,
+            leedsContext: {
+              windows: [],
+              dontBother: true,
+              todayBestScore: 0,
+              todayCarWash: { score: 0 },
+              dailySummary: [],
+              metarNote: '',
+              sunrise: null,
+              sunset: null,
+              moonPct: 0,
+            },
+            hourly: { time: [] },
+            daily: { sunrise: [], sunset: [] },
+          },
+        }),
+        all: () => [{
+          json: {
+            name: 'Bolton Abbey',
+            lat: 53.984,
+            lon: -1.878,
+            driveMins: 35,
+            types: ['mist', 'atmospheric'],
+            darkSky: false,
+            leedsContext: {
+              windows: [],
+              dontBother: true,
+              todayBestScore: 0,
+              todayCarWash: { score: 0 },
+              dailySummary: [],
+              metarNote: '',
+              sunrise: null,
+              sunset: null,
+              moonPct: 0,
+            },
+            hourly: { time: [] },
+            daily: { sunrise: [], sunset: [] },
+          },
+        }],
+      },
+    );
+
+    expect(result).toEqual([{
+      json: {
+        altLocations: [],
+        noAltsMsg: 'No nearby locations score well enough today to recommend a trip.',
+        windows: [],
+        dontBother: true,
+        todayBestScore: 0,
+        todayCarWash: { score: 0 },
+        dailySummary: [],
+        metarNote: '',
+        sunrise: null,
+        sunset: null,
+        moonPct: 0,
       },
     }]);
   });

@@ -286,6 +286,21 @@
     },
     {
       "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0023-0023-0023-000000000023",
+      "name": "Merge: Alt Weather Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        500
+      ]
+    },
+    {
+      "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
         "jsCode": "__ADAPTER_score-alternatives__"
@@ -295,7 +310,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        2200,
         500
       ]
     },
@@ -546,11 +561,27 @@
             "node": "HTTP: Alt Weather",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge: Alt Weather Context",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
     },
     "HTTP: Alt Weather": {
+      "main": [
+        [
+          {
+            "node": "Merge: Alt Weather Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Alt Weather Context": {
       "main": [
         [
           {

@@ -1,10 +1,18 @@
 import { scoreAlternatives } from '../../core/score-alternatives.js';
 import type { N8nRuntime } from './types.js';
 
-export function run({ $, $input }: N8nRuntime) {
-  const altWeatherData = $input.all().map(item => item.json);
-  const altLocationMeta = $('Code: Prepare Alt Locations').all().map(item => item.json);
-  const leedsContext = $('Code: Best Windows').first().json;
+export function run({ $input }: N8nRuntime) {
+  const mergedItems = (() => {
+    try {
+      return $input.all().map(item => item.json);
+    } catch {
+      return [];
+    }
+  })();
+
+  const altWeatherData = mergedItems.map(({ name: _name, lat: _lat, lon: _lon, driveMins: _driveMins, types: _types, darkSky: _darkSky, url: _url, leedsContext: _leedsContext, ...weather }) => weather);
+  const altLocationMeta = mergedItems.map(({ name, lat, lon, driveMins, types, darkSky }) => ({ name, lat, lon, driveMins, types, darkSky }));
+  const leedsContext = mergedItems[0]?.leedsContext ?? {};
 
   const result = scoreAlternatives({
     altWeatherData,
