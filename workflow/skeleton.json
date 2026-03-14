@@ -158,6 +158,21 @@
     },
     {
       "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0024-0024-0024-000000000024",
+      "name": "Merge: Prompt Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        300
+      ]
+    },
+    {
+      "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
         "jsCode": "__ADAPTER_format-messages__"
@@ -167,7 +182,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1980,
+        2200,
         300
       ]
     },
@@ -523,11 +538,27 @@
             "node": "HTTP: Groq",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
     },
     "HTTP: Groq": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Prompt Context": {
       "main": [
         [
           {

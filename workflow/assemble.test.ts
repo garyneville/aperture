@@ -200,6 +200,75 @@ describe('workflow assembly', () => {
     }]);
   });
 
+  it('assembles format-messages code that consumes only merged prompt input', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const groqConnection = data.connections['HTTP: Groq']?.main?.[0]?.[0];
+    expect(groqConnection?.node).toBe('Merge: Prompt Context');
+    expect(groqConnection?.index).toBe(1);
+
+    const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Format Messages');
+    expect(node).toBeTruthy();
+    expect(node.parameters.jsCode).not.toContain('Code: Build Prompt');
+
+    const fn = new Function('$', '$input', node.parameters.jsCode);
+    const result = fn(
+      () => ({
+        first: () => {
+          throw new Error('unexpected selector lookup');
+        },
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            dontBother: true,
+            windows: [],
+            todayCarWash: {
+              score: 0,
+              rating: 'X',
+              label: 'No good window',
+              start: '--',
+              end: '--',
+              wind: 0,
+              pp: 0,
+              tmp: 0,
+            },
+            dailySummary: [],
+            altLocations: [],
+            noAltsMsg: 'No nearby locations score well enough today to recommend a trip.',
+            sunriseStr: '--:--',
+            sunsetStr: '--:--',
+            moonPct: 0,
+            metarNote: '',
+            today: 'Saturday 14 March',
+            todayBestScore: 0,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+            choices: [{ message: { content: 'Stay home today.' } }],
+          },
+        }),
+        all: () => [],
+      },
+    );
+
+    expect(result).toEqual([{
+      json: {
+        telegramMsg: expect.stringContaining('Stay home today.'),
+        emailHtml: expect.stringContaining('Stay home today.'),
+      },
+    }]);
+  });
+
   it('assembles retry-safe prepare azimuth code without cross-node SunsetHue lookup', async () => {
     const workflowJson = await assembleWorkflow();
     expect(workflowJson).not.toContain("$('HTTP: SunsetHue')");
