@@ -238,14 +238,31 @@ function labelWindow(w: Omit<Window, 'label'>, sunrise?: string, sunset?: string
   const sunrD = sunrise ? new Date(sunrise) : null;
   const sunsetD = sunset ? new Date(sunset) : null;
   const s = new Date(w.st);
+  const astroHours = w.hours.filter(h => h.isNight && h.astro > 35);
+
+  if (astroHours.length) {
+    const astroHourNumbers = astroHours
+      .map(hour => Number.parseInt(hour.hour.slice(0, 2), 10))
+      .filter(hour => Number.isFinite(hour));
+    const allOvernight = astroHourNumbers.length > 0 && astroHourNumbers.every(hour => hour < 6);
+    const allEvening = astroHourNumbers.length > 0 && astroHourNumbers.every(hour => hour >= 18);
+
+    if (w.fallback) {
+      if (allEvening) return 'Best chance for evening astro';
+      if (allOvernight) return 'Best chance for overnight astro';
+      return 'Best chance for night sky';
+    }
+
+    if (allEvening) return 'Evening astro window';
+    if (allOvernight) return 'Overnight astro window';
+    return 'Night sky window';
+  }
 
   if (w.fallback) {
     if (w.hours.some(h => h.isGoldPm || h.isBluePm)) return 'Best chance around sunset';
     if (w.hours.some(h => h.isGoldAm || h.isBlueAm)) return 'Best chance around sunrise';
-    if (w.hours.some(h => h.isNight && h.astro > 35)) return 'Best chance for astro';
   }
 
-  if (w.hours.some(h => h.isNight && h.astro > 35) && !w.hours.some(h => h.isBlue)) return 'Astrophotography window';
   if (w.hours.some(h => h.isBlue && !h.isGolden)) return 'Blue hour';
   if (w.hours.some(h => h.isGolden) && sunrD && s < new Date(+sunrD + 4 * 3600000)) return 'Morning golden hour';
   if (w.hours.some(h => h.isGolden) && sunsetD && s > new Date(+sunsetD - 8 * 3600000)) return 'Evening golden hour';

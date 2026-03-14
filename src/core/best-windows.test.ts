@@ -132,8 +132,101 @@ describe('bestWindows', () => {
 
     const result = bestWindows(input);
 
-    expect(result.windows[0]?.label).toBe('Astrophotography window');
+    expect(result.windows[0]?.label).toBe('Evening astro window');
     expect(result.dailySummary[0]?.bestPhotoHour).toBe('19:00');
     expect(result.dailySummary[0]?.bestTags).toBe('astrophotography');
+  });
+
+  it('distinguishes overnight astro windows from evening astro windows', () => {
+    const result = bestWindows({
+      todayHours: [
+        {
+          ts: '2026-03-14T01:00:00.000Z',
+          t: '2026-03-14T01:00:00.000Z',
+          hour: '01:00',
+          score: 57,
+          drama: 0,
+          clarity: 0,
+          mist: 0,
+          astro: 70,
+          crepuscular: 0,
+          shQ: null,
+          cl: 0,
+          cm: 0,
+          ch: 0,
+          ct: 0,
+          visK: 25.9,
+          aod: 0,
+          tpw: 20,
+          wind: 9,
+          gusts: 11,
+          tmp: 4,
+          hum: 55,
+          dew: 3,
+          pp: 0,
+          pr: 0,
+          vpd: 0,
+          azimuthRisk: null,
+          isGolden: false,
+          isGoldAm: false,
+          isGoldPm: false,
+          isBlue: false,
+          isBlueAm: false,
+          isBluePm: false,
+          isNight: true,
+          moon: 22,
+          uv: 0,
+          tags: ['astrophotography'],
+        },
+      ],
+      dailySummary: [{
+        dateKey: '2026-03-14',
+        dayLabel: 'Today',
+        dayIdx: 0,
+        hours: [],
+        photoScore: 42,
+        headlineScore: 70,
+        photoEmoji: 'Excellent',
+        photoRating: 'Excellent',
+        bestPhotoHour: '18:00',
+        bestTags: 'landscape',
+        carWash: {
+          score: 60,
+          rating: 'OK',
+          label: 'Usable',
+          start: '15:00',
+          end: '17:00',
+          wind: 14,
+          pp: 24,
+          tmp: 9,
+        },
+        sunrise: '2026-03-14T06:23:00.000Z',
+        sunset: '2026-03-14T18:07:00.000Z',
+        shSunsetQuality: null,
+        shSunriseQuality: null,
+        shSunsetText: null,
+        sunDirection: null,
+        crepRayPeak: 0,
+        confidence: 'high',
+        confidenceStdDev: 10,
+        durationBonus: 0,
+        amConfidence: 'medium',
+        amConfidenceStdDev: 10,
+        pmConfidence: 'medium',
+        pmConfidenceStdDev: 10,
+        goldAmMins: 0,
+        goldPmMins: 0,
+        amScore: 32,
+        pmScore: 46,
+        astroScore: 70,
+        bestAmHour: '07:00',
+        bestPmHour: '18:00',
+        sunriseOcclusionRisk: null,
+        sunsetOcclusionRisk: null,
+      }],
+      metarNote: 'METAR clear',
+    });
+
+    expect(result.windows[0]?.label).toBe('Overnight astro window');
   });
 });
