@@ -1,8 +1,8 @@
 import { scoreAllDays } from '../../core/score-hours.js';
+import { getPhotoWeatherLat, getPhotoWeatherLon } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $ }: N8nRuntime) {
-  const vars = $('Set Variables').first().json;
   const w = $('HTTP: Weather').first().json;
   const aq = $('HTTP: Air Quality').first().json;
   const metarRaw = $('HTTP: METAR').first().json;
@@ -12,8 +12,8 @@ export function run({ $ }: N8nRuntime) {
   const ppData = $('HTTP: Precip Prob').first().json;
 
   const result = scoreAllDays({
-    lat: parseFloat(vars.lat || 53.82703),
-    lon: parseFloat(vars.lon || -1.570755),
+    lat: getPhotoWeatherLat(),
+    lon: getPhotoWeatherLon(),
     weather: w,
     airQuality: aq,
     metarRaw,

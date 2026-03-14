@@ -23,56 +23,7 @@
     },
     {
       "parameters": {
-        "mode": "manual",
-        "duplicateItem": false,
-        "assignments": {
-          "assignments": [
-            {
-              "id": "1",
-              "name": "lat",
-              "value": "__PHOTO_WEATHER_LAT__",
-              "type": "string"
-            },
-            {
-              "id": "2",
-              "name": "lon",
-              "value": "__PHOTO_WEATHER_LON__",
-              "type": "string"
-            },
-            {
-              "id": "3",
-              "name": "location",
-              "value": "__PHOTO_WEATHER_LOCATION__",
-              "type": "string"
-            },
-            {
-              "id": "4",
-              "name": "timezone",
-              "value": "__PHOTO_WEATHER_TIMEZONE__",
-              "type": "string"
-            },
-            {
-              "id": "5",
-              "name": "icao",
-              "value": "__PHOTO_WEATHER_ICAO__",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "a1b2c3d4-0002-0002-0002-000000000002",
-      "name": "Set Variables",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        220,
-        300
-      ]
-    },
-    {
-      "parameters": {
-        "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $json.lat }}&longitude={{ $json.lon }}&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation_probability,precipitation,windspeed_10m,windgusts_10m,cape,vapour_pressure_deficit,total_column_integrated_water_vapour&daily=sunrise,sunset&timezone={{ $json.timezone }}&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation_probability,precipitation,windspeed_10m,windgusts_10m,cape,vapour_pressure_deficit,total_column_integrated_water_vapour&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0003-0003-0003-000000000003",
@@ -89,7 +40,7 @@
     },
     {
       "parameters": {
-        "url": "=https://air-quality-api.open-meteo.com/v1/air-quality?latitude={{ $('Set Variables').first().json.lat }}&longitude={{ $('Set Variables').first().json.lon }}&hourly=aerosol_optical_depth,dust,uv_index,european_aqi,pm2_5,alder_pollen,birch_pollen,grass_pollen&timezone={{ $('Set Variables').first().json.timezone }}&forecast_days=5",
+        "url": "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=aerosol_optical_depth,dust,uv_index,european_aqi,pm2_5,alder_pollen,birch_pollen,grass_pollen&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0004-0004-0004-000000000004",
@@ -107,7 +58,7 @@
     },
     {
       "parameters": {
-        "url": "=https://aviationweather.gov/api/data/metar?ids={{ $('Set Variables').first().json.icao }}&format=json&taf=false",
+        "url": "https://aviationweather.gov/api/data/metar?ids=__PHOTO_WEATHER_ICAO__&format=json&taf=false",
         "options": {}
       },
       "id": "a1b2c3d4-0005-0005-0005-000000000005",
@@ -350,7 +301,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.sunsethue.com/forecast?lat={{ $('Set Variables').first().json.lat }}&lon={{ $('Set Variables').first().json.lon }}",
+        "url": "https://api.sunsethue.com/forecast?lat=__PHOTO_WEATHER_LAT__&lon=__PHOTO_WEATHER_LON__",
         "sendHeaders": true,
         "specifyHeaders": "keypair",
         "headerParameters": {
@@ -378,7 +329,7 @@
     },
     {
       "parameters": {
-        "url": "=https://api.open-meteo.com/v1/forecast?latitude={{ $('Set Variables').first().json.lat }}&longitude={{ $('Set Variables').first().json.lon }}&hourly=precipitation_probability&timezone={{ $('Set Variables').first().json.timezone }}&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=precipitation_probability&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0017-0017-0017-000000000017",
@@ -396,7 +347,7 @@
     },
     {
       "parameters": {
-        "url": "=https://ensemble-api.open-meteo.com/v1/ensemble?latitude={{ $('Set Variables').first().json.lat }}&longitude={{ $('Set Variables').first().json.lon }}&hourly=cloudcover&models=ecmwf_ifs025&timezone={{ $('Set Variables').first().json.timezone }}&forecast_days=5",
+        "url": "https://ensemble-api.open-meteo.com/v1/ensemble?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=cloudcover&models=ecmwf_ifs025&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0018-0018-0018-000000000018",
@@ -470,17 +421,6 @@
   ],
   "connections": {
     "Schedule: 06:30 Daily": {
-      "main": [
-        [
-          {
-            "node": "Set Variables",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set Variables": {
       "main": [
         [
           {

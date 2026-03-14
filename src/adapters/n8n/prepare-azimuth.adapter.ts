@@ -1,14 +1,20 @@
 import { prepareAzimuthSamples } from '../../core/prepare-azimuth.js';
+import { getPhotoWeatherLat, getPhotoWeatherLon, PHOTO_WEATHER_CONFIG } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
-export function run({ $ }: N8nRuntime) {
-  const vars = $('Set Variables').first().json;
-  const shData = $('HTTP: SunsetHue').first().json;
+export function run({ $input }: N8nRuntime) {
+  let shData: Array<{ type?: string; direction?: string | number }> = [];
+  try {
+    const candidate = $input.first().json;
+    shData = Array.isArray(candidate) ? candidate : [];
+  } catch {
+    shData = [];
+  }
 
   const samples = prepareAzimuthSamples({
-    lat: parseFloat(vars.lat || 53.82703),
-    lon: parseFloat(vars.lon || -1.570755),
-    timezone: vars.timezone || 'Europe/London',
+    lat: getPhotoWeatherLat(),
+    lon: getPhotoWeatherLon(),
+    timezone: PHOTO_WEATHER_CONFIG.timezone || 'Europe/London',
     sunsetHueData: shData,
   });
 
