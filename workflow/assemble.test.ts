@@ -53,6 +53,8 @@ describe('workflow assembly', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(8);
     expect(result[0]?.json?.name).toBe('Bolton Abbey');
+    expect(result[0]?.json?.url).toContain('timezone=Europe%2FLondon');
+    expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
 
   it('assembles retry-safe score input packaging ahead of score-hours', async () => {
@@ -174,6 +176,8 @@ describe('workflow assembly', () => {
     expect(result).toHaveLength(12);
     expect(result[0]?.json?.bearing).toBe(90);
     expect(result[6]?.json?.bearing).toBe(270);
+    expect(result[0]?.json?.url).toContain('timezone=Europe%2FLondon');
+    expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
 
   it('assembles aggregate azimuth code without prepare-azimuth selector lookups', async () => {

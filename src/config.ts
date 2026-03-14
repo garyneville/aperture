@@ -6,9 +6,18 @@ export const PHOTO_WEATHER_CONFIG = {
   icao: '__PHOTO_WEATHER_ICAO__',
 } as const;
 
+function isPlaceholder(value: string): boolean {
+  return /^__.+__$/.test(value);
+}
+
 function parseNumber(value: string, fallback: number): number {
+  if (!value || isPlaceholder(value)) return fallback;
   const parsed = Number.parseFloat(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function parseString(value: string, fallback: string): string {
+  return !value || isPlaceholder(value) ? fallback : value;
 }
 
 export function getPhotoWeatherLat(): number {
@@ -17,4 +26,16 @@ export function getPhotoWeatherLat(): number {
 
 export function getPhotoWeatherLon(): number {
   return parseNumber(PHOTO_WEATHER_CONFIG.lon, -1.570755);
+}
+
+export function getPhotoWeatherLocation(): string {
+  return parseString(PHOTO_WEATHER_CONFIG.location, 'Leeds');
+}
+
+export function getPhotoWeatherTimezone(): string {
+  return parseString(PHOTO_WEATHER_CONFIG.timezone, 'Europe/London');
+}
+
+export function getPhotoWeatherIcao(): string {
+  return parseString(PHOTO_WEATHER_CONFIG.icao, 'EGNM');
 }

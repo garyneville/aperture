@@ -1,5 +1,5 @@
 import { prepareAzimuthSamples } from '../../core/prepare-azimuth.js';
-import { getPhotoWeatherLat, getPhotoWeatherLon, PHOTO_WEATHER_CONFIG } from '../../config.js';
+import { getPhotoWeatherLat, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {
@@ -14,7 +14,7 @@ export function run({ $input }: N8nRuntime) {
   const samples = prepareAzimuthSamples({
     lat: getPhotoWeatherLat(),
     lon: getPhotoWeatherLon(),
-    timezone: PHOTO_WEATHER_CONFIG.timezone || 'Europe/London',
+    timezone: getPhotoWeatherTimezone(),
     sunsetHueData: shData,
   });
 
