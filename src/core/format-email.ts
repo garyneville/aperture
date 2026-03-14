@@ -156,6 +156,50 @@ function metricChip(label: string, value: string | number, tone?: string): strin
   return `<span class="chip" style="display:inline-block;margin:2px 4px 0 0;padding:3px 7px;border-radius:8px;background:${C.surfaceVariant};border:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.25;color:${C.ink};"><span style="font-weight:700;color:${toneColor};">${esc(label)}</span> ${esc(value)}</span>`;
 }
 
+function moonDescriptor(moonPct: number): string {
+  if (moonPct <= 5) return 'New-ish';
+  if (moonPct <= 35) return 'Crescent';
+  if (moonPct <= 65) return 'Half moon';
+  if (moonPct <= 90) return 'Gibbous';
+  return 'Full-ish';
+}
+
+interface SummaryStat {
+  label: string;
+  value: string;
+  tone?: string;
+}
+
+function summaryGrid(items: SummaryStat[], columns = 2): string {
+  const rows: SummaryStat[][] = [];
+  for (let index = 0; index < items.length; index += columns) {
+    rows.push(items.slice(index, index + columns));
+  }
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;border-spacing:0;">
+    ${rows.map(row => `
+      <tr>
+        ${row.map((item, itemIndex) => `
+          <td valign="top" style="width:${100 / columns}%;padding:0;${itemIndex > 0 ? `border-left:1px solid rgba(16,42,92,0.12);` : ''}">
+            <div style="padding:9px 10px;">
+              <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.7;">${esc(item.label)}</div>
+              <div style="Margin-top:4px;font-family:${FONT};font-size:15px;font-weight:700;line-height:1.25;color:${item.tone || C.onPrimaryContainer};">${esc(item.value)}</div>
+            </div>
+          </td>
+        `).join('')}
+        ${row.length < columns ? `<td style="width:${100 / columns}%;padding:0;border-left:1px solid rgba(16,42,92,0.12);">&nbsp;</td>`.repeat(columns - row.length) : ''}
+      </tr>
+    `).join('')}
+  </table>`;
+}
+
+function summaryNote(label: string, value: string): string {
+  return `<div style="Margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.55);border:1px solid rgba(16,42,92,0.12);">
+    <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.72;">${esc(label)}</div>
+    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.onPrimaryContainer};">${esc(value)}</div>
+  </div>`;
+}
+
 function spacer(size: number): string {
   return `<tr><td style="height:${size}px;line-height:${size}px;font-size:${size}px;">&nbsp;</td></tr>`;
 }
@@ -405,21 +449,49 @@ export function formatEmail(input: FormatEmailInput): string {
   const todayDay = dailySummary[0] || ({} as DaySummary);
   const todayScoreState = scoreState(todayBestScore);
   const todayConfidence = confidenceDetail(todayDay);
-  const heroFacts = [
-    metricChip('Sunrise', sunriseStr, C.primary),
-    metricChip('Sunset', sunsetStr, C.primary),
-    metricChip('Moon', `${moonPct}% lit`, C.tertiary),
-    todayConfidence && todayDay.confidenceStdDev !== null && todayDay.confidenceStdDev !== undefined
-      ? metricChip('Certainty', `${todayConfidence.label} - ${todayDay.confidenceStdDev} pts`, todayConfidence.fg)
-      : '',
-  ].join('');
+  const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
+  const factStats: SummaryStat[] = [
+    { label: 'Sunrise', value: sunriseStr, tone: C.primary },
+    { label: 'Sunset', value: sunsetStr, tone: C.primary },
+    { label: 'Moon', value: `${moonDescriptor(moonPct)} · ${moonPct}% lit`, tone: C.tertiary },
+  ];
+
+  if (todayConfidence) {
+    factStats.push({
+      label: 'Certainty',
+      value: todayDay.confidenceStdDev !== null && todayDay.confidenceStdDev !== undefined
+        ? `${todayConfidence.label} · spread ${todayDay.confidenceStdDev} pts`
+        : todayConfidence.label,
+      tone: todayConfidence.fg,
+    });
+  }
+
+  const scoreStats: SummaryStat[] = [
+    { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
+    { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
+    { label: 'Astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
+    { label: 'Best local', value: todayDay.bestPhotoHour || 'No clear slot', tone: C.onPrimaryContainer },
+  ];
+
+  const localSummary = todayDay.bestTags
+    ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
+    : todayDay.bestPhotoHour
+      ? `Best local setup: ${todayDay.bestPhotoHour}.`
+      : '';
+
+  const alternativeSummary = topAlternative
+    ? `${topAlternative.name} · ${topAlternative.bestScore}/100${topAlternative.isAstroWin ? ` · astro ${topAlternative.bestAstroHour || 'evening'}` : topAlternative.bestDayHour ? ` · ${topAlternative.bestDayHour}` : ''} · ${topAlternative.driveMins} min drive`
+    : '';
 
   const hero = card(`
   <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.82;">Photography brief</div>
   <div class="hero-title" style="Margin:0;font-family:${FONT};font-size:26px;font-weight:700;line-height:1.08;color:${C.onPrimaryContainer};">Leeds</div>
   <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.onPrimaryContainer};opacity:0.9;">${esc(today)}</div>
   <div style="Margin-top:8px;">${pill(`${todayScoreState.label} - ${todayBestScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
-  <div style="Margin-top:8px;">${heroFacts}</div>
+  <div style="Margin-top:12px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
+  <div style="Margin-top:10px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
+  ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
+  ${alternativeSummary ? summaryNote('Best nearby alternative', alternativeSummary) : ''}
 `, 'hero-card', `background:${C.primaryContainer};border-color:#C5D6FF;`);
 
   /* Signal cards */
@@ -457,6 +529,9 @@ export function formatEmail(input: FormatEmailInput): string {
       .hero-title {
         font-size: 18px !important;
         line-height: 1.08 !important;
+      }
+      .hero-card td[style*="border-left"] {
+        border-left: none !important;
       }
       .section-title {
         font-size: 18px !important;
