@@ -65,6 +65,11 @@ function topAlternativeLine(altLocations?: AltLocationResult[]): string {
   return `${alt.name} (${alt.driveMins}min, ${alt.bestScore}/100, ${timing}${alt.darkSky ? ', dark sky' : ''})`;
 }
 
+function isAstroWindow(window: Window | undefined): boolean {
+  if (!window) return false;
+  return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
@@ -123,6 +128,10 @@ ${shInfo}${confNote}${lhStr}`;
   } else {
     const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
     const bestWin = windows[0];
+    const nextWin = windows[1];
+    const topAlt = altLocations?.[0];
+    const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
+    const overallAstroDelta = todayDay && bestWin ? (todayDay.astroScore ?? 0) - bestWin.peak : 0;
     const fallbackNote = bestWin?.fallback
       ? `\nTiming note: this is the most promising narrow stretch rather than a clean standout window.`
       : '';
@@ -133,6 +142,17 @@ ${shInfo}${confNote}${lhStr}`;
     const shQNote = bestHour?.shQ !== null && bestHour?.shQ !== undefined
       ? `\nSunsetHue quality for this session: ${Math.round(bestHour!.shQ! * 100)}%`
       : '';
+    const editorialInsights = [
+      overallAstroDelta >= 10
+        ? `- Overall astro potential runs ${overallAstroDelta} points higher than the named local window score.`
+        : '',
+      bestAltDelta >= 10 && topAlt
+        ? `- Best nearby alternative ${topAlt.name} improves the score by ${bestAltDelta} points${topAlt.darkSky ? ' because of darker skies' : ''}.`
+        : '',
+      nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
+        ? `- Secondary local option is ${nextWin.label} (${nextWin.start}\u2013${nextWin.end}, ${nextWin.peak}/100), which is mainly useful if you miss the first astro slot.`
+        : '',
+    ].filter(Boolean).join('\n');
 
     const windowsText = windows.map((w, i) => {
       const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
@@ -143,13 +163,14 @@ ${shInfo}${confNote}${lhStr}`;
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
 Write exactly 2 short sentences, maximum 55 words total.
-Sentence 1 must name the best local window exactly as labelled, include its time and score, and cite 1-2 concrete conditions from the structured data.
-Sentence 2 must either mention the next most relevant local window or the best nearby alternative if it is materially better.
-Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis.
+Sentence 1 must make the local call, name the best local window exactly as labelled, include its time and score, and cite 1-2 concrete conditions from the structured data.
+Sentence 2 must add one comparative insight that is not already obvious from the metric line. Prefer one of: why the overall day score runs higher than the named window, why the best nearby alternative is materially stronger, or how the secondary local window differs.
+Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis. Avoid simply repeating the same metrics from the card.
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
 ${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
 ${metarNote ? 'METAR: ' + metarNote : ''}
+${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 
 Leeds shooting windows:
 ${windowsText}${altText}`;

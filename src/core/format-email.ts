@@ -200,9 +200,10 @@ function summaryGrid(items: SummaryStat[], columns = 2): string {
 }
 
 function summaryNote(label: string, value: string): string {
+  const content = esc(value).replace(/\n/g, '<br>');
   return `<div style="Margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.55);border:1px solid rgba(16,42,92,0.12);">
     <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.72;">${esc(label)}</div>
-    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.onPrimaryContainer};">${esc(value)}</div>
+    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.onPrimaryContainer};">${content}</div>
   </div>`;
 }
 
@@ -255,11 +256,20 @@ function listRows(items: string[]): string {
   return items.filter(Boolean).join('<div style="height:6px;line-height:6px;font-size:6px;">&nbsp;</div>');
 }
 
-function windowCard(w: Window, index: number): string {
+function isAstroWindow(window: Window | undefined): boolean {
+  if (!window) return false;
+  return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
+}
+
+function windowCard(w: Window, index: number, windows: Window[]): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
+  const topWindow = windows[0];
   if (w.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
   if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular rays ${h.crepuscular}/100.`);
+  if (index > 0 && isAstroWindow(topWindow) && isAstroWindow(w) && topWindow?.label !== w.label) {
+    notes.push('Later, darker backup if you miss the first astro slot.');
+  }
   const metricLine = metricRun([
     { label: 'Cloud high', value: `${h.ch ?? '-'}%`, tone: C.primary },
     { label: 'Visibility', value: `${h.visK ?? '-'}km`, tone: C.secondary },
@@ -299,7 +309,7 @@ function todayWindowSection(
     `, '', `border-top:4px solid ${C.error};`);
   }
   return listRows([
-    ...(windows || []).map((w, index) => windowCard(w, index)),
+    ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
     card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
       ${htmlText(aiText)}
@@ -437,9 +447,14 @@ export function formatEmail(input: FormatEmailInput): string {
 
   /* Hero card */
   const todayDay = dailySummary[0] || ({} as DaySummary);
-  const todayScoreState = scoreState(todayBestScore);
+  const topWindow = !dontBother ? windows?.[0] : null;
+  const heroScore = topWindow?.peak ?? todayBestScore;
+  const todayScoreState = scoreState(heroScore);
   const todayConfidence = confidenceDetail(todayDay);
   const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
+  const topAltDelta = topAlternative ? topAlternative.bestScore - heroScore : 0;
+  const overallAstroDelta = typeof todayDay.astroScore === 'number' ? todayDay.astroScore - heroScore : 0;
+  const nextWindow = !dontBother ? windows?.[1] : null;
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
     { label: 'Sunset', value: sunsetStr, tone: C.primary },
@@ -459,15 +474,27 @@ export function formatEmail(input: FormatEmailInput): string {
   const scoreStats: SummaryStat[] = [
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
-    { label: 'Astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
+    { label: 'Overall astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
     { label: 'Best local', value: todayDay.bestPhotoHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
-  const localSummary = todayDay.bestTags
-    ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
-    : todayDay.bestPhotoHour
-      ? `Best local setup: ${todayDay.bestPhotoHour}.`
-      : '';
+  const localSummary = [
+    topWindow
+      ? `${topWindow.label}: ${topWindow.start}-${topWindow.end} at ${topWindow.peak}/100.`
+      : todayDay.bestTags
+        ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
+        : todayDay.bestPhotoHour
+          ? `Best local setup: ${todayDay.bestPhotoHour}.`
+          : '',
+    overallAstroDelta >= 10
+      ? `Overall astro potential still peaks ${overallAstroDelta} points higher than the named local window.`
+      : '',
+    topAltDelta >= 10 && topAlternative
+      ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
+      : nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
+        ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
+        : '',
+  ].filter(Boolean).join('\n');
 
   const alternativeSummary = topAlternative
     ? `${topAlternative.name} · ${topAlternative.bestScore}/100${topAlternative.isAstroWin ? ` · astro ${topAlternative.bestAstroHour || 'evening'}` : topAlternative.bestDayHour ? ` · ${topAlternative.bestDayHour}` : ''} · ${topAlternative.driveMins} min drive`
@@ -477,7 +504,7 @@ export function formatEmail(input: FormatEmailInput): string {
   <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.82;">Photography brief</div>
   <div class="hero-title" style="Margin:0;font-family:${FONT};font-size:26px;font-weight:700;line-height:1.08;color:${C.onPrimaryContainer};">Leeds</div>
   <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.onPrimaryContainer};opacity:0.9;">${esc(today)}</div>
-  <div style="Margin-top:8px;">${pill(`${todayScoreState.label} - ${todayBestScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
+  <div style="Margin-top:8px;">${pill(`${todayScoreState.label} - ${heroScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
   <div style="Margin-top:12px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
   <div style="Margin-top:10px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
