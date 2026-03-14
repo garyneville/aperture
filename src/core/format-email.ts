@@ -370,6 +370,8 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
+    const utilityWindow = day.carWash.start !== '\u2014' ? `${day.carWash.start}-${day.carWash.end}` : '\u2014';
+    const utilityLine = `🚗 / 🚶 Daylight utility: ${utilityWindow} · Wind ${day.carWash.wind}km/h · Rain ${day.carWash.pp}% · Temp ${day.carWash.tmp}C`;
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
       <div style="Margin-top:6px;">${scorePill(day.headlineScore ?? day.photoScore)}</div>
@@ -382,11 +384,12 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
       ${conf ? `<div style="Margin-top:8px;">${confidencePill(day)}</div>` : ''}
 
       ${altLine ? `<div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(utilityLine)}</div>
     `);
   }));
 }
 
-function carWashTodayCard(todayCarWash: CarWash): string {
+function daylightUtilityTodayCard(todayCarWash: CarWash): string {
   const cw = todayCarWash;
   const state = cw.score >= 75
     ? { fg: C.success, bg: C.successContainer, border: '#B7E0CF' }
@@ -395,37 +398,15 @@ function carWashTodayCard(todayCarWash: CarWash): string {
       : { fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
   const window = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Car wash today</div>
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Daylight utility</div>
     <div style="Margin-top:4px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
-    <div style="Margin-top:8px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(window)}</div>
+    <div style="Margin-top:8px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">🚗 / 🚶 ${esc(window)}</div>
     <div style="Margin-top:8px;">
       ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
       ${metricChip('Rain', `${cw.pp}%`, C.error)}
       ${metricChip('Temp', `${cw.tmp}C`, C.secondary)}
     </div>
   `);
-}
-
-function carWashForecastCards(dailySummary: DaySummary[]): string {
-  return listRows(dailySummary.map(day => {
-    const cw = day.carWash;
-    const state = cw.score >= 75
-      ? { fg: C.success, bg: C.successContainer, border: '#B7E0CF' }
-      : cw.score >= 50
-        ? { fg: C.primary, bg: C.primaryContainer, border: '#C5D6FF' }
-        : { fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
-    const window = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
-    return card(`
-      <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
-      <div style="Margin-top:6px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
-      <div style="Margin-top:6px;">
-        ${metricChip('Window', window, C.primary)}
-        ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
-        ${metricChip('Rain', `${cw.pp}%`, C.error)}
-        ${metricChip('Temp', `${cw.tmp}C`, C.secondary)}
-      </div>
-    `);
-  }));
 }
 
 /* ------------------------------------------------------------------ */
@@ -613,7 +594,7 @@ export function formatEmail(input: FormatEmailInput): string {
           </tr>
           ${spacer(6)}
           <tr>
-            <td>${carWashTodayCard(todayCarWashData)}</td>
+            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
           </tr>
           ${spacer(10)}
           <tr>
@@ -629,13 +610,6 @@ export function formatEmail(input: FormatEmailInput): string {
 
           <tr>
             <td>${photoForecastCards(dailySummary)}</td>
-          </tr>
-          ${spacer(10)}
-          <tr>
-            <td>${sectionTitle('5-day car wash')}</td>
-          </tr>
-          <tr>
-            <td>${carWashForecastCards(dailySummary)}</td>
           </tr>
         </table>
       </td>

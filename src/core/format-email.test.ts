@@ -90,6 +90,9 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
     expect(html).toContain('Best backup: Malham Cove - 85/100 at 20:00 (astro)');
+    expect(html).toContain('Daylight utility');
+    expect(html).toContain('🚗 / 🚶');
+    expect(html).not.toContain('5-day car wash');
     expect(html).toContain('&middot;');
     expect(html).not.toContain('Sunrise</span> 06:23</span><span');
   });
