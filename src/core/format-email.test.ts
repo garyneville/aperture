@@ -10,7 +10,7 @@ describe('formatEmail hero summary', () => {
         start: '19:00',
         end: '21:00',
         peak: 60,
-        hours: [{ score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
         tops: ['astrophotography'],
       }],
       todayCarWash: {
@@ -90,8 +90,10 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Best nearby alternative');
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
+    expect(html).toContain('Peak local');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
-    expect(html).toContain('Overall astro potential still peaks 15 points higher than the named local window.');
+    expect(html).toContain('Peak local: 19:00, right as the window opens.');
+    expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by earlier evening conditions before the 19:00 local peak.');
     expect(html).toContain('Malham Cove adds 25 points with darker skies at 20:00.');
     expect(html).toContain('Best backup: Malham Cove - 85/100 at 20:00 (astro)');
     expect(html).toContain('Daylight utility');
@@ -103,6 +105,9 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('Sunrise</span> 06:23</span><span');
     expect(html).not.toContain('AM</span> 32 ·');
     expect(html).not.toContain('PM</span> 40 ·');
+    expect(html).toContain('Today - 14 Mar');
+    expect(html).toContain('Good - 60/100');
+    expect(html).toContain('Peak local 18:00 - landscape');
   });
 
   it('adds a later-night distinction when both local windows are astro', () => {
@@ -113,14 +118,14 @@ describe('formatEmail hero summary', () => {
         start: '19:00',
         end: '22:00',
         peak: 60,
-        hours: [{ score: 60, ch: 0, visK: 18.3, wind: '9', pp: 0, tpw: 20 }],
+        hours: [{ hour: '22:00', score: 60, ch: 0, visK: 18.3, wind: '9', pp: 0, tpw: 20 }],
         tops: ['astrophotography'],
       }, {
         label: 'Overnight astro window',
         start: '01:00',
         end: '05:00',
         peak: 57,
-        hours: [{ score: 57, ch: 0, visK: 25.9, wind: '9', pp: 0, tpw: 20 }],
+        hours: [{ hour: '01:00', score: 57, ch: 0, visK: 25.9, wind: '9', pp: 0, tpw: 20 }],
         tops: ['astrophotography'],
       }],
       todayCarWash: {
@@ -189,7 +194,7 @@ describe('formatEmail hero summary', () => {
         start: '19:00',
         end: '21:00',
         peak: 60,
-        hours: [{ score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
         tops: ['astrophotography'],
       }],
       todayCarWash: {

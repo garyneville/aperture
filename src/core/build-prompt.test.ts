@@ -130,10 +130,11 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Write exactly 2 short sentences');
     expect(result.prompt).toContain('Do not add camera tips, composition advice, technique advice');
     expect(result.prompt).toContain('Sentence 1 must make the local call');
-    expect(result.prompt).toContain('Sentence 2 must add one comparative insight');
-    expect(result.prompt).toContain('Avoid simply repeating the same metrics from the card');
-    expect(result.prompt).toContain('Overall astro potential runs 15 points higher than the named local window score.');
-    expect(result.prompt).toContain('Best nearby alternative Sutton Bank improves the score by 25 points because of darker skies.');
+    expect(result.prompt).toContain('Sentence 2 must use one of the editorial insight lines below');
+    expect(result.prompt).toContain('Do not simply restate cloud, visibility, wind, rain');
+    expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
+    expect(result.prompt).toContain('Overall astro potential is 75/100 - the window score is held back by weaker conditions earlier in the session before the 19:00 local peak.');
+    expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
   });
 });

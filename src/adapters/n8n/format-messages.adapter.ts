@@ -2,7 +2,31 @@ import { formatTelegram } from '../../core/format-telegram.js';
 import { formatEmail } from '../../core/format-email.js';
 import type { N8nRuntime } from './types.js';
 
-function normalizeAiText(text: string): string {
+type BriefContext = {
+  windows?: WindowLike[];
+  dailySummary?: Array<{
+    bestPhotoHour?: string;
+    astroScore?: number;
+  }>;
+  altLocations?: Array<{
+    name?: string;
+    bestScore?: number;
+    bestAstroHour?: string | null;
+    darkSky?: boolean;
+    driveMins?: number;
+  }>;
+};
+
+type WindowLike = {
+  label?: string;
+  start?: string;
+  end?: string;
+  peak?: number;
+  tops?: string[];
+  hours?: Array<{ hour?: string; score?: number }>;
+};
+
+export function normalizeAiText(text: string): string {
   const cleaned = text.replace(/\s+/g, ' ').trim();
   if (!cleaned) return '(No AI summary)';
 
@@ -14,6 +38,64 @@ function normalizeAiText(text: string): string {
     : shortened;
 }
 
+function peakHourForWindow(window: WindowLike | undefined): string | null {
+  if (!window?.hours?.length) return null;
+  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
+  return peakHour?.hour || null;
+}
+
+export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean {
+  const topWindow = ctx.windows?.[0];
+  if (!aiText || aiText === '(No AI summary)') return true;
+  if (!topWindow) return false;
+
+  const lower = aiText.toLowerCase();
+  const mentionsWindow = [
+    topWindow.label?.toLowerCase(),
+    topWindow.start && topWindow.end ? `${topWindow.start}-${topWindow.end}`.toLowerCase() : '',
+    topWindow.start && topWindow.end ? `${topWindow.start} to ${topWindow.end}`.toLowerCase() : '',
+  ].filter((fragment): fragment is string => Boolean(fragment)).some(fragment => lower.includes(fragment));
+
+  const addsInsight = [
+    'peak',
+    'darker',
+    'stronger',
+    'later',
+    'overall astro',
+    'held back',
+    'drive',
+    'fallback',
+  ].some(fragment => lower.includes(fragment));
+
+  return mentionsWindow && !addsInsight;
+}
+
+export function buildFallbackAiText(ctx: BriefContext): string {
+  const topWindow = ctx.windows?.[0];
+  const nextWindow = ctx.windows?.[1];
+  const today = ctx.dailySummary?.[0];
+  const topAlt = ctx.altLocations?.[0];
+
+  if (!topWindow) return '(No AI summary)';
+
+  const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
+  const firstSentence = `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${topWindow.start && topWindow.end ? ` from ${topWindow.start}-${topWindow.end}` : ''}.`;
+
+  if (topAlt && typeof topAlt.bestScore === 'number' && typeof topWindow.peak === 'number' && topAlt.bestScore - topWindow.peak >= 10) {
+    return `${firstSentence} ${topAlt.name} is ${topAlt.bestScore - topWindow.peak} points stronger${topAlt.darkSky ? ' thanks to darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}${topAlt.driveMins ? ` if you can make the ${topAlt.driveMins}-minute drive` : ''}.`;
+  }
+
+  if (typeof today?.astroScore === 'number' && typeof topWindow.peak === 'number' && today.astroScore - topWindow.peak >= 10) {
+    return `${firstSentence} Overall astro potential is ${today.astroScore}/100, but the window score is held back by weaker conditions earlier in the session.`;
+  }
+
+  if (nextWindow?.label && nextWindow.start && nextWindow.end) {
+    return `${firstSentence} If you miss it, ${nextWindow.label.toLowerCase()} is the later fallback from ${nextWindow.start}-${nextWindow.end}.`;
+  }
+
+  return firstSentence;
+}
+
 export function run({ $input }: N8nRuntime) {
   const input = (() => {
     try {
@@ -23,7 +105,10 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
   const { choices, ...ctx } = input;
-  const aiText = normalizeAiText(choices?.[0]?.message?.content?.trim() || '');
+  const normalizedAiText = normalizeAiText(choices?.[0]?.message?.content?.trim() || '');
+  const aiText = shouldReplaceAiText(normalizedAiText, ctx)
+    ? buildFallbackAiText(ctx)
+    : normalizedAiText;
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
   const emailHtml = formatEmail({ ...ctx, aiText });

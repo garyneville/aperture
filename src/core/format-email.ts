@@ -5,6 +5,7 @@ import { esc } from './utils.js';
 /* ------------------------------------------------------------------ */
 
 export interface WindowHour {
+  hour?: string;
   score: number;
   ch?: number;
   visK?: number;
@@ -267,6 +268,19 @@ function isAstroWindow(window: Window | undefined): boolean {
   return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
 }
 
+function peakHourForWindow(window: Window | undefined): string | null {
+  if (!window?.hours?.length) return null;
+  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
+  return peakHour?.hour || null;
+}
+
+function peakTimeNote(window: Window | null | undefined, peakHour: string | undefined): string {
+  if (!window || !peakHour) return '';
+  if (peakHour === window.end) return `Peak local: ${peakHour}, near the end of the window.`;
+  if (peakHour === window.start) return `Peak local: ${peakHour}, right as the window opens.`;
+  return `Peak local: ${peakHour}, within the window.`;
+}
+
 function windowCard(w: Window, index: number, windows: Window[]): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
@@ -377,19 +391,22 @@ function alternativeSection(
   return card(rows);
 }
 
-function photoForecastCards(dailySummary: DaySummary[]): string {
+function photoForecastCards(dailySummary: DaySummary[], todayLocalScore?: number): string {
   return listRows(dailySummary.map(day => {
     const conf = confidenceDetail(day);
     const bestAltHour = day.bestAlt?.isAstroWin
       ? day.bestAlt.bestAstroHour
       : day.bestAlt?.bestDayHour;
+    const displayScore = day.dayIdx === 0 && typeof todayLocalScore === 'number'
+      ? todayLocalScore
+      : (day.headlineScore ?? day.photoScore);
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
-      <div style="Margin-top:6px;">${scorePill(day.headlineScore ?? day.photoScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
+      <div style="Margin-top:6px;">${scorePill(displayScore)}</div>
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Peak local ${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
       <div style="Margin-top:8px;">
         ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
         ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
@@ -453,6 +470,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const todayDay = dailySummary[0] || ({} as DaySummary);
   const topWindow = !dontBother ? windows?.[0] : null;
   const heroScore = topWindow?.peak ?? todayBestScore;
+  const peakLocalHour = peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
   const todayScoreState = scoreState(heroScore);
   const todayConfidence = confidenceDetail(todayDay);
   const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
@@ -479,7 +497,7 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
     { label: 'Overall astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
-    { label: 'Best local', value: todayDay.bestPhotoHour || 'No clear slot', tone: C.onPrimaryContainer },
+    { label: 'Peak local', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
   const localSummary = [
@@ -490,8 +508,9 @@ export function formatEmail(input: FormatEmailInput): string {
         : todayDay.bestPhotoHour
           ? `Best local setup: ${todayDay.bestPhotoHour}.`
           : '',
+    peakTimeNote(topWindow, peakLocalHour || undefined),
     overallAstroDelta >= 10
-      ? `Overall astro potential still peaks ${overallAstroDelta} points higher than the named local window.`
+      ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by earlier evening conditions${peakLocalHour ? ` before the ${peakLocalHour} local peak` : ''}.`
       : '',
     topAltDelta >= 10 && topAlternative
       ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
@@ -640,7 +659,7 @@ export function formatEmail(input: FormatEmailInput): string {
           </tr>
 
           <tr>
-            <td>${photoForecastCards(dailySummary)}</td>
+            <td>${photoForecastCards(dailySummary, heroScore)}</td>
           </tr>
         </table>
       </td>

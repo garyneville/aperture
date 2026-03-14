@@ -70,6 +70,35 @@ function isAstroWindow(window: Window | undefined): boolean {
   return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
 }
 
+function peakHourForWindow(window: Window | undefined): string | null {
+  if (!window?.hours?.length) return null;
+  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
+  return peakHour?.hour || null;
+}
+
+function windowTrendInsight(window: Window | undefined): string {
+  if (!window?.hours?.length) return '';
+  const peakHour = peakHourForWindow(window);
+  if (!peakHour) return '';
+
+  const firstHour = window.hours[0];
+  const lastHour = window.hours[window.hours.length - 1];
+  const firstScore = typeof firstHour?.score === 'number' ? firstHour.score : null;
+  const lastScore = typeof lastHour?.score === 'number' ? lastHour.score : null;
+
+  if (peakHour === window.end && firstScore !== null && lastScore !== null && lastScore - firstScore >= 6) {
+    return `- Peak local time is around ${peakHour}, with conditions improving through the window.`;
+  }
+
+  if (peakHour === window.start && firstScore !== null && lastScore !== null && firstScore - lastScore >= 6) {
+    return `- Peak local time is around ${peakHour}, right as the window opens.`;
+  }
+
+  if (peakHour === window.end) return `- Peak local time is around ${peakHour}, near the end of the window.`;
+  if (peakHour === window.start) return `- Peak local time is around ${peakHour}, right at the start of the window.`;
+  return `- Peak local time is around ${peakHour}, within the ${window.label.toLowerCase()}.`;
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
@@ -132,6 +161,7 @@ ${shInfo}${confNote}${lhStr}`;
     const topAlt = altLocations?.[0];
     const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
     const overallAstroDelta = todayDay && bestWin ? (todayDay.astroScore ?? 0) - bestWin.peak : 0;
+    const peakHour = peakHourForWindow(bestWin);
     const fallbackNote = bestWin?.fallback
       ? `\nTiming note: this is the most promising narrow stretch rather than a clean standout window.`
       : '';
@@ -143,14 +173,15 @@ ${shInfo}${confNote}${lhStr}`;
       ? `\nSunsetHue quality for this session: ${Math.round(bestHour!.shQ! * 100)}%`
       : '';
     const editorialInsights = [
+      windowTrendInsight(bestWin),
       overallAstroDelta >= 10
-        ? `- Overall astro potential runs ${overallAstroDelta} points higher than the named local window score.`
+        ? `- Overall astro potential is ${todayDay?.astroScore ?? 0}/100 - the window score is held back by weaker conditions earlier in the session${peakHour ? ` before the ${peakHour} local peak` : ''}.`
         : '',
       bestAltDelta >= 10 && topAlt
-        ? `- Best nearby alternative ${topAlt.name} improves the score by ${bestAltDelta} points${topAlt.darkSky ? ' because of darker skies' : ''}.`
+        ? `- ${topAlt.name} is ${bestAltDelta} points stronger${topAlt.darkSky ? ' mainly because of darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}.`
         : '',
       nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
-        ? `- Secondary local option is ${nextWin.label} (${nextWin.start}\u2013${nextWin.end}, ${nextWin.peak}/100), which is mainly useful if you miss the first astro slot.`
+        ? `- If you miss the first slot, ${nextWin.label.toLowerCase()} is the later, darker fallback from ${nextWin.start}\u2013${nextWin.end}.`
         : '',
     ].filter(Boolean).join('\n');
 
@@ -163,9 +194,9 @@ ${shInfo}${confNote}${lhStr}`;
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
 Write exactly 2 short sentences, maximum 55 words total.
-Sentence 1 must make the local call, name the best local window exactly as labelled, include its time and score, and cite 1-2 concrete conditions from the structured data.
-Sentence 2 must add one comparative insight that is not already obvious from the metric line. Prefer one of: why the overall day score runs higher than the named window, why the best nearby alternative is materially stronger, or how the secondary local window differs.
-Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis. Avoid simply repeating the same metrics from the card.
+Sentence 1 must make the local call, name the best local window exactly as labelled, include its time and score, and add one useful detail beyond the raw card - usually the peak time within the window or how the session changes.
+Sentence 2 must use one of the editorial insight lines below with only light paraphrase. Do not invent a different second sentence.
+Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis. Do not simply restate cloud, visibility, wind, rain, the time range, or the score from the card unless needed to explain a trend.
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
 ${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
