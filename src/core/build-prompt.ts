@@ -54,6 +54,17 @@ function confidenceLabel(confidence: string): string {
   return 'unknown';
 }
 
+function topAlternativeLine(altLocations?: AltLocationResult[]): string {
+  const alt = altLocations?.[0];
+  if (!alt) return '';
+
+  const timing = alt.isAstroWin
+    ? `best astro at ${alt.bestAstroHour || 'nightfall'}`
+    : `best at ${alt.bestDayHour || 'time TBD'}`;
+
+  return `${alt.name} (${alt.driveMins}min, ${alt.bestScore}/100, ${timing}${alt.darkSky ? ', dark sky' : ''})`;
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
@@ -90,18 +101,24 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     ? `\nNearby alternatives worth considering:\n` +
       altLocations.slice(0, 3).map(l =>
         `- ${l.name} (${l.driveMins}min): ${l.bestScore}/100` +
-        (l.isAstroWin ? ` astrophotography${l.darkSky ? ' (dark sky)' : ''}` : ` best at ${l.bestDayHour}`)
+        (l.isAstroWin
+          ? ` ${l.bestAstroHour ? `best astro ${l.bestAstroHour}` : 'astrophotography'}${l.darkSky ? ' (dark sky)' : ''}`
+          : ` best at ${l.bestDayHour}`)
       ).join('\n')
     : '';
 
   let prompt: string;
 
   if (dontBother) {
-    const lhStr = altLocations?.length
-      ? ` The nearest alternative scoring well is ${altLocations[0].name} (${altLocations[0].driveMins}min, ${altLocations[0].bestScore}/100${altLocations[0].bestDayHour ? ' at ' + altLocations[0].bestDayHour : ''}).`
+    const topAlt = topAlternativeLine(altLocations);
+    const lhStr = topAlt
+      ? ` The nearest meaningful alternative is ${topAlt}.`
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
-One dry sentence why it's not worth going out. Then one sentence max about the best nearby alternative if there is one. No emojis.
+Write exactly 2 short sentences, maximum 45 words total.
+Sentence 1: say plainly why Leeds is not worth it locally, using only the provided weather facts.
+Sentence 2: mention the best nearby alternative only if one is provided.
+Do not include camera tips, composition advice, filler, hype, or emojis.
 ${shInfo}${confNote}${lhStr}`;
   } else {
     const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
@@ -125,7 +142,10 @@ ${shInfo}${confNote}${lhStr}`;
     }).join('\n\n');
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
-Write 2\u20133 concise sentences. Be direct and specific. Cover: (1) the best window and why the light works, (2) one practical tip \u2014 composition, subject, or technique. Dry but enthusiastic tone. No emojis, no padding.
+Write exactly 2 short sentences, maximum 55 words total.
+Sentence 1 must name the best local window exactly as labelled, include its time and score, and cite 1-2 concrete conditions from the structured data.
+Sentence 2 must either mention the next most relevant local window or the best nearby alternative if it is materially better.
+Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis.
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
 ${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
