@@ -81,6 +81,7 @@ export interface DailySummary {
   pmScore: number;
   astroScore: number;
   bestAstroHour?: string | null;
+  darkSkyStartsAt?: string | null;
   bestAmHour: string;
   bestPmHour: string;
   sunriseOcclusionRisk: number | null;

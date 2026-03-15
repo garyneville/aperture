@@ -151,6 +151,11 @@ function weekSummaryLine(dailySummary: DailySummary[]): string {
   ).join(' | ');
 }
 
+function moonTimingNote(todayDay: DailySummary | undefined): string {
+  if (!todayDay?.darkSkyStartsAt || (todayDay.astroScore ?? 0) <= 0) return '';
+  return `\nDark-sky conditions improve from ${todayDay.darkSkyStartsAt} once the moon is down.`;
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
@@ -189,6 +194,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       (todayDay.sunDirection !== null ? `Sun direction at golden hour: ${Math.round(todayDay.sunDirection!)}°\n` : '') +
       (todayDay.crepRayPeak > 0 ? `Crepuscular ray potential: ${todayDay.crepRayPeak}/100` : '')
     : '';
+  const moonNote = moonTimingNote(todayDay);
 
   const altText = altLocations && altLocations.length
     ? `\nNearby alternatives worth considering:\n` +
@@ -212,7 +218,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words naming the standout day this week>"}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
-${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${confNote}${lhStr}
+${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}
 5-day outlook: ${weekLine}`;
   } else {
     const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
@@ -267,7 +273,7 @@ WEEK STANDOUT (1 sentence, max 30 words):
 Name the standout photography day this week and why. If today is the best, say so.
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
+${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 

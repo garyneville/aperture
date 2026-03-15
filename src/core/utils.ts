@@ -12,6 +12,42 @@ export function moonFrac(ts: number): number {
   return (1 - Math.cos(2 * Math.PI * phase)) / 2;
 }
 
+type MoonEventType = 'rise' | 'set';
+
+function parseMoonEvents(times: string[] | undefined, type: MoonEventType): Array<{ ts: number; type: MoonEventType }> {
+  return (times || [])
+    .map(time => ({ ts: Date.parse(time), type }))
+    .filter((event): event is { ts: number; type: MoonEventType } => Number.isFinite(event.ts));
+}
+
+export function isMoonUpAt(
+  ts: number,
+  moonrise: string[] | undefined,
+  moonset: string[] | undefined,
+): boolean | null {
+  const events = [
+    ...parseMoonEvents(moonrise, 'rise'),
+    ...parseMoonEvents(moonset, 'set'),
+  ].sort((a, b) => a.ts - b.ts);
+
+  if (!events.length) return null;
+
+  let lastEvent: { ts: number; type: MoonEventType } | null = null;
+  let nextEvent: { ts: number; type: MoonEventType } | null = null;
+
+  for (const event of events) {
+    if (event.ts <= ts) lastEvent = event;
+    if (event.ts > ts) {
+      nextEvent = event;
+      break;
+    }
+  }
+
+  if (lastEvent) return lastEvent.type === 'rise';
+  if (nextEvent) return nextEvent.type === 'set';
+  return null;
+}
+
 export function solarElevation(ts: number, lat: number, lon: number): number {
   const JD = ts / 86400000 + 2440587.5;
   const n = JD - 2451545.0;

@@ -2,7 +2,7 @@ import { scoreAllDays } from '../../core/score-hours.js';
 import { getPhotoWeatherLat, getPhotoWeatherLon } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
-const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [] } };
+const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [], moonrise: [], moonset: [] } };
 const EMPTY_HOURLY = { hourly: { time: [] } };
 
 export function run({ $input }: N8nRuntime) {

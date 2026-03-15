@@ -1,7 +1,7 @@
 import type { N8nRuntime } from './types.js';
 import { firstInputJson } from './input.js';
 
-const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [] } };
+const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [], moonrise: [], moonset: [] } };
 const EMPTY_HOURLY = { hourly: { time: [] } };
 
 export function run({ $input }: N8nRuntime) {

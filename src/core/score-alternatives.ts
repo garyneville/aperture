@@ -1,4 +1,4 @@
-import { clamp, moonFrac } from './utils.js';
+import { clamp, moonFrac, isMoonUpAt } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
 
 /* ------------------------------------------------------------------ */
@@ -26,6 +26,8 @@ export interface AltWeatherData {
   daily?: {
     sunrise?: string[];
     sunset?: string[];
+    moonrise?: string[];
+    moonset?: string[];
   };
 }
 
@@ -243,7 +245,9 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
       if (isNight) {
         const moon = moonFrac(+t);
         let astro = 0;
-        if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
+        const moonUp = isMoonUpAt(+t, wData.daily?.moonrise, wData.daily?.moonset);
+        if (moonUp === false) astro += 30;
+        else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
         if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
         if (visK > 20) astro += 15;
         if (hum < 80) astro += 5;

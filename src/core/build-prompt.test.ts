@@ -104,6 +104,7 @@ describe('buildPrompt', () => {
         amScore: 32,
         pmScore: 46,
         astroScore: 75,
+        darkSkyStartsAt: '22:00',
         bestAmHour: '07:00',
         bestPmHour: '18:00',
         sunriseOcclusionRisk: null,
@@ -135,6 +136,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Sentence 2: use one editorial insight line below with light paraphrase.');
     expect(result.prompt).toContain('No camera tips, composition advice, hype, or filler.');
     expect(result.prompt).toContain('Seasonal context: March — early spring; blossom building; frost on clear nights still likely.');
+    expect(result.prompt).toContain('Dark-sky conditions improve from 22:00 once the moon is down.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
     expect(result.prompt).toContain('Overall astro potential is 75/100 - the window score is held back by conditions outside the named window.');
     expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');

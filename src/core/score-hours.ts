@@ -1,4 +1,4 @@
-import { clamp, avg, moonFrac, solarElevation, aodClarity } from './utils.js';
+import { clamp, avg, moonFrac, solarElevation, aodClarity, isMoonUpAt } from './utils.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
 
@@ -23,6 +23,8 @@ export interface WeatherData {
   daily?: {
     sunrise: string[];
     sunset: string[];
+    moonrise?: string[];
+    moonset?: string[];
   };
 }
 
@@ -166,6 +168,7 @@ export interface DaySummary {
   pmScore: number;
   astroScore: number;
   bestAstroHour?: string | null;
+  darkSkyStartsAt?: string | null;
   bestAmHour: string;
   bestPmHour: string;
   sunriseOcclusionRisk: number | null;
@@ -295,6 +298,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     }
 
     const hours: ScoredHour[] = [];
+    let darkSkyStartsAt: string | null = null;
     (byDate[dateKey] || []).forEach(({ ts, i }) => {
       const t = new Date(ts);
 
@@ -405,7 +409,11 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
       if (isNight) {
-        if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
+        const moonUp = isMoonUpAt(+t, w.daily?.moonrise, w.daily?.moonset);
+        if (moonUp === false) {
+          astro += 30;
+          darkSkyStartsAt ||= t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+        } else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
         if (ct < 10)    astro += 30; else if (ct < 30)    astro += 10; else if (ct > 60)    astro -= 20;
         if (visK > 25)  astro += 15;
         if (aod < 0.1)  astro += 15;
@@ -542,7 +550,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       amConfidence: amConf.confidence, amConfidenceStdDev: amConf.confidenceStdDev,
       pmConfidence: pmConf.confidence, pmConfidenceStdDev: pmConf.confidenceStdDev,
       goldAmMins: Math.round(goldAmMins), goldPmMins: Math.round(goldPmMins),
-      amScore, pmScore, astroScore, bestAstroHour: bestNightH?.hour || null, bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
+      amScore, pmScore, astroScore, bestAstroHour: bestNightH?.hour || null, darkSkyStartsAt, bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
       sunriseOcclusionRisk: sunriseOcclusionRisk !== null ? Math.round(sunriseOcclusionRisk) : null,
       sunsetOcclusionRisk: sunsetOcclusionRisk !== null ? Math.round(sunsetOcclusionRisk) : null,
     };
