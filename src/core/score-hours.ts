@@ -151,7 +151,7 @@ export interface DaySummary {
   shSunsetQuality: number | null;
   shSunriseQuality: number | null;
   shSunsetText: string | null;
-  sunDirection: string | null;
+  sunDirection: number | null;
   crepRayPeak: number;
   confidence: string;
   confidenceStdDev: number | null;
@@ -253,7 +253,9 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     const blueAmS = shSunrise?.magics?.blue_hour?.[0]   ? new Date(shSunrise.magics.blue_hour[0])   : new Date(+sunriseD - 30 * 60000);
     const bluePmE = shSunset?.magics?.blue_hour?.[1]    ? new Date(shSunset.magics.blue_hour[1])    : new Date(+sunsetD  + 30 * 60000);
     const nightS  = new Date(+sunsetD + 90 * 60000);
-    const sunDirection = shSunset?.direction ?? null;
+    const sunDirection = shSunset?.direction != null
+      ? (parseFloat(String(shSunset.direction)) || null)
+      : null;
 
     // Golden-hour duration bonus — longer twilight = more opportunity
     // Baseline 90 min total; +1pt per 8 min above that, capped at +8

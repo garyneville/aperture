@@ -3,6 +3,7 @@ import { formatEmail } from '../../core/format-email.js';
 import type { N8nRuntime } from './types.js';
 
 type BriefContext = {
+  dontBother?: boolean;
   windows?: WindowLike[];
   dailySummary?: Array<{
     bestPhotoHour?: string;
@@ -65,9 +66,16 @@ export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean 
     'held back',
     'drive',
     'fallback',
+    'not worth',
+    'alternative',
   ].some(fragment => lower.includes(fragment));
 
-  return mentionsWindow && !addsInsight;
+  // For dontBother days the AI won't reference a window — just check for editorial value.
+  if (ctx.dontBother) return !addsInsight;
+
+  // For positive days: replace if AI doesn't mention the window at all, or mentions it
+  // but adds no editorial insight beyond restating the card data.
+  return !mentionsWindow || !addsInsight;
 }
 
 function windowRange(w: { start?: string; end?: string }): string {
@@ -80,6 +88,13 @@ export function buildFallbackAiText(ctx: BriefContext): string {
   const nextWindow = ctx.windows?.[1];
   const today = ctx.dailySummary?.[0];
   const topAlt = ctx.altLocations?.[0];
+
+  if (ctx.dontBother) {
+    if (topAlt && typeof topAlt.bestScore === 'number') {
+      return `Conditions in Leeds are not worth shooting today.${topAlt.driveMins ? ` ${topAlt.name} is the best nearby option at ${topAlt.bestScore}/100 — ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
+    }
+    return 'Conditions in Leeds are not worth shooting today.';
+  }
 
   if (!topWindow) return '(No AI summary)';
 
