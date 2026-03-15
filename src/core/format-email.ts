@@ -90,6 +90,30 @@ export interface FormatEmailInput {
   compositionBullets?: string[];
   weekInsight?: string;
   peakKpTonight?: number | null;
+  longRangeTop?: LongRangeCard | null;
+  longRangeCardLabel?: string | null;
+  darkSkyAlert?: DarkSkyAlertCard | null;
+}
+
+export interface LongRangeCard {
+  name: string;
+  region: string;
+  driveMins: number;
+  bestScore: number;
+  bestDayHour: string | null;
+  bestAstroHour: string | null;
+  isAstroWin: boolean;
+  darkSky: boolean;
+  elevation: number;
+  tags: string[];
+}
+
+export interface DarkSkyAlertCard {
+  name: string;
+  region: string;
+  driveMins: number;
+  astroScore: number;
+  bestAstroHour: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -456,6 +480,41 @@ function alternativeSection(
   return card(rows);
 }
 
+function longRangeSection(
+  longRangeTop: LongRangeCard | null | undefined,
+  cardLabel: string | null | undefined,
+  darkSkyAlert: DarkSkyAlertCard | null | undefined,
+): string {
+  const cards: string[] = [];
+
+  if (longRangeTop && cardLabel) {
+    const regionLabel = longRangeTop.region.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const timing = longRangeTop.isAstroWin
+      ? `Best astro around ${longRangeTop.bestAstroHour || 'evening'}${longRangeTop.darkSky ? ' - dark sky site' : ''}`
+      : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).join(', ')}`;
+    cards.push(card(`
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">${esc(cardLabel)}</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(longRangeTop.name)}</div>
+      <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
+      <div style="Margin-top:8px;">${scorePill(longRangeTop.bestScore)}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(timing)}</div>
+    `, '', `border-top:4px solid ${C.secondary};`));
+  }
+
+  if (darkSkyAlert && (!longRangeTop || darkSkyAlert.name !== longRangeTop?.name)) {
+    cards.push(card(`
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Dark sky alert</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(darkSkyAlert.name)}</div>
+      <div style="Margin-top:8px;">${pill(`Astro ${darkSkyAlert.astroScore}/100`, C.success, C.successContainer, '#B7E0CF')}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+        Perfect conditions tonight from ${esc(darkSkyAlert.bestAstroHour || 'nightfall')} &middot; ${darkSkyAlert.driveMins} min drive
+      </div>
+    `));
+  }
+
+  return listRows(cards);
+}
+
 function photoForecastCards(dailySummary: DaySummary[]): string {
   const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
   return listRows(forecastDays.map(day => {
@@ -531,6 +590,9 @@ export function formatEmail(input: FormatEmailInput): string {
     compositionBullets,
     weekInsight,
     peakKpTonight,
+    longRangeTop,
+    longRangeCardLabel,
+    darkSkyAlert,
   } = input;
 
   /* Hero card */
@@ -723,6 +785,10 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${alternativeSection(altLocations, noAltsMsg)}</td>
           </tr>
+          ${(() => {
+            const lr = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
+            return lr ? spacer(10) + `<tr><td>${sectionTitle('If you had the day')}</td></tr><tr><td>${lr}</td></tr>` : '';
+          })()}
           ${spacer(6)}
           <tr>
             <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
