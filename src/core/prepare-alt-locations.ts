@@ -33,6 +33,6 @@ export function prepareAltLocations(timezone: string): AltLocationWithUrl[] {
   const tz = encodeURIComponent(timezone);
   return ALT_LOCATIONS.map(loc => ({
     ...loc,
-    url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset,moonrise,moonset&timezone=${tz}&forecast_days=5`,
+    url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=5`,
   }));
 }

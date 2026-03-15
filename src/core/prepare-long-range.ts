@@ -43,6 +43,6 @@ export function prepareLongRangeLocations(timezone: string): LongRangeLocationWi
       tags: loc.tags,
       darkSky: loc.darkSky,
       driveMins: estimatedDriveMins(loc),
-      url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset,moonrise,moonset&timezone=${tz}&forecast_days=1`,
+      url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=1`,
     }));
 }
