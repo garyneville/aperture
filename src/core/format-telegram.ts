@@ -117,7 +117,8 @@ function windowsTelegram(wins: Window[] | undefined): string {
 }
 
 function photoFiveDayTelegram(days: DaySummary[]): string {
-  const lines = days.map(d => {
+  const forecastDays = days.filter(d => d.dayIdx >= 1).slice(0, 4);
+  const lines = forecastDays.map(d => {
     const alt = d.bestAlt ? `  \ud83d\udccd${d.bestAlt.name.split(' ')[0]}` : '';
     const confTag = d.confidence === 'low' ? '?' : d.confidence === 'medium' ? '~' : '';
     const label = pad(d.dayLabel, 9);
@@ -132,7 +133,8 @@ function photoFiveDayTelegram(days: DaySummary[]): string {
 }
 
 function cwFiveDayTelegram(days: DaySummary[]): string {
-  const lines = days.map(d => {
+  const forecastDays = days.filter(d => d.dayIdx >= 1).slice(0, 4);
+  const lines = forecastDays.map(d => {
     const cw = d.carWash;
     const label = pad(d.dayLabel, 9);
     const window = cw.start !== '\u2014' ? `${cw.start}\u2013${cw.end}` : '    \u2014    ';
@@ -174,8 +176,8 @@ export function formatTelegram(input: FormatTelegramInput): string {
   const DIV = '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n';
 
   if (dontBother) {
-    return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${metarNote ? metarNote + '\n' : ''}${DIV}\u274c <b>Not worth it today</b>  [${todayBestScore}/100]\n${aiText}\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}\n${DIV}<b>\ud83d\udcc5 Photography Outlook</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
+    return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${metarNote ? metarNote + '\n' : ''}${DIV}\u274c <b>Not worth it today</b>  [${todayBestScore}/100]\n${aiText}\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
   }
 
-  return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${metarNote ? metarNote + '\n' : ''}${DIV}${windowsTelegram(windows)}\n\n\ud83d\udcac <i>${aiText}</i>\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}\n${DIV}<b>\ud83d\udcc5 Photography Outlook</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
+  return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${metarNote ? metarNote + '\n' : ''}${DIV}${windowsTelegram(windows)}\n\n\ud83d\udcac <i>${aiText}</i>\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
 }

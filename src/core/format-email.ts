@@ -281,9 +281,9 @@ function windowRange(w: { start: string; end: string }): string {
 function peakTimeNote(window: Window | null | undefined, peakHour: string | undefined): string {
   if (!window || !peakHour) return '';
   if (window.start === window.end) return '';
-  if (peakHour === window.end) return `Peak local: ${peakHour}, near the end of the window.`;
-  if (peakHour === window.start) return `Peak local: ${peakHour}, right as the window opens.`;
-  return `Peak local: ${peakHour}, within the window.`;
+  if (peakHour === window.end) return `Best time: ${peakHour}, near the end of the window.`;
+  if (peakHour === window.start) return `Best time: ${peakHour}, right as the window opens.`;
+  return `Best time: ${peakHour}, within the window.`;
 }
 
 function windowCard(w: Window, index: number, windows: Window[]): string {
@@ -291,7 +291,7 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
   const notes: string[] = [];
   const topWindow = windows[0];
   if (w.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
-  if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular rays ${h.crepuscular}/100.`);
+  if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${h.crepuscular}/100 (light shafts through broken cloud).`);
   if (index > 0 && isAstroWindow(topWindow) && isAstroWindow(w) && topWindow?.label !== w.label) {
     notes.push('Later, darker backup if you miss the first astro slot.');
   }
@@ -396,22 +396,21 @@ function alternativeSection(
   return card(rows);
 }
 
-function photoForecastCards(dailySummary: DaySummary[], todayLocalScore?: number): string {
-  return listRows(dailySummary.map(day => {
+function photoForecastCards(dailySummary: DaySummary[]): string {
+  const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
+  return listRows(forecastDays.map(day => {
     const conf = confidenceDetail(day);
     const bestAltHour = day.bestAlt?.isAstroWin
       ? day.bestAlt.bestAstroHour
       : day.bestAlt?.bestDayHour;
-    const displayScore = day.dayIdx === 0 && typeof todayLocalScore === 'number'
-      ? todayLocalScore
-      : (day.headlineScore ?? day.photoScore);
+    const displayScore = day.headlineScore ?? day.photoScore;
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
       <div style="Margin-top:6px;">${scorePill(displayScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Peak local ${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Best at ${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
       <div style="Margin-top:8px;">
         ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
         ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
@@ -502,30 +501,37 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
     { label: 'Overall astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
-    { label: 'Peak local', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
+    { label: 'Best time', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
-  const localSummary = [
-    topWindow
-      ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
-      : todayDay.bestTags
-        ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
-        : todayDay.bestPhotoHour
-          ? `Best local setup: ${todayDay.bestPhotoHour}.`
-          : '',
-    peakTimeNote(topWindow, peakLocalHour || undefined),
-    overallAstroDelta >= 10
-      ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
-      : '',
-    topAltDelta >= 10 && topAlternative
-      ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
-      : nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
-        ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
+  const localSummary = heroScore < 42
+    ? [
+      'Not a great photography day locally — better to enjoy the outdoors instead.',
+      topAltDelta >= 10 && topAlternative
+        ? `If you do want to shoot, ${topAlternative.name} scores ${topAlternative.bestScore}/100 (${topAlternative.driveMins} min drive).`
         : '',
-  ].filter(Boolean).join('\n');
+    ].filter(Boolean).join('\n')
+    : [
+      topWindow
+        ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
+        : todayDay.bestTags
+          ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
+          : todayDay.bestPhotoHour
+            ? `Best local setup: ${todayDay.bestPhotoHour}.`
+            : '',
+      peakTimeNote(topWindow, peakLocalHour || undefined),
+      overallAstroDelta >= 10
+        ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
+        : '',
+      topAltDelta >= 10 && topAlternative
+        ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
+        : nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
+          ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
+          : '',
+    ].filter(Boolean).join('\n');
 
   const alternativeSummary = topAlternative
-    ? `${topAlternative.name} · ${topAlternative.bestScore}/100${topAlternative.isAstroWin ? ` · astro ${topAlternative.bestAstroHour || 'evening'}` : topAlternative.bestDayHour ? ` · ${topAlternative.bestDayHour}` : ''} · ${topAlternative.driveMins} min drive`
+    ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${topAlternative.isAstroWin ? ` · astro from ${topAlternative.bestAstroHour || 'evening'}` : topAlternative.bestDayHour ? ` · best at ${topAlternative.bestDayHour}` : ''}`
     : '';
 
   const hero = card(`
@@ -660,11 +666,23 @@ export function formatEmail(input: FormatEmailInput): string {
           </tr>
           ${spacer(10)}
           <tr>
-            <td>${sectionTitle('5-day photography')}</td>
+            <td>${sectionTitle('Days ahead')}</td>
           </tr>
 
           <tr>
-            <td>${photoForecastCards(dailySummary, heroScore)}</td>
+            <td>${photoForecastCards(dailySummary)}</td>
+          </tr>
+          ${spacer(10)}
+          <tr>
+            <td>
+              <div style="padding:8px 4px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">
+                <b>Key</b> &middot;
+                AM/PM = sunrise &amp; sunset light quality &middot;
+                Astro = night sky potential (clear skies + dark moon) &middot;
+                Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
+                Spread = how much forecast models disagree (lower is more reliable)
+              </div>
+            </td>
           </tr>
         </table>
       </td>

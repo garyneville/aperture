@@ -90,12 +90,11 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Best nearby alternative');
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
-    expect(html).toContain('Peak local');
+    expect(html).toContain('Best time');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
-    expect(html).toContain('Peak local: 19:00, right as the window opens.');
+    expect(html).toContain('Best time: 19:00, right as the window opens.');
     expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by conditions outside the named window.');
     expect(html).toContain('Malham Cove adds 25 points with darker skies at 20:00.');
-    expect(html).toContain('Best backup: Malham Cove - 85/100 at 20:00 (astro)');
     expect(html).toContain('Daylight utility');
     expect(html).toContain('&#x1F697; / &#x1F6B6;');
     expect(html).toContain('>Moisture</span> 20mm');
@@ -105,9 +104,10 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('Sunrise</span> 06:23</span><span');
     expect(html).not.toContain('AM</span> 32 ·');
     expect(html).not.toContain('PM</span> 40 ·');
-    expect(html).toContain('Today - 14 Mar');
-    expect(html).toContain('Good - 60/100');
-    expect(html).toContain('Peak local 18:00 - landscape');
+    expect(html).toContain('Days ahead');
+    expect(html).not.toContain('5-day photography');
+    expect(html).toContain('Key');
+    expect(html).toContain('Crepuscular rays = shafts of light');
   });
 
   it('adds a later-night distinction when both local windows are astro', () => {
@@ -268,6 +268,6 @@ describe('formatEmail hero summary', () => {
     const html = formatEmail(input);
 
     expect(html.indexOf('Alternatives')).toBeLessThan(html.indexOf('Daylight utility'));
-    expect(html.indexOf('Daylight utility')).toBeLessThan(html.indexOf('5-day photography'));
+    expect(html.indexOf('Daylight utility')).toBeLessThan(html.indexOf('Days ahead'));
   });
 });
