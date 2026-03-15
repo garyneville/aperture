@@ -127,14 +127,18 @@ describe('buildPrompt', () => {
       now: new Date('2026-03-14T12:00:00Z'),
     });
 
-    expect(result.prompt).toContain('Write exactly 2 short sentences');
-    expect(result.prompt).toContain('Do not add camera tips, composition advice, technique advice');
-    expect(result.prompt).toContain('Sentence 1 must make the local call');
-    expect(result.prompt).toContain('Sentence 2 must use one of the editorial insight lines below');
-    expect(result.prompt).toContain('Do not simply restate cloud, visibility, wind, rain');
+    expect(result.prompt).toContain('Respond with ONLY a raw JSON object');
+    expect(result.prompt).toContain('"editorial":"<2 sentences max 55 words>"');
+    expect(result.prompt).toContain('"composition":["<shot idea 1>","<shot idea 2>"]');
+    expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words>"');
+    expect(result.prompt).toContain('Sentence 1: name the best local window exactly as labelled, include its time and score, add one useful detail');
+    expect(result.prompt).toContain('Sentence 2: use one editorial insight line below with light paraphrase.');
+    expect(result.prompt).toContain('No camera tips, composition advice, hype, or filler.');
+    expect(result.prompt).toContain('Seasonal context: March — early spring; blossom building; frost on clear nights still likely.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
     expect(result.prompt).toContain('Overall astro potential is 75/100 - the window score is held back by conditions outside the named window.');
     expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
+    expect(result.peakKpTonight).toBeNull();
   });
 });

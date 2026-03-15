@@ -43,7 +43,7 @@ describe('format-messages adapter editorial fallback', () => {
   });
 
   it('keeps AI copy that already adds comparative insight', () => {
-    const aiText = 'Local peak is around 22:00 near the end of the evening window. Sutton Bank is 24 points stronger thanks to darker skies if you can make the drive.';
+    const aiText = 'Local peak is around 22:00 near the end of the Evening astro window. Sutton Bank is 24 points stronger thanks to darker skies if you can make the drive.';
 
     expect(shouldReplaceAiText(aiText, ctx)).toBe(false);
   });
