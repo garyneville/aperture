@@ -289,6 +289,15 @@ function peakTimeNote(window: Window | null | undefined, peakHour: string | unde
   return `Best time: ${peakHour}, within the window.`;
 }
 
+function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditions'): string {
+  if (!bestTags) return fallback;
+  const visibleTags = bestTags
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(tag => tag && tag !== 'general' && tag !== 'poor');
+  return visibleTags.join(', ') || fallback;
+}
+
 function windowCard(w: Window, index: number, windows: Window[]): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
@@ -442,10 +451,11 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
+    const bestLineTags = displayBestTags(day.bestTags);
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
       <div style="Margin-top:6px;">${scorePill(displayScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Best at ${esc(day.bestPhotoHour || '-')} - ${esc(day.bestTags || 'no clear window')}</div>
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Best at ${esc(day.bestPhotoHour || '-')} - ${esc(bestLineTags)}</div>
       <div style="Margin-top:8px;">
         ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
         ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
@@ -553,7 +563,7 @@ export function formatEmail(input: FormatEmailInput): string {
       topWindow
         ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
         : todayDay.bestTags
-          ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
+          ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${displayBestTags(todayDay.bestTags)}.`
           : todayDay.bestPhotoHour
             ? `Best local setup: ${todayDay.bestPhotoHour}.`
             : '',
