@@ -394,4 +394,102 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Best at 07:00 - mixed conditions');
     expect(html).toContain('Best at 18:00 - mixed conditions');
   });
+
+  it('uses astro timing when a future day headline is astro-led', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Evening astro window',
+        start: '19:00',
+        end: '21:00',
+        peak: 60,
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '15:00',
+        end: '17:00',
+        wind: 14,
+        pp: 24,
+        tmp: 9,
+      },
+      dailySummary: [{
+        dayLabel: 'Saturday',
+        dateKey: '2026-03-14',
+        dayIdx: 0,
+        photoScore: 60,
+        headlineScore: 60,
+        photoEmoji: 'Good',
+        amScore: 32,
+        pmScore: 40,
+        astroScore: 60,
+        bestAstroHour: '22:00',
+        confidence: 'high',
+        confidenceStdDev: 10,
+        amConfidence: 'medium',
+        pmConfidence: 'medium',
+        bestPhotoHour: '20:00',
+        bestTags: 'astrophotography',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 60,
+          start: '15:00',
+          end: '17:00',
+          wind: 14,
+          pp: 24,
+          tmp: 9,
+        },
+      }, {
+        dayLabel: 'Tomorrow',
+        dateKey: '2026-03-15',
+        dayIdx: 1,
+        photoScore: 34,
+        headlineScore: 72,
+        photoEmoji: 'Excellent',
+        amScore: 18,
+        pmScore: 22,
+        astroScore: 72,
+        bestAstroHour: '03:00',
+        confidence: 'medium',
+        confidenceStdDev: 12,
+        amConfidence: 'medium',
+        pmConfidence: 'medium',
+        bestPhotoHour: '07:00',
+        bestTags: 'poor',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 60,
+          start: '15:00',
+          end: '17:00',
+          wind: 14,
+          pp: 24,
+          tmp: 9,
+        },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:23',
+      sunsetStr: '18:07',
+      moonPct: 23,
+      metarNote: '',
+      today: 'Saturday 14 March',
+      todayBestScore: 60,
+      shSunsetQ: 70,
+      shSunriseQ: 61,
+      shSunsetText: 'Good texture',
+      sunDir: 251,
+      crepPeak: 0,
+      aiText: 'Leeds has a usable evening astro slot.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Best local astro around 03:00');
+    expect(html).not.toContain('Best at 07:00 - poor');
+  });
 });

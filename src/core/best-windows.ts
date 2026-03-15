@@ -80,6 +80,7 @@ export interface DailySummary {
   amScore: number;
   pmScore: number;
   astroScore: number;
+  bestAstroHour?: string | null;
   bestAmHour: string;
   bestPmHour: string;
   sunriseOcclusionRisk: number | null;

@@ -57,6 +57,7 @@ export interface DaySummary {
   amScore?: number;
   pmScore?: number;
   astroScore?: number;
+  bestAstroHour?: string | null;
   confidence?: string;
   confidenceStdDev?: number | null;
   amConfidence?: string;
@@ -298,6 +299,14 @@ function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditi
   return visibleTags.join(', ') || fallback;
 }
 
+function forecastBestLine(day: DaySummary): string {
+  const isAstroLed = (day.astroScore ?? 0) > (day.photoScore ?? 0);
+  if (isAstroLed) {
+    return `Best local astro around ${day.bestAstroHour || 'nightfall'}`;
+  }
+  return `Best at ${day.bestPhotoHour || '-'} - ${displayBestTags(day.bestTags)}`;
+}
+
 function windowCard(w: Window, index: number, windows: Window[]): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
@@ -451,11 +460,10 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
     const altLine = day.bestAlt
       ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
       : '';
-    const bestLineTags = displayBestTags(day.bestTags);
     return card(`
       <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
       <div style="Margin-top:6px;">${scorePill(displayScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">Best at ${esc(day.bestPhotoHour || '-')} - ${esc(bestLineTags)}</div>
+      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(forecastBestLine(day))}</div>
       <div style="Margin-top:8px;">
         ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
         ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}

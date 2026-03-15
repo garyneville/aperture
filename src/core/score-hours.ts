@@ -165,6 +165,7 @@ export interface DaySummary {
   amScore: number;
   pmScore: number;
   astroScore: number;
+  bestAstroHour?: string | null;
   bestAmHour: string;
   bestPmHour: string;
   sunriseOcclusionRisk: number | null;
@@ -485,7 +486,10 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     const bestPmH = pmHours.length ? pmHours.reduce((b, h) => h.score > b.score ? h : b) : { hour: '\u2014' };
 
     const nightHoursArr = hours.filter(h => h.isNight);
-    const astroScore = nightHoursArr.length ? Math.max(...nightHoursArr.map(h => h.astro)) : 0;
+    const bestNightH = nightHoursArr.length
+      ? nightHoursArr.reduce((best, hour) => hour.astro > best.astro ? hour : best)
+      : null;
+    const astroScore = bestNightH?.astro ?? 0;
     const sunriseOcclusionRisk = avg(amHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
     const sunsetOcclusionRisk  = avg(pmHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
 
@@ -538,7 +542,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       amConfidence: amConf.confidence, amConfidenceStdDev: amConf.confidenceStdDev,
       pmConfidence: pmConf.confidence, pmConfidenceStdDev: pmConf.confidenceStdDev,
       goldAmMins: Math.round(goldAmMins), goldPmMins: Math.round(goldPmMins),
-      amScore, pmScore, astroScore, bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
+      amScore, pmScore, astroScore, bestAstroHour: bestNightH?.hour || null, bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
       sunriseOcclusionRisk: sunriseOcclusionRisk !== null ? Math.round(sunriseOcclusionRisk) : null,
       sunsetOcclusionRisk: sunsetOcclusionRisk !== null ? Math.round(sunsetOcclusionRisk) : null,
     };
