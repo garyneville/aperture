@@ -120,6 +120,28 @@ export function buildFallbackAiText(ctx: BriefContext): string {
   return firstSentence;
 }
 
+function parseGroqResponse(rawContent: string): {
+  editorial: string;
+  compositionBullets: string[];
+  weekInsight: string;
+} {
+  try {
+    const parsed = JSON.parse(rawContent);
+    if (parsed && typeof parsed === 'object') {
+      return {
+        editorial: typeof parsed.editorial === 'string' ? parsed.editorial : rawContent,
+        compositionBullets: Array.isArray(parsed.composition)
+          ? parsed.composition.filter((s: unknown) => typeof s === 'string')
+          : [],
+        weekInsight: typeof parsed.weekStandout === 'string' ? parsed.weekStandout : '',
+      };
+    }
+  } catch {
+    // Not JSON — treat as plain editorial text (backward compat)
+  }
+  return { editorial: rawContent, compositionBullets: [], weekInsight: '' };
+}
+
 export function run({ $input }: N8nRuntime) {
   const input = (() => {
     try {
@@ -129,13 +151,15 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
   const { choices, ...ctx } = input;
-  const normalizedAiText = normalizeAiText(choices?.[0]?.message?.content?.trim() || '');
+  const rawContent = choices?.[0]?.message?.content?.trim() || '';
+  const { editorial, compositionBullets, weekInsight } = parseGroqResponse(rawContent);
+  const normalizedAiText = normalizeAiText(editorial);
   const aiText = shouldReplaceAiText(normalizedAiText, ctx)
     ? buildFallbackAiText(ctx)
     : normalizedAiText;
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight });
 
   return [{ json: { telegramMsg, emailHtml } }];
 }

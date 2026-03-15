@@ -1,5 +1,25 @@
 import type { Window, DailySummary, CarWash } from './best-windows.js';
 
+const SEASONAL_CONTEXT: Record<number, string> = {
+  1:  'January — frost and snow possible on high ground; bare trees; frozen reservoirs.',
+  2:  'February — snowdrops in woodland; low sun angle throughout the day.',
+  3:  'March — early spring; blossom building; frost on clear nights still likely.',
+  4:  'April — bluebells peak late month; lambs in the Dales; dramatic cloud building.',
+  5:  'May — full canopy; bluebells finishing; long golden hour windows.',
+  6:  'June — longest days; very late sunsets (~21:30); short nights limit astro.',
+  7:  'July — summer haze; heather not yet out; long blue hours.',
+  8:  'August — heather on the moors; Perseid meteor shower mid-month.',
+  9:  'September — golden light returns; mist in valleys from temperature swings.',
+  10: 'October — autumn colour; low sun, long shadows; morning frosts returning.',
+  11: 'November — bare trees re-emerging; dramatic skies; short days.',
+  12: 'December — winter light; snow possible on Pennines; very short days.',
+};
+
+export interface KpEntry {
+  time: string;
+  kp: number;
+}
+
 export interface BuildPromptInput {
   windows: Window[];
   dontBother: boolean;
@@ -12,6 +32,7 @@ export interface BuildPromptInput {
   sunrise?: string;
   sunset?: string;
   moonPct: number;
+  kpForecast?: KpEntry[];
   now?: Date;
 }
 
@@ -45,6 +66,7 @@ export interface BuildPromptOutput {
   shSunsetText: string | null;
   sunDir: number | null;
   crepPeak: number;
+  peakKpTonight: number | null;
 }
 
 function confidenceLabel(confidence: string): string {
@@ -105,11 +127,35 @@ function windowTrendInsight(window: Window | undefined): string {
   return `- Peak local time is around ${peakHour}, within the ${window.label.toLowerCase()}.`;
 }
 
+function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | null {
+  if (!kpForecast || !kpForecast.length) return null;
+  const tonightStart = new Date(now);
+  tonightStart.setHours(18, 0, 0, 0);
+  const tonightEnd = new Date(now);
+  tonightEnd.setDate(tonightEnd.getDate() + 1);
+  tonightEnd.setHours(6, 0, 0, 0);
+  let peak: number | null = null;
+  for (const entry of kpForecast) {
+    const t = new Date(entry.time);
+    if (t >= tonightStart && t <= tonightEnd) {
+      if (peak === null || entry.kp > peak) peak = entry.kp;
+    }
+  }
+  return peak;
+}
+
+function weekSummaryLine(dailySummary: DailySummary[]): string {
+  return dailySummary.slice(0, 5).map(d =>
+    `${d.dayLabel}: ${d.headlineScore ?? d.photoScore}/100` +
+    (d.confidence && d.confidence !== 'unknown' ? ` (${d.confidence} confidence)` : '')
+  ).join(' | ');
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, noAltsMsg, metarNote,
-    sunrise, sunset, moonPct,
+    sunrise, sunset, moonPct, kpForecast,
   } = input;
 
   const now = input.now || new Date();
@@ -123,6 +169,13 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const today = now.toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London',
   });
+
+  const seasonalNote = SEASONAL_CONTEXT[now.getMonth() + 1] || '';
+  const peakKpTonight = peakKpForNight(kpForecast, now);
+  const auroraNote = peakKpTonight !== null && peakKpTonight >= 5
+    ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`
+    : '';
+  const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
 
@@ -155,11 +208,12 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       ? ` The nearest meaningful alternative is ${topAlt}.`
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
-Write exactly 2 short sentences, maximum 45 words total.
-Sentence 1: say plainly why Leeds is not worth it locally, using only the provided weather facts.
-Sentence 2: mention the best nearby alternative only if one is provided.
-Do not include camera tips, composition advice, filler, hype, or emojis.
-${shInfo}${confNote}${lhStr}`;
+Respond with ONLY a raw JSON object — no markdown, no code fences:
+{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words naming the standout day this week>"}
+
+Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
+${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${confNote}${lhStr}
+5-day outlook: ${weekLine}`;
   } else {
     const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
     const bestWin = windows[0];
@@ -198,18 +252,28 @@ ${shInfo}${confNote}${lhStr}`;
     }).join('\n\n');
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
-Write exactly 2 short sentences, maximum 55 words total.
-Sentence 1 must make the local call, name the best local window exactly as labelled, include its time and score, and add one useful detail beyond the raw card - usually the peak time within the window or how the session changes.
-Sentence 2 must use one of the editorial insight lines below with only light paraphrase. Do not invent a different second sentence.
-Use only the supplied facts. Do not add camera tips, composition advice, technique advice, hype, or generic filler. Do not call conditions ideal unless the score is at least 70. No emojis. Do not simply restate cloud, visibility, wind, rain, the time range, or the score from the card unless needed to explain a trend.
+Respond with ONLY a raw JSON object — no markdown, no code fences:
+{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"<1 sentence max 30 words>"}
+
+EDITORIAL (2 sentences, max 55 words total):
+Sentence 1: name the best local window exactly as labelled, include its time and score, add one useful detail (peak time or how session changes).
+Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
+Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Do not call conditions ideal unless score ≥ 70.
+
+COMPOSITION (2 short bullet items):
+Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.
+
+WEEK STANDOUT (1 sentence, max 30 words):
+Name the standout photography day this week and why. If today is the best, say so.
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
+${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${crepNote}${shQNote}${confNote}${fallbackNote}
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 
 Leeds shooting windows:
-${windowsText}${altText}`;
+${windowsText}${altText}
+5-day outlook: ${weekLine}`;
   }
 
   return {
@@ -231,5 +295,6 @@ ${windowsText}${altText}`;
     shSunsetText: todayDay?.shSunsetText ?? null,
     sunDir: todayDay?.sunDirection ?? null,
     crepPeak: todayDay?.crepRayPeak || 0,
+    peakKpTonight,
   };
 }

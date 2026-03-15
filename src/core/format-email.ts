@@ -86,6 +86,9 @@ export interface FormatEmailInput {
   sunDir: number | null;
   crepPeak: number;
   aiText: string;
+  compositionBullets?: string[];
+  weekInsight?: string;
+  peakKpTonight?: number | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -319,11 +322,23 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
   `, '', index === 0 ? `border-top:4px solid ${scoreState(w.peak).fg};` : '');
 }
 
+function compositionCard(bullets: string[]): string {
+  if (!bullets.length) return '';
+  const items = bullets.map(b =>
+    `<div style="Margin-bottom:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(b)}</div>`
+  ).join('');
+  return card(`
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Shot ideas</div>
+    <div style="Margin-top:4px;">${items}</div>
+  `, '', `border-left:4px solid ${C.secondary};`);
+}
+
 function todayWindowSection(
   dontBother: boolean,
   todayBestScore: number,
   aiText: string,
   windows: Window[] | undefined,
+  compositionBullets?: string[],
 ): string {
   if (dontBother) {
     return card(`
@@ -333,12 +348,14 @@ function todayWindowSection(
       <div style="Margin-top:8px;">${htmlText(aiText)}</div>
     `, '', `border-top:4px solid ${C.error};`);
   }
+  const compCard = compositionCard(compositionBullets || []);
   return listRows([
     ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
     card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
       ${htmlText(aiText)}
     `, '', `border-left:4px solid ${C.primary};`),
+    ...(compCard ? [compCard] : []),
   ]);
 }
 
@@ -349,8 +366,26 @@ function signalCards(
   sunDir: number | null,
   crepPeak: number,
   metarNote: string | undefined,
+  peakKpTonight?: number | null,
 ): string {
   const cards: string[] = [];
+  if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
+    const kpDisplay = peakKpTonight.toFixed(1);
+    const visible = peakKpTonight >= 6;
+    const fg = visible ? C.success : C.warning;
+    const bg = visible ? C.successContainer : C.warningContainer;
+    const border = visible ? '#B7E0CF' : '#F0D58D';
+    cards.push(card(`
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Aurora signal tonight</div>
+      <div style="Margin-top:8px;">${pill(`Kp ${kpDisplay}${visible ? ' — visible ~54°N' : ' — watch threshold'}`, fg, bg, border)}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+        ${visible
+          ? `Kp ${kpDisplay} exceeds the visibility threshold for Leeds latitude. Best combined with a good astro window.`
+          : `Kp ${kpDisplay} is approaching the visible threshold (~Kp 6 at 54°N). Worth watching overnight.`}
+      </div>
+    `));
+  }
   if (shSunriseQ !== null || shSunsetQ !== null) {
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Twilight signal</div>
@@ -468,6 +503,9 @@ export function formatEmail(input: FormatEmailInput): string {
     sunDir,
     crepPeak,
     aiText,
+    compositionBullets,
+    weekInsight,
+    peakKpTonight,
   } = input;
 
   /* Hero card */
@@ -546,7 +584,7 @@ export function formatEmail(input: FormatEmailInput): string {
 `, 'hero-card', `background:${C.primaryContainer};border-color:#C5D6FF;`);
 
   /* Signal cards */
-  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote);
+  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight);
 
   /* Assemble full HTML */
   return `<!DOCTYPE html>
@@ -651,7 +689,7 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>${sectionTitle('Today\'s window')}</td>
           </tr>
           <tr>
-            <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows)}</td>
+            <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows, compositionBullets)}</td>
           </tr>
           ${spacer(10)}
           <tr>
@@ -668,7 +706,7 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${sectionTitle('Days ahead')}</td>
           </tr>
-
+          ${weekInsight ? `<tr><td>${card(`<div style="font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(weekInsight)}</div>`, '', `border-left:4px solid ${C.tertiary};`)}</td></tr>${spacer(6)}` : ''}
           <tr>
             <td>${photoForecastCards(dailySummary)}</td>
           </tr>

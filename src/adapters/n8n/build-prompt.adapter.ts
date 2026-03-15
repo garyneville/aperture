@@ -16,6 +16,7 @@ export function run({ $input }: N8nRuntime) {
     sunrise: input.sunrise,
     sunset: input.sunset,
     moonPct: input.moonPct,
+    kpForecast: input.kpForecast,
   });
 
   return [{ json: result }];

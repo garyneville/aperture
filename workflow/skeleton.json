@@ -140,7 +140,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 300 }) }}",
+        "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 600, response_format: { type: 'json_object' } }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0009-0009-0009-000000000009",
@@ -657,6 +657,54 @@
         1980,
         760
       ]
+    },
+    {
+      "parameters": {
+        "url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0038-0038-0038-000000000038",
+      "name": "HTTP: Kp Index",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        500
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-kp-index__"
+      },
+      "id": "a1b2c3d4-0039-0039-0039-000000000039",
+      "name": "Code: Wrap Kp Index",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        500
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0040-0040-0040-000000000040",
+      "name": "Merge: Scoring + Kp",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1540,
+        400
+      ]
     }
   ],
   "connections": {
@@ -665,6 +713,11 @@
         [
           {
             "node": "HTTP: Weather",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Kp Index",
             "type": "main",
             "index": 0
           }
@@ -834,6 +887,39 @@
       ]
     },
     "Code: Score Alternatives": {
+      "main": [
+        [
+          {
+            "node": "Merge: Scoring + Kp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Kp Index": {
+      "main": [
+        [
+          {
+            "node": "Code: Wrap Kp Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Kp Index": {
+      "main": [
+        [
+          {
+            "node": "Merge: Scoring + Kp",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Scoring + Kp": {
       "main": [
         [
           {

@@ -1,0 +1,32 @@
+import type { N8nRuntime } from './types.js';
+
+/**
+ * Wraps NOAA SWPC planetary Kp-index forecast.
+ * Endpoint: https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json
+ * Response: array-of-arrays, first row is headers ["time_tag", "kp", "observed", "noaa_scale"]
+ */
+export function run({ $input }: N8nRuntime) {
+  try {
+    const items = $input.all();
+
+    // n8n may return the JSON array as a single item containing the array,
+    // or as multiple items (one per row) — handle both.
+    let rawRows: unknown[];
+    if (items.length === 1 && Array.isArray(items[0].json)) {
+      rawRows = items[0].json as unknown[];
+    } else {
+      rawRows = items.map(item => item.json);
+    }
+
+    const kpForecast = rawRows
+      .filter(row => Array.isArray(row) && row.length >= 2 && !isNaN(parseFloat(String(row[1]))))
+      .map(row => ({
+        time: String((row as unknown[])[0]),
+        kp: parseFloat(String((row as unknown[])[1])),
+      }));
+
+    return [{ json: { kpForecast } }];
+  } catch {
+    return [{ json: { kpForecast: [] } }];
+  }
+}
