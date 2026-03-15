@@ -351,6 +351,13 @@ function compositionCard(bullets: string[]): string {
   `, '', `border-left:4px solid ${C.secondary};`);
 }
 
+function poorDayFallbackLine(windows: Window[] | undefined): string {
+  const fallbackWindow = windows?.[0];
+  if (!fallbackWindow) return 'If you still go: no clear local fallback window.';
+  const peakHour = peakHourForWindow(fallbackWindow) || fallbackWindow.end || fallbackWindow.start;
+  return `If you still go: ${fallbackWindow.label.toLowerCase()} around ${peakHour || 'time TBD'} at ${fallbackWindow.peak}/100.`;
+}
+
 function todayWindowSection(
   dontBother: boolean,
   todayBestScore: number,
@@ -363,7 +370,7 @@ function todayWindowSection(
       <div style="Margin:0 0 3px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.error};">Today&apos;s call</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">Not worth shooting locally</div>
       <div style="Margin-top:8px;">${scorePill(todayBestScore)}</div>
-      <div style="Margin-top:8px;">${htmlText(aiText)}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:4px solid ${C.error};`);
   }
   const compCard = compositionCard(compositionBullets || []);
@@ -560,7 +567,7 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'Best time', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
-  const localSummary = heroScore < 42
+  const localSummary = dontBother
     ? [
       'Not a great photography day locally — better to enjoy the outdoors instead.',
       topAltDelta >= 10 && topAlternative

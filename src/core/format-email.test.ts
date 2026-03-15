@@ -492,4 +492,92 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Best local astro around 03:00');
     expect(html).not.toContain('Best at 07:00 - poor');
   });
+
+  it('collapses poor-day local detail and suppresses the AI briefing block', () => {
+    const input: FormatEmailInput = {
+      dontBother: true,
+      windows: [{
+        label: 'Best chance around sunrise',
+        start: '07:00',
+        end: '07:00',
+        peak: 46,
+        hours: [{ hour: '07:00', score: 46, ch: 75, visK: 8.2, wind: '12', pp: 10, tpw: 24 }],
+        tops: ['general'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '15:00',
+        end: '17:00',
+        wind: 14,
+        pp: 24,
+        tmp: 9,
+      },
+      dailySummary: [{
+        dayLabel: 'Saturday',
+        dateKey: '2026-03-14',
+        dayIdx: 0,
+        photoScore: 40,
+        headlineScore: 46,
+        photoEmoji: 'Marginal',
+        amScore: 22,
+        pmScore: 18,
+        astroScore: 46,
+        bestAstroHour: '23:00',
+        confidence: 'medium',
+        confidenceStdDev: 16,
+        amConfidence: 'medium',
+        pmConfidence: 'medium',
+        bestPhotoHour: '07:00',
+        bestTags: 'poor',
+        bestAlt: {
+          name: 'Sutton Bank',
+          driveMins: 75,
+          bestScore: 65,
+          bestAstroHour: '00:00',
+          isAstroWin: true,
+          darkSky: true,
+        },
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 60,
+          start: '15:00',
+          end: '17:00',
+          wind: 14,
+          pp: 24,
+          tmp: 9,
+        },
+      }],
+      altLocations: [{
+        name: 'Sutton Bank',
+        driveMins: 75,
+        bestScore: 65,
+        bestAstroHour: '00:00',
+        isAstroWin: true,
+        darkSky: true,
+      }],
+      noAltsMsg: undefined,
+      sunriseStr: '06:23',
+      sunsetStr: '18:07',
+      moonPct: 23,
+      metarNote: '',
+      today: 'Saturday 14 March',
+      todayBestScore: 46,
+      shSunsetQ: 70,
+      shSunriseQ: 61,
+      shSunsetText: 'Good texture',
+      sunDir: 251,
+      crepPeak: 0,
+      aiText: 'Conditions in Leeds are not worth shooting today. Sutton Bank is the best nearby option at 65/100.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Not a great photography day locally');
+    expect(html).toContain('If you still go: best chance around sunrise around 07:00 at 46/100.');
+    expect(html).not.toContain('AI briefing');
+    expect(html).not.toContain('Conditions in Leeds are not worth shooting today.');
+  });
 });

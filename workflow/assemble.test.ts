@@ -283,7 +283,7 @@ describe('workflow assembly', () => {
     expect(result).toEqual([{
       json: {
         telegramMsg: expect.stringContaining('Stay home today.'),
-        emailHtml: expect.stringContaining('Stay home today.'),
+        emailHtml: expect.stringContaining('If you still go: no clear local fallback window.'),
       },
     }]);
   });
