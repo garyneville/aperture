@@ -76,10 +76,16 @@ function peakHourForWindow(window: Window | undefined): string | null {
   return peakHour?.hour || null;
 }
 
+function windowRange(w: { start: string; end: string }): string {
+  return w.start === w.end ? w.start : `${w.start}-${w.end}`;
+}
+
 function windowTrendInsight(window: Window | undefined): string {
   if (!window?.hours?.length) return '';
   const peakHour = peakHourForWindow(window);
   if (!peakHour) return '';
+
+  if (window.start === window.end) return '';
 
   const firstHour = window.hours[0];
   const lastHour = window.hours[window.hours.length - 1];
@@ -161,7 +167,6 @@ ${shInfo}${confNote}${lhStr}`;
     const topAlt = altLocations?.[0];
     const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
     const overallAstroDelta = todayDay && bestWin ? (todayDay.astroScore ?? 0) - bestWin.peak : 0;
-    const peakHour = peakHourForWindow(bestWin);
     const fallbackNote = bestWin?.fallback
       ? `\nTiming note: this is the most promising narrow stretch rather than a clean standout window.`
       : '';
@@ -175,7 +180,7 @@ ${shInfo}${confNote}${lhStr}`;
     const editorialInsights = [
       windowTrendInsight(bestWin),
       overallAstroDelta >= 10
-        ? `- Overall astro potential is ${todayDay?.astroScore ?? 0}/100 - the window score is held back by weaker conditions earlier in the session${peakHour ? ` before the ${peakHour} local peak` : ''}.`
+        ? `- Overall astro potential is ${todayDay?.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
         : '',
       bestAltDelta >= 10 && topAlt
         ? `- ${topAlt.name} is ${bestAltDelta} points stronger${topAlt.darkSky ? ' mainly because of darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}.`
@@ -187,7 +192,7 @@ ${shInfo}${confNote}${lhStr}`;
 
     const windowsText = windows.map((w, i) => {
       const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
-      return `${i + 1}. ${w.label} (${w.start}\u2013${w.end}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
+      return `${i + 1}. ${w.label} (${windowRange(w)}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
    Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${h?.visK}km | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
    Tags: ${(w.tops || []).join(', ')}`;
     }).join('\n\n');

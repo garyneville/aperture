@@ -133,7 +133,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Sentence 2 must use one of the editorial insight lines below');
     expect(result.prompt).toContain('Do not simply restate cloud, visibility, wind, rain');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
-    expect(result.prompt).toContain('Overall astro potential is 75/100 - the window score is held back by weaker conditions earlier in the session before the 19:00 local peak.');
+    expect(result.prompt).toContain('Overall astro potential is 75/100 - the window score is held back by conditions outside the named window.');
     expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
   });

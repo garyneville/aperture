@@ -47,4 +47,47 @@ describe('format-messages adapter editorial fallback', () => {
 
     expect(shouldReplaceAiText(aiText, ctx)).toBe(false);
   });
+
+  it('does not repeat start-end range for single-hour fallback windows', () => {
+    const singleHourCtx = {
+      windows: [{
+        label: 'Best chance around sunrise',
+        start: '07:00',
+        end: '07:00',
+        peak: 36,
+        hours: [{ hour: '07:00', score: 36 }],
+      }],
+      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55 }],
+      altLocations: [{
+        name: 'Sutton Bank',
+        bestScore: 65,
+        bestAstroHour: '19:00',
+        darkSky: true,
+        driveMins: 75,
+      }],
+    };
+
+    const text = buildFallbackAiText(singleHourCtx);
+    expect(text).not.toContain('07:00-07:00');
+    expect(text).toContain('07:00');
+    expect(text).toContain('Sutton Bank is 29 points stronger');
+  });
+
+  it('uses generic wording for astro-delta on morning windows', () => {
+    const morningCtx = {
+      windows: [{
+        label: 'Best chance around sunrise',
+        start: '07:00',
+        end: '07:00',
+        peak: 36,
+        hours: [{ hour: '07:00', score: 36 }],
+      }],
+      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55 }],
+      altLocations: [],
+    };
+
+    const text = buildFallbackAiText(morningCtx);
+    expect(text).toContain('conditions outside the named window');
+    expect(text).not.toContain('evening');
+  });
 });

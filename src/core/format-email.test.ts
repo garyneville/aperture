@@ -93,7 +93,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Peak local');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
     expect(html).toContain('Peak local: 19:00, right as the window opens.');
-    expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by earlier evening conditions before the 19:00 local peak.');
+    expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by conditions outside the named window.');
     expect(html).toContain('Malham Cove adds 25 points with darker skies at 20:00.');
     expect(html).toContain('Best backup: Malham Cove - 85/100 at 20:00 (astro)');
     expect(html).toContain('Daylight utility');

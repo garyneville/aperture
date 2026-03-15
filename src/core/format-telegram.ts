@@ -109,7 +109,8 @@ function windowsTelegram(wins: Window[] | undefined): string {
     const hdr = i === 0 ? '\ud83d\udd25' : i === 1 ? '\ud83c\udf24' : '\ud83d\udca1';
     const ray = (h?.crepuscular || 0) > 45 ? `  \ud83c\udf1f Rays ${h!.crepuscular}/100` : '';
     const narrow = w.fallback ? '  [best chance]' : '';
-    return `${hdr} <b>${w.label}</b>  ${w.start}\u2013${w.end}  [<b>${w.peak}</b>/100]${narrow}\n` +
+    const range = w.start === w.end ? w.start : `${w.start}\u2013${w.end}`;
+    return `${hdr} <b>${w.label}</b>  ${range}  [<b>${w.peak}</b>/100]${narrow}\n` +
       `   \u2601\ufe0f ${h?.ch}%hi  \ud83d\udc41 ${h?.visK}km  \ud83d\udca8 ${h?.wind}  \ud83c\udf27 ${h?.pp}%${ray}\n` +
       `   <i>${(w.tops || []).join(' \u00b7 ')}</i>`;
   }).join('\n\n');

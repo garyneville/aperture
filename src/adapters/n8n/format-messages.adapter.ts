@@ -70,6 +70,11 @@ export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean 
   return mentionsWindow && !addsInsight;
 }
 
+function windowRange(w: { start?: string; end?: string }): string {
+  if (!w.start || !w.end) return '';
+  return w.start === w.end ? w.start : `${w.start}-${w.end}`;
+}
+
 export function buildFallbackAiText(ctx: BriefContext): string {
   const topWindow = ctx.windows?.[0];
   const nextWindow = ctx.windows?.[1];
@@ -78,15 +83,19 @@ export function buildFallbackAiText(ctx: BriefContext): string {
 
   if (!topWindow) return '(No AI summary)';
 
+  const isSingleHour = topWindow.start === topWindow.end;
   const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
-  const firstSentence = `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${topWindow.start && topWindow.end ? ` from ${topWindow.start}-${topWindow.end}` : ''}.`;
+  const range = windowRange(topWindow);
+  const firstSentence = isSingleHour
+    ? `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}.`
+    : `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${range ? ` from ${range}` : ''}.`;
 
   if (topAlt && typeof topAlt.bestScore === 'number' && typeof topWindow.peak === 'number' && topAlt.bestScore - topWindow.peak >= 10) {
     return `${firstSentence} ${topAlt.name} is ${topAlt.bestScore - topWindow.peak} points stronger${topAlt.darkSky ? ' thanks to darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}${topAlt.driveMins ? ` if you can make the ${topAlt.driveMins}-minute drive` : ''}.`;
   }
 
   if (typeof today?.astroScore === 'number' && typeof topWindow.peak === 'number' && today.astroScore - topWindow.peak >= 10) {
-    return `${firstSentence} Overall astro potential is ${today.astroScore}/100, but the window score is held back by weaker conditions earlier in the session.`;
+    return `${firstSentence} Overall astro potential is ${today.astroScore}/100, but the window score is held back by conditions outside the named window.`;
   }
 
   if (nextWindow?.label && nextWindow.start && nextWindow.end) {

@@ -274,8 +274,13 @@ function peakHourForWindow(window: Window | undefined): string | null {
   return peakHour?.hour || null;
 }
 
+function windowRange(w: { start: string; end: string }): string {
+  return w.start === w.end ? w.start : `${w.start}-${w.end}`;
+}
+
 function peakTimeNote(window: Window | null | undefined, peakHour: string | undefined): string {
   if (!window || !peakHour) return '';
+  if (window.start === window.end) return '';
   if (peakHour === window.end) return `Peak local: ${peakHour}, near the end of the window.`;
   if (peakHour === window.start) return `Peak local: ${peakHour}, right as the window opens.`;
   return `Peak local: ${peakHour}, within the window.`;
@@ -306,7 +311,7 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
   return card(`
     <div style="Margin:0 0 3px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">${index === 0 ? 'Best window' : 'Worth watching'}</div>
     <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(w.label)}</div>
-    <div style="Margin:4px 0 0;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(w.start)}-${esc(w.end)}</div>
+    <div style="Margin:4px 0 0;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(windowRange(w))}</div>
     <div style="Margin-top:8px;">${scorePill(w.peak)}</div>
     <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${metricLine}</div>
     ${tags}
@@ -502,7 +507,7 @@ export function formatEmail(input: FormatEmailInput): string {
 
   const localSummary = [
     topWindow
-      ? `${topWindow.label}: ${topWindow.start}-${topWindow.end} at ${topWindow.peak}/100.`
+      ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
       : todayDay.bestTags
         ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${todayDay.bestTags}.`
         : todayDay.bestPhotoHour
@@ -510,7 +515,7 @@ export function formatEmail(input: FormatEmailInput): string {
           : '',
     peakTimeNote(topWindow, peakLocalHour || undefined),
     overallAstroDelta >= 10
-      ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by earlier evening conditions${peakLocalHour ? ` before the ${peakLocalHour} local peak` : ''}.`
+      ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
       : '',
     topAltDelta >= 10 && topAlternative
       ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
