@@ -40,9 +40,15 @@ export function normalizeAiText(text: string): string {
   const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(sentence => sentence.trim()) || [cleaned];
   const shortened = sentences.slice(0, 2).join(' ').trim();
 
-  return shortened.length > 280
+  const result = shortened.length > 280
     ? `${shortened.slice(0, 277).trimEnd()}...`
     : shortened;
+
+  // Fix AI decimal-spacing artifacts like "20. 5km" → "20.5km" (#108).
+  // Must run after sentence joining: the sentence splitter treats the "." in a
+  // decimal as a sentence boundary and the subsequent join reintroduces a space,
+  // so \s* catches both that reintroduced space and any spacing in the raw AI output.
+  return result.replace(/(\d)\.\s*(\d)/g, '$1.$2');
 }
 
 function peakHourForWindow(window: WindowLike | undefined): string | null {

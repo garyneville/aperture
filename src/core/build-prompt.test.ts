@@ -143,6 +143,10 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
     expect(result.peakKpTonight).toBeNull();
+    // Visibility must be a whole number in the prompt (no decimal) so the LLM
+    // cannot echo back "18. 3km" with a spurious decimal space (#108).
+    expect(result.prompt).toContain('Vis 18km');
+    expect(result.prompt).not.toMatch(/Vis \d+\.\d+km/);
   });
 
   it('includes spurOfTheMoment schema key and location list in the good-day prompt', () => {

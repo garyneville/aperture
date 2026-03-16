@@ -292,7 +292,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
     const windowsText = windows.map((w, i) => {
       const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
       return `${i + 1}. ${w.label} (${windowRange(w)}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
-   Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${h?.visK}km | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
+   Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${Math.round(h?.visK ?? 0)}km | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
    Tags: ${(w.tops || []).join(', ')}`;
     }).join('\n\n');
 

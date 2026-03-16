@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFallbackAiText, isFactuallyIncoherentEditorial, shouldReplaceAiText, parseGroqResponse, resolveSpurSuggestion } from './format-messages.adapter.js';
+import { buildFallbackAiText, isFactuallyIncoherentEditorial, normalizeAiText, shouldReplaceAiText, parseGroqResponse, resolveSpurSuggestion } from './format-messages.adapter.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 
 describe('format-messages adapter editorial fallback', () => {
@@ -290,5 +290,34 @@ describe('resolveSpurSuggestion', () => {
   it('correctly identifies a non-dark-sky location', () => {
     const result = resolveSpurSuggestion({ locationName: 'Mam Tor', hookLine: 'Dramatic ridge walk above the Hope Valley.', confidence: 0.75 });
     expect(result?.darkSky).toBe(false);
+  });
+});
+
+describe('normalizeAiText — decimal spacing fix (#108)', () => {
+  it('fixes "X. Y" decimal spacing artifact from AI output (the bug case)', () => {
+    // Groq sometimes echoes "20. 5km" treating the decimal point as a sentence end.
+    expect(normalizeAiText('Visibility drops to 20. 5km through the window.')).toBe('Visibility drops to 20.5km through the window.');
+  });
+
+  it('fixes decimal at a sentence-splitter boundary', () => {
+    // The sentence regex splits on any "."; "18.3km" becomes ["Tonight reaches 18.", "3km ..."].
+    // When rejoined the decimal fix must restore the original value.
+    expect(normalizeAiText('Tonight reaches 18. 3km visibility making this a solid astro night.')).toBe('Tonight reaches 18.3km visibility making this a solid astro night.');
+  });
+
+  it('does not alter a correctly formatted decimal', () => {
+    expect(normalizeAiText('Expect 18.3km visibility at the peak hour.')).toBe('Expect 18.3km visibility at the peak hour.');
+  });
+
+  it('does not alter sentence-ending periods before words', () => {
+    expect(normalizeAiText('The window opens at 20:00. Conditions improve overnight.')).toBe('The window opens at 20:00. Conditions improve overnight.');
+  });
+
+  it('does not alter sentence-ending periods before capital letters', () => {
+    expect(normalizeAiText('Good conditions tonight. Tomorrow looks clearer.')).toBe('Good conditions tonight. Tomorrow looks clearer.');
+  });
+
+  it('returns (No AI summary) for empty input', () => {
+    expect(normalizeAiText('')).toBe('(No AI summary)');
   });
 });
