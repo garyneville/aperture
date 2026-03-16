@@ -2,7 +2,6 @@ import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import type { DebugContext, DebugKitAdvisoryRule } from './debug-context.js';
-import { renderAiBriefingText } from './ai-briefing.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -17,6 +16,7 @@ export interface WindowHour {
   pp?: number;
   crepuscular?: number;
   tpw?: number;
+  tmp?: number;
 }
 
 export interface Window {

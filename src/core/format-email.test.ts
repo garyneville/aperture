@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildKitTips, evaluateKitRules, formatDebugEmail, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
+import type { DebugContext } from './debug-context.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -1461,10 +1462,12 @@ describe('evaluateKitRules', () => {
     expect(trace).toHaveLength(6);
   });
 
-  it('marks no rules matched on a quiet, clear day', () => {
+  it('still surfaces astro-window on a quiet dark astro session', () => {
     const { trace, tipsShown } = evaluateKitRules(quietDay, quietWindows, 50, 30);
-    expect(tipsShown).toHaveLength(0);
-    expect(trace.every(r => !r.matched && !r.shown)).toBe(true);
+    const astroRule = trace.find(r => r.id === 'astro-window')!;
+    expect(tipsShown).toContain('astro-window');
+    expect(astroRule.matched).toBe(true);
+    expect(astroRule.shown).toBe(true);
   });
 
   it('marks matched and shown separately when the display cap hides a lower-priority rule', () => {
@@ -1507,7 +1510,7 @@ describe('evaluateKitRules', () => {
 /* ------------------------------------------------------------------ */
 
 describe('formatDebugEmail — new debug sections', () => {
-  const baseDebugContext = {
+  const baseDebugContext: DebugContext = {
     metadata: {
       generatedAt: '2026-03-16T12:00:00.000Z',
       location: 'Leeds',
@@ -1519,7 +1522,16 @@ describe('formatDebugEmail — new debug sections', () => {
       debugModeSource: 'workflow toggle',
       debugRecipient: 'debug@example.com',
     },
-    scores: { am: 30, pm: 40, astro: 75, overall: 60, certainty: 'medium', certaintySpread: 5 },
+    scores: {
+      am: 30,
+      pm: 40,
+      astro: 75,
+      overall: 60,
+      certainty: 'medium',
+      certaintySpread: 5,
+      astroConfidence: 'unknown',
+      astroConfidenceStdDev: null,
+    },
     hourlyScoring: [],
     windows: [],
     nearbyAlternatives: [],
@@ -1565,7 +1577,7 @@ describe('formatDebugEmail — new debug sections', () => {
   });
 
   it('formatEmail populates debugContext.kitAdvisory when debugContext provided', () => {
-    const dc = { hourlyScoring: [], windows: [], nearbyAlternatives: [] };
+    const dc: DebugContext = { hourlyScoring: [], windows: [], nearbyAlternatives: [] };
     formatEmail({
       dontBother: false,
       windows: [{
