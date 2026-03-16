@@ -743,4 +743,5 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Home location (Leeds) is Bortle 7');
     expect(result.prompt).toContain('keep the composition bullets about the local session');
   });
+
 });
