@@ -1,4 +1,5 @@
 import { formatTelegram } from '../../core/format-telegram.js';
+import { explainAstroScoreGap } from '../../core/astro-score-explanation.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
 import { emptyDebugContext, type DebugAiCheck, type DebugContext, type WeekStandoutParseStatus } from '../../core/debug-context.js';
@@ -14,6 +15,8 @@ type BriefContext = {
   dailySummary?: Array<{
     bestPhotoHour?: string;
     astroScore?: number;
+    bestAstroHour?: string | null;
+    darkSkyStartsAt?: string | null;
   }>;
   altLocations?: Array<{
     name?: string;
@@ -137,8 +140,9 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'darker',
     'stronger',
     'later',
-    'overall astro',
-    'held back',
+    'astro sub-score',
+    'full weighting',
+    'weighted',
     'drive',
     'fallback',
     'not worth',
@@ -195,8 +199,9 @@ export function buildFallbackAiText(ctx: BriefContext): string {
     return `${firstSentence} ${topAlt.name} is ${topAlt.bestScore - topWindow.peak} points stronger${topAlt.darkSky ? ' thanks to darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}${topAlt.driveMins ? ` if you can make the ${topAlt.driveMins}-minute drive` : ''}.`;
   }
 
-  if (typeof today?.astroScore === 'number' && typeof topWindow.peak === 'number' && today.astroScore - topWindow.peak >= 10) {
-    return `${firstSentence} Overall astro potential is ${today.astroScore}/100, but the window score is held back by conditions outside the named window.`;
+  const astroGap = explainAstroScoreGap({ window: topWindow, today });
+  if (astroGap) {
+    return `${firstSentence} ${astroGap.text}`;
   }
 
   if (nextWindow?.label && nextWindow.start && nextWindow.end) {

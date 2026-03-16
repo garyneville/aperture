@@ -1,3 +1,4 @@
+import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import type { DebugContext } from './debug-context.js';
 
@@ -61,6 +62,7 @@ export interface DaySummary {
   pmScore?: number;
   astroScore?: number;
   bestAstroHour?: string | null;
+  darkSkyStartsAt?: string | null;
   confidence?: string;
   confidenceStdDev?: number | null;
   astroConfidence?: string;
@@ -829,8 +831,9 @@ export function formatEmail(input: FormatEmailInput): string {
   const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
   const todayConfidence = confidenceDetail(todayEffConf);
   const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
-  const topAltDelta = topAlternative ? topAlternative.bestScore - heroScore : 0;
-  const overallAstroDelta = typeof todayDay.astroScore === 'number' ? todayDay.astroScore - heroScore : 0;
+  const astroGap = topWindow
+    ? explainAstroScoreGap({ window: topWindow, today: todayDay })
+    : null;
   const nextWindow = !dontBother ? windows?.[1] : null;
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
@@ -851,7 +854,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const scoreStats: SummaryStat[] = [
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
-    { label: 'Overall astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
+    { label: 'Peak astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
     { label: 'Best time', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
@@ -865,8 +868,8 @@ export function formatEmail(input: FormatEmailInput): string {
           : todayDay.bestPhotoHour
             ? `Best local setup: ${todayDay.bestPhotoHour}.`
             : '',
-      overallAstroDelta >= 10
-        ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
+      astroGap
+        ? astroGap.text
         : '',
       nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
         ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`

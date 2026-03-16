@@ -1,4 +1,5 @@
 import type { Window, DailySummary, CarWash } from './best-windows.js';
+import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
 import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
@@ -265,7 +266,9 @@ Locations: ${SPUR_LOCATION_NAMES}`;
     const nextWin = windows[1];
     const topAlt = altLocations?.[0];
     const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
-    const overallAstroDelta = todayDay && bestWin ? (todayDay.astroScore ?? 0) - bestWin.peak : 0;
+    const astroGap = todayDay && bestWin
+      ? explainAstroScoreGap({ window: bestWin, today: todayDay })
+      : null;
     const fallbackNote = bestWin?.fallback
       ? `\nTiming note: this is the most promising narrow stretch rather than a clean standout window.`
       : '';
@@ -278,8 +281,8 @@ Locations: ${SPUR_LOCATION_NAMES}`;
       : '';
     const editorialInsights = [
       windowTrendInsight(bestWin),
-      overallAstroDelta >= 10
-        ? `- Overall astro potential is ${todayDay?.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
+      astroGap
+        ? `- ${astroGap.text}`
         : '',
       bestAltDelta >= 10 && topAlt
         ? `- ${topAlt.name} is ${bestAltDelta} points stronger${topAlt.darkSky ? ' mainly because of darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}.`

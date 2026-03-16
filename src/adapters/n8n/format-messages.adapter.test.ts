@@ -25,6 +25,7 @@ describe('format-messages adapter editorial fallback', () => {
     dailySummary: [{
       bestPhotoHour: '22:00',
       astroScore: 75,
+      bestAstroHour: '22:00',
     }],
     altLocations: [{
       name: 'Sutton Bank',
@@ -58,7 +59,7 @@ describe('format-messages adapter editorial fallback', () => {
         peak: 36,
         hours: [{ hour: '07:00', score: 36 }],
       }],
-      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55 }],
+      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55, bestAstroHour: '07:00' }],
       altLocations: [{
         name: 'Sutton Bank',
         bestScore: 65,
@@ -83,12 +84,12 @@ describe('format-messages adapter editorial fallback', () => {
         peak: 36,
         hours: [{ hour: '07:00', score: 36 }],
       }],
-      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55 }],
+      dailySummary: [{ bestPhotoHour: '07:00', astroScore: 55, bestAstroHour: '07:00' }],
       altLocations: [],
     };
 
     const text = buildFallbackAiText(morningCtx);
-    expect(text).toContain('conditions outside the named window');
+    expect(text).toContain('Peak astro sub-score is 55/100 at 07:00, with the final window score at 36/100 after full weighting.');
     expect(text).not.toContain('evening');
   });
 });

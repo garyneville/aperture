@@ -33,6 +33,7 @@ describe('formatEmail hero summary', () => {
         amScore: 32,
         pmScore: 40,
         astroScore: 75,
+        bestAstroHour: '19:00',
         confidence: 'high',
         confidenceStdDev: 10,
         amConfidence: 'medium',
@@ -86,13 +87,13 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Good - 60/100');
     expect(html).toContain('AM light');
     expect(html).toContain('PM light');
-    expect(html).toContain('Overall astro');
+    expect(html).toContain('Peak astro');
     expect(html).toContain('Best nearby alternative');
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
     expect(html).toContain('Best time');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
-    expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by conditions outside the named window.');
+    expect(html).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
     expect(html).toContain('Daylight utility');
     expect(html).toContain('&#x1F697; / &#x1F6B6;');
     expect(html).toContain('>Moisture</span> 20mm');
