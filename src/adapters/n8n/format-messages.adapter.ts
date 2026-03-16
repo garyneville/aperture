@@ -299,6 +299,20 @@ function resolveSpurDropReason(spurRaw: SpurRaw | null, nearbyAltNames: string[]
   return undefined;
 }
 
+function normaliseLongRangeCandidate(c: Record<string, unknown>, rank: number) {
+  return {
+    name: typeof c.name === 'string' ? c.name : '(unknown)',
+    region: typeof c.region === 'string' ? c.region : '—',
+    tags: Array.isArray(c.tags) ? (c.tags as string[]) : [],
+    bestScore: typeof c.bestScore === 'number' ? c.bestScore : 0,
+    dayScore: typeof c.dayScore === 'number' ? c.dayScore : 0,
+    astroScore: typeof c.astroScore === 'number' ? c.astroScore : 0,
+    driveMins: typeof c.driveMins === 'number' ? c.driveMins : 0,
+    darkSky: c.darkSky === true,
+    rank,
+  };
+}
+
 export function run({ $input }: N8nRuntime) {
   const input = (() => {
     try {
@@ -338,17 +352,7 @@ export function run({ $input }: N8nRuntime) {
   /* Populate long-range candidate pool from context */
   if (Array.isArray(ctx.longRangeCandidates)) {
     debugContext.longRangeCandidates = (ctx.longRangeCandidates as Array<Record<string, unknown>>)
-      .map((c, idx) => ({
-        name: typeof c?.name === 'string' ? c.name : '(unknown)',
-        region: typeof c?.region === 'string' ? c.region : '—',
-        tags: Array.isArray(c?.tags) ? (c.tags as string[]) : [],
-        bestScore: typeof c?.bestScore === 'number' ? c.bestScore : 0,
-        dayScore: typeof c?.dayScore === 'number' ? c.dayScore : 0,
-        astroScore: typeof c?.astroScore === 'number' ? c.astroScore : 0,
-        driveMins: typeof c?.driveMins === 'number' ? c.driveMins : 0,
-        darkSky: c?.darkSky === true,
-        rank: idx + 1,
-      }));
+      .map((c, idx) => normaliseLongRangeCandidate(c, idx + 1));
   }
 
   debugContext.ai = {
