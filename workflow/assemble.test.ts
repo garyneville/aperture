@@ -58,6 +58,38 @@ describe('workflow assembly', () => {
     expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
 
+  it('assembles runnable code node output for prepare long range', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Prepare Long Range');
+    expect(node).toBeTruthy();
+
+    const fn = new Function('$', '$input', node.parameters.jsCode);
+    const result = fn(
+      () => ({
+        first: () => ({ json: { timezone: 'Europe/London' } }),
+        all: () => [],
+      }),
+      {
+        first: () => ({ json: { todayBestScore: 42, dailySummary: [{ headlineScore: 42 }] } }),
+        all: () => [],
+      },
+    );
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.length).toBeGreaterThan(10);
+    expect(result[0]?.json?.name).toBe('Pen-y-ghent');
+    expect(result[0]?.json?.leedsContext?.todayBestScore).toBe(42);
+    expect(result[0]?.json?.url).toContain('forecast_days=1');
+    expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
+  });
+
   it('assembles retry-safe score input packaging ahead of score-hours', async () => {
     const workflowJson = await assembleWorkflow();
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
@@ -220,6 +252,132 @@ describe('workflow assembly', () => {
         }),
       },
     }]);
+  });
+
+  it('assembles long-range scoring code that consumes only merged workflow input', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const bestWindowsConnections = data.connections['Code: Best Windows']?.main?.[0] ?? [];
+    expect(bestWindowsConnections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ node: 'Code: Prepare Alt Locations', index: 0 }),
+      expect.objectContaining({ node: 'Code: Prepare Long Range', index: 0 }),
+    ]));
+
+    const longRangeWeatherConnection = data.connections['HTTP: Long Range Weather']?.main?.[0]?.[0];
+    expect(longRangeWeatherConnection?.node).toBe('Merge: Long Range Weather Context');
+    expect(longRangeWeatherConnection?.index).toBe(1);
+
+    const altScoreConnection = data.connections['Code: Score Alternatives']?.main?.[0]?.[0];
+    expect(altScoreConnection?.node).toBe('Merge: Scoring + Long Range');
+    expect(altScoreConnection?.index).toBe(0);
+
+    const longRangeScoreConnection = data.connections['Code: Score Long Range']?.main?.[0]?.[0];
+    expect(longRangeScoreConnection?.node).toBe('Merge: Scoring + Long Range');
+    expect(longRangeScoreConnection?.index).toBe(1);
+
+    const longRangeMergeConnection = data.connections['Merge: Scoring + Long Range']?.main?.[0]?.[0];
+    expect(longRangeMergeConnection?.node).toBe('Merge: Scoring + Kp');
+    expect(longRangeMergeConnection?.index).toBe(0);
+
+    const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Score Long Range');
+    expect(node).toBeTruthy();
+    expect(node.parameters.jsCode).not.toContain('Code: Prepare Long Range');
+    expect(node.parameters.jsCode).not.toContain('Code: Best Windows');
+
+    const fn = new Function('$', '$input', node.parameters.jsCode);
+    const result = fn(
+      () => ({
+        first: () => {
+          throw new Error('unexpected selector lookup');
+        },
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            name: 'Kielder Forest',
+            lat: 55.233,
+            lon: -2.588,
+            region: 'northumberland',
+            elevation: 380,
+            tags: ['woodland', 'lake'],
+            siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
+            darkSky: true,
+            driveMins: 120,
+            leedsContext: {
+              dailySummary: [{ headlineScore: 42 }],
+            },
+            hourly: {
+              time: ['2026-03-16T22:00:00.000Z'],
+              cloudcover: [0],
+              cloudcover_low: [0],
+              cloudcover_mid: [0],
+              cloudcover_high: [0],
+              visibility: [30000],
+              temperature_2m: [4],
+              relativehumidity_2m: [55],
+              dewpoint_2m: [0],
+              precipitation_probability: [0],
+              precipitation: [0],
+              windspeed_10m: [5],
+              windgusts_10m: [10],
+              total_column_integrated_water_vapour: [8],
+            },
+            daily: {
+              sunrise: ['2026-03-16T06:18:00.000Z'],
+              sunset: ['2026-03-16T18:11:00.000Z'],
+            },
+          },
+        }),
+        all: () => [{
+          json: {
+            name: 'Kielder Forest',
+            lat: 55.233,
+            lon: -2.588,
+            region: 'northumberland',
+            elevation: 380,
+            tags: ['woodland', 'lake'],
+            siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
+            darkSky: true,
+            driveMins: 120,
+            leedsContext: {
+              dailySummary: [{ headlineScore: 42 }],
+            },
+            hourly: {
+              time: ['2026-03-16T22:00:00.000Z'],
+              cloudcover: [0],
+              cloudcover_low: [0],
+              cloudcover_mid: [0],
+              cloudcover_high: [0],
+              visibility: [30000],
+              temperature_2m: [4],
+              relativehumidity_2m: [55],
+              dewpoint_2m: [0],
+              precipitation_probability: [0],
+              precipitation: [0],
+              windspeed_10m: [5],
+              windgusts_10m: [10],
+              total_column_integrated_water_vapour: [8],
+            },
+            daily: {
+              sunrise: ['2026-03-16T06:18:00.000Z'],
+              sunset: ['2026-03-16T18:11:00.000Z'],
+            },
+          },
+        }],
+      },
+    );
+
+    expect(result[0]?.json?.longRangeTop?.name).toBe('Kielder Forest');
+    expect(result[0]?.json?.longRangeCandidates?.[0]?.name).toBe('Kielder Forest');
+    expect(result[0]?.json?.longRangeDebugCandidates?.[0]?.name).toBe('Kielder Forest');
+    expect(result[0]?.json?.longRangeDebugCandidates?.[0]?.shown).toBe(true);
   });
 
   it('assembles format-messages code that consumes only merged prompt input', async () => {

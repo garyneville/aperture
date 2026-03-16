@@ -926,7 +926,9 @@ export function formatEmail(input: FormatEmailInput): string {
   const effectiveDontBother = dontBother || !hasLocalWindow;
   const topWindow = !effectiveDontBother ? windows?.[0] : null;
   const heroScore = topWindow?.peak ?? todayBestScore;
-  const peakLocalHour = peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
+  const peakLocalHour = effectiveDontBother
+    ? null
+    : peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
   const todayScoreState = scoreState(heroScore);
   const topWindowIsAstro = isAstroWindow(topWindow || undefined);
   const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);

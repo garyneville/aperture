@@ -30,6 +30,8 @@ export const ADAPTERS: Record<string, string> = {
   'best-windows': 'src/adapters/n8n/best-windows.adapter.ts',
   'prepare-alt-locations': 'src/adapters/n8n/prepare-alt-locations.adapter.ts',
   'score-alternatives': 'src/adapters/n8n/score-alternatives.adapter.ts',
+  'prepare-long-range': 'src/adapters/n8n/prepare-long-range.adapter.ts',
+  'score-long-range': 'src/adapters/n8n/score-long-range.adapter.ts',
   'build-prompt': 'src/adapters/n8n/build-prompt.adapter.ts',
   'wrap-kp-index': 'src/adapters/n8n/wrap-kp-index.adapter.ts',
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',

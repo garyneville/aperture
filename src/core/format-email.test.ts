@@ -905,8 +905,11 @@ describe('formatEmail hero summary', () => {
 
     const html = formatEmail(input);
 
+    expect(html).toContain('Best time');
+    expect(html).toContain('No clear slot');
     expect(html).toContain('No clear local window');
     expect(html).toContain('No local window cleared the threshold today');
+    expect(html).not.toContain('Best time</span> 07:00');
     expect(html).not.toContain('Best local setup: 07:00');
     expect(html).not.toContain('Shot ideas');
   });

@@ -413,6 +413,90 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_prepare-long-range__"
+      },
+      "id": "a1b2c3d4-0045-0045-0045-000000000045",
+      "name": "Code: Prepare Long Range",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-0046-0046-0046-000000000046",
+      "name": "HTTP: Long Range Weather",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        640
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0047-0047-0047-000000000047",
+      "name": "Merge: Long Range Weather Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1980,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_score-long-range__"
+      },
+      "id": "a1b2c3d4-0048-0048-0048-000000000048",
+      "name": "Code: Score Long Range",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0049-0049-0049-000000000049",
+      "name": "Merge: Scoring + Long Range",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2420,
+        560
+      ]
+    },
+    {
+      "parameters": {
         "url": "https://api.sunsethue.com/forecast?lat=__PHOTO_WEATHER_LAT__&lon=__PHOTO_WEATHER_LON__",
         "sendHeaders": true,
         "specifyHeaders": "keypair",
@@ -877,6 +961,11 @@
             "node": "Code: Prepare Alt Locations",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Code: Prepare Long Range",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -1012,6 +1101,66 @@
       ]
     },
     "Code: Score Alternatives": {
+      "main": [
+        [
+          {
+            "node": "Merge: Scoring + Long Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Long Range": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Long Range Weather",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge: Long Range Weather Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Long Range Weather": {
+      "main": [
+        [
+          {
+            "node": "Merge: Long Range Weather Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Long Range Weather Context": {
+      "main": [
+        [
+          {
+            "node": "Code: Score Long Range",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Score Long Range": {
+      "main": [
+        [
+          {
+            "node": "Merge: Scoring + Long Range",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Scoring + Long Range": {
       "main": [
         [
           {
