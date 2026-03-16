@@ -8,6 +8,21 @@ export interface MoonMetrics {
   isUp: boolean;
 }
 
+export function moonScoreAdjustment(metrics: MoonMetrics): number {
+  if (!metrics.isUp) return 30;
+  if (metrics.illumination < 0.2) return 30;
+
+  const altitudeFactor = Math.max(0, Math.min(90, metrics.altitudeDeg)) / 90;
+
+  if (metrics.illumination < 0.5) {
+    const softenedBonus = 10 - ((metrics.illumination - 0.2) / 0.3) * 10 * altitudeFactor;
+    return Math.round(Math.max(0, softenedBonus));
+  }
+
+  const basePenalty = ((metrics.illumination - 0.5) / 0.5) * 20;
+  return -Math.round(basePenalty * altitudeFactor);
+}
+
 export function getMoonMetrics(ts: number, lat: number, lon: number): MoonMetrics {
   const observer = new Observer(lat, lon, 0);
   const date = new Date(ts);

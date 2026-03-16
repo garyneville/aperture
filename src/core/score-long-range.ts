@@ -1,4 +1,4 @@
-import { getMoonMetrics } from './astro.js';
+import { getMoonMetrics, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
@@ -174,10 +174,8 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
 
     if (isNight) {
       const moonMetrics = getMoonMetrics(+t, meta.lat, meta.lon);
-      const moon = moonMetrics.illumination;
       let astro = 0;
-      if (!moonMetrics.isUp) astro += 30;
-      else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
+      astro += moonScoreAdjustment(moonMetrics);
       if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
       if (visK > 20) astro += 15;
       if (hum < 80) astro += 5;

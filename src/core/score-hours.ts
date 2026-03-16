@@ -1,4 +1,4 @@
-import { findDarkSkyStart, getMoonMetrics } from './astro.js';
+import { findDarkSkyStart, getMoonMetrics, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity } from './utils.js';
 
@@ -421,9 +421,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
       if (isNight) {
-        if (!moonMetrics.isUp) {
-          astro += 30;
-        } else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
+        astro += moonScoreAdjustment(moonMetrics);
         if (ct < 10)    astro += 30; else if (ct < 30)    astro += 10; else if (ct > 60)    astro -= 20;
         if (visK > 25)  astro += 15;
         if (aod < 0.1)  astro += 15;
