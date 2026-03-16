@@ -10,8 +10,8 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
 
-  const longRangeWeatherData = mergedItems.map(({ name: _n, lat: _la, lon: _lo, region: _r, elevation: _e, tags: _t, darkSky: _d, driveMins: _dm, url: _u, leedsContext: _lc, ...weather }) => weather);
-  const longRangeMeta = mergedItems.map(({ name, lat, lon, region, elevation, tags, darkSky, driveMins }) => ({ name, lat, lon, region, elevation, tags, darkSky, driveMins }));
+  const longRangeWeatherData = mergedItems.map(({ name: _n, lat: _la, lon: _lo, region: _r, elevation: _e, tags: _t, siteDarkness: _sd, darkSky: _d, driveMins: _dm, url: _u, leedsContext: _lc, ...weather }) => weather);
+  const longRangeMeta = mergedItems.map(({ name, lat, lon, region, elevation, tags, siteDarkness, darkSky, driveMins }) => ({ name, lat, lon, region, elevation, tags, siteDarkness, darkSky, driveMins }));
   const leedsContext = mergedItems[0]?.leedsContext ?? {};
   const leedsHeadlineScore = leedsContext.dailySummary?.[0]?.headlineScore ?? leedsContext.dailySummary?.[0]?.photoScore ?? 0;
 

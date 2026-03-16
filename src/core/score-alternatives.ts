@@ -1,4 +1,5 @@
 import { getMoonMetrics } from './astro.js';
+import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
 
@@ -53,6 +54,7 @@ export interface TodayAlt {
   name: string;
   driveMins: number;
   types: string[];
+  siteDarkness: SiteDarkness;
   darkSky: boolean;
   dayScore: number;
   astroScore: number;
@@ -73,6 +75,7 @@ export interface BestAltCandidate {
   bestDayHour: string | null;
   bestAstroHour: string | null;
   isAstroWin: boolean;
+  siteDarkness: SiteDarkness;
   darkSky: boolean;
   bestTags: string[];
   bestAm: number;
@@ -252,7 +255,7 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
         if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
         if (visK > 20) astro += 15;
         if (hum < 80) astro += 5;
-        if (loc.darkSky) astro += 10;
+        astro += astroDarknessBonus(loc.siteDarkness);
         astro = clamp(astro);
         if (astro > bestAstro) {
           bestAstro = astro;
@@ -263,9 +266,10 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
       }
     });
 
-    const isAstroWin = bestAstro > bestDay && loc.darkSky;
+    const isAstroWin = bestAstro > bestDay && loc.siteDarkness.siteDarknessScore > HOME_SITE_DARKNESS.siteDarknessScore;
     const bestScore = Math.max(bestDay, isAstroWin ? bestAstro : 0);
-    const meetsThreshold = (bestDay >= DAY_THRESHOLD) || (loc.darkSky && bestAstro >= ASTRO_THRESHOLD);
+    const meetsThreshold = (bestDay >= DAY_THRESHOLD)
+      || (loc.siteDarkness.siteDarknessScore > HOME_SITE_DARKNESS.siteDarknessScore && bestAstro >= ASTRO_THRESHOLD);
 
     days.push({
       dateKey,
@@ -314,6 +318,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       name: loc.name,
       driveMins: loc.driveMins,
       types: today.bestTags?.length ? today.bestTags : loc.types,
+      siteDarkness: loc.siteDarkness,
       darkSky: loc.darkSky,
       dayScore: today.bestDay,
       astroScore: today.bestAstro,
@@ -339,6 +344,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         bestDayHour: d.bestDayHour,
         bestAstroHour: d.bestAstroHour,
         isAstroWin: d.isAstroWin,
+        siteDarkness: loc.siteDarkness,
         darkSky: loc.darkSky,
         bestTags: d.bestTags,
         bestAm: d.bestAm,

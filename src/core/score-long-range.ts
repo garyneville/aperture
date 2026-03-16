@@ -1,4 +1,5 @@
 import { getMoonMetrics } from './astro.js';
+import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from './long-range-locations.js';
@@ -14,6 +15,7 @@ export interface LongRangeMeta {
   region: Region;
   elevation: number;
   tags: LocationTag[];
+  siteDarkness: SiteDarkness;
   darkSky: boolean;
   driveMins: number;
 }
@@ -23,6 +25,7 @@ export interface LongRangeCandidate {
   region: Region;
   driveMins: number;
   tags: LocationTag[];
+  siteDarkness: SiteDarkness;
   darkSky: boolean;
   elevation: number;
   dayScore: number;
@@ -178,7 +181,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
       if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
       if (visK > 20) astro += 15;
       if (hum < 80) astro += 5;
-      if (meta.darkSky) astro += 10;
+      astro += astroDarknessBonus(meta.siteDarkness);
       astro = clamp(astro);
       if (astro > bestAstro) {
         bestAstro = astro;
@@ -189,7 +192,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
     }
   });
 
-  const isAstroWin = bestAstro > bestDay && meta.darkSky;
+  const isAstroWin = bestAstro > bestDay && meta.siteDarkness.siteDarknessScore > HOME_SITE_DARKNESS.siteDarknessScore;
   const bestScore = Math.max(bestDay, isAstroWin ? bestAstro : 0);
 
   return {
@@ -197,6 +200,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
     region: meta.region,
     driveMins: meta.driveMins,
     tags: meta.tags,
+    siteDarkness: meta.siteDarkness,
     darkSky: meta.darkSky,
     elevation: meta.elevation,
     dayScore: bestDay,

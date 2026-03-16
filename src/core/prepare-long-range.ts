@@ -6,6 +6,7 @@ import {
   type LocationTag,
   type Region,
 } from './long-range-locations.js';
+import type { SiteDarkness } from './site-darkness.js';
 
 export interface LongRangeLocationWithUrl {
   name: string;
@@ -14,6 +15,7 @@ export interface LongRangeLocationWithUrl {
   region: Region;
   elevation: number;
   tags: LocationTag[];
+  siteDarkness: SiteDarkness;
   darkSky: boolean;
   driveMins: number;
   url: string;
@@ -41,6 +43,7 @@ export function prepareLongRangeLocations(timezone: string): LongRangeLocationWi
       region: loc.region,
       elevation: loc.elevation,
       tags: loc.tags,
+      siteDarkness: loc.siteDarkness,
       darkSky: loc.darkSky,
       driveMins: estimatedDriveMins(loc),
       url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=1`,

@@ -10,6 +10,9 @@ describe('forecast URL builders', () => {
       expect(location.url).toContain('daily=sunrise,sunset');
       expect(location.url).not.toContain('moonrise');
       expect(location.url).not.toContain('moonset');
+      expect(location.siteDarkness.bortle).toBeGreaterThanOrEqual(1);
+      expect(location.siteDarkness.lookupDate).toBe('2026-03-16');
+      expect(typeof location.darkSky).toBe('boolean');
     }
   });
 
@@ -20,6 +23,9 @@ describe('forecast URL builders', () => {
       expect(location.url).toContain('daily=sunrise,sunset');
       expect(location.url).not.toContain('moonrise');
       expect(location.url).not.toContain('moonset');
+      expect(location.siteDarkness.bortle).toBeGreaterThanOrEqual(1);
+      expect(location.siteDarkness.lookupDate).toBe('2026-03-16');
+      expect(typeof location.darkSky).toBe('boolean');
     }
   });
 });

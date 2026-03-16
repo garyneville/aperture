@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { scoreLongRange, type ScoreLongRangeInput, type LongRangeMeta } from './score-long-range.js';
 import { haversineKm, estimatedDriveMins, isWithinDriveLimit, LONG_RANGE_LOCATIONS, type LongRangeLocation } from './long-range-locations.js';
 import type { AltWeatherData } from './score-alternatives.js';
+import { siteDarknessFromBortle } from './site-darkness.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
@@ -58,6 +59,7 @@ const baseMeta: LongRangeMeta = {
   region: 'lake-district',
   elevation: 300,
   tags: ['upland', 'lake'],
+  siteDarkness: siteDarknessFromBortle(5),
   darkSky: false,
   driveMins: 120,
 };
@@ -206,6 +208,39 @@ describe('scoreLongRange', () => {
     }
   });
 
+  it('lets a materially darker site win on otherwise identical weather', () => {
+    const identicalWeather = makeWeatherData({
+      cloudcover: 10,
+      cloudcover_low: 5,
+      cloudcover_mid: 20,
+      cloudcover_high: 30,
+      visibility: 50000,
+      relativehumidity_2m: 55,
+    });
+
+    const brighterMeta: LongRangeMeta = {
+      ...baseMeta,
+      name: 'Brighter Site',
+      siteDarkness: siteDarknessFromBortle(5),
+      darkSky: false,
+    };
+    const darkerMeta: LongRangeMeta = {
+      ...baseMeta,
+      name: 'Darker Site',
+      siteDarkness: siteDarknessFromBortle(3),
+      darkSky: true,
+    };
+
+    const result = scoreLongRange({
+      longRangeWeatherData: [identicalWeather, identicalWeather],
+      longRangeMeta: [brighterMeta, darkerMeta],
+      leedsHeadlineScore: 10,
+      isWeekday: false,
+    });
+
+    expect(result.longRangeCandidates[0]?.name).toBe('Darker Site');
+  });
+
   it('detects dark sky alert for dark-sky locations with high astro score', () => {
     const clearNightWeather = makeWeatherData({
       cloudcover: 5,
@@ -215,6 +250,7 @@ describe('scoreLongRange', () => {
     const darkSkyMeta: LongRangeMeta = {
       ...baseMeta,
       name: 'Kielder Forest',
+      siteDarkness: siteDarknessFromBortle(2),
       darkSky: true,
     };
     const input: ScoreLongRangeInput = {
@@ -265,11 +301,11 @@ describe('estimatedDriveMins', () => {
   it('applies regional correction factor', () => {
     const snowdonia: LongRangeLocation = {
       name: 'Snowdon', lat: 53.069, lon: -4.076,
-      region: 'snowdonia', elevation: 1085, tags: ['upland'], darkSky: false,
+      region: 'snowdonia', elevation: 1085, tags: ['upland'], siteDarkness: siteDarknessFromBortle(4), darkSky: false,
     };
     const yorkshire: LongRangeLocation = {
       name: 'Pen-y-ghent', lat: 54.155, lon: -2.265,
-      region: 'yorkshire-dales', elevation: 694, tags: ['upland'], darkSky: false,
+      region: 'yorkshire-dales', elevation: 694, tags: ['upland'], siteDarkness: siteDarknessFromBortle(4), darkSky: false,
     };
     // Snowdonia has 0.65 factor (slower) so drive time should be proportionally longer per km
     const snowdonMins = estimatedDriveMins(snowdonia);
@@ -282,7 +318,7 @@ describe('isWithinDriveLimit', () => {
   it('includes nearby locations', () => {
     const loc: LongRangeLocation = {
       name: 'Near', lat: 54.0, lon: -2.0,
-      region: 'yorkshire-dales', elevation: 300, tags: ['upland'], darkSky: false,
+      region: 'yorkshire-dales', elevation: 300, tags: ['upland'], siteDarkness: siteDarknessFromBortle(4), darkSky: false,
     };
     expect(isWithinDriveLimit(loc)).toBe(true);
   });
@@ -302,6 +338,7 @@ describe('LONG_RANGE_LOCATIONS', () => {
       expect(typeof loc.elevation).toBe('number');
       expect(Array.isArray(loc.tags)).toBe(true);
       expect(loc.tags.length).toBeGreaterThan(0);
+      expect(loc.siteDarkness.bortle).toBeGreaterThanOrEqual(1);
       expect(typeof loc.darkSky).toBe('boolean');
     }
   });
