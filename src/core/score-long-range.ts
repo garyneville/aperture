@@ -36,6 +36,13 @@ export interface LongRangeCandidate {
   isAstroWin: boolean;
 }
 
+export interface LongRangeDebugCandidate extends LongRangeCandidate {
+  rank: number;
+  deltaVsLeeds: number;
+  shown: boolean;
+  discardedReason?: string;
+}
+
 export interface ScoreLongRangeInput {
   longRangeWeatherData: AltWeatherData[];
   longRangeMeta: LongRangeMeta[];
@@ -60,6 +67,8 @@ export interface ScoreLongRangeOutput {
   cardLabel: string | null;
   /** All candidates that met the minimum threshold, ranked by score. */
   longRangeCandidates: LongRangeCandidate[];
+  /** Full evaluated pool for debug output, including discarded candidates and reasons. */
+  longRangeDebugCandidates: LongRangeDebugCandidate[];
   /** Dark sky alert: perfect astro conditions at a known dark site. */
   darkSkyAlert: DarkSkyAlert | null;
 }
@@ -221,18 +230,39 @@ export function scoreLongRange(input: ScoreLongRangeInput): ScoreLongRangeOutput
     .map((wData, idx) => scoreLocToday(wData, longRangeMeta[idx]))
     .filter((c): c is LongRangeCandidate => c !== null);
 
-  const candidates = rawCandidates
-    .filter(c => c.bestScore >= LONG_RANGE_SCORE_THRESHOLD)
-    .sort((a, b) => b.bestScore - a.bestScore);
+  const rankedCandidates = [...rawCandidates].sort((a, b) => b.bestScore - a.bestScore);
+  const candidates = rankedCandidates.filter(c => c.bestScore >= LONG_RANGE_SCORE_THRESHOLD);
 
   const top = candidates[0] || null;
   const delta = top ? top.bestScore - leedsHeadlineScore : 0;
   const meetsThreshold = top !== null && delta >= LONG_RANGE_DELTA_THRESHOLD;
 
+  const longRangeDebugCandidates = rankedCandidates.map((candidate, index) => {
+    const candidateDelta = candidate.bestScore - leedsHeadlineScore;
+    let shown = false;
+    let discardedReason: string | undefined;
+
+    if (candidate.bestScore < LONG_RANGE_SCORE_THRESHOLD) {
+      discardedReason = `score below threshold (${candidate.bestScore} < ${LONG_RANGE_SCORE_THRESHOLD})`;
+    } else if (candidateDelta < LONG_RANGE_DELTA_THRESHOLD) {
+      discardedReason = `does not beat Leeds by ${LONG_RANGE_DELTA_THRESHOLD} points (${candidate.bestScore} vs ${leedsHeadlineScore})`;
+    } else if (top && candidate.name === top.name && meetsThreshold) {
+      shown = true;
+    } else {
+      discardedReason = top ? `eligible pool candidate behind ${top.name}` : 'eligible pool candidate';
+    }
+
+    return {
+      ...candidate,
+      rank: index + 1,
+      deltaVsLeeds: candidateDelta,
+      shown,
+      discardedReason,
+    };
+  });
+
   // Dark sky alert: any dark-sky location with excellent astro, regardless of day score
-  const darkSkyCandidates = longRangeWeatherData
-    .map((wData, idx) => scoreLocToday(wData, longRangeMeta[idx]))
-    .filter((c): c is LongRangeCandidate => c !== null)
+  const darkSkyCandidates = rankedCandidates
     .filter(c => c.darkSky && c.astroScore >= ASTRO_DARK_SKY_THRESHOLD)
     .sort((a, b) => b.astroScore - a.astroScore);
 
@@ -251,6 +281,7 @@ export function scoreLongRange(input: ScoreLongRangeInput): ScoreLongRangeOutput
     showCard: meetsThreshold,
     cardLabel: meetsThreshold && isWeekday ? 'Weekend opportunity' : meetsThreshold ? 'Distance no object' : null,
     longRangeCandidates: candidates,
+    longRangeDebugCandidates,
     darkSkyAlert,
   };
 }

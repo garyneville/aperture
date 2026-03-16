@@ -81,11 +81,15 @@ export interface DebugAiCheck {
 }
 
 export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
+export type WeekStandoutDecision = 'raw-used' | 'fallback-used' | 'omitted';
 
 export interface DebugWeekStandoutTrace {
   parseStatus: WeekStandoutParseStatus;
   rawValue: string | null;
   used: boolean;
+  decision?: WeekStandoutDecision;
+  finalValue?: string | null;
+  fallbackReason?: string | null;
 }
 
 export interface DebugAiTrace {
@@ -115,6 +119,9 @@ export interface DebugLongRangeCandidate {
   driveMins: number;
   darkSky: boolean;
   rank: number;
+  deltaVsLeeds: number;
+  shown: boolean;
+  discardedReason?: string;
 }
 
 export interface DebugKitAdvisoryRule {

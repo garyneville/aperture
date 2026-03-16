@@ -6,7 +6,13 @@ import {
 } from '../../core/ai-briefing.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
-import { emptyDebugContext, type DebugAiCheck, type DebugContext, type WeekStandoutParseStatus } from '../../core/debug-context.js';
+import {
+  emptyDebugContext,
+  type DebugAiCheck,
+  type DebugContext,
+  type WeekStandoutDecision,
+  type WeekStandoutParseStatus,
+} from '../../core/debug-context.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 import type { N8nRuntime } from './types.js';
 
@@ -18,6 +24,12 @@ type BriefContext = {
   debugContext?: DebugContext;
   windows?: WindowLike[];
   dailySummary?: Array<{
+    dayLabel?: string;
+    dayIdx?: number;
+    headlineScore?: number;
+    photoScore?: number;
+    confidence?: string;
+    confidenceStdDev?: number | null;
     bestPhotoHour?: string;
     astroScore?: number;
     bestAstroHour?: string | null;
@@ -39,6 +51,22 @@ type BriefContext = {
     astroScore?: number;
     driveMins?: number;
     darkSky?: boolean;
+    deltaVsLeeds?: number;
+    shown?: boolean;
+    discardedReason?: string;
+  }>;
+  longRangeDebugCandidates?: Array<{
+    name?: string;
+    region?: string;
+    tags?: string[];
+    bestScore?: number;
+    dayScore?: number;
+    astroScore?: number;
+    driveMins?: number;
+    darkSky?: boolean;
+    deltaVsLeeds?: number;
+    shown?: boolean;
+    discardedReason?: string;
   }>;
 };
 
@@ -409,6 +437,141 @@ function normaliseLongRangeCandidate(c: Record<string, unknown>, rank: number) {
     driveMins: typeof c.driveMins === 'number' ? c.driveMins : 0,
     darkSky: c.darkSky === true,
     rank,
+    deltaVsLeeds: typeof c.deltaVsLeeds === 'number' ? c.deltaVsLeeds : 0,
+    shown: c.shown === true,
+    discardedReason: typeof c.discardedReason === 'string' ? c.discardedReason : undefined,
+  };
+}
+
+type WeekSummaryDay = NonNullable<BriefContext['dailySummary']>[number];
+
+type WeekStandoutResolution = {
+  text: string;
+  usedRaw: boolean;
+  decision: WeekStandoutDecision;
+  fallbackReason: string | null;
+};
+
+function displayScore(day: WeekSummaryDay | undefined): number {
+  if (!day) return 0;
+  if (typeof day.headlineScore === 'number') return day.headlineScore;
+  if (typeof day.photoScore === 'number') return day.photoScore;
+  return 0;
+}
+
+function spreadScore(day: WeekSummaryDay | undefined): number | null {
+  if (!day || typeof day.confidenceStdDev !== 'number') return null;
+  return day.confidenceStdDev;
+}
+
+function sanitizeWeekInsight(text: string): string {
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function buildWeekStandoutFallback(days: WeekSummaryDay[] | undefined): string {
+  const forecastDays = (days || []).slice(0, 5);
+  if (!forecastDays.length) return '';
+
+  const today = forecastDays.find(day => day.dayIdx === 0) || forecastDays[0];
+  const rankedByScore = [...forecastDays].sort((a, b) => displayScore(b) - displayScore(a));
+  const topDay = rankedByScore[0];
+  const secondDay = rankedByScore[1];
+  const todaySpread = spreadScore(today);
+  const topSpread = spreadScore(topDay);
+
+  const todayIsReliableLead = Boolean(
+    today &&
+    topDay &&
+    topDay !== today &&
+    displayScore(topDay) > displayScore(today) &&
+    todaySpread !== null &&
+    topSpread !== null &&
+    topSpread - todaySpread >= 8,
+  );
+
+  if (todayIsReliableLead) {
+    return `Today is the most reliable forecast; ${topDay.dayLabel || 'later in the week'} may score higher but with much lower certainty.`;
+  }
+
+  if (topDay && secondDay && displayScore(topDay) - displayScore(secondDay) >= 5) {
+    return `${topDay.dayLabel || 'Today'} is the standout day.`;
+  }
+
+  return `${topDay?.dayLabel || 'Today'} is the best bet this week.`;
+}
+
+function validateWeekInsight(rawValue: string | null, days: WeekSummaryDay[] | undefined): WeekStandoutResolution {
+  const fallback = buildWeekStandoutFallback(days);
+  const sanitizedRaw = rawValue ? sanitizeWeekInsight(rawValue) : '';
+
+  if (!fallback) {
+    return {
+      text: sanitizedRaw,
+      usedRaw: sanitizedRaw.length > 0,
+      decision: sanitizedRaw.length > 0 ? 'raw-used' : 'omitted',
+      fallbackReason: sanitizedRaw.length > 0 ? null : 'no forecast days available',
+    };
+  }
+
+  if (!sanitizedRaw) {
+    return {
+      text: fallback,
+      usedRaw: false,
+      decision: 'fallback-used',
+      fallbackReason: 'missing weekStandout value',
+    };
+  }
+
+  if (countWords(sanitizedRaw) > 30) {
+    return {
+      text: fallback,
+      usedRaw: false,
+      decision: 'fallback-used',
+      fallbackReason: 'weekStandout exceeded 30 words',
+    };
+  }
+
+  const lowerRaw = sanitizedRaw.toLowerCase();
+  const lowerFallback = fallback.toLowerCase();
+  const forecastDays = (days || []).slice(0, 5);
+  const topDay = [...forecastDays].sort((a, b) => displayScore(b) - displayScore(a))[0];
+
+  if (lowerFallback.includes('today is the most reliable forecast')) {
+    const topLabel = topDay?.dayLabel?.toLowerCase() || '';
+    const valid = lowerRaw.includes('today')
+      && lowerRaw.includes('reliable')
+      && (!topLabel || lowerRaw.includes(topLabel));
+    if (!valid) {
+      return {
+        text: fallback,
+        usedRaw: false,
+        decision: 'fallback-used',
+        fallbackReason: 'weekStandout misidentified the reliable day',
+      };
+    }
+  } else {
+    const expectedLabel = (topDay?.dayLabel || 'Today').toLowerCase();
+    const valid = lowerRaw.includes(expectedLabel)
+      && (lowerRaw.includes('standout') || lowerRaw.includes('best'));
+    if (!valid) {
+      return {
+        text: fallback,
+        usedRaw: false,
+        decision: 'fallback-used',
+        fallbackReason: 'weekStandout did not name the expected standout day',
+      };
+    }
+  }
+
+  return {
+    text: sanitizedRaw,
+    usedRaw: true,
+    decision: 'raw-used',
+    fallbackReason: null,
   };
 }
 
@@ -430,6 +593,7 @@ export function run({ $input }: N8nRuntime) {
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
   const fallbackUsed = !factualCheck.passed || !editorialCheck.passed;
   const aiText = fallbackUsed ? buildFallbackAiText(ctx) : normalizedAiText;
+  const resolvedWeekStandout = validateWeekInsight(weekInsight, ctx.dailySummary);
   const safeCompositionBullets = filterCompositionBullets(compositionBullets, ctx);
 
   const debugContext = ctx.debugContext || emptyDebugContext();
@@ -453,8 +617,11 @@ export function run({ $input }: N8nRuntime) {
   };
 
   /* Populate long-range candidate pool from context */
-  if (Array.isArray(ctx.longRangeCandidates)) {
-    debugContext.longRangeCandidates = (ctx.longRangeCandidates as Array<Record<string, unknown>>)
+  const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
+    ? ctx.longRangeDebugCandidates
+    : ctx.longRangeCandidates;
+  if (Array.isArray(longRangeDebugPool)) {
+    debugContext.longRangeCandidates = (longRangeDebugPool as Array<Record<string, unknown>>)
       .map((c, idx) => normaliseLongRangeCandidate(c, idx + 1));
   }
 
@@ -473,14 +640,17 @@ export function run({ $input }: N8nRuntime) {
     weekStandout: {
       parseStatus: weekStandoutParseStatus,
       rawValue: weekStandoutRawValue,
-      used: weekStandoutParseStatus === 'present' && weekStandoutRawValue !== null && weekStandoutRawValue.length > 0,
+      used: resolvedWeekStandout.usedRaw,
+      decision: resolvedWeekStandout.decision,
+      finalValue: resolvedWeekStandout.text || null,
+      fallbackReason: resolvedWeekStandout.fallbackReason,
     },
     fallbackUsed,
     finalAiText: aiText,
   };
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight, spurOfTheMoment, debugContext });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, debugContext });
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`

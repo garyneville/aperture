@@ -6,6 +6,7 @@ import {
   normalizeAiText,
   parseGroqResponse,
   resolveSpurSuggestion,
+  run,
   shouldReplaceAiText,
 } from './format-messages.adapter.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
@@ -428,5 +429,130 @@ describe('resolveSpurSuggestion — nearby alt deduplication', () => {
       { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
     );
     expect(result).not.toBeNull();
+  });
+});
+
+describe('run — weekStandout validation', () => {
+  const makeDay = (
+    dayLabel: string,
+    dayIdx: number,
+    headlineScore: number,
+    confidence: 'high' | 'medium' | 'low',
+    confidenceStdDev: number,
+  ) => ({
+    dayLabel,
+    dateKey: `2026-03-${String(16 + dayIdx).padStart(2, '0')}`,
+    dayIdx,
+    photoScore: headlineScore,
+    headlineScore,
+    photoEmoji: 'Good',
+    amScore: 30,
+    pmScore: 35,
+    astroScore: headlineScore,
+    confidence,
+    confidenceStdDev,
+    amConfidence: confidence,
+    pmConfidence: confidence,
+    bestPhotoHour: '21:00',
+    bestTags: 'astrophotography',
+    carWash: {
+      rating: 'OK',
+      label: 'Usable',
+      score: 60,
+      start: '06:00',
+      end: '08:00',
+      wind: 10,
+      pp: 10,
+      tmp: 8,
+    },
+  });
+
+  const makeRuntimeOutput = (weekStandout: string | undefined, dailySummary = [
+    makeDay('Today', 0, 60, 'high', 5),
+    makeDay('Tomorrow', 1, 55, 'medium', 15),
+    makeDay('Wednesday', 2, 70, 'low', 39),
+    makeDay('Thursday', 3, 45, 'medium', 12),
+    makeDay('Friday', 4, 50, 'medium', 18),
+  ]) => {
+    const content = JSON.stringify({
+      editorial: 'Conditions improve through the evening astro window toward 21:00. Clearer skies hold into the best hour.',
+      composition: ['Frame the skyline against the western glow'],
+      ...(weekStandout !== undefined ? { weekStandout } : {}),
+    });
+
+    return run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content } }],
+            dontBother: false,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [{
+              label: 'Evening astro window',
+              start: '19:00',
+              end: '21:00',
+              peak: 60,
+              tops: ['astrophotography'],
+              hours: [{ hour: '21:00', score: 60 }],
+            }],
+            dailySummary,
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 10,
+              pp: 10,
+              tmp: 8,
+            },
+            altLocations: [],
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 60,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as {
+      emailHtml: string;
+      debugEmailHtml: string;
+    };
+  };
+
+  it('keeps a valid raw weekStandout that matches the strongest day', () => {
+    const result = makeRuntimeOutput('Wednesday is the standout day.', [
+      makeDay('Today', 0, 60, 'high', 12),
+      makeDay('Tomorrow', 1, 55, 'medium', 15),
+      makeDay('Wednesday', 2, 70, 'medium', 16),
+      makeDay('Thursday', 3, 45, 'medium', 12),
+      makeDay('Friday', 4, 50, 'medium', 18),
+    ]);
+
+    expect(result.emailHtml).toContain('Wednesday is the standout day.');
+    expect(result.debugEmailHtml).toContain('present in raw response → used: &quot;Wednesday is the standout day.&quot;');
+  });
+
+  it('replaces a semantically wrong weekStandout with the reliability fallback', () => {
+    const result = makeRuntimeOutput('Wednesday is most reliable.');
+
+    expect(result.emailHtml).toContain('Today is the most reliable forecast; Wednesday may score higher but with much lower certainty.');
+    expect(result.emailHtml).not.toContain('Wednesday is most reliable.');
+    expect(result.debugEmailHtml).toContain('replaced with fallback');
+    expect(result.debugEmailHtml).toContain('weekStandout misidentified the reliable day');
   });
 });

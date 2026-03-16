@@ -96,6 +96,23 @@ function topAlternativeLine(altLocations?: AltLocationResult[]): string {
   return `${alt.name} (${alt.driveMins}min, ${alt.bestScore}/100, ${timing}${alt.darkSky ? ', dark sky' : ''})`;
 }
 
+function dayAlternativeTiming(bestDayHour: string | null): string {
+  if (!bestDayHour) return 'golden hour';
+  const hour = Number.parseInt(bestDayHour.slice(0, 2), 10);
+  if (!Number.isFinite(hour)) return `best at ${bestDayHour}`;
+  return hour < 12 ? `morning golden hour around ${bestDayHour}` : `evening golden hour around ${bestDayHour}`;
+}
+
+function alternativePromptSection(title: string, alts: AltLocationResult[]): string {
+  if (!alts.length) return '';
+  return `${title}:\n${alts.slice(0, 3).map(l =>
+    `- ${l.name} (${l.driveMins}min): ${l.bestScore}/100` +
+    (l.isAstroWin
+      ? ` best astro ${l.bestAstroHour || 'evening'}${l.darkSky ? ' (dark sky)' : ''}`
+      : ` ${dayAlternativeTiming(l.bestDayHour)}`)
+  ).join('\n')}`;
+}
+
 function isAstroWindow(window: Window | undefined): boolean {
   if (!window) return false;
   return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
@@ -308,14 +325,13 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     : '';
   const moonNote = moonTimingNote(todayDay);
 
+  const astroAlternatives = (altLocations || []).filter(location => location.isAstroWin);
+  const goldenHourAlternatives = (altLocations || []).filter(location => !location.isAstroWin);
   const altText = altLocations && altLocations.length
-    ? `\nNearby alternatives worth considering:\n` +
-      altLocations.slice(0, 3).map(l =>
-        `- ${l.name} (${l.driveMins}min): ${l.bestScore}/100` +
-        (l.isAstroWin
-          ? ` ${l.bestAstroHour ? `best astro ${l.bestAstroHour}` : 'astrophotography'}${l.darkSky ? ' (dark sky)' : ''}`
-          : ` best at ${l.bestDayHour}`)
-      ).join('\n')
+    ? `\nNearby alternatives worth considering:\n${[
+      alternativePromptSection('Astro alternatives', astroAlternatives),
+      alternativePromptSection('Golden-hour alternatives', goldenHourAlternatives),
+    ].filter(Boolean).join('\n')}`
     : '';
 
   let prompt: string;

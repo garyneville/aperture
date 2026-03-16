@@ -367,6 +367,13 @@ function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditi
   return visibleTags.join(', ') || fallback;
 }
 
+function bestDaySessionLabel(bestDayHour: string | null | undefined): string {
+  if (!bestDayHour) return 'Golden hour';
+  const hour = Number.parseInt(bestDayHour.slice(0, 2), 10);
+  if (!Number.isFinite(hour)) return 'Golden hour';
+  return hour < 12 ? 'Morning golden hour' : 'Evening golden hour';
+}
+
 function forecastBestLine(day: DaySummary): string {
   const isAstroLed = (day.astroScore ?? 0) > (day.photoScore ?? 0);
   if (isAstroLed) {
@@ -734,18 +741,46 @@ function alternativeSection(
     return card(`<div style="font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(noAltsMsg || 'No nearby locations score well enough today.')}</div>`);
   }
 
-  const rows = altLocations.map((loc, index) => {
-    const note = loc.isAstroWin
-      ? `Astro${loc.darkSky ? ' - dark sky' : ''} - best ${loc.bestAstroHour || 'evening'} - ${loc.driveMins} min drive`
-      : `${(loc.types || []).slice(0, 2).join(', ')} - best ${loc.bestDayHour || 'time TBD'} - ${loc.driveMins} min drive`;
-    return `<div style="${index < altLocations.length - 1 ? `padding:0 0 8px;border-bottom:1px solid ${C.outline};margin-bottom:8px;` : ''}">
-      <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
-      <div style="Margin-top:6px;">${scorePill(loc.bestScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(note)}</div>
-    </div>`;
-  }).join('');
+  const renderGroup = (title: string, locations: AltLocation[]): string => {
+    if (!locations.length) return '';
+    const rows = locations.map((loc, index) => {
+      const note = loc.isAstroWin
+        ? `Astro${loc.darkSky ? ' - dark sky' : ''} - best ${loc.bestAstroHour || 'evening'} - ${loc.driveMins} min drive`
+        : `${bestDaySessionLabel(loc.bestDayHour)} - best ${loc.bestDayHour || 'time TBD'} - ${loc.driveMins} min drive`;
+      return `<div style="${index < locations.length - 1 ? `padding:0 0 8px;border-bottom:1px solid ${C.outline};margin-bottom:8px;` : ''}">
+        <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
+        <div style="Margin-top:6px;">${scorePill(loc.bestScore)}</div>
+        <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(note)}</div>
+      </div>`;
+    }).join('');
 
-  return card(rows);
+    return `
+      <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};Margin:0 0 8px;">${esc(title)}</div>
+      ${rows}
+    `;
+  };
+
+  const astroAlternatives = altLocations.filter(loc => loc.isAstroWin);
+  const goldenHourAlternatives = altLocations.filter(loc => !loc.isAstroWin);
+  const sections = [
+    renderGroup('Astro alternatives', astroAlternatives),
+    renderGroup('Golden-hour alternatives', goldenHourAlternatives),
+  ].filter(Boolean);
+
+  return card(sections.join(`<div style="height:12px;"></div>`));
+}
+
+function alternativeSummaryTitle(topAlternative: AltLocation | null | undefined): string {
+  if (!topAlternative) return 'Best nearby alternative';
+  return topAlternative.isAstroWin ? 'Best nearby astro alternative' : 'Best nearby golden-hour alternative';
+}
+
+function alternativeTimingSummary(topAlternative: AltLocation | null | undefined): string {
+  if (!topAlternative) return '';
+  if (topAlternative.isAstroWin) {
+    return ` · astro from ${topAlternative.bestAstroHour || 'evening'}`;
+  }
+  return ` · ${bestDaySessionLabel(topAlternative.bestDayHour).toLowerCase()} around ${topAlternative.bestDayHour || 'time TBD'}`;
 }
 
 function longRangeSection(
@@ -955,11 +990,7 @@ export function formatEmail(input: FormatEmailInput): string {
 
   const altSpurHook = spurMatchesTopAlt ? `\n"${spurOfTheMoment!.hookLine}"` : '';
 
-  const altTimingNote = topAlternative?.isAstroWin
-    ? ` · astro from ${topAlternative.bestAstroHour || 'evening'}`
-    : topAlternative?.bestDayHour
-      ? ` · best at ${topAlternative.bestDayHour}`
-      : '';
+  const altTimingNote = alternativeTimingSummary(topAlternative);
 
   const alternativeSummary = topAlternative
     ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${altTimingNote}${altSpurHook}`
@@ -973,7 +1004,7 @@ export function formatEmail(input: FormatEmailInput): string {
   <div style="Margin-top:12px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
   <div style="Margin-top:10px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
-  ${alternativeSummary ? summaryNote('Best nearby alternative', alternativeSummary) : ''}
+  ${alternativeSummary ? summaryNote(alternativeSummaryTitle(topAlternative), alternativeSummary) : ''}
 `, 'hero-card', `background:${C.primaryContainer};border-color:#C5D6FF;`);
 
   /* Signal cards */
@@ -1215,9 +1246,11 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(c.name),
     esc(c.region),
     esc(String(c.bestScore)),
+    esc(String(c.dayScore)),
+    esc(String(c.astroScore)),
+    esc(c.deltaVsLeeds >= 0 ? `+${c.deltaVsLeeds}` : `${c.deltaVsLeeds}`),
     esc(c.darkSky ? 'Yes' : 'No'),
-    esc(c.tags.join(', ') || '—'),
-    esc(`${c.driveMins}m`),
+    esc(c.shown ? 'Shown' : c.discardedReason || 'Eligible pool candidate'),
   ]));
 
   const kitRows = (debugContext.kitAdvisory?.rules || []).map(rule => ([
@@ -1284,7 +1317,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ${spacer(8)}
         ${debugCard('Long-range pool', longRangeRows.length
           ? debugTable(
-              ['Rank', 'Location', 'Region', 'Score', 'Dark sky', 'Tags', 'Drive'],
+              ['Rank', 'Location', 'Region', 'Best', 'Day', 'Astro', 'Δ vs Leeds', 'Dark sky', 'Outcome'],
               longRangeRows,
             )
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No long-range candidates met the threshold this run.</div>`
@@ -1299,7 +1332,13 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['weekStandout', (() => {
               const ws = aiTrace.weekStandout;
               if (ws.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
+              if (ws.parseStatus === 'absent' && ws.finalValue) {
+                return `absent from raw response → fallback used: "${ws.finalValue}"`;
+              }
               if (ws.parseStatus === 'absent') return 'absent from raw response — model did not generate';
+              if (ws.decision === 'fallback-used') {
+                return `present in raw response → replaced with fallback: "${ws.finalValue || ''}"${ws.fallbackReason ? ` (${ws.fallbackReason})` : ''}`;
+              }
               if (!ws.used) return `present in raw response (empty string) — not used`;
               return `present in raw response → used: "${ws.rawValue}"`;
             })()],

@@ -89,7 +89,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('AM light');
     expect(html).toContain('PM light');
     expect(html).toContain('Peak astro');
-    expect(html).toContain('Best nearby alternative');
+    expect(html).toContain('Best nearby astro alternative');
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
     expect(html).toContain('Best time');
@@ -280,6 +280,95 @@ describe('formatEmail hero summary', () => {
 
     expect(html.indexOf('Alternatives')).toBeLessThan(html.indexOf('Daylight utility'));
     expect(html.indexOf('Daylight utility')).toBeLessThan(html.indexOf('Days ahead'));
+  });
+
+  it('groups nearby alternatives into astro and golden-hour sections', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Best chance around sunrise',
+        start: '07:00',
+        end: '07:00',
+        peak: 36,
+        hours: [{ hour: '07:00', score: 36, ch: 15, visK: 18, wind: '8', pp: 10, tpw: 16 }],
+        tops: ['landscape'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 58,
+        start: '06:00',
+        end: '08:00',
+        wind: 9,
+        pp: 12,
+        tmp: 7,
+      },
+      dailySummary: [{
+        dayLabel: 'Monday',
+        dateKey: '2026-03-16',
+        dayIdx: 0,
+        photoScore: 36,
+        headlineScore: 36,
+        photoEmoji: 'Marginal',
+        amScore: 36,
+        pmScore: 18,
+        astroScore: 22,
+        confidence: 'high',
+        confidenceStdDev: 6,
+        amConfidence: 'high',
+        pmConfidence: 'medium',
+        bestPhotoHour: '07:00',
+        bestTags: 'landscape',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 58,
+          start: '06:00',
+          end: '08:00',
+          wind: 9,
+          pp: 12,
+          tmp: 7,
+        },
+      }],
+      altLocations: [{
+        name: 'Brimham Rocks',
+        driveMins: 40,
+        bestScore: 81,
+        bestAstroHour: '02:00',
+        isAstroWin: true,
+        darkSky: false,
+      }, {
+        name: 'Bolton Abbey',
+        driveMins: 35,
+        bestScore: 64,
+        bestDayHour: '06:45',
+        isAstroWin: false,
+        darkSky: false,
+      }],
+      noAltsMsg: undefined,
+      sunriseStr: '06:18',
+      sunsetStr: '18:11',
+      moonPct: 8,
+      metarNote: '',
+      today: 'Monday 16 March',
+      todayBestScore: 36,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Leeds has a narrow sunrise option, but stronger alternatives exist if you can travel.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Best nearby astro alternative');
+    expect(html).toContain('Astro alternatives');
+    expect(html).toContain('Brimham Rocks');
+    expect(html).toContain('Astro - best 02:00 - 40 min drive');
+    expect(html).toContain('Golden-hour alternatives');
+    expect(html).toContain('Bolton Abbey');
+    expect(html).toContain('Morning golden hour - best 06:45 - 35 min drive');
   });
 
   it('does not leak internal fallback tags into days-ahead cards', () => {
@@ -974,6 +1063,9 @@ describe('formatDebugEmail', () => {
           parseStatus: 'absent',
           rawValue: null,
           used: false,
+          decision: 'fallback-used',
+          finalValue: 'Today is the most reliable forecast; Wednesday may score higher but with much lower certainty.',
+          fallbackReason: 'missing weekStandout value',
         },
         fallbackUsed: true,
         finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
@@ -1435,7 +1527,7 @@ describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
 
   it('appends hookLine to the nearby alt card when spur location matches top alt', () => {
     const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: matchingSpur });
-    expect(html).toContain('Best nearby alternative');
+    expect(html).toContain('Best nearby astro alternative');
     expect(html).toContain('Sutton Bank');
     expect(html).toContain('Darker skies await above the escarpment edge.');
   });
@@ -1445,9 +1537,9 @@ describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
     expect(html).not.toContain('Spur of the moment');
   });
 
-  it('hookLine appears inside the Best nearby alternative section, not after Days ahead', () => {
+  it('hookLine appears inside the Best nearby astro alternative section, not after Days ahead', () => {
     const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: matchingSpur });
-    const altPos = html.indexOf('Best nearby alternative');
+    const altPos = html.indexOf('Best nearby astro alternative');
     const daysAheadPos = html.indexOf('Days ahead');
     const hookPos = html.indexOf('Darker skies await above the escarpment edge.');
     expect(altPos).toBeGreaterThan(-1);
@@ -1470,7 +1562,7 @@ describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
     expect(html).toContain('Aysgarth Falls');
     expect(html).toContain('Overcast light is perfect for waterfalls without harsh shadows.');
     // Alt card should NOT show the different spur's hookLine
-    const altSection = html.slice(html.indexOf('Best nearby alternative'), html.indexOf('Days ahead'));
+    const altSection = html.slice(html.indexOf('Best nearby astro alternative'), html.indexOf('Days ahead'));
     expect(altSection).not.toContain('Overcast light is perfect for waterfalls');
   });
 
@@ -1587,14 +1679,59 @@ describe('formatDebugEmail — new debug sections', () => {
     const html = formatDebugEmail({
       ...baseDebugContext,
       longRangeCandidates: [
-        { name: 'Kielder Forest', region: 'northumberland', tags: ['dark-sky', 'forest'], bestScore: 91, dayScore: 40, astroScore: 91, driveMins: 120, darkSky: true, rank: 1 },
-        { name: 'Whernside', region: 'yorkshire-dales', tags: ['moorland'], bestScore: 79, dayScore: 79, astroScore: 30, driveMins: 55, darkSky: false, rank: 2 },
+        { name: 'Kielder Forest', region: 'northumberland', tags: ['dark-sky', 'forest'], bestScore: 91, dayScore: 40, astroScore: 91, driveMins: 120, darkSky: true, rank: 1, deltaVsLeeds: 31, shown: true },
+        { name: 'Whernside', region: 'yorkshire-dales', tags: ['moorland'], bestScore: 79, dayScore: 79, astroScore: 30, driveMins: 55, darkSky: false, rank: 2, deltaVsLeeds: 19, shown: false, discardedReason: 'eligible pool candidate behind Kielder Forest' },
       ],
     });
     expect(html).toContain('Long-range pool');
     expect(html).toContain('Kielder Forest');
     expect(html).toContain('Whernside');
     expect(html).toContain('northumberland');
+    expect(html).toContain('eligible pool candidate behind Kielder Forest');
+  });
+
+  it('shows discarded long-range candidates even when none met the display threshold', () => {
+    const html = formatDebugEmail({
+      ...baseDebugContext,
+      longRangeCandidates: [
+        {
+          name: 'North Pennines',
+          region: 'north-pennines',
+          tags: ['moorland'],
+          bestScore: 48,
+          dayScore: 32,
+          astroScore: 48,
+          driveMins: 95,
+          darkSky: true,
+          rank: 1,
+          deltaVsLeeds: 6,
+          shown: false,
+          discardedReason: 'score below threshold (48 < 50)',
+        },
+        {
+          name: 'Kielder Forest',
+          region: 'northumberland',
+          tags: ['forest', 'dark-sky'],
+          bestScore: 54,
+          dayScore: 28,
+          astroScore: 54,
+          driveMins: 120,
+          darkSky: true,
+          rank: 2,
+          deltaVsLeeds: 8,
+          shown: false,
+          discardedReason: 'does not beat Leeds by 10 points (54 vs 46)',
+        },
+      ],
+    });
+
+    expect(html).toContain('Long-range pool');
+    expect(html).toContain('North Pennines');
+    expect(html).toContain('48');
+    expect(html).toContain('score below threshold (48 &lt; 50)');
+    expect(html).toContain('Kielder Forest');
+    expect(html).toContain('does not beat Leeds by 10 points (54 vs 46)');
+    expect(html).not.toContain('No long-range candidates met the threshold this run.');
   });
 
   it('renders kit advisory trace section with matched and shown columns', () => {

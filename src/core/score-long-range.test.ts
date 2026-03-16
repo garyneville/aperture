@@ -80,6 +80,7 @@ describe('scoreLongRange', () => {
     expect(result.showCard).toBe(false);
     expect(result.longRangeTop).toBeNull();
     expect(result.cardLabel).toBeNull();
+    expect(result.longRangeDebugCandidates[0]?.discardedReason).toContain('score below threshold');
   });
 
   it('returns showCard=true when candidate meets score and delta thresholds', () => {
@@ -277,7 +278,40 @@ describe('scoreLongRange', () => {
     expect(result.showCard).toBe(false);
     expect(result.longRangeTop).toBeNull();
     expect(result.longRangeCandidates).toHaveLength(0);
+    expect(result.longRangeDebugCandidates).toHaveLength(0);
     expect(result.darkSkyAlert).toBeNull();
+  });
+
+  it('keeps full debug pool with delta and discard reasons even when no card is shown', () => {
+    const strongButNotEnoughDelta = makeWeatherData({
+      cloudcover: 15,
+      cloudcover_low: 5,
+      cloudcover_mid: 25,
+      cloudcover_high: 45,
+      visibility: 50000,
+      precipitation_probability: 0,
+      windspeed_10m: 3,
+      relativehumidity_2m: 50,
+      total_column_integrated_water_vapour: 8,
+    });
+    const weakWeather = makeWeatherData({
+      cloudcover: 95,
+      visibility: 1000,
+      precipitation_probability: 80,
+    });
+
+    const result = scoreLongRange({
+      longRangeWeatherData: [strongButNotEnoughDelta, weakWeather],
+      longRangeMeta: [{ ...baseMeta, name: 'Strong Site' }, { ...baseMeta, name: 'Weak Site' }],
+      leedsHeadlineScore: 75,
+      isWeekday: false,
+    });
+
+    expect(result.showCard).toBe(false);
+    expect(result.longRangeDebugCandidates).toHaveLength(2);
+    expect(result.longRangeDebugCandidates[0]?.name).toBe('Strong Site');
+    expect(result.longRangeDebugCandidates[0]?.discardedReason).toContain('does not beat Leeds');
+    expect(result.longRangeDebugCandidates[1]?.discardedReason).toContain('score below threshold');
   });
 });
 
