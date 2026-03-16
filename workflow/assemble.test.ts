@@ -307,6 +307,22 @@ describe('workflow assembly', () => {
     const debugConfigConnection = data.connections['Code: Debug Config']?.main?.[0]?.[0];
     expect(debugConfigConnection?.node).toBe('Merge: Prompt + Debug Config');
 
+    const debugConfigNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Debug Config');
+    expect(debugConfigNode).toBeTruthy();
+
+    const debugConfigFn = new Function('$', '$input', debugConfigNode.parameters.jsCode);
+    const debugConfig = debugConfigFn(
+      () => ({ first: () => ({ json: {} }), all: () => [] }),
+      { first: () => ({ json: {} }), all: () => [] },
+    );
+    expect(debugConfig).toEqual([{
+      json: {
+        debugMode: false,
+        debugModeSource: 'debug recipient missing',
+        debugEmailTo: '',
+      },
+    }]);
+
     const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Prepare Debug Email');
     expect(node).toBeTruthy();
 

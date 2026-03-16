@@ -13,6 +13,7 @@ import type { N8nRuntime } from './types.js';
 type BriefContext = {
   dontBother?: boolean;
   debugMode?: boolean;
+  debugModeSource?: string;
   debugEmailTo?: string;
   debugContext?: DebugContext;
   windows?: WindowLike[];
@@ -335,6 +336,9 @@ export function run({ $input }: N8nRuntime) {
   const debugContext = ctx.debugContext || emptyDebugContext();
   const debugMode = ctx.debugMode === true;
   const debugEmailTo = typeof ctx.debugEmailTo === 'string' ? ctx.debugEmailTo : '';
+  const debugModeSource = typeof ctx.debugModeSource === 'string' && ctx.debugModeSource.trim().length > 0
+    ? ctx.debugModeSource
+    : (debugMode ? 'workflow toggle' : 'workflow default');
 
   debugContext.metadata = {
     ...(debugContext.metadata || {}),
@@ -345,7 +349,7 @@ export function run({ $input }: N8nRuntime) {
     timezone: debugContext.metadata?.timezone || 'Europe/London',
     workflowVersion: debugContext.metadata?.workflowVersion || null,
     debugModeEnabled: debugMode,
-    debugModeSource: debugMode ? 'workflow toggle' : 'workflow default',
+    debugModeSource,
     debugRecipient: debugMode ? debugEmailTo : null,
   };
 
