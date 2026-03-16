@@ -133,7 +133,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Respond with ONLY a raw JSON object');
     expect(result.prompt).toContain('"editorial":"<2 sentences max 55 words>"');
     expect(result.prompt).toContain('"composition":["<shot idea 1>","<shot idea 2>"]');
-    expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words>"');
+    expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>"');
     expect(result.prompt).toContain('Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.');
     expect(result.prompt).toContain('Sentence 2: use one editorial insight line below with light paraphrase.');
     expect(result.prompt).toContain('Do not open by repeating the visible window name, time, score, or visibility line.');
@@ -476,6 +476,11 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('"spurOfTheMoment"');
     expect(result.prompt).toContain('SPUR OF THE MOMENT');
     expect(result.prompt).toContain('Pen-y-ghent');
+    expect(result.prompt).toContain('WEEK STANDOUT (1 sentence, max 30 words):');
+    expect(result.prompt).toContain('If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day');
+    expect(result.prompt).toContain('Today is the most reliable forecast; Wednesday may score higher but with much lower certainty');
+    expect(result.prompt).toContain('Use only the supplied 5-day outlook labels, scores, and spreads. Do not invent a different higher-scoring day.');
+    expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>"');
   });
 
   it('treats a missing local window as dontBother and explains the weighted no-window state', () => {
@@ -604,6 +609,7 @@ describe('buildPrompt', () => {
     // The prompt should instruct the AI to distinguish score wins from certainty-only wins
     expect(result.prompt).toContain('If one day scores clearly higher than others, call it the "standout" day.');
     expect(result.prompt).toContain('If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day');
+    expect(result.prompt).toContain('Use only the supplied 5-day outlook labels, scores, and spreads. Do not invent a different higher-scoring day.');
   });
 
   const makeAstroWindow = (dateStr: string) => ({

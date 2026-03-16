@@ -124,6 +124,17 @@ function alternativePromptSection(title: string, alts: AltLocationResult[]): str
   ).join('\n')}`;
 }
 
+function weekStandoutSchemaHint(): string {
+  return '<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>';
+}
+
+function weekStandoutInstructionBlock(): string {
+  return `WEEK STANDOUT (1 sentence, max 30 words):
+If one day scores clearly higher than others, call it the "standout" day.
+If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day and briefly name the higher-scoring day with its uncertainty (e.g. "Today is the most reliable forecast; Wednesday may score higher but with much lower certainty").
+Use only the supplied 5-day outlook labels, scores, and spreads. Do not invent a different higher-scoring day.`;
+}
+
 function isAstroWindow(window: Window | undefined): boolean {
   if (!window) return false;
   return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
@@ -359,11 +370,13 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if a day wins only on certainty while another scores higher, call it most reliable and name the higher-scoring day>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
+{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
 ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}${noWindowNote}
 5-day outlook: ${weekLine}
+
+${weekStandoutInstructionBlock()}
 
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}`;
@@ -415,7 +428,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"<1 sentence max 30 words>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
+{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 EDITORIAL (exactly 2 sentences, max 55 words total):
 Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.
@@ -427,8 +440,7 @@ When an insight line mentions a nearby alternative, use a prose recommendation o
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.
 ${shotConstraints ? `\n${shotConstraints}\n` : ''}
-WEEK STANDOUT (1 sentence, max 30 words):
-If one day scores clearly higher than others, call it the "standout" day. If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day and briefly name the higher-scoring day with its uncertainty (e.g. "Today is the most reliable forecast; Wednesday may score higher but with much lower certainty").
+${weekStandoutInstructionBlock()}
 
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}
