@@ -1,5 +1,3 @@
-import { Body, Equator, Horizon, Observer } from 'astronomy-engine';
-
 export function clamp(n: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -12,20 +10,6 @@ export function moonFrac(ts: number): number {
   const cycle = 29.53058867 * 86400000;
   const phase = ((ts - 947182440000) % cycle + cycle) % cycle / cycle;
   return (1 - Math.cos(2 * Math.PI * phase)) / 2;
-}
-
-export function moonAltitude(ts: number, lat: number, lon: number): number {
-  const observer = new Observer(lat, lon, 0);
-  const equator = Equator(Body.Moon, new Date(ts), observer, true, false);
-  return Horizon(new Date(ts), observer, equator.ra, equator.dec, 'normal').altitude;
-}
-
-export function isMoonUpAt(
-  ts: number,
-  lat: number,
-  lon: number,
-): boolean {
-  return moonAltitude(ts, lat, lon) > 0;
 }
 
 export function solarElevation(ts: number, lat: number, lon: number): number {

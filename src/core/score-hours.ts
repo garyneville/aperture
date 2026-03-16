@@ -1,4 +1,5 @@
-import { clamp, avg, moonFrac, solarElevation, aodClarity, isMoonUpAt } from './utils.js';
+import { findDarkSkyStart, getMoonMetrics } from './astro.js';
+import { clamp, avg, solarElevation, aodClarity } from './utils.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
 
@@ -298,7 +299,16 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     }
 
     const hours: ScoredHour[] = [];
-    let darkSkyStartsAt: string | null = null;
+    const nightTimestamps = (byDate[dateKey] || [])
+      .map(({ ts }) => ts)
+      .filter(ts => {
+        const t = new Date(ts);
+        return t < blueAmS || t > bluePmE;
+      });
+    const darkSkyStartTs = findDarkSkyStart(nightTimestamps, LAT, LON);
+    const darkSkyStartsAt = darkSkyStartTs
+      ? new Date(darkSkyStartTs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+      : null;
     (byDate[dateKey] || []).forEach(({ ts, i }) => {
       const t = new Date(ts);
 
@@ -344,7 +354,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       const azimuthRisk = azimuthScan?.occlusionRisk ?? null;
       const azimuthLowRisk = azimuthScan?.lowRisk ?? null;
 
-      const moon  = moonFrac(+t);
+      const moonMetrics = getMoonMetrics(+t, LAT, LON);
+      const moon = moonMetrics.illumination;
       const shQ   = isGoldAm ? shSunriseQ : isGoldPm ? shSunsetQ : null;
       const shBoost = shQ !== null ? Math.round(shQ * 25) : 0;
 
@@ -409,10 +420,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
       if (isNight) {
-        const moonUp = isMoonUpAt(+t, LAT, LON);
-        if (!moonUp) {
+        if (!moonMetrics.isUp) {
           astro += 30;
-          darkSkyStartsAt ||= t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
         } else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
         if (ct < 10)    astro += 30; else if (ct < 30)    astro += 10; else if (ct > 60)    astro -= 20;
         if (visK > 25)  astro += 15;

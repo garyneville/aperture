@@ -1,4 +1,5 @@
-import { clamp, moonFrac, isMoonUpAt } from './utils.js';
+import { getMoonMetrics } from './astro.js';
+import { clamp } from './utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from './long-range-locations.js';
 
@@ -169,10 +170,10 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
     }
 
     if (isNight) {
-      const moon = moonFrac(+t);
+      const moonMetrics = getMoonMetrics(+t, meta.lat, meta.lon);
+      const moon = moonMetrics.illumination;
       let astro = 0;
-      const moonUp = isMoonUpAt(+t, meta.lat, meta.lon);
-      if (!moonUp) astro += 30;
+      if (!moonMetrics.isUp) astro += 30;
       else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
       if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
       if (visK > 20) astro += 15;

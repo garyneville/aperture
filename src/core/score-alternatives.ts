@@ -1,4 +1,5 @@
-import { clamp, moonFrac, isMoonUpAt } from './utils.js';
+import { getMoonMetrics } from './astro.js';
+import { clamp } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
 
 /* ------------------------------------------------------------------ */
@@ -242,11 +243,11 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
         if (isGoldPm || (t > goldPmE && t <= bluePmE)) bestPm = Math.max(bestPm, score);
       }
 
-      if (isNight) {
-        const moon = moonFrac(+t);
+    if (isNight) {
+        const moonMetrics = getMoonMetrics(+t, loc.lat, loc.lon);
+        const moon = moonMetrics.illumination;
         let astro = 0;
-        const moonUp = isMoonUpAt(+t, loc.lat, loc.lon);
-        if (!moonUp) astro += 30;
+        if (!moonMetrics.isUp) astro += 30;
         else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
         if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
         if (visK > 20) astro += 15;
