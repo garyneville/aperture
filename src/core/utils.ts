@@ -38,6 +38,10 @@ export function aodClarity(aod: number): number {
   return vibrancy - illuminationPenalty;
 }
 
+export function astroAodPenalty(aod: number): number {
+  return Math.round(Math.min(20, Math.max(0, ((aod - 0.1) / 0.3) * 20)));
+}
+
 export function pad(s: string | number, len: number): string {
   return String(s).padEnd(len).substring(0, len);
 }
