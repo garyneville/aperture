@@ -16,8 +16,25 @@ export interface MoonMetrics {
   isUp: boolean;
 }
 
+/**
+ * Returns a human-readable label describing the moon's current state.
+ * Used in debug output to make score adjustments self-explanatory.
+ */
+export function moonState(metrics: MoonMetrics): string {
+  if (!metrics.isUp) return 'Down';
+  if (metrics.illumination < 0.2) return 'Thin crescent';
+  if (metrics.illumination < 0.5) return 'Faint';
+  if (metrics.altitudeDeg <= 30) return 'Bright & low';
+  return 'Bright & high';
+}
+
 export function moonScoreAdjustment(metrics: MoonMetrics): number {
-  if (!metrics.isUp) return 30;
+  if (!metrics.isUp) {
+    // Graduated dark-sky bonus: full +30 when firmly set (≥30° below horizon),
+    // smaller bonus when the moon has just dipped below (about to rise).
+    const depthFactor = Math.min(1, Math.abs(metrics.altitudeDeg) / 30);
+    return Math.round(10 + depthFactor * 20);
+  }
   if (metrics.illumination < 0.2) return 30;
 
   const altitudeFactor = Math.max(0, Math.min(90, metrics.altitudeDeg)) / 90;

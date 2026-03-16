@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findDarkSkyStart, getMoonMetrics, moonScoreAdjustment } from './astro.js';
+import { findDarkSkyStart, getMoonMetrics, moonScoreAdjustment, moonState } from './astro.js';
 
 describe('shared astro metrics helper', () => {
   it('derives moon-up state, altitude, azimuth, and illumination together', () => {
@@ -46,12 +46,61 @@ describe('shared astro metrics helper', () => {
     expect(highMoon).toBe(-5);
   });
 
-  it('gives a full dark-sky bonus when the moon is below the horizon', () => {
-    expect(moonScoreAdjustment({
+  it('gives a graduated dark-sky bonus based on how far below the horizon the moon is', () => {
+    const justSet = moonScoreAdjustment({
       illumination: 0.9,
-      altitudeDeg: -4,
+      altitudeDeg: -1,
       azimuthDeg: 180,
       isUp: false,
+    });
+    const halfwayDown = moonScoreAdjustment({
+      illumination: 0.9,
+      altitudeDeg: -15,
+      azimuthDeg: 180,
+      isUp: false,
+    });
+    const firmlySet = moonScoreAdjustment({
+      illumination: 0.9,
+      altitudeDeg: -45,
+      azimuthDeg: 180,
+      isUp: false,
+    });
+
+    expect(justSet).toBeLessThan(firmlySet);
+    expect(halfwayDown).toBeLessThan(firmlySet);
+    expect(justSet).toBe(11);   // 10 + (1/30)*20 ≈ 10.67 → 11
+    expect(halfwayDown).toBe(20); // 10 + (15/30)*20 = 20
+    expect(firmlySet).toBe(30);   // capped at 30
+  });
+
+  it('gives full +30 bonus for a thin crescent moon that is up', () => {
+    expect(moonScoreAdjustment({
+      illumination: 0.1,
+      altitudeDeg: 40,
+      azimuthDeg: 180,
+      isUp: true,
     })).toBe(30);
+  });
+
+  describe('moonState', () => {
+    it('returns "Down" when moon is below horizon', () => {
+      expect(moonState({ illumination: 0.9, altitudeDeg: -20, azimuthDeg: 180, isUp: false })).toBe('Down');
+    });
+
+    it('returns "Thin crescent" when illumination < 20% and moon is up', () => {
+      expect(moonState({ illumination: 0.1, altitudeDeg: 20, azimuthDeg: 180, isUp: true })).toBe('Thin crescent');
+    });
+
+    it('returns "Faint" when illumination is 20–50% and moon is up', () => {
+      expect(moonState({ illumination: 0.35, altitudeDeg: 20, azimuthDeg: 180, isUp: true })).toBe('Faint');
+    });
+
+    it('returns "Bright & low" when illumination ≥ 50% and altitude ≤ 30°', () => {
+      expect(moonState({ illumination: 0.7, altitudeDeg: 15, azimuthDeg: 180, isUp: true })).toBe('Bright & low');
+    });
+
+    it('returns "Bright & high" when illumination ≥ 50% and altitude > 30°', () => {
+      expect(moonState({ illumination: 0.7, altitudeDeg: 60, azimuthDeg: 180, isUp: true })).toBe('Bright & high');
+    });
   });
 });

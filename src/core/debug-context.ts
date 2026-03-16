@@ -29,6 +29,7 @@ export interface DebugHourlyScore {
   visK: number;
   aod: number;
   moonAdjustment: number;
+  moonState: string;
   aodPenalty: number;
   astroScore: number;
   drama: number;

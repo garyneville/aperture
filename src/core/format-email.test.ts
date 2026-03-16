@@ -807,6 +807,7 @@ describe('formatDebugEmail', () => {
         visK: 20.5,
         aod: 0.11,
         moonAdjustment: 30,
+        moonState: 'Down',
         aodPenalty: 1,
         astroScore: 72,
         drama: 0,

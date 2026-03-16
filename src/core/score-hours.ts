@@ -1,4 +1,4 @@
-import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
+import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment, moonState } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
@@ -632,6 +632,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         visK: hour.visK,
         aod: hour.aod,
         moonAdjustment: moonScoreAdjustment(moonMetrics),
+        moonState: moonState(moonMetrics),
         aodPenalty: astroAodPenalty(hour.aod),
         astroScore: hour.astro,
         drama: hour.drama,

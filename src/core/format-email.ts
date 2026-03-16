@@ -1093,7 +1093,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(`${hour.cloud}%`),
     esc(`${hour.visK}km`),
     esc(String(hour.aod)),
-    esc(`${hour.moon.altitudeDeg}deg / ${hour.moon.illuminationPct}%`),
+    esc(`${hour.moon.altitudeDeg}° / ${hour.moon.illuminationPct}%`),
+    esc(hour.moonState),
     esc(String(hour.moonAdjustment)),
     esc(String(hour.aodPenalty)),
     esc(`${hour.astroScore}`),
@@ -1160,7 +1161,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ))}
         ${spacer(8)}
         ${debugCard('Hourly astro scoring', debugTable(
-          ['Hour', 'Final', 'Cloud', 'Vis', 'AOD', 'Moon', 'Moon adj', 'AOD pen', 'Astro'],
+          ['Hour', 'Final', 'Cloud', 'Vis', 'AOD', 'Moon', 'Moon state', 'Moon score', 'AOD pen', 'Astro'],
           hourlyRows,
         ))}
         ${spacer(8)}
