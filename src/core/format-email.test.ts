@@ -727,6 +727,47 @@ describe('formatEmail hero summary', () => {
 
     expect(html).toContain('Evening light window scores 62/100 but patchy cloud may thin by dusk');
   });
+
+  it('surfaces a dark-phase note when a window improves after moonset', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Overnight astro window',
+        start: '22:00',
+        end: '00:00',
+        peak: 84,
+        darkPhaseStart: '23:00',
+        postMoonsetScore: 84,
+        hours: [{ hour: '00:00', score: 84, ch: 0, visK: 24, wind: '6', pp: 0 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      dailySummary: [{
+        dayLabel: 'Sunday', dateKey: '2026-03-15', dayIdx: 0, photoScore: 40, headlineScore: 84, photoEmoji: 'Good',
+        amScore: 0, pmScore: 0, astroScore: 84, confidence: 'medium', confidenceStdDev: 12,
+        amConfidence: 'medium', pmConfidence: 'medium', bestPhotoHour: '22:00', bestTags: 'astrophotography',
+        carWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:20',
+      sunsetStr: '18:10',
+      moonPct: 60,
+      metarNote: '',
+      today: 'Sunday 15 March',
+      todayBestScore: 84,
+      shSunsetQ: 55,
+      shSunriseQ: null,
+      shSunsetText: 'Moderate texture',
+      sunDir: 260,
+      crepPeak: 0,
+      aiText: 'The window improves after moonset.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Dark from 23:00 - peak after moonset 84/100.');
+  });
 });
 
 /* ------------------------------------------------------------------ */

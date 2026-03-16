@@ -20,6 +20,8 @@ export interface Window {
   start: string;
   end: string;
   peak: number;
+  darkPhaseStart?: string | null;
+  postMoonsetScore?: number | null;
   fallback?: boolean;
   hours?: WindowHour[];
   tops?: string[];
@@ -454,6 +456,9 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
   const topWindow = windows[0];
   if (w.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
   if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${h.crepuscular}/100 (light shafts through broken cloud).`);
+  if (w.darkPhaseStart && w.postMoonsetScore !== null && w.postMoonsetScore !== undefined) {
+    notes.push(`Dark from ${w.darkPhaseStart} - peak after moonset ${w.postMoonsetScore}/100.`);
+  }
   if (index > 0 && isAstroWindow(topWindow) && isAstroWindow(w) && topWindow?.label !== w.label) {
     notes.push('Later, darker backup if you miss the first astro slot.');
   }

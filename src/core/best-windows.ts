@@ -47,6 +47,8 @@ export interface Window {
   hours: ScoredHour[];
   fallback: boolean;
   label: string;
+  darkPhaseStart?: string | null;
+  postMoonsetScore?: number | null;
 }
 
 export interface DailySummary {
@@ -273,6 +275,22 @@ function labelWindow(w: Omit<Window, 'label'>, sunrise?: string, sunset?: string
   return 'Good light window';
 }
 
+function annotateDarkPhase(window: Omit<Window, 'label'>, darkSkyStartsAt?: string | null): Omit<Window, 'label'> {
+  if (!darkSkyStartsAt || !window.hours.length) return window;
+
+  const splitIndex = window.hours.findIndex(hour => hour.hour === darkSkyStartsAt);
+  if (splitIndex <= 0 || splitIndex >= window.hours.length) return window;
+
+  const darkPhaseHours = window.hours.slice(splitIndex);
+  const postMoonsetScore = Math.max(...darkPhaseHours.map(hour => hour.astro || 0));
+
+  return {
+    ...window,
+    darkPhaseStart: darkSkyStartsAt,
+    postMoonsetScore,
+  };
+}
+
 export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
   const { todayHours, dailySummary, metarNote } = input;
 
@@ -284,11 +302,14 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
 
   const sunrise = dailySummary[0]?.sunrise;
   const sunset = dailySummary[0]?.sunset;
+  const darkSkyStartsAt = dailySummary[0]?.darkSkyStartsAt;
 
-  const labelledWindows: Window[] = windows.map(w => ({
-    ...w,
-    label: labelWindow(w, sunrise, sunset),
-  }));
+  const labelledWindows: Window[] = windows
+    .map(w => annotateDarkPhase(w, darkSkyStartsAt))
+    .map(w => ({
+      ...w,
+      label: labelWindow(w, sunrise, sunset),
+    }));
   const alignedDailySummary = alignTodaySummaryWithWindow(dailySummary, labelledWindows);
 
   const todayHeadline = alignedDailySummary[0]?.headlineScore ?? alignedDailySummary[0]?.photoScore ?? 0;
