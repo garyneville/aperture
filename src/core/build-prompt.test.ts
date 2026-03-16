@@ -324,4 +324,129 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('If one day scores clearly higher than others, call it the "standout" day.');
     expect(result.prompt).toContain('If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day');
   });
+
+  const makeAstroWindow = (dateStr: string) => ({
+    label: 'Evening astro window',
+    start: '21:00',
+    st: `${dateStr}T21:00:00.000Z`,
+    end: '23:00',
+    et: `${dateStr}T23:00:00.000Z`,
+    peak: 65,
+    tops: ['astrophotography'],
+    hours: [{
+      ts: `${dateStr}T21:00:00.000Z`, t: `${dateStr}T21:00:00.000Z`,
+      hour: '21:00', score: 65, drama: 0, clarity: 0, mist: 0, astro: 65, crepuscular: 0,
+      shQ: null, cl: 0, cm: 0, ch: 0, ct: 0, visK: 20, aod: 0, tpw: 20,
+      wind: 8, gusts: 10, tmp: 8, hum: 50, dew: 2, pp: 0, pr: 0, vpd: 0,
+      azimuthRisk: null, isGolden: false, isGoldAm: false, isGoldPm: false,
+      isBlue: false, isBlueAm: false, isBluePm: false, isNight: true, moon: 10, uv: 0,
+      tags: ['astrophotography'],
+    }],
+    fallback: false,
+  });
+
+  const makeBaseDailySummary = (dateKey: string) => ({
+    dateKey, dayLabel: 'Today', dayIdx: 0, hours: [],
+    photoScore: 65, headlineScore: 65, photoEmoji: '👍', photoRating: 'Good',
+    bestPhotoHour: '21:00', bestTags: 'astrophotography',
+    carWash: { score: 60, rating: '✅', label: 'Good', start: '15:00', end: '17:00', wind: 10, pp: 5, tmp: 10 },
+    sunrise: `${dateKey}T06:00:00.000Z`, sunset: `${dateKey}T20:00:00.000Z`,
+    shSunsetQuality: null, shSunriseQuality: null, shSunsetText: null,
+    sunDirection: null, crepRayPeak: 0, confidence: 'high' as const, confidenceStdDev: 8,
+    durationBonus: 0, amConfidence: 'medium' as const, amConfidenceStdDev: 8,
+    pmConfidence: 'medium' as const, pmConfidenceStdDev: 8, goldAmMins: 0, goldPmMins: 0,
+    amScore: 30, pmScore: 45, astroScore: 65,
+    astroConfidence: 'unknown' as const, astroConfidenceStdDev: null,
+    darkSkyStartsAt: null, bestAmHour: '—', bestPmHour: '—',
+    sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
+  });
+
+  it('includes home Bortle class in sky quality constraints for an astro window', () => {
+    // March: out of Milky Way season — home Bortle constraint should always appear for astro
+    const result = buildPrompt({
+      windows: [makeAstroWindow('2026-03-16')],
+      dontBother: false,
+      todayBestScore: 65,
+      todayCarWash: { score: 60, rating: '✅', label: 'Good', start: '15:00', end: '17:00', wind: 10, pp: 5, tmp: 10 },
+      dailySummary: [makeBaseDailySummary('2026-03-16')],
+      altLocations: [],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-03-16T06:00:00.000Z',
+      sunset: '2026-03-16T20:00:00.000Z',
+      moonPct: 15,
+      now: new Date('2026-03-16T12:00:00Z'),
+    });
+
+    expect(result.prompt).toContain('Sky quality constraints for shot ideas:');
+    expect(result.prompt).toContain('Home location (Leeds) is Bortle 7');
+    expect(result.prompt).toContain('Do NOT suggest Milky Way core shots for the home session');
+    expect(result.prompt).toContain('star trails with a silhouetted landmark foreground');
+    expect(result.prompt).toContain('Composition bullets must stay focused on the named local window');
+  });
+
+  it('blocks Milky Way suggestions outside of season (Oct–Mar) for any location', () => {
+    // January: definitely out of Milky Way season
+    const result = buildPrompt({
+      windows: [makeAstroWindow('2026-01-10')],
+      dontBother: false,
+      todayBestScore: 65,
+      todayCarWash: { score: 60, rating: '✅', label: 'Good', start: '15:00', end: '17:00', wind: 10, pp: 5, tmp: 10 },
+      dailySummary: [makeBaseDailySummary('2026-01-10')],
+      altLocations: [{
+        name: 'Sutton Bank',
+        driveMins: 75,
+        bestScore: 80,
+        bestDayHour: '07:00',
+        bestAstroHour: '22:00',
+        isAstroWin: true,
+        darkSky: true,
+        types: ['astrophotography'],
+      }],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-01-10T08:00:00.000Z',
+      sunset: '2026-01-10T16:30:00.000Z',
+      moonPct: 20,
+      now: new Date('2026-01-10T12:00:00Z'),
+    });
+
+    expect(result.prompt).toContain('Milky Way core is NOT seasonally visible from UK in Jan');
+    expect(result.prompt).toContain('Do not suggest Milky Way photography at any location this month');
+    expect(result.prompt).toContain('star trails');
+  });
+
+  it('permits Milky Way suggestion for dark-sky alt in season (Apr–Sep)', () => {
+    // June: in Milky Way season, dark-sky alt available
+    const result = buildPrompt({
+      windows: [makeAstroWindow('2026-06-15')],
+      dontBother: false,
+      todayBestScore: 70,
+      todayCarWash: { score: 65, rating: '✅', label: 'Good', start: '14:00', end: '16:00', wind: 8, pp: 5, tmp: 15 },
+      dailySummary: [makeBaseDailySummary('2026-06-15')],
+      altLocations: [{
+        name: 'Galloway Forest',
+        driveMins: 180,
+        bestScore: 85,
+        bestDayHour: '06:00',
+        bestAstroHour: '23:00',
+        isAstroWin: true,
+        darkSky: true,
+        types: ['astrophotography'],
+      }],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-06-15T04:30:00.000Z',
+      sunset: '2026-06-15T21:30:00.000Z',
+      moonPct: 10,
+      now: new Date('2026-06-15T12:00:00Z'),
+    });
+
+    // Should NOT block Milky Way outright — it's in season
+    expect(result.prompt).not.toContain('Milky Way core is NOT seasonally visible');
+    expect(result.prompt).toContain('Galloway Forest');
+    expect(result.prompt).toContain('Milky Way work may be viable');
+    expect(result.prompt).toContain('Home location (Leeds) is Bortle 7');
+    expect(result.prompt).toContain('keep the composition bullets about the local session');
+  });
 });

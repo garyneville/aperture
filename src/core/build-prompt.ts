@@ -3,6 +3,7 @@ import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
 import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import { HOME_SITE_DARKNESS } from './site-darkness.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -168,6 +169,78 @@ function moonTimingNote(todayDay: DailySummary | undefined): string {
   return `\nDark-sky conditions improve from ${todayDay.darkSkyStartsAt} once the moon is down.`;
 }
 
+/** Milky Way galactic core is usefully above the horizon from UK latitudes roughly April–September. */
+function isMilkyWaySeason(month: number): boolean {
+  return month >= 4 && month <= 9;
+}
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * Generates sky-quality constraints for the COMPOSITION prompt section.
+ * Conditions local shot ideas on Bortle class, season, moon phase, and whether
+ * a dark-sky alternative exists, without letting the composition drift away
+ * from the named local window.
+ */
+function skyQualityConstraints(
+  month: number,
+  moonPct: number,
+  topAlt: AltLocationResult | undefined,
+  isAstroWin: boolean,
+): string {
+  if (!isAstroWin) return '';
+
+  const milkyWaySeason = isMilkyWaySeason(month);
+  const homeBortle = HOME_SITE_DARKNESS.bortle;
+  const homeLocation = getPhotoWeatherLocation();
+  const parts: string[] = [
+    'Composition bullets must stay focused on the named local window and local conditions. Do not turn them into travel or remote-location shot plans.',
+  ];
+
+  parts.push(
+    `Home location (${homeLocation}) is Bortle ${homeBortle} — significant light pollution. ` +
+    `Do NOT suggest Milky Way core shots for the home session; bias toward: star trails with a ` +
+    `silhouetted landmark foreground, wide-field constellation framing, moonlit architecture, or light-painting.`,
+  );
+
+  if (!milkyWaySeason) {
+    parts.push(
+      `Milky Way core is NOT seasonally visible from UK in ${MONTH_NAMES[month - 1]} ` +
+      `(core only viable roughly April–September from UK latitudes). ` +
+      `Do not suggest Milky Way photography at any location this month. ` +
+      `Instead consider: star trails, aurora potential (if Kp elevated), constellation framing, ` +
+      `or moonlit architecture.`,
+    );
+  }
+
+  if (moonPct > 60) {
+    parts.push(
+      `Moon is ${moonPct}% illuminated — prioritise moonlit architecture or illuminated landscape silhouettes ` +
+      `over faint-star or deep-sky work.`,
+    );
+  } else if (moonPct < 20 && milkyWaySeason) {
+    parts.push(
+      `Moon is ${moonPct}% — dark enough for wide-field star work or Milky Way if at a dark-sky site.`,
+    );
+  }
+
+  if (topAlt?.darkSky) {
+    if (milkyWaySeason) {
+      parts.push(
+        `${topAlt.name} is a genuine dark-sky alternative where Milky Way work may be viable, ` +
+        `but keep the composition bullets about the local session rather than the remote alternative.`,
+      );
+    } else {
+      parts.push(
+        `${topAlt.name} is a dark-sky alternative but Milky Way core is out of season — ` +
+        `suggest wide-field star trails or aurora if Kp permits rather than Milky Way, and keep composition bullets local.`,
+      );
+    }
+  }
+
+  return `Sky quality constraints for shot ideas:\n${parts.map(p => `- ${p}`).join('\n')}`;
+}
+
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
@@ -292,6 +365,13 @@ Locations: ${SPUR_LOCATION_NAMES}`;
         : '',
     ].filter(Boolean).join('\n');
 
+    const shotConstraints = skyQualityConstraints(
+      now.getMonth() + 1,
+      moonPct,
+      topAlt,
+      isAstroWindow(bestWin),
+    );
+
     const windowsText = windows.map((w, i) => {
       const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
       return `${i + 1}. ${w.label} (${windowRange(w)}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
@@ -312,7 +392,7 @@ When an insight line mentions a nearby alternative, use a prose recommendation o
 
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.
-
+${shotConstraints ? `\n${shotConstraints}\n` : ''}
 WEEK STANDOUT (1 sentence, max 30 words):
 If one day scores clearly higher than others, call it the "standout" day. If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day and briefly name the higher-scoring day with its uncertainty (e.g. "Today is the most reliable forecast; Wednesday may score higher but with much lower certainty").
 
