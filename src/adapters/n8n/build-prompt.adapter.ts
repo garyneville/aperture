@@ -18,6 +18,11 @@ export function run({ $input }: N8nRuntime) {
     moonPct: input.moonPct,
     kpForecast: input.kpForecast,
     debugContext: input.debugContext,
+    longRangeTop: input.longRangeTop,
+    longRangeCardLabel: input.longRangeCardLabel,
+    darkSkyAlert: input.darkSkyAlert,
+    longRangeCandidates: input.longRangeCandidates,
+    longRangeDebugCandidates: input.longRangeDebugCandidates,
   });
 
   return [{ json: result }];

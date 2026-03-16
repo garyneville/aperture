@@ -4,6 +4,7 @@ import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
 import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
 import { HOME_SITE_DARKNESS } from './site-darkness.js';
+import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from './score-long-range.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -42,6 +43,11 @@ export interface BuildPromptInput {
   kpForecast?: KpEntry[];
   now?: Date;
   debugContext?: DebugContext;
+  longRangeTop?: LongRangeCandidate | null;
+  longRangeCardLabel?: string | null;
+  darkSkyAlert?: DarkSkyAlert | null;
+  longRangeCandidates?: LongRangeCandidate[];
+  longRangeDebugCandidates?: LongRangeDebugCandidate[];
 }
 
 export interface AltLocationResult {
@@ -76,6 +82,11 @@ export interface BuildPromptOutput {
   crepPeak: number;
   peakKpTonight: number | null;
   debugContext: DebugContext;
+  longRangeTop?: LongRangeCandidate | null;
+  longRangeCardLabel?: string | null;
+  darkSkyAlert?: DarkSkyAlert | null;
+  longRangeCandidates?: LongRangeCandidate[];
+  longRangeDebugCandidates?: LongRangeDebugCandidate[];
 }
 
 function confidenceLabel(confidence: string): string {
@@ -263,6 +274,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, noAltsMsg, metarNote,
     sunrise, sunset, moonPct, kpForecast,
+    longRangeTop, longRangeCardLabel, darkSkyAlert,
+    longRangeCandidates, longRangeDebugCandidates,
   } = input;
 
   const now = input.now || new Date();
@@ -451,5 +464,10 @@ ${windowsText}${altText}
     crepPeak: todayDay?.crepRayPeak || 0,
     peakKpTonight,
     debugContext,
+    longRangeTop,
+    longRangeCardLabel,
+    darkSkyAlert,
+    longRangeCandidates,
+    longRangeDebugCandidates,
   };
 }

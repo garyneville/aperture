@@ -555,4 +555,96 @@ describe('run — weekStandout validation', () => {
     expect(result.debugEmailHtml).toContain('replaced with fallback');
     expect(result.debugEmailHtml).toContain('weekStandout misidentified the reliable day');
   });
+
+  it('drops a spur suggestion when the location was already scored in the nearby alternatives pool', () => {
+    const content = JSON.stringify({
+      editorial: 'Leeds is not worth it today due to poor conditions. Consider Brimham Rocks instead.',
+      composition: [],
+      weekStandout: 'Wednesday is most reliable, with Thursday scoring higher.',
+      spurOfTheMoment: {
+        locationName: 'Ribblehead Viaduct',
+        hookLine: 'Misty dawn at the viaduct',
+        confidence: 0.8,
+      },
+    });
+
+    const result = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content } }],
+            dontBother: true,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [],
+            dailySummary: [
+              makeDay('Today', 0, 42, 'high', 5),
+              makeDay('Tomorrow', 1, 62, 'high', 11),
+              makeDay('Wednesday', 2, 67, 'low', 31),
+            ],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 12,
+              pp: 22,
+              tmp: 5,
+            },
+            altLocations: [{
+              name: 'Brimham Rocks',
+              bestScore: 81,
+              bestAstroHour: '02:00',
+              darkSky: false,
+              driveMins: 40,
+            }],
+            debugContext: {
+              hourlyScoring: [],
+              windows: [],
+              nearbyAlternatives: [{
+                name: 'Ribblehead Viaduct',
+                rank: 5,
+                shown: false,
+                bestScore: 26,
+                dayScore: 8,
+                astroScore: 26,
+                driveMins: 55,
+                bortle: 4,
+                darknessScore: 63,
+                darknessDelta: 38,
+                weatherDelta: -16,
+                deltaVsWindowPeak: null,
+                discardedReason: 'astro score below threshold (26 < 60)',
+              }],
+            },
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 42,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as {
+      emailHtml: string;
+      debugEmailHtml: string;
+    };
+
+    expect(result.emailHtml).not.toContain('Misty dawn at the viaduct');
+    expect(result.debugEmailHtml).toContain('Ribblehead Viaduct (0.8) → dropped: already scored in nearby alternatives');
+    expect(result.debugEmailHtml).not.toContain('Resolved spur:</span> Ribblehead Viaduct');
+  });
 });

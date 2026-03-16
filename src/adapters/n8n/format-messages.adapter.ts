@@ -418,7 +418,7 @@ function resolveSpurDropReason(spurRaw: SpurRaw | null, nearbyAltNames: string[]
   if (!spurRaw) return undefined;
   if (spurRaw.confidence < 0.7) return `confidence below threshold (${spurRaw.confidence})`;
   if (nearbyAltNames.includes(spurRaw.locationName)) {
-    return 'already shown in nearby alternatives';
+    return 'already scored in nearby alternatives';
   }
   if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
     return 'location not found in approved long-range list';
@@ -586,7 +586,10 @@ export function run({ $input }: N8nRuntime) {
   const { choices, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
-  const nearbyAltNames = (ctx.altLocations || []).map((a: { name?: string }) => a?.name).filter((n: string | undefined): n is string => Boolean(n));
+  const nearbyAltNames = [
+    ...(ctx.altLocations || []).map((a: { name?: string }) => a?.name),
+    ...((ctx.debugContext?.nearbyAlternatives || []).map((a: { name?: string }) => a?.name)),
+  ].filter((n: string | undefined): n is string => Boolean(n));
   const spurOfTheMoment = resolveSpurSuggestion(spurRaw, nearbyAltNames);
   const normalizedAiText = normalizeAiText(editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);

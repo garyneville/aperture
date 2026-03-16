@@ -351,6 +351,98 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('- Bolton Abbey (35min): 64/100 morning golden hour around 06:45');
   });
 
+  it('passes long-range fields through to the formatter context', () => {
+    const result = buildPrompt({
+      windows: [],
+      dontBother: true,
+      todayBestScore: 35,
+      todayCarWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
+      dailySummary: [{
+        dateKey: '2026-03-16', dayLabel: 'Today', dayIdx: 0, hours: [],
+        photoScore: 35, headlineScore: 35, photoEmoji: '❌', photoRating: 'Poor',
+        bestPhotoHour: '—', bestTags: '',
+        carWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
+        sunrise: '2026-03-16T06:15:00.000Z', sunset: '2026-03-16T18:20:00.000Z',
+        shSunsetQuality: null, shSunriseQuality: null, shSunsetText: null,
+        sunDirection: null, crepRayPeak: 0, confidence: 'low', confidenceStdDev: 20,
+        durationBonus: 0, amConfidence: 'low', amConfidenceStdDev: 20,
+        pmConfidence: 'low', pmConfidenceStdDev: 20, goldAmMins: 0, goldPmMins: 0,
+        amScore: 20, pmScore: 25, astroScore: 15,
+        darkSkyStartsAt: null, bestAmHour: '—', bestPmHour: '—',
+        sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
+      }],
+      altLocations: [],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-03-16T06:15:00.000Z',
+      sunset: '2026-03-16T18:20:00.000Z',
+      moonPct: 80,
+      longRangeTop: {
+        name: 'Kielder Forest',
+        region: 'northumberland',
+        driveMins: 120,
+        tags: ['woodland', 'moorland'],
+        siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
+        darkSky: true,
+        elevation: 312,
+        dayScore: 40,
+        astroScore: 91,
+        bestScore: 91,
+        bestDayHour: '07:00',
+        bestAstroHour: '22:00',
+        isAstroWin: true,
+      },
+      longRangeCardLabel: 'Weekend opportunity',
+      darkSkyAlert: {
+        name: 'Kielder Forest',
+        region: 'northumberland',
+        driveMins: 120,
+        astroScore: 91,
+        bestAstroHour: '22:00',
+      },
+      longRangeCandidates: [{
+        name: 'Kielder Forest',
+        region: 'northumberland',
+        driveMins: 120,
+        tags: ['woodland', 'moorland'],
+        siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
+        darkSky: true,
+        elevation: 312,
+        dayScore: 40,
+        astroScore: 91,
+        bestScore: 91,
+        bestDayHour: '07:00',
+        bestAstroHour: '22:00',
+        isAstroWin: true,
+      }],
+      longRangeDebugCandidates: [{
+        name: 'Kielder Forest',
+        region: 'northumberland',
+        driveMins: 120,
+        tags: ['woodland', 'moorland'],
+        siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
+        darkSky: true,
+        elevation: 312,
+        dayScore: 40,
+        astroScore: 91,
+        bestScore: 91,
+        bestDayHour: '07:00',
+        bestAstroHour: '22:00',
+        isAstroWin: true,
+        rank: 1,
+        deltaVsLeeds: 56,
+        shown: true,
+      }],
+      now: new Date('2026-03-16T12:00:00Z'),
+    });
+
+    expect(result.longRangeTop?.name).toBe('Kielder Forest');
+    expect(result.longRangeCardLabel).toBe('Weekend opportunity');
+    expect(result.darkSkyAlert?.name).toBe('Kielder Forest');
+    expect(result.longRangeDebugCandidates?.[0]?.deltaVsLeeds).toBe(56);
+  });
+
   it('includes spurOfTheMoment schema key and location list in the dontBother prompt', () => {
     const result = buildPrompt({
       windows: [],
