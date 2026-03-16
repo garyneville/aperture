@@ -1,4 +1,4 @@
-import { findDarkSkyStart, getMoonMetrics, moonScoreAdjustment } from './astro.js';
+import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
@@ -190,6 +190,9 @@ export interface ScoreHoursOutput {
 interface DateEntry { ts: string; i: number }
 
 interface EnsEntry { mean: number; stdDev: number }
+
+// Degrees below horizon at which astronomical twilight ends (sky is truly dark)
+const ASTRO_DARK_ELEVATION = -18;
 
 /**
  * scoreAllDays — pure extraction of the n8n "Score Hours" node logic.
@@ -422,7 +425,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
-      if (isNight) {
+      if (isNight && getSolarAltitude(+t, LAT, LON) < ASTRO_DARK_ELEVATION) {
         astro += moonScoreAdjustment(moonMetrics);
         if (ct < 10)    astro += 30; else if (ct < 30)    astro += 10; else if (ct > 60)    astro -= 20;
         if (visK > 25)  astro += 15;

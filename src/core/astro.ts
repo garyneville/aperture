@@ -1,6 +1,14 @@
 import { Body, Equator, Horizon, Observer } from 'astronomy-engine';
 import { moonFrac } from './utils.js';
 
+export function getSolarAltitude(ts: number, lat: number, lon: number): number {
+  const observer = new Observer(lat, lon, 0);
+  const date = new Date(ts);
+  const equator = Equator(Body.Sun, date, observer, true, true);
+  const horizon = Horizon(date, observer, equator.ra, equator.dec, 'normal');
+  return horizon.altitude;
+}
+
 export interface MoonMetrics {
   illumination: number;
   altitudeDeg: number;

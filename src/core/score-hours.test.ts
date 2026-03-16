@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { scoreAllDays, type ScoreHoursInput } from './score-hours.js';
 
 describe('scoreAllDays moon timeline scoring', () => {
-  it('gives post-moonset night hours the full dark-sky bonus', () => {
+  it('detects moonset time even when the moon sets after astronomical darkness ends', () => {
+    // 2026-03-27: sunrise 05:52 UTC, sunset 18:31 UTC.
+    // Astronomical darkness ends at ~04:22 UTC (90 min before sunrise).
+    // The moon sets at ~05:00 UTC — after astronomical darkness, inside nautical twilight.
+    // 03:00 UTC: solar altitude ~-23° → genuinely dark, astro scores despite moon being up.
+    // 05:00 UTC: solar altitude ~-7.75° → inside nautical twilight, astro must be 0.
     const input: ScoreHoursInput = {
       lat: 53.8,
       lon: -1.57,
@@ -55,9 +60,86 @@ describe('scoreAllDays moon timeline scoring', () => {
     const earlyNight = today.hours.find(hour => hour.hour === '03:00');
     const lateNight = today.hours.find(hour => hour.hour === '05:00');
 
-    expect(earlyNight?.astro).toBeLessThan(lateNight?.astro ?? 0);
+    // 03:00 is genuinely astronomically dark (solar altitude ~-23°) — astro should be positive.
+    expect(earlyNight?.astro).toBeGreaterThan(0);
+    // 05:00 is only in nautical twilight (solar altitude ~-7.75°) — astro must be zero.
+    expect(lateNight?.astro).toBe(0);
+    // darkSkyStartsAt reflects moonset time (05:00), not astronomical twilight end.
     expect(today.darkSkyStartsAt).toBe('05:00');
-    expect(today.bestAstroHour).toBe('05:00');
+    // Best astro is the genuinely dark hour (03:00), not the post-moonset twilight hour.
+    expect(today.bestAstroHour).toBe('03:00');
+  });
+});
+
+describe('scoreAllDays astronomical twilight boundary', () => {
+  it('gives astro=0 to isNight hours still inside astronomical twilight', () => {
+    // 2026-03-17 scenario (the original bug report): Leeds, sunset ~18:12 UTC.
+    // 19:00 UTC: isNight=true, but solar altitude ~-7° — inside astronomical twilight.
+    // 21:00 UTC: isNight=true, solar altitude ~-23° — genuinely astronomically dark.
+    // Before the fix, 19:00 was scored as a valid astro hour and drove a window recommendation.
+    const base = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-03-17T19:00:00Z', '2026-03-17T21:00:00Z'],
+          cloudcover: [0, 0],
+          cloudcover_low: [0, 0],
+          cloudcover_mid: [0, 0],
+          cloudcover_high: [0, 0],
+          visibility: [30000, 30000],
+          temperature_2m: [7, 5],
+          relativehumidity_2m: [55, 60],
+          dewpoint_2m: [3, 2],
+          precipitation: [0, 0],
+          windspeed_10m: [5, 4],
+          windgusts_10m: [8, 7],
+          cape: [0, 0],
+          vapour_pressure_deficit: [0.7, 0.6],
+          total_column_integrated_water_vapour: [10, 10],
+        },
+        daily: {
+          sunrise: ['2026-03-17T06:20:00Z'],
+          sunset: ['2026-03-17T18:12:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-17T19:00:00Z', '2026-03-17T21:00:00Z'],
+          aerosol_optical_depth: [0.05, 0.05],
+          dust: [0, 0],
+          european_aqi: [10, 10],
+          uv_index: [0, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-17T19:00:00Z', '2026-03-17T21:00:00Z'],
+          precipitation_probability: [0, 0],
+        },
+      },
+      metarRaw: [] as [],
+      sunsetHue: [] as [],
+      ensemble: { hourly: { time: [] as string[] } },
+      azimuthByPhase: {},
+    } satisfies ScoreHoursInput;
+
+    const result = scoreAllDays(base, new Date('2026-03-17T12:00:00Z'));
+    const today = result.dailySummary[0];
+    const twilightHour = today.hours.find(h => h.hour === '19:00');
+    const darkHour = today.hours.find(h => h.hour === '21:00');
+
+    // Both hours are flagged isNight (outside blue hour window).
+    expect(twilightHour?.isNight).toBe(true);
+    expect(darkHour?.isNight).toBe(true);
+
+    // 19:00 is still inside astronomical twilight — no astro score.
+    expect(twilightHour?.astro).toBe(0);
+    // 21:00 is genuinely dark — astro score must be positive.
+    expect(darkHour?.astro).toBeGreaterThan(0);
+
+    // The dark hour should be chosen as the best astro hour, not the twilight hour.
+    expect(today.bestAstroHour).toBe('21:00');
   });
 });
 
