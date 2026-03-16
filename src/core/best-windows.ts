@@ -254,15 +254,16 @@ function labelWindow(w: Omit<Window, 'label'>, sunrise?: string, sunset?: string
       .filter(hour => Number.isFinite(hour));
     const allOvernight = astroHourNumbers.length > 0 && astroHourNumbers.every(hour => hour < 6);
     const allEvening = astroHourNumbers.length > 0 && astroHourNumbers.every(hour => hour >= 18);
+    const minAstroHour = astroHourNumbers.length > 0 ? Math.min(...astroHourNumbers) : 0;
 
     if (w.fallback) {
       if (allEvening) return 'Best chance for evening astro';
-      if (allOvernight) return 'Best chance for overnight astro';
+      if (allOvernight) return minAstroHour >= 3 ? 'Best chance for pre-dawn astro' : 'Best chance for midnight astro';
       return 'Best chance for night sky';
     }
 
     if (allEvening) return 'Evening astro window';
-    if (allOvernight) return 'Overnight astro window';
+    if (allOvernight) return minAstroHour >= 3 ? 'Pre-dawn astro window' : 'Midnight astro window';
     return 'Night sky window';
   }
 
