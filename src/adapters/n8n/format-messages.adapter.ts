@@ -45,10 +45,60 @@ function peakHourForWindow(window: WindowLike | undefined): string | null {
   return peakHour?.hour || null;
 }
 
+export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext): boolean {
+  const topWindow = ctx.windows?.[0];
+  const topAlt = ctx.altLocations?.[0];
+  const SCORE_TOLERANCE = 5;
+
+  // Rule 1: reject if the first sentence mentions the alt location name.
+  // A coherent editorial describes Leeds conditions first; the alt belongs in a follow-up sentence.
+  if (topAlt?.name) {
+    const sentenceEnd = aiText.search(/[.!?]/);
+    const firstSentence = sentenceEnd >= 0 ? aiText.slice(0, sentenceEnd + 1) : aiText;
+    if (firstSentence.toLowerCase().includes(topAlt.name.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // Build the list of valid numeric values from source data.
+  const validScores: number[] = [];
+  if (typeof topWindow?.peak === 'number') validScores.push(topWindow.peak);
+  if (typeof topAlt?.bestScore === 'number') validScores.push(topAlt.bestScore);
+  const today = ctx.dailySummary?.[0];
+  if (typeof today?.astroScore === 'number') validScores.push(today.astroScore);
+  topWindow?.hours?.forEach(h => { if (typeof h.score === 'number') validScores.push(h.score); });
+
+  // Rule 2: reject if any quoted X/100 score is not within ±SCORE_TOLERANCE of any known source value.
+  const quotedScores = [...aiText.matchAll(/\b(\d+)\/100\b/g)].map(m => parseInt(m[1], 10));
+  if (quotedScores.length > 0 && validScores.length > 0) {
+    const hasInvalidScore = quotedScores.some(
+      score => !validScores.some(valid => Math.abs(score - valid) <= SCORE_TOLERANCE),
+    );
+    if (hasInvalidScore) return true;
+  }
+
+  // Rule 3: reject if any "X points stronger" value doesn't match the real alt delta (±SCORE_TOLERANCE).
+  const realDelta = (typeof topAlt?.bestScore === 'number' && typeof topWindow?.peak === 'number')
+    ? topAlt.bestScore - topWindow.peak
+    : null;
+  if (realDelta !== null) {
+    const quotedDeltas = [...aiText.matchAll(/\b(\d+)\s+points?\s+stronger\b/gi)].map(m => parseInt(m[1], 10));
+    if (quotedDeltas.length > 0) {
+      const hasInvalidDelta = quotedDeltas.some(delta => Math.abs(delta - realDelta) > SCORE_TOLERANCE);
+      if (hasInvalidDelta) return true;
+    }
+  }
+
+  return false;
+}
+
 export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean {
   const topWindow = ctx.windows?.[0];
   if (!aiText || aiText === '(No AI summary)') return true;
   if (!topWindow) return false;
+
+  // Factual coherence check takes priority: replace regardless of keyword heuristics.
+  if (isFactuallyIncoherentEditorial(aiText, ctx)) return true;
 
   const lower = aiText.toLowerCase();
   const mentionsWindow = [

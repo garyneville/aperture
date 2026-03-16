@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFallbackAiText, shouldReplaceAiText } from './format-messages.adapter.js';
+import { buildFallbackAiText, isFactuallyIncoherentEditorial, shouldReplaceAiText } from './format-messages.adapter.js';
 
 describe('format-messages adapter editorial fallback', () => {
   const ctx = {
@@ -89,5 +89,62 @@ describe('format-messages adapter editorial fallback', () => {
     const text = buildFallbackAiText(morningCtx);
     expect(text).toContain('conditions outside the named window');
     expect(text).not.toContain('evening');
+  });
+});
+
+describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
+  const marchCtx = {
+    windows: [{
+      label: 'Evening astro window',
+      start: '20:00',
+      end: '23:00',
+      peak: 55,
+      hours: [
+        { hour: '20:00', score: 55 },
+        { hour: '21:00', score: 50 },
+        { hour: '22:00', score: 48 },
+        { hour: '23:00', score: 45 },
+      ],
+    }],
+    dailySummary: [{ bestPhotoHour: '20:00', astroScore: 60 }],
+    altLocations: [{
+      name: 'Sutton Bank',
+      bestScore: 85,
+      bestAstroHour: '20:00',
+      darkSky: true,
+      driveMins: 75,
+    }],
+  };
+
+  it('flags hallucination where alt name appears in first sentence (rule 1)', () => {
+    const hallucinatedText = 'Leeds has the Sutton Bank window from 20:00, scoring 85. Sutton Bank is 85 points stronger mainly because of darker skies around 20:00.';
+    expect(isFactuallyIncoherentEditorial(hallucinatedText, marchCtx)).toBe(true);
+  });
+
+  it('flags hallucination where delta is reused as score (rule 3)', () => {
+    // First sentence is fine but delta is wrong (85 points stronger; real delta is 30)
+    const wrongDeltaText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 85 points stronger mainly because of darker skies.';
+    expect(isFactuallyIncoherentEditorial(wrongDeltaText, marchCtx)).toBe(true);
+  });
+
+  it('flags hallucination where quoted X/100 score is not in source data (rule 2)', () => {
+    // Leeds peak is 55, Sutton Bank is 85, astro score is 60 — 70 is not a known value
+    const wrongScoreText = 'Local peak is around 20:00, scoring 70/100. Sutton Bank is 30 points stronger thanks to darker skies.';
+    expect(isFactuallyIncoherentEditorial(wrongScoreText, marchCtx)).toBe(true);
+  });
+
+  it('does not flag a coherent editorial with the alt in the second sentence', () => {
+    const coherentText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies.';
+    expect(isFactuallyIncoherentEditorial(coherentText, marchCtx)).toBe(false);
+  });
+
+  it('shouldReplaceAiText returns true for the 15 March hallucination', () => {
+    const hallucinatedText = 'Leeds has the Sutton Bank window from 20:00, scoring 85. Sutton Bank is 85 points stronger mainly because of darker skies around 20:00.';
+    expect(shouldReplaceAiText(hallucinatedText, marchCtx)).toBe(true);
+  });
+
+  it('shouldReplaceAiText returns false for a coherent editorial that passes keyword heuristics', () => {
+    const coherentText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies if you can make the drive.';
+    expect(shouldReplaceAiText(coherentText, marchCtx)).toBe(false);
   });
 });
