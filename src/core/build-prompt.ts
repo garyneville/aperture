@@ -152,10 +152,14 @@ function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | 
 }
 
 function weekSummaryLine(dailySummary: DailySummary[]): string {
-  return dailySummary.slice(0, 5).map(d =>
-    `${d.dayLabel}: ${d.headlineScore ?? d.photoScore}/100` +
-    (d.confidence && d.confidence !== 'unknown' ? ` (${d.confidence} confidence)` : '')
-  ).join(' | ');
+  return dailySummary.slice(0, 5).map(d => {
+    const score = d.headlineScore ?? d.photoScore;
+    if (!d.confidence || d.confidence === 'unknown') return `${d.dayLabel}: ${score}/100`;
+    const spreadPart = d.confidenceStdDev != null
+      ? ` spread ${d.confidenceStdDev}`
+      : '';
+    return `${d.dayLabel}: ${score}/100 (${d.confidence} confidence${spreadPart})`;
+  }).join(' | ');
 }
 
 function moonTimingNote(todayDay: DailySummary | undefined): string {
@@ -235,7 +239,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words naming the standout day this week>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
+{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if a day wins only on certainty while another scores higher, call it most reliable and name the higher-scoring day>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
 ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}
@@ -293,7 +297,7 @@ COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.
 
 WEEK STANDOUT (1 sentence, max 30 words):
-Name the standout photography day this week and why. If today is the best, say so.
+If one day scores clearly higher than others, call it the "standout" day. If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day and briefly name the higher-scoring day with its uncertainty (e.g. "Today is the most reliable forecast; Wednesday may score higher but with much lower certainty").
 
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out.
 Locations: ${SPUR_LOCATION_NAMES}

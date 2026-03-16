@@ -228,4 +228,86 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('SPUR OF THE MOMENT');
     expect(result.prompt).toContain('Pen-y-ghent');
   });
+
+  it('includes spread in the 5-day outlook and instructs AI to distinguish score winner from certainty-only winner', () => {
+    const makeDailySummaryDay = (dayLabel: string, dayIdx: number, headlineScore: number, confidence: string, confidenceStdDev: number | null) => ({
+      dateKey: `2026-03-${14 + dayIdx}`,
+      dayLabel,
+      dayIdx,
+      hours: [],
+      photoScore: headlineScore - 5,
+      headlineScore,
+      photoEmoji: '👍',
+      photoRating: 'Good',
+      bestPhotoHour: '19:00',
+      bestTags: 'golden hour',
+      carWash: { score: 60, rating: '✅', label: 'OK', start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 10 },
+      sunrise: '2026-03-14T06:20:00.000Z',
+      sunset: '2026-03-14T18:10:00.000Z',
+      shSunsetQuality: null,
+      shSunriseQuality: null,
+      shSunsetText: null,
+      sunDirection: null,
+      crepRayPeak: 0,
+      confidence,
+      confidenceStdDev,
+      durationBonus: 0,
+      amConfidence: 'medium',
+      amConfidenceStdDev: confidenceStdDev,
+      pmConfidence: 'medium',
+      pmConfidenceStdDev: confidenceStdDev,
+      goldAmMins: 0,
+      goldPmMins: 0,
+      amScore: 30,
+      pmScore: 40,
+      astroScore: 50,
+      darkSkyStartsAt: null,
+      bestAmHour: '07:00',
+      bestPmHour: '18:00',
+      sunriseOcclusionRisk: null,
+      sunsetOcclusionRisk: null,
+    });
+
+    const result = buildPrompt({
+      windows: [{
+        label: 'Evening window', start: '18:00', st: '2026-03-14T18:00:00.000Z',
+        end: '20:00', et: '2026-03-14T20:00:00.000Z', peak: 60, tops: ['golden hour'],
+        hours: [{
+          ts: '2026-03-14T18:00:00.000Z', t: '2026-03-14T18:00:00.000Z',
+          hour: '18:00', score: 60, drama: 0, clarity: 0, mist: 0, astro: 0, crepuscular: 0,
+          shQ: null, cl: 20, cm: 10, ch: 5, ct: 35, visK: 18, aod: 0, tpw: 20,
+          wind: 10, gusts: 12, tmp: 8, hum: 60, dew: 4, pp: 5, pr: 0, vpd: 0,
+          azimuthRisk: null, isGolden: true, isGoldAm: false, isGoldPm: true,
+          isBlue: false, isBlueAm: false, isBluePm: false, isNight: false, moon: 10, uv: 2,
+          tags: ['golden hour'],
+        }],
+        fallback: false,
+      }],
+      dontBother: false,
+      todayBestScore: 60,
+      todayCarWash: { score: 60, rating: '✅', label: 'OK', start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 10 },
+      dailySummary: [
+        makeDailySummaryDay('Monday', 0, 60, 'high', 5),
+        makeDailySummaryDay('Tuesday', 1, 55, 'medium', 15),
+        makeDailySummaryDay('Wednesday', 2, 70, 'low', 39),
+        makeDailySummaryDay('Thursday', 3, 45, 'medium', 12),
+        makeDailySummaryDay('Friday', 4, 50, 'medium', 18),
+      ],
+      altLocations: [],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-03-14T06:20:00.000Z',
+      sunset: '2026-03-14T18:10:00.000Z',
+      moonPct: 30,
+      now: new Date('2026-03-14T12:00:00Z'),
+    });
+
+    // Spread values should appear in the 5-day outlook so the AI can reason about certainty
+    expect(result.prompt).toContain('Monday: 60/100 (high confidence spread 5)');
+    expect(result.prompt).toContain('Wednesday: 70/100 (low confidence spread 39)');
+
+    // The prompt should instruct the AI to distinguish score wins from certainty-only wins
+    expect(result.prompt).toContain('If one day scores clearly higher than others, call it the "standout" day.');
+    expect(result.prompt).toContain('If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day');
+  });
 });
