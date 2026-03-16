@@ -47,8 +47,6 @@ function makeWeatherData(overrides: Partial<{
     daily: {
       sunrise: ['2026-03-15T06:15:00'],
       sunset: ['2026-03-15T18:15:00'],
-      moonrise: ['2026-03-15T22:00:00'],
-      moonset: ['2026-03-15T08:00:00'],
     },
   };
 }
@@ -113,8 +111,6 @@ describe('scoreLongRange', () => {
       daily: {
         sunrise: ['2026-03-15T06:15:00'],
         sunset: ['2026-03-15T18:15:00'],
-        moonrise: ['2026-03-15T22:00:00'],
-        moonset: ['2026-03-15T08:00:00'],
       },
     };
     const input: ScoreLongRangeInput = {

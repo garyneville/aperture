@@ -1,3 +1,5 @@
+import { Body, Equator, Horizon, Observer } from 'astronomy-engine';
+
 export function clamp(n: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -12,40 +14,18 @@ export function moonFrac(ts: number): number {
   return (1 - Math.cos(2 * Math.PI * phase)) / 2;
 }
 
-type MoonEventType = 'rise' | 'set';
-
-function parseMoonEvents(times: string[] | undefined, type: MoonEventType): Array<{ ts: number; type: MoonEventType }> {
-  return (times || [])
-    .map(time => ({ ts: Date.parse(time), type }))
-    .filter((event): event is { ts: number; type: MoonEventType } => Number.isFinite(event.ts));
+export function moonAltitude(ts: number, lat: number, lon: number): number {
+  const observer = new Observer(lat, lon, 0);
+  const equator = Equator(Body.Moon, new Date(ts), observer, true, false);
+  return Horizon(new Date(ts), observer, equator.ra, equator.dec, 'normal').altitude;
 }
 
 export function isMoonUpAt(
   ts: number,
-  moonrise: string[] | undefined,
-  moonset: string[] | undefined,
-): boolean | null {
-  const events = [
-    ...parseMoonEvents(moonrise, 'rise'),
-    ...parseMoonEvents(moonset, 'set'),
-  ].sort((a, b) => a.ts - b.ts);
-
-  if (!events.length) return null;
-
-  let lastEvent: { ts: number; type: MoonEventType } | null = null;
-  let nextEvent: { ts: number; type: MoonEventType } | null = null;
-
-  for (const event of events) {
-    if (event.ts <= ts) lastEvent = event;
-    if (event.ts > ts) {
-      nextEvent = event;
-      break;
-    }
-  }
-
-  if (lastEvent) return lastEvent.type === 'rise';
-  if (nextEvent) return nextEvent.type === 'set';
-  return null;
+  lat: number,
+  lon: number,
+): boolean {
+  return moonAltitude(ts, lat, lon) > 0;
 }
 
 export function solarElevation(ts: number, lat: number, lon: number): number {

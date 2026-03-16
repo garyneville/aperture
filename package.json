@@ -15,5 +15,8 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19"
   }
 }

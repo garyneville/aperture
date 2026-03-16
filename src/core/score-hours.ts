@@ -409,8 +409,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
       if (isNight) {
-        const moonUp = isMoonUpAt(+t, w.daily?.moonrise, w.daily?.moonset);
-        if (moonUp === false) {
+        const moonUp = isMoonUpAt(+t, LAT, LON);
+        if (!moonUp) {
           astro += 30;
           darkSkyStartsAt ||= t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
         } else if (moon < 0.2) astro += 30; else if (moon < 0.5) astro += 10; else if (moon > 0.8) astro -= 20;
