@@ -382,6 +382,23 @@ function poorDayFallbackLine(windows: Window[] | undefined): string {
   return `If you still go: ${fallbackWindow.label.toLowerCase()} around ${peakHour || 'time TBD'} at ${fallbackWindow.peak}/100.`;
 }
 
+function stripRedundantAiOpener(aiText: string, topWindow: Window | null | undefined): string {
+  if (!topWindow || !aiText) return aiText;
+  const dotIndex = aiText.indexOf('.');
+  if (dotIndex < 0) return aiText;
+  const firstSentence = aiText.slice(0, dotIndex).toLowerCase();
+  const labelLower = topWindow.label.toLowerCase();
+  const scoreStr = `${topWindow.peak}/100`;
+  const labelPos = firstSentence.indexOf(labelLower);
+  const scorePos = firstSentence.indexOf(scoreStr);
+  // Only strip when label appears before score — the classic restatement pattern.
+  if (labelPos >= 0 && scorePos > labelPos) {
+    const remainder = aiText.slice(dotIndex + 1).trimStart();
+    return remainder || aiText;
+  }
+  return aiText;
+}
+
 function todayWindowSection(
   dontBother: boolean,
   todayBestScore: number,
@@ -397,12 +414,14 @@ function todayWindowSection(
       <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:4px solid ${C.error};`);
   }
+  const topWindow = windows?.[0] ?? null;
+  const trimmedAiText = stripRedundantAiOpener(aiText, topWindow);
   const compCard = compositionCard(compositionBullets || []);
   return listRows([
     ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
     card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
-      ${htmlText(aiText)}
+      ${htmlText(trimmedAiText)}
     `, '', `border-left:4px solid ${C.primary};`),
     ...(compCard ? [compCard] : []),
   ]);
@@ -630,12 +649,7 @@ export function formatEmail(input: FormatEmailInput): string {
   ];
 
   const localSummary = dontBother
-    ? [
-      'Not a great photography day locally — better to enjoy the outdoors instead.',
-      topAltDelta >= 10 && topAlternative
-        ? `If you do want to shoot, ${topAlternative.name} scores ${topAlternative.bestScore}/100 (${topAlternative.driveMins} min drive).`
-        : '',
-    ].filter(Boolean).join('\n')
+    ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
     : [
       topWindow
         ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
@@ -644,15 +658,12 @@ export function formatEmail(input: FormatEmailInput): string {
           : todayDay.bestPhotoHour
             ? `Best local setup: ${todayDay.bestPhotoHour}.`
             : '',
-      peakTimeNote(topWindow, peakLocalHour || undefined),
       overallAstroDelta >= 10
         ? `Overall astro potential: ${todayDay.astroScore ?? 0}/100 - the window score is held back by conditions outside the named window.`
         : '',
-      topAltDelta >= 10 && topAlternative
-        ? `${topAlternative.name} adds ${topAltDelta} points${topAlternative.darkSky ? ' with darker skies' : ''}${topAlternative.isAstroWin ? ` at ${topAlternative.bestAstroHour || 'nightfall'}` : topAlternative.bestDayHour ? ` at ${topAlternative.bestDayHour}` : ''}.`
-        : nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
-          ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
-          : '',
+      nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
+        ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
+        : '',
     ].filter(Boolean).join('\n');
 
   const alternativeSummary = topAlternative

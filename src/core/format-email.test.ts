@@ -92,9 +92,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Crescent');
     expect(html).toContain('Best time');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
-    expect(html).toContain('Best time: 19:00, right as the window opens.');
     expect(html).toContain('Overall astro potential: 75/100 - the window score is held back by conditions outside the named window.');
-    expect(html).toContain('Malham Cove adds 25 points with darker skies at 20:00.');
     expect(html).toContain('Daylight utility');
     expect(html).toContain('&#x1F697; / &#x1F6B6;');
     expect(html).toContain('>Moisture</span> 20mm');
@@ -108,6 +106,12 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('5-day photography');
     expect(html).toContain('Key');
     expect(html).toContain('Crepuscular rays = shafts of light');
+    // at-a-glance must not restate peak time already visible in the hero grid
+    expect(html).not.toContain('right as the window opens');
+    expect(html).not.toContain('near the end of the window');
+    expect(html).not.toContain('within the window');
+    // at-a-glance must not include alternative score deltas (local Leeds only)
+    expect(html).not.toContain('adds 25 points');
   });
 
   it('adds a later-night distinction when both local windows are astro', () => {
@@ -579,5 +583,148 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('If you still go: best chance around sunrise around 07:00 at 46/100.');
     expect(html).not.toContain('AI briefing');
     expect(html).not.toContain('Conditions in Leeds are not worth shooting today.');
+    // at-a-glance must not reference the alt location score or suggest going there
+    expect(html).not.toContain('If you do want to shoot');
+    expect(html).not.toContain('scores 65/100 (75 min drive)');
+  });
+
+  it('strips the AI briefing opener when it restates the window label and score', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Evening light window',
+        start: '18:00',
+        end: '20:00',
+        peak: 62,
+        hours: [{ hour: '19:00', score: 62, ch: 40, visK: 12.0, wind: '10', pp: 5 }],
+        tops: ['landscape'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 55,
+        start: '14:00',
+        end: '16:00',
+        wind: 10,
+        pp: 15,
+        tmp: 11,
+      },
+      dailySummary: [{
+        dayLabel: 'Sunday',
+        dateKey: '2026-03-15',
+        dayIdx: 0,
+        photoScore: 62,
+        headlineScore: 62,
+        photoEmoji: 'Good',
+        amScore: 30,
+        pmScore: 62,
+        astroScore: 20,
+        confidence: 'medium',
+        confidenceStdDev: 12,
+        amConfidence: 'medium',
+        pmConfidence: 'medium',
+        bestPhotoHour: '19:00',
+        bestTags: 'landscape',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 55,
+          start: '14:00',
+          end: '16:00',
+          wind: 10,
+          pp: 15,
+          tmp: 11,
+        },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:20',
+      sunsetStr: '18:10',
+      moonPct: 50,
+      metarNote: '',
+      today: 'Sunday 15 March',
+      todayBestScore: 62,
+      shSunsetQ: 55,
+      shSunriseQ: null,
+      shSunsetText: 'Moderate texture',
+      sunDir: 260,
+      crepPeak: 0,
+      aiText: 'The evening light window scores 62/100. Expect patchy cloud with good visibility for landscape work.',
+    };
+
+    const html = formatEmail(input);
+
+    // The opener restating the window label + score should be stripped
+    expect(html).not.toContain('The evening light window scores 62/100.');
+    // The remaining editorial context should still be present
+    expect(html).toContain('Expect patchy cloud with good visibility for landscape work.');
+    expect(html).toContain('AI briefing');
+  });
+
+  it('does not strip the AI opener when the score appears before the label', () => {
+    const baseWindow = {
+      label: 'Evening light window',
+      start: '18:00',
+      end: '20:00',
+      peak: 62,
+      hours: [{ hour: '19:00', score: 62, ch: 40, visK: 12.0, wind: '10', pp: 5 }],
+      tops: ['landscape'],
+    };
+    const baseInput: FormatEmailInput = {
+      dontBother: false,
+      windows: [baseWindow],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      dailySummary: [{
+        dayLabel: 'Sunday', dateKey: '2026-03-15', dayIdx: 0, photoScore: 62, headlineScore: 62, photoEmoji: 'Good',
+        amScore: 30, pmScore: 62, astroScore: 20, confidence: 'medium', confidenceStdDev: 12,
+        amConfidence: 'medium', pmConfidence: 'medium', bestPhotoHour: '19:00', bestTags: 'landscape',
+        carWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:20', sunsetStr: '18:10', moonPct: 50, metarNote: '',
+      today: 'Sunday 15 March', todayBestScore: 62,
+      shSunsetQ: 55, shSunriseQ: null, shSunsetText: 'Moderate texture', sunDir: 260, crepPeak: 0,
+      // Score appears before label — not a simple restatement, should not strip
+      aiText: 'A 62/100 is what the evening light window offers today. Cloud should thin by dusk.',
+    };
+
+    const html = formatEmail(baseInput);
+
+    // Opener should be preserved since score precedes label (not a restatement pattern)
+    expect(html).toContain('A 62/100 is what the evening light window offers today.');
+  });
+
+  it('does not strip the AI opener when the text has no sentence boundary', () => {
+    const baseWindow = {
+      label: 'Evening light window',
+      start: '18:00',
+      end: '20:00',
+      peak: 62,
+      hours: [{ hour: '19:00', score: 62, ch: 40, visK: 12.0, wind: '10', pp: 5 }],
+      tops: ['landscape'],
+    };
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [baseWindow],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      dailySummary: [{
+        dayLabel: 'Sunday', dateKey: '2026-03-15', dayIdx: 0, photoScore: 62, headlineScore: 62, photoEmoji: 'Good',
+        amScore: 30, pmScore: 62, astroScore: 20, confidence: 'medium', confidenceStdDev: 12,
+        amConfidence: 'medium', pmConfidence: 'medium', bestPhotoHour: '19:00', bestTags: 'landscape',
+        carWash: { rating: 'OK', label: 'Usable', score: 55, start: '14:00', end: '16:00', wind: 10, pp: 15, tmp: 11 },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:20', sunsetStr: '18:10', moonPct: 50, metarNote: '',
+      today: 'Sunday 15 March', todayBestScore: 62,
+      shSunsetQ: 55, shSunriseQ: null, shSunsetText: 'Moderate texture', sunDir: 260, crepPeak: 0,
+      // Single sentence with no period — nothing to strip
+      aiText: 'Evening light window scores 62/100 but patchy cloud may thin by dusk',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Evening light window scores 62/100 but patchy cloud may thin by dusk');
   });
 });
