@@ -44,8 +44,8 @@ export interface LocDayScore {
   bestDayHour: string | null;
   bestAstroHour: string | null;
   bestTags: string[];
-  bestAm: number;
-  bestPm: number;
+  amScore: number;
+  pmScore: number;
   isAstroWin: boolean;
   meetsThreshold: boolean;
 }
@@ -62,8 +62,8 @@ export interface TodayAlt {
   bestScore: number;
   bestDayHour: string | null;
   bestAstroHour: string | null;
-  bestAm: number;
-  bestPm: number;
+  amScore: number;
+  pmScore: number;
   isAstroWin: boolean;
   meetsThreshold: boolean;
 }
@@ -79,8 +79,8 @@ export interface BestAltCandidate {
   siteDarkness: SiteDarkness;
   darkSky: boolean;
   bestTags: string[];
-  bestAm: number;
-  bestPm: number;
+  amScore: number;
+  pmScore: number;
 }
 
 /** Minimal shape for a dailySummary entry from Best Windows. */
@@ -160,8 +160,8 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
     let bestDayHour: string | null = null;
     let bestAstroHour: string | null = null;
     let bestTags: string[] = [];
-    let bestAm = 0;
-    let bestPm = 0;
+    let amScore = 0;
+    let pmScore = 0;
 
     byDate[dateKey].forEach(({ ts, i }) => {
       const t = new Date(ts);
@@ -245,8 +245,8 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
           });
           bestTags = tags;
         }
-        if (isGoldAm || (t >= blueAmS && t < goldAmS)) bestAm = Math.max(bestAm, score);
-        if (isGoldPm || (t > goldPmE && t <= bluePmE)) bestPm = Math.max(bestPm, score);
+        if (isGoldAm || (t >= blueAmS && t < goldAmS)) amScore = Math.max(amScore, score);
+        if (isGoldPm || (t > goldPmE && t <= bluePmE)) pmScore = Math.max(pmScore, score);
       }
 
     if (isNight) {
@@ -281,8 +281,8 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
       bestDayHour,
       bestAstroHour,
       bestTags,
-      bestAm,
-      bestPm,
+      amScore,
+      pmScore,
       isAstroWin,
       meetsThreshold,
     });
@@ -327,8 +327,8 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       bestScore: today.bestScore,
       bestDayHour: today.bestDayHour,
       bestAstroHour: today.bestAstroHour,
-      bestAm: today.bestAm,
-      bestPm: today.bestPm,
+      amScore: today.amScore,
+      pmScore: today.pmScore,
       isAstroWin: today.isAstroWin,
       meetsThreshold: today.meetsThreshold,
     }];
@@ -349,8 +349,8 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         siteDarkness: loc.siteDarkness,
         darkSky: loc.darkSky,
         bestTags: d.bestTags,
-        bestAm: d.bestAm,
-        bestPm: d.bestPm,
+        amScore: d.amScore,
+        pmScore: d.pmScore,
       };
     }).filter((x): x is BestAltCandidate => x !== null).sort((a, b) => b.bestScore - a.bestScore);
 

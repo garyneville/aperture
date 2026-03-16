@@ -40,6 +40,10 @@ export interface AltLocation {
   types?: string[];
   isAstroWin?: boolean;
   darkSky?: boolean;
+  amScore?: number;
+  pmScore?: number;
+  dayScore?: number;
+  astroScore?: number;
 }
 
 export interface CarWash {
@@ -111,6 +115,10 @@ export interface LongRangeCard {
   region: string;
   driveMins: number;
   bestScore: number;
+  amScore?: number;
+  pmScore?: number;
+  dayScore?: number;
+  astroScore?: number;
   bestDayHour: string | null;
   bestAstroHour: string | null;
   isAstroWin: boolean;
@@ -750,6 +758,11 @@ function alternativeSection(
       return `<div style="${index < locations.length - 1 ? `padding:0 0 8px;border-bottom:1px solid ${C.outline};margin-bottom:8px;` : ''}">
         <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
         <div style="Margin-top:6px;">${scorePill(loc.bestScore)}</div>
+        <div style="Margin-top:6px;">
+          ${metricChip('AM', loc.amScore ?? 0, scoreState(loc.amScore ?? 0).fg)}
+          ${metricChip('PM', loc.pmScore ?? 0, scoreState(loc.pmScore ?? 0).fg)}
+          ${metricChip('Astro', loc.astroScore ?? 0, scoreState(loc.astroScore ?? 0).fg)}
+        </div>
         <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(note)}</div>
       </div>`;
     }).join('');
@@ -800,6 +813,11 @@ function longRangeSection(
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(longRangeTop.name)}</div>
       <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
       <div style="Margin-top:8px;">${scorePill(longRangeTop.bestScore)}</div>
+      <div style="Margin-top:6px;">
+        ${metricChip('AM', longRangeTop.amScore ?? 0, scoreState(longRangeTop.amScore ?? 0).fg)}
+        ${metricChip('PM', longRangeTop.pmScore ?? 0, scoreState(longRangeTop.pmScore ?? 0).fg)}
+        ${metricChip('Astro', longRangeTop.astroScore ?? 0, scoreState(longRangeTop.astroScore ?? 0).fg)}
+      </div>
       <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(timing)}</div>
     `, '', `border-top:4px solid ${C.secondary};`));
   }

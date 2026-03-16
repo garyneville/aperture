@@ -96,6 +96,10 @@ export interface LongRangeCard {
   region: string;
   driveMins: number;
   bestScore: number;
+  amScore?: number;
+  pmScore?: number;
+  dayScore?: number;
+  astroScore?: number;
   bestDayHour: string | null;
   bestAstroHour: string | null;
   isAstroWin: boolean;

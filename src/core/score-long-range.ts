@@ -24,11 +24,13 @@ export interface LongRangeCandidate {
   name: string;
   region: Region;
   driveMins: number;
-  tags: LocationTag[];
+  tags: string[];
   siteDarkness: SiteDarkness;
   darkSky: boolean;
   elevation: number;
   dayScore: number;
+  amScore: number;
+  pmScore: number;
   astroScore: number;
   bestScore: number;
   bestDayHour: string | null;
@@ -104,6 +106,8 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
 
   let bestDay = 0;
   let bestAstro = 0;
+  let bestAm = 0;
+  let bestPm = 0;
   let bestDayHour: string | null = null;
   let bestAstroHour: string | null = null;
 
@@ -169,8 +173,10 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
       let score: number;
       if (isAmSession) {
         score = clamp(Math.round(drama * 0.30 + clarity * 0.40 + mist * 0.30));
+        bestAm = Math.max(bestAm, score);
       } else {
         score = clamp(Math.round(drama * 0.55 + clarity * 0.30 + mist * 0.15));
+        bestPm = Math.max(bestPm, score);
       }
 
       if (score > bestDay) {
@@ -211,6 +217,8 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
     darkSky: meta.darkSky,
     elevation: meta.elevation,
     dayScore: bestDay,
+    amScore: bestAm,
+    pmScore: bestPm,
     astroScore: bestAstro,
     bestScore,
     bestDayHour,
