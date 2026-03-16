@@ -269,6 +269,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
+  const hasLocalWindow = windows.length > 0;
+  const effectiveDontBother = dontBother || !hasLocalWindow;
 
   debugContext.metadata = {
     generatedAt: now.toISOString(),
@@ -318,17 +320,20 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
 
   let prompt: string;
 
-  if (dontBother) {
+  if (effectiveDontBother) {
     const topAlt = topAlternativeLine(altLocations);
     const lhStr = topAlt
       ? ` The nearest meaningful alternative is ${topAlt}.`
+      : '';
+    const noWindowNote = !hasLocalWindow && (todayDay?.astroScore ?? 0) > 0
+      ? ` Leeds may show some theoretical astro potential (${todayDay?.astroScore}/100 raw), but no local window cleared the full weighted threshold.`
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
 Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if a day wins only on certainty while another scores higher, call it most reliable and name the higher-scoring day>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
-${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}
+${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}${noWindowNote}
 5-day outlook: ${weekLine}
 
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out.
@@ -411,7 +416,7 @@ ${windowsText}${altText}
 
   return {
     prompt,
-    dontBother,
+    dontBother: effectiveDontBother,
     windows,
     todayCarWash,
     dailySummary,

@@ -147,6 +147,65 @@ describe('scoreAllDays astronomical twilight boundary', () => {
   });
 });
 
+describe('scoreAllDays headline scoring', () => {
+  it('uses the weighted night final score, not raw astro score, for the daily headline', () => {
+    const input: ScoreHoursInput = {
+      lat: 53.82703,
+      lon: -1.570755,
+      weather: {
+        hourly: {
+          time: ['2026-03-16T04:00:00Z', '2026-03-16T07:00:00Z'],
+          cloudcover: [3, 55],
+          cloudcover_low: [0, 35],
+          cloudcover_mid: [0, 10],
+          cloudcover_high: [3, 10],
+          visibility: [20500, 16000],
+          temperature_2m: [4, 5],
+          relativehumidity_2m: [78, 82],
+          dewpoint_2m: [2, 3],
+          precipitation: [0, 0],
+          windspeed_10m: [6, 12],
+          windgusts_10m: [8, 14],
+          cape: [0, 0],
+          vapour_pressure_deficit: [0.4, 0.3],
+          total_column_integrated_water_vapour: [10, 12],
+        },
+        daily: {
+          sunrise: ['2026-03-16T06:18:00Z'],
+          sunset: ['2026-03-16T18:11:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-16T04:00:00Z', '2026-03-16T07:00:00Z'],
+          aerosol_optical_depth: [0.09, 0.1],
+          dust: [0, 0],
+          european_aqi: [10, 10],
+          uv_index: [0, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-16T04:00:00Z', '2026-03-16T07:00:00Z'],
+          precipitation_probability: [0, 22],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-16T12:00:00Z'));
+    const today = result.dailySummary[0];
+    const maxNightFinal = Math.max(...today.hours.filter(hour => hour.isNight).map(hour => hour.score));
+
+    expect(today.astroScore).toBeGreaterThan(maxNightFinal);
+    expect(today.headlineScore).toBe(Math.max(today.photoScore, maxNightFinal));
+    expect(today.headlineScore).toBeLessThan(today.astroScore);
+  });
+});
+
 describe('scoreAllDays astro confidence', () => {
   it('returns astroConfidence from night-hour ensemble data', () => {
     const nightTs = ['2026-03-27T01:00:00Z', '2026-03-27T02:00:00Z', '2026-03-27T03:00:00Z'];

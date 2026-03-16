@@ -651,10 +651,14 @@ function todayWindowSection(
   altLocations: AltLocation[] | undefined,
   compositionBullets?: string[],
 ): string {
-  if (dontBother) {
+  const hasLocalWindow = (windows?.length || 0) > 0;
+  const effectiveDontBother = dontBother || !hasLocalWindow;
+
+  if (effectiveDontBother) {
+    const headline = hasLocalWindow ? 'Not worth shooting locally' : 'No clear local window';
     return card(`
       <div style="Margin:0 0 3px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.error};">Today&apos;s call</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">Not worth shooting locally</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${headline}</div>
       <div style="Margin-top:8px;">${scorePill(todayBestScore)}</div>
       <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:4px solid ${C.error};`);
@@ -883,7 +887,9 @@ export function formatEmail(input: FormatEmailInput): string {
 
   /* Hero card */
   const todayDay = dailySummary[0] || ({} as DaySummary);
-  const topWindow = !dontBother ? windows?.[0] : null;
+  const hasLocalWindow = (windows?.length || 0) > 0;
+  const effectiveDontBother = dontBother || !hasLocalWindow;
+  const topWindow = !effectiveDontBother ? windows?.[0] : null;
   const heroScore = topWindow?.peak ?? todayBestScore;
   const peakLocalHour = peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
   const todayScoreState = scoreState(heroScore);
@@ -897,7 +903,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const astroGap = topWindow
     ? explainAstroScoreGap({ window: topWindow, today: todayDay })
     : null;
-  const nextWindow = !dontBother ? windows?.[1] : null;
+  const nextWindow = !effectiveDontBother ? windows?.[1] : null;
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
     { label: 'Sunset', value: sunsetStr, tone: C.primary },
@@ -921,8 +927,10 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'Best time', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
-  const localSummary = dontBother
-    ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
+  const localSummary = effectiveDontBother
+    ? (hasLocalWindow
+        ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
+        : 'No local window cleared the threshold today — treat Leeds as a pass unless you just want a walk.')
     : [
       topWindow
         ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
@@ -1084,7 +1092,7 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>${sectionTitle('Today\'s window')}</td>
           </tr>
           <tr>
-            <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
+            <td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
           </tr>
           ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
           ${spacer(10)}
@@ -1140,9 +1148,9 @@ function debugCard(title: string, body: string): string {
   );
 }
 
-function debugTable(headers: string[], rows: string[][]): string {
+function debugTable(headers: string[], rows: string[][], emptyMessage = 'No data recorded for this run.'): string {
   if (!rows.length) {
-    return `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No data recorded for this run.</div>`;
+    return `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">${esc(emptyMessage)}</div>`;
   }
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
@@ -1261,6 +1269,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ${debugCard('Window selection trace', debugTable(
           ['Rank', 'Window', 'Range', 'Peak', 'Selected', 'Reason', 'Dark phase'],
           windowRows,
+          'No local window cleared threshold for this run.',
         ))}
         ${spacer(8)}
         ${debugCard('Hourly astro scoring', debugTable(

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { buildFallbackAiText, isFactuallyIncoherentEditorial, normalizeAiText, shouldReplaceAiText, parseGroqResponse, resolveSpurSuggestion } from './format-messages.adapter.js';
+import {
+  buildFallbackAiText,
+  filterCompositionBullets,
+  isFactuallyIncoherentEditorial,
+  normalizeAiText,
+  parseGroqResponse,
+  resolveSpurSuggestion,
+  shouldReplaceAiText,
+} from './format-messages.adapter.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 
 describe('format-messages adapter editorial fallback', () => {
@@ -101,6 +109,53 @@ describe('format-messages adapter editorial fallback', () => {
     const text = buildFallbackAiText(morningCtx);
     expect(text).toContain('Peak astro sub-score is 55/100 at 07:00, with the final window score at 36/100 after full weighting.');
     expect(text).not.toContain('evening');
+  });
+
+  it('forces fallback when a non-dontBother run has no chosen local window', () => {
+    const noWindowCtx = {
+      windows: [],
+      dontBother: false,
+      dailySummary: [{
+        bestPhotoHour: '07:00',
+        astroScore: 52,
+        bestAstroHour: '04:00',
+        darkSkyStartsAt: '00:00',
+      }],
+      altLocations: [{
+        name: 'Brimham Rocks',
+        bestScore: 81,
+        bestAstroHour: '02:00',
+        darkSky: false,
+        driveMins: 40,
+      }],
+    };
+
+    const aiText = 'Darkness improves from 00:00. Consider Brimham Rocks today — better overall conditions (40 min drive).';
+
+    expect(shouldReplaceAiText(aiText, noWindowCtx)).toBe(true);
+    expect(buildFallbackAiText(noWindowCtx)).toContain('No local window clears the threshold in Leeds today');
+  });
+
+  it('filters remote composition bullets and backfills local-only ideas', () => {
+    const bullets = filterCompositionBullets([
+      'Shoot tree silhouettes at sunrise',
+      'Capture star trails at Brimham Rocks',
+    ], {
+      windows: [{
+        label: 'Best chance around sunrise',
+        start: '07:00',
+        end: '07:00',
+        peak: 36,
+        tops: ['landscape', 'clear light path'],
+        hours: [{ hour: '07:00', score: 36 }],
+      }],
+      dailySummary: [{ bestPhotoHour: '07:00' }],
+      altLocations: [{ name: 'Brimham Rocks', driveMins: 40 }],
+    });
+
+    expect(bullets).toContain('Shoot tree silhouettes at sunrise');
+    expect(bullets.some(bullet => bullet.includes('Brimham Rocks'))).toBe(false);
+    expect(bullets).toHaveLength(2);
   });
 });
 

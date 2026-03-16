@@ -776,6 +776,52 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Dark from 23:00 - peak after moonset 84/100.');
   });
 
+  it('renders a no-window day as a local pass even if dontBother was not set upstream', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [],
+      todayCarWash: { rating: 'OK', label: 'Great', score: 60, start: '06:00', end: '08:00', wind: 12, pp: 22, tmp: 5 },
+      dailySummary: [{
+        dayLabel: 'Monday', dateKey: '2026-03-16', dayIdx: 0,
+        photoScore: 32, headlineScore: 42, photoEmoji: 'Marginal',
+        amScore: 32, pmScore: 15, astroScore: 52, confidence: 'high', confidenceStdDev: 5,
+        astroConfidence: 'high', astroConfidenceStdDev: 11,
+        amConfidence: 'high', pmConfidence: 'high', bestPhotoHour: '07:00', bestTags: 'landscape, clear light path',
+        bestAstroHour: '04:00', darkSkyStartsAt: '00:00',
+        carWash: { rating: 'OK', label: 'Great', score: 60, start: '06:00', end: '08:00', wind: 12, pp: 22, tmp: 5 },
+      }],
+      altLocations: [{
+        name: 'Brimham Rocks',
+        driveMins: 40,
+        bestScore: 81,
+        bestDayHour: null,
+        bestAstroHour: '02:00',
+        isAstroWin: true,
+        darkSky: false,
+      }],
+      noAltsMsg: undefined,
+      sunriseStr: '06:18',
+      sunsetStr: '18:11',
+      moonPct: 8,
+      metarNote: '',
+      today: 'Monday 16 March',
+      todayBestScore: 47,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Darkness improves from 00:00. Consider Brimham Rocks today.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('No clear local window');
+    expect(html).toContain('No local window cleared the threshold today');
+    expect(html).not.toContain('Best local setup: 07:00');
+    expect(html).not.toContain('Shot ideas');
+  });
+
   it('shows Dew risk High for TPW above 30mm', () => {
     const input: FormatEmailInput = {
       dontBother: false,

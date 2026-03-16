@@ -146,6 +146,10 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
   }
 
   if (!topWindow) {
+    if (!ctx.dontBother) {
+      rulesTriggered.push('no chosen local window in context');
+      return { passed: false, rulesTriggered };
+    }
     return { passed: true, rulesTriggered };
   }
 
@@ -213,6 +217,11 @@ export function buildFallbackAiText(ctx: BriefContext): string {
 
 export type SpurRaw = { locationName: string; hookLine: string; confidence: number };
 
+function isAstroWindow(window: WindowLike | undefined): boolean {
+  if (!window) return false;
+  return window.label?.toLowerCase().includes('astro') === true || (window.tops || []).includes('astrophotography');
+}
+
 /** Strip Markdown code fences (```json ... ``` or ``` ... ```) that Groq occasionally wraps responses in. */
 function stripMarkdownFences(content: string): string {
   return content.replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/, '$1').trim();
@@ -267,6 +276,95 @@ export function parseGroqResponse(rawContent: string): {
     weekStandoutParseStatus: parseFailure ? 'parse-failure' : 'absent',
     weekStandoutRawValue: null,
   };
+}
+
+function normaliseCompositionBullet(text: string): string {
+  return text
+    .replace(/^[\s\u2022*-]+/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function remoteLocationNames(ctx: BriefContext): string[] {
+  return [
+    ...(ctx.altLocations || []).map(location => location?.name),
+    ...LONG_RANGE_LOCATIONS.map(location => location.name),
+  ].filter((name): name is string => Boolean(name));
+}
+
+function isRemoteCompositionBullet(bullet: string, ctx: BriefContext): boolean {
+  const lower = bullet.toLowerCase();
+  if (remoteLocationNames(ctx).some(name => lower.includes(name.toLowerCase()))) {
+    return true;
+  }
+  return /\b(?:drive to|make the drive|road trip|detour|travel to|min drive|minute drive)\b/i.test(bullet);
+}
+
+function dedupeBullets(bullets: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const bullet of bullets) {
+    const key = bullet.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(bullet);
+  }
+  return result;
+}
+
+function fallbackCompositionBullets(ctx: BriefContext): string[] {
+  const topWindow = ctx.windows?.[0];
+  if (!topWindow) return [];
+
+  const peakHour = topWindow.hours?.find(hour => hour.score === topWindow.peak)?.hour
+    || topWindow.hours?.[topWindow.hours.length - 1]?.hour
+    || topWindow.end
+    || topWindow.start
+    || 'the peak';
+  const loweredLabel = topWindow.label?.toLowerCase() || 'best window';
+  const lowerTags = new Set((topWindow.tops || []).map(tag => tag.toLowerCase()));
+  const ideas: string[] = [];
+
+  if (isAstroWindow(topWindow)) {
+    const darkPhaseStart = ctx.dailySummary?.[0]?.darkSkyStartsAt;
+    ideas.push(`Use a simple local silhouette so the cleanest sky stays dominant around ${peakHour}.`);
+    ideas.push(
+      darkPhaseStart
+        ? `Save your darkest local sky frame for after ${darkPhaseStart} once the sky turns properly dark.`
+        : `Try a wide local skyline or tree-line frame while the ${loweredLabel} is at its cleanest.`,
+    );
+    return dedupeBullets(ideas).slice(0, 2);
+  }
+
+  if (lowerTags.has('clear light path')) {
+    ideas.push('Use a clean skyline, ridge, or lone tree where the light path stays unobstructed.');
+  }
+  if (lowerTags.has('crepuscular rays')) {
+    ideas.push('Watch for gaps in broken cloud and frame shafts of light across open ground.');
+  }
+  if (lowerTags.has('atmospheric') || lowerTags.has('misty / atmospheric') || lowerTags.has('mist')) {
+    ideas.push('Look for layered trees, bridges, or water edges where haze can add depth.');
+  }
+  if (!ideas.length) {
+    ideas.push(`Work a simple local landscape composition around ${peakHour} during the ${loweredLabel}.`);
+  }
+  ideas.push(`Try a tighter frame on local detail while the ${loweredLabel} holds its cleanest light.`);
+  return dedupeBullets(ideas).slice(0, 2);
+}
+
+export function filterCompositionBullets(rawBullets: string[], ctx: BriefContext): string[] {
+  const cleaned = rawBullets
+    .map(normaliseCompositionBullet)
+    .filter(Boolean)
+    .filter(bullet => !isRemoteCompositionBullet(bullet, ctx));
+
+  const safeBullets = dedupeBullets(cleaned).slice(0, 2);
+  if (safeBullets.length >= 2 || !ctx.windows?.[0]) {
+    return safeBullets;
+  }
+
+  const fallback = fallbackCompositionBullets(ctx);
+  return dedupeBullets([...safeBullets, ...fallback]).slice(0, 2);
 }
 
 export function resolveSpurSuggestion(
@@ -332,6 +430,7 @@ export function run({ $input }: N8nRuntime) {
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
   const fallbackUsed = !factualCheck.passed || !editorialCheck.passed;
   const aiText = fallbackUsed ? buildFallbackAiText(ctx) : normalizedAiText;
+  const safeCompositionBullets = filterCompositionBullets(compositionBullets, ctx);
 
   const debugContext = ctx.debugContext || emptyDebugContext();
   const debugMode = ctx.debugMode === true;
@@ -381,7 +480,7 @@ export function run({ $input }: N8nRuntime) {
   };
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight, spurOfTheMoment, debugContext });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight, spurOfTheMoment, debugContext });
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`

@@ -241,6 +241,50 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Pen-y-ghent');
   });
 
+  it('treats a missing local window as dontBother and explains the weighted no-window state', () => {
+    const result = buildPrompt({
+      windows: [],
+      dontBother: false,
+      todayBestScore: 47,
+      todayCarWash: { score: 60, rating: '✅', label: 'Great', start: '06:00', end: '08:00', wind: 12, pp: 22, tmp: 5 },
+      dailySummary: [{
+        dateKey: '2026-03-16', dayLabel: 'Today', dayIdx: 0, hours: [],
+        photoScore: 32, headlineScore: 42, photoEmoji: '🟡', photoRating: 'Marginal',
+        bestPhotoHour: '07:00', bestTags: 'landscape, clear light path',
+        carWash: { score: 60, rating: '✅', label: 'Great', start: '06:00', end: '08:00', wind: 12, pp: 22, tmp: 5 },
+        sunrise: '2026-03-16T06:18:00.000Z', sunset: '2026-03-16T18:11:00.000Z',
+        shSunsetQuality: null, shSunriseQuality: null, shSunsetText: null,
+        sunDirection: null, crepRayPeak: 0, confidence: 'high', confidenceStdDev: 5,
+        durationBonus: 0, amConfidence: 'high', amConfidenceStdDev: 5,
+        pmConfidence: 'high', pmConfidenceStdDev: 5, goldAmMins: 0, goldPmMins: 0,
+        amScore: 32, pmScore: 15, astroScore: 52, bestAstroHour: '04:00', darkSkyStartsAt: '00:00',
+        bestAmHour: '07:00', bestPmHour: '18:00',
+        sunriseOcclusionRisk: 10, sunsetOcclusionRisk: null,
+        astroConfidence: 'high', astroConfidenceStdDev: 11,
+      }],
+      altLocations: [{
+        name: 'Brimham Rocks',
+        driveMins: 40,
+        bestScore: 81,
+        bestDayHour: null,
+        bestAstroHour: '02:00',
+        isAstroWin: true,
+        darkSky: false,
+        types: ['astrophotography'],
+      }],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-03-16T06:18:00.000Z',
+      sunset: '2026-03-16T18:11:00.000Z',
+      moonPct: 8,
+      now: new Date('2026-03-16T12:00:00Z'),
+    });
+
+    expect(result.dontBother).toBe(true);
+    expect(result.prompt).toContain('no local window cleared the full weighted threshold');
+    expect(result.prompt).not.toContain('Sentence 1: explain why the best local window is worth attention');
+  });
+
   it('includes spread in the 5-day outlook and instructs AI to distinguish score winner from certainty-only winner', () => {
     const makeDailySummaryDay = (dayLabel: string, dayIdx: number, headlineScore: number, confidence: string, confidenceStdDev: number | null) => ({
       dateKey: `2026-03-${14 + dayIdx}`,

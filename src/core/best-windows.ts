@@ -319,11 +319,12 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     }));
   const alignedDailySummary = alignTodaySummaryWithWindow(dailySummary, labelledWindows);
 
+  const hasLocalWindow = labelledWindows.length > 0;
   const todayHeadline = alignedDailySummary[0]?.headlineScore ?? alignedDailySummary[0]?.photoScore ?? 0;
-  const todayBestScore = labelledWindows.length
+  const todayBestScore = hasLocalWindow
     ? Math.max(labelledWindows[0].peak, todayHeadline)
-    : todayHeadline;
-  const dontBother = todayBestScore < PHOTO_THRESHOLD;
+    : Math.min(todayHeadline, PHOTO_THRESHOLD - 1);
+  const dontBother = !hasLocalWindow || todayBestScore < PHOTO_THRESHOLD;
 
   const todayCarWash = alignedDailySummary[0]?.carWash || {
     score: 0, rating: '\u274c', label: 'No good window',

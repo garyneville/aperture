@@ -519,7 +519,11 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     const bestNightH = nightHoursArr.length
       ? nightHoursArr.reduce((best, hour) => hour.astro > best.astro ? hour : best)
       : null;
+    const bestNightFinalH = nightHoursArr.length
+      ? nightHoursArr.reduce((best, hour) => hour.score > best.score ? hour : best)
+      : null;
     const astroScore = bestNightH?.astro ?? 0;
+    const headlineScore = Math.max(bestPhoto, bestNightFinalH?.score ?? 0);
     const sunriseOcclusionRisk = avg(amHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
     const sunsetOcclusionRisk  = avg(pmHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
 
@@ -529,9 +533,9 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       : labelDate.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
 
     let photoEmoji: string, photoRating: string;
-    if (bestPhoto >= 75)      { photoEmoji = '\uD83D\uDD25'; photoRating = 'Excellent'; }
-    else if (bestPhoto >= 58) { photoEmoji = '\u2705'; photoRating = 'Good'; }
-    else if (bestPhoto >= 42) { photoEmoji = '\uD83D\uDFE1'; photoRating = 'Marginal'; }
+    if (headlineScore >= 75)      { photoEmoji = '\uD83D\uDD25'; photoRating = 'Excellent'; }
+    else if (headlineScore >= 58) { photoEmoji = '\u2705'; photoRating = 'Good'; }
+    else if (headlineScore >= 42) { photoEmoji = '\uD83D\uDFE1'; photoRating = 'Marginal'; }
     else                      { photoEmoji = '\u274C'; photoRating = "Poor \u2014 don't bother"; }
 
     // Car wash
@@ -557,7 +561,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
     return {
       dateKey, dayLabel, dayIdx, hours,
-      photoScore: bestPhoto, headlineScore: Math.max(bestPhoto, astroScore), photoEmoji, photoRating,
+      photoScore: bestPhoto, headlineScore, photoEmoji, photoRating,
       bestPhotoHour: bestPhotoH.hour || '\u2014',
       bestTags: (bestPhotoH.tags || []).slice(0, 2).join(', '),
       carWash: cw,

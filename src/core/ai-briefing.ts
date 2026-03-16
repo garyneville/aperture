@@ -187,7 +187,17 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
     return 'Conditions in Leeds are not worth shooting today.';
   }
 
-  if (!topWindow) return '(No AI summary)';
+  if (!topWindow) {
+    if (topAlt?.name) {
+      const altDrive = topAlt.driveMins ? ` — ${topAlt.driveMins}-minute drive` : '';
+      const altConditions = topAlt.darkSky ? ' for better dark sky conditions' : ' for better overall conditions';
+      return `No local window clears the threshold in Leeds today. Consider ${topAlt.name}${altConditions}${altDrive}.`;
+    }
+    if (today?.darkSkyStartsAt) {
+      return `No local window clears the threshold in Leeds today. Darkness improves from ${today.darkSkyStartsAt}, but no local slot survives the full weighting.`;
+    }
+    return 'No local window clears the threshold in Leeds today.';
+  }
 
   const isSingleHour = topWindow.start === topWindow.end;
   const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
@@ -216,11 +226,19 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
 
 export function renderAiBriefingText(aiText: string, ctx: AiBriefingContext): RenderAiBriefingResult {
   const topWindow = ctx.windows?.[0];
-  if (!topWindow || !aiText) {
+  if (!aiText) {
     return {
       text: aiText,
       strippedOpener: false,
       usedFallback: false,
+    };
+  }
+
+  if (!topWindow) {
+    return {
+      text: buildFallbackAiText(ctx),
+      strippedOpener: false,
+      usedFallback: true,
     };
   }
 
