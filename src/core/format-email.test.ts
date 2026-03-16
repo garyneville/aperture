@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatEmail, type FormatEmailInput } from './format-email.js';
+import { buildKitTips, formatEmail, type CarWash, type FormatEmailInput, type Window } from './format-email.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -579,5 +579,241 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('If you still go: best chance around sunrise around 07:00 at 46/100.');
     expect(html).not.toContain('AI briefing');
     expect(html).not.toContain('Conditions in Leeds are not worth shooting today.');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  buildKitTips unit tests                                            */
+/* ------------------------------------------------------------------ */
+
+describe('buildKitTips', () => {
+  const baseCarWash: CarWash = {
+    rating: 'OK',
+    label: 'Usable',
+    score: 60,
+    start: '15:00',
+    end: '17:00',
+    wind: 10,
+    pp: 10,
+    tmp: 12,
+  };
+
+  const baseWindows: Window[] = [{
+    label: 'Evening golden hour',
+    start: '18:00',
+    end: '19:00',
+    peak: 65,
+    hours: [{ hour: '18:00', score: 65, ch: 20, visK: 20, wind: '10', pp: 10, tpw: 15 }],
+    tops: ['landscape'],
+  }];
+
+  it('returns no tips when all conditions are benign', () => {
+    const tips = buildKitTips(baseCarWash, baseWindows, 30, 40);
+    expect(tips).toHaveLength(0);
+  });
+
+  it('returns high-wind tip when wind exceeds 25 km/h', () => {
+    const tips = buildKitTips({ ...baseCarWash, wind: 30 }, baseWindows, 30, 40);
+    expect(tips.some(t => t.id === 'high-wind')).toBe(true);
+  });
+
+  it('returns rain-risk tip when rain probability exceeds 40%', () => {
+    const tips = buildKitTips({ ...baseCarWash, pp: 55 }, baseWindows, 30, 40);
+    expect(tips.some(t => t.id === 'rain-risk')).toBe(true);
+  });
+
+  it('returns cold tip when temperature drops below 2°C', () => {
+    const tips = buildKitTips({ ...baseCarWash, tmp: -1 }, baseWindows, 30, 40);
+    expect(tips.some(t => t.id === 'cold')).toBe(true);
+  });
+
+  it('returns fog-mist tip when peak window hour visibility is below 5 km', () => {
+    const lowVisWindows: Window[] = [{
+      ...baseWindows[0],
+      hours: [{ hour: '18:00', score: 65, ch: 20, visK: 2, wind: '5', pp: 5, tpw: 15 }],
+    }];
+    const tips = buildKitTips(baseCarWash, lowVisWindows, 30, 40);
+    expect(tips.some(t => t.id === 'fog-mist')).toBe(true);
+  });
+
+  it('returns astro-window tip when astro score ≥ 60, window is astro, and moon < 60%', () => {
+    const astroWindows: Window[] = [{
+      label: 'Evening astro window',
+      start: '22:00',
+      end: '02:00',
+      peak: 75,
+      hours: [{ hour: '22:00', score: 75, ch: 5, visK: 25, wind: '5', pp: 0, tpw: 15 }],
+      tops: ['astrophotography'],
+    }];
+    const tips = buildKitTips(baseCarWash, astroWindows, 70, 25);
+    expect(tips.some(t => t.id === 'astro-window')).toBe(true);
+  });
+
+  it('does not return astro-window tip when moon is too bright (≥ 60%)', () => {
+    const astroWindows: Window[] = [{
+      label: 'Evening astro window',
+      start: '22:00',
+      end: '02:00',
+      peak: 75,
+      hours: [{ hour: '22:00', score: 75, ch: 5, visK: 25, wind: '5', pp: 0, tpw: 15 }],
+      tops: ['astrophotography'],
+    }];
+    const tips = buildKitTips(baseCarWash, astroWindows, 70, 80);
+    expect(tips.some(t => t.id === 'astro-window')).toBe(false);
+  });
+
+  it('returns high-moisture tip when TPW is high and temperature is cool', () => {
+    const highMoistureWindows: Window[] = [{
+      ...baseWindows[0],
+      hours: [{ hour: '18:00', score: 65, ch: 20, visK: 10, wind: '5', pp: 20, tpw: 35 }],
+    }];
+    const tips = buildKitTips({ ...baseCarWash, tmp: 8 }, highMoistureWindows, 30, 40);
+    expect(tips.some(t => t.id === 'high-moisture')).toBe(true);
+  });
+
+  it('limits output to maxTips even when many conditions are triggered', () => {
+    const tips = buildKitTips(
+      { ...baseCarWash, wind: 35, pp: 60, tmp: 0 },
+      baseWindows,
+      30, 40,
+      3,
+    );
+    expect(tips.length).toBeLessThanOrEqual(3);
+  });
+
+  it('returns tips sorted by priority descending', () => {
+    const tips = buildKitTips(
+      { ...baseCarWash, wind: 30, pp: 50 },
+      baseWindows,
+      30, 40,
+    );
+    for (let i = 1; i < tips.length; i++) {
+      expect(tips[i - 1].priority).toBeGreaterThanOrEqual(tips[i].priority);
+    }
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  Kit advisory card rendering                                        */
+/* ------------------------------------------------------------------ */
+
+describe('kit advisory card in formatEmail', () => {
+  const baseInput: FormatEmailInput = {
+    dontBother: false,
+    windows: [{
+      label: 'Evening astro window',
+      start: '19:00',
+      end: '21:00',
+      peak: 60,
+      hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20 }],
+      tops: ['astrophotography'],
+    }],
+    todayCarWash: {
+      rating: 'OK',
+      label: 'Usable',
+      score: 60,
+      start: '15:00',
+      end: '17:00',
+      wind: 14,
+      pp: 24,
+      tmp: 9,
+    },
+    dailySummary: [{
+      dayLabel: 'Saturday',
+      dateKey: '2026-03-14',
+      dayIdx: 0,
+      photoScore: 75,
+      headlineScore: 75,
+      photoEmoji: 'Excellent',
+      amScore: 32,
+      pmScore: 40,
+      astroScore: 75,
+      confidence: 'high',
+      confidenceStdDev: 10,
+      bestPhotoHour: '18:00',
+      bestTags: 'landscape',
+      carWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '15:00',
+        end: '17:00',
+        wind: 14,
+        pp: 24,
+        tmp: 9,
+      },
+    }],
+    altLocations: [],
+    sunriseStr: '06:23',
+    sunsetStr: '18:07',
+    moonPct: 23,
+    today: 'Saturday 14 March',
+    todayBestScore: 75,
+    shSunsetQ: null,
+    shSunriseQ: null,
+    sunDir: null,
+    crepPeak: 0,
+    aiText: 'Clear astro conditions expected.',
+  };
+
+  it('renders kit advisory card when a condition is triggered (high wind)', () => {
+    const input: FormatEmailInput = {
+      ...baseInput,
+      todayCarWash: { ...baseInput.todayCarWash, wind: 35 },
+    };
+    const html = formatEmail(input);
+    expect(html).toContain('Kit advisory');
+    expect(html).toContain('High wind');
+  });
+
+  it('renders kit advisory card when rain risk is triggered', () => {
+    const input: FormatEmailInput = {
+      ...baseInput,
+      todayCarWash: { ...baseInput.todayCarWash, pp: 55 },
+    };
+    const html = formatEmail(input);
+    expect(html).toContain('Kit advisory');
+    expect(html).toContain('Rain expected');
+  });
+
+  it('does not render kit advisory card when all conditions are benign', () => {
+    const calmInput: FormatEmailInput = {
+      ...baseInput,
+      windows: [{
+        label: 'Evening golden hour',
+        start: '18:00',
+        end: '19:00',
+        peak: 65,
+        hours: [{ hour: '18:00', score: 65, ch: 20, visK: 20, wind: '10', pp: 10, tpw: 15 }],
+        tops: ['landscape'],
+      }],
+      todayCarWash: {
+        rating: 'Good',
+        label: 'Good',
+        score: 80,
+        start: '15:00',
+        end: '18:00',
+        wind: 8,
+        pp: 5,
+        tmp: 15,
+      },
+      dailySummary: [{
+        ...baseInput.dailySummary[0],
+        astroScore: 20,
+      }],
+      moonPct: 70,
+    };
+    const html = formatEmail(calmInput);
+    expect(html).not.toContain('Kit advisory');
+  });
+
+  it('kit advisory appears after today\'s window section and before alternatives section', () => {
+    const input: FormatEmailInput = {
+      ...baseInput,
+      todayCarWash: { ...baseInput.todayCarWash, wind: 35 },
+    };
+    const html = formatEmail(input);
+    expect(html.indexOf('Kit advisory')).toBeGreaterThan(html.indexOf('Today\'s window'));
+    expect(html.indexOf('Kit advisory')).toBeLessThan(html.indexOf('Alternatives'));
   });
 });
