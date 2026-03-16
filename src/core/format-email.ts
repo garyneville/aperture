@@ -1066,27 +1066,32 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
   return listRows(forecastDays.map(day => {
     const dayIsAstroLed = (day.astroScore ?? 0) > (day.photoScore ?? 0);
     const { confidence: effConf } = effectiveConf(day, dayIsAstroLed);
-    const conf = confidenceDetail(effConf);
+    const displayScore = day.headlineScore ?? day.photoScore;
     const bestAltHour = day.bestAlt?.isAstroWin
       ? day.bestAlt.bestAstroHour
       : day.bestAlt?.bestDayHour;
-    const displayScore = day.headlineScore ?? day.photoScore;
-    const altLine = day.bestAlt
-      ? `Best backup: ${day.bestAlt.name} - ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
-      : '';
-    return card(`
-      <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))}</div>
-      <div style="Margin-top:6px;">${scorePill(displayScore)}</div>
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(forecastBestLine(day))}</div>
-      <div style="Margin-top:8px;">
-        ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
-        ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
-        ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
-      </div>
-      ${conf ? `<div style="Margin-top:8px;">${confidencePill(day, dayIsAstroLed)}</div>` : ''}
+    const scoreStr = typeof displayScore === 'number' ? `${displayScore}/100` : '-';
+    const confState = confidenceDetail(effConf);
+    const spreadNote = dayIsAstroLed 
+      ? (day.astroConfidenceStdDev !== null && day.astroConfidenceStdDev !== undefined ? ` · spread ${day.astroConfidenceStdDev}` : '')
+      : (day.confidenceStdDev !== null && day.confidenceStdDev !== undefined ? ` · spread ${day.confidenceStdDev}` : '');
+    const confText = confState ? `<span style="color:${confState.fg};">${confState.label}${spreadNote}</span>` : '';
 
-      ${altLine ? `<div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
-      <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
+    const altLine = day.bestAlt
+      ? `Backup: ${day.bestAlt.name} · ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
+      : '';
+
+    return card(`
+    <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))} &middot; ${scoreState(displayScore).label} (${scoreStr})</div>
+    <div style="Margin-top:6px;font-family:${FONT};font-size:13px;font-weight:700;line-height:1.45;color:${C.ink};">${esc(forecastBestLine(day))}</div>
+    <div style="Margin-top:8px;">
+      ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
+      ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
+      ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
+      ${confText ? `<span style="font-family:${FONT};font-size:11px;font-weight:700;margin-left:4px;">${confText}</span>` : ''}
+    </div>
+    ${altLine ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
+    <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
     `);
   }));
 }
@@ -1344,30 +1349,34 @@ export function formatEmail(input: FormatEmailInput): string {
               ${hero}
             </td>
           </tr>
+          ${spacer(6)}
+          <tr>
+            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
+          </tr>
           ${signals ? spacer(6) + `<tr><td>${signals}</td></tr>` : ''}
           ${spacer(10)}
+          ${!effectiveDontBother ? `
           <tr>
             <td>${sectionTitle('Today\'s window')}</td>
           </tr>
           <tr>
             <td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
           </tr>
+          ` : ''}
           ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
           ${spacer(10)}
+          ${(altLocations?.length || longRangeTop) ? `
           <tr>
-            <td>${sectionTitle('Alternatives')}</td>
+            <td>${sectionTitle('Out of town options')}</td>
           </tr>
           <tr>
             <td>${alternativeSection(altLocations, noAltsMsg)}</td>
           </tr>
           ${(() => {
             const lr = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
-            return lr ? spacer(10) + `<tr><td>${sectionTitle('If you had the day')}</td></tr><tr><td>${lr}</td></tr>` : '';
+            return lr ? spacer(10) + `<tr><td>${lr}</td></tr>` : '';
           })()}
-          ${spacer(6)}
-          <tr>
-            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
-          </tr>
+          ` : ''}
           ${(() => {
             const tomorrow = dailySummary.find(day => day.dayIdx === 1);
             const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);

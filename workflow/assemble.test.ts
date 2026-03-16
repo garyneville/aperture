@@ -446,13 +446,16 @@ describe('workflow assembly', () => {
     expect(result).toEqual([{
       json: {
         telegramMsg: expect.stringContaining('Stay home today.'),
-        emailHtml: expect.stringContaining('If you still go: no clear local fallback window.'),
+        emailHtml: expect.any(String),
         debugMode: false,
         debugEmailTo: '',
         debugEmailHtml: '',
         debugEmailSubject: expect.stringContaining('Photo Brief Debug'),
       },
     }]);
+    expect(result[0]?.json?.emailHtml).toContain('No local window cleared the threshold today');
+    expect(result[0]?.json?.emailHtml).not.toContain('If you still go: no clear local fallback window.');
+    expect(result[0]?.json?.emailHtml).not.toContain('Today&#39;s window');
   });
 
   it('assembles the debug-email gate so no SendGrid call is made when debug mode is off', async () => {

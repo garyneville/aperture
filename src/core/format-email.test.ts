@@ -676,7 +676,7 @@ describe('formatEmail hero summary', () => {
     const html = formatEmail(input);
 
     expect(html).toContain('Not a great photography day locally');
-    expect(html).toContain('If you still go: best chance around sunrise around 07:00 at 46/100.');
+    
     expect(html).not.toContain('AI briefing');
     expect(html).not.toContain('Conditions in Leeds are not worth shooting today.');
     // at-a-glance must not reference the alt location score or suggest going there
@@ -907,7 +907,7 @@ describe('formatEmail hero summary', () => {
 
     expect(html).toContain('Best time');
     expect(html).toContain('No clear slot');
-    expect(html).toContain('No clear local window');
+    expect(html).not.toContain('No clear local window');
     expect(html).toContain('No local window cleared the threshold today');
     expect(html).not.toContain('Best time</span> 07:00');
     expect(html).not.toContain('Best local setup: 07:00');
@@ -1350,14 +1350,19 @@ describe('kit advisory card in formatEmail', () => {
     expect(html).not.toContain('Kit advisory');
   });
 
-  it('kit advisory appears after today\'s window section and before alternatives section', () => {
+  it('kit advisory appears after today\'s window section and before the next major section', () => {
     const input: FormatEmailInput = {
       ...baseInput,
       todayCarWash: { ...baseInput.todayCarWash, wind: 35 },
     };
     const html = formatEmail(input);
+    const nextSectionHeading = html.includes('Out of town options')
+      ? 'Out of town options'
+      : html.includes('Tomorrow\'s weather')
+        ? 'Tomorrow\'s weather'
+        : 'Days ahead';
     expect(html.indexOf('Kit advisory')).toBeGreaterThan(html.indexOf('Today\'s window'));
-    expect(html.indexOf('Kit advisory')).toBeLessThan(html.indexOf('Alternatives'));
+    expect(html.indexOf('Kit advisory')).toBeLessThan(html.indexOf(nextSectionHeading));
   });
 
   it('renders astro kit advice from a later night window even when the top window is daylight', () => {
@@ -1672,7 +1677,7 @@ describe('formatEmail long-range section', () => {
       },
     });
 
-    expect(html).toContain('If you had the day');
+    expect(html).toContain('Out of town options');
     expect(html).toContain('Weekend opportunity');
     expect(html).toContain('Goathland');
     expect(html).toContain('Best astro around 02:00 - dark sky site');
