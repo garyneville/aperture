@@ -215,6 +215,9 @@ describe('workflow assembly', () => {
         sunrise: null,
         sunset: null,
         moonPct: 0,
+        debugContext: expect.objectContaining({
+          nearbyAlternatives: [],
+        }),
       },
     }]);
   });
@@ -284,6 +287,45 @@ describe('workflow assembly', () => {
       json: {
         telegramMsg: expect.stringContaining('Stay home today.'),
         emailHtml: expect.stringContaining('If you still go: no clear local fallback window.'),
+        debugMode: false,
+        debugEmailTo: '',
+        debugEmailHtml: '',
+        debugEmailSubject: expect.stringContaining('Photo Brief Debug'),
+      },
+    }]);
+  });
+
+  it('assembles the debug-email gate so no SendGrid call is made when debug mode is off', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const debugConfigConnection = data.connections['Code: Debug Config']?.main?.[0]?.[0];
+    expect(debugConfigConnection?.node).toBe('Merge: Prompt + Debug Config');
+
+    const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Prepare Debug Email');
+    expect(node).toBeTruthy();
+
+    const fn = new Function('$', '$input', node.parameters.jsCode);
+    const disabled = fn(
+      () => ({ first: () => ({ json: {} }), all: () => [] }),
+      { first: () => ({ json: { debugMode: false, debugEmailTo: 'debug@example.com', debugEmailHtml: '<p>x</p>' } }), all: () => [] },
+    );
+    expect(disabled).toEqual([]);
+
+    const enabled = fn(
+      () => ({ first: () => ({ json: {} }), all: () => [] }),
+      { first: () => ({ json: { debugMode: true, debugEmailTo: 'debug@example.com', debugEmailHtml: '<p>x</p>', debugEmailSubject: 'Debug subject' } }), all: () => [] },
+    );
+    expect(enabled).toEqual([{
+      json: {
+        debugEmailTo: 'debug@example.com',
+        debugEmailHtml: '<p>x</p>',
+        debugEmailSubject: 'Debug subject',
       },
     }]);
   });
@@ -435,6 +477,11 @@ describe('workflow assembly', () => {
         todayHours: [],
         dailySummary: [],
         metarNote: '',
+        debugContext: expect.objectContaining({
+          hourlyScoring: [],
+          windows: [],
+          nearbyAlternatives: [],
+        }),
       },
     }]);
   });

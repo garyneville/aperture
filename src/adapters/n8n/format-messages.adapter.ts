@@ -1,11 +1,15 @@
 import { formatTelegram } from '../../core/format-telegram.js';
-import { formatEmail } from '../../core/format-email.js';
+import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
+import { emptyDebugContext, type DebugAiCheck, type DebugContext } from '../../core/debug-context.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 import type { N8nRuntime } from './types.js';
 
 type BriefContext = {
   dontBother?: boolean;
+  debugMode?: boolean;
+  debugEmailTo?: string;
+  debugContext?: DebugContext;
   windows?: WindowLike[];
   dailySummary?: Array<{
     bestPhotoHour?: string;
@@ -47,10 +51,11 @@ function peakHourForWindow(window: WindowLike | undefined): string | null {
   return peakHour?.hour || null;
 }
 
-export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext): boolean {
+export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
   const topWindow = ctx.windows?.[0];
   const topAlt = ctx.altLocations?.[0];
   const SCORE_TOLERANCE = 5;
+  const rulesTriggered: string[] = [];
 
   // Rule 1: reject if the first sentence mentions the alt location name.
   // A coherent editorial describes Leeds conditions first; the alt belongs in a follow-up sentence.
@@ -58,7 +63,7 @@ export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext
     const sentenceEnd = aiText.search(/[.!?]/);
     const firstSentence = sentenceEnd >= 0 ? aiText.slice(0, sentenceEnd + 1) : aiText;
     if (firstSentence.toLowerCase().includes(topAlt.name.toLowerCase())) {
-      return true;
+      rulesTriggered.push('alt name appears in first sentence');
     }
   }
 
@@ -76,7 +81,7 @@ export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext
     const hasInvalidScore = quotedScores.some(
       score => !validScores.some(valid => Math.abs(score - valid) <= SCORE_TOLERANCE),
     );
-    if (hasInvalidScore) return true;
+    if (hasInvalidScore) rulesTriggered.push('quoted score not grounded in source values');
   }
 
   // Rule 3: reject if any "X points stronger" value doesn't match the real alt delta (±SCORE_TOLERANCE).
@@ -87,20 +92,32 @@ export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext
     const quotedDeltas = [...aiText.matchAll(/\b(\d+)\s+points?\s+stronger\b/gi)].map(m => parseInt(m[1], 10));
     if (quotedDeltas.length > 0) {
       const hasInvalidDelta = quotedDeltas.some(delta => Math.abs(delta - realDelta) > SCORE_TOLERANCE);
-      if (hasInvalidDelta) return true;
+      if (hasInvalidDelta) rulesTriggered.push('quoted alternative delta does not match source data');
     }
   }
 
-  return false;
+  return {
+    passed: rulesTriggered.length === 0,
+    rulesTriggered,
+  };
 }
 
-export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean {
-  const topWindow = ctx.windows?.[0];
-  if (!aiText || aiText === '(No AI summary)') return true;
-  if (!topWindow) return false;
+export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext): boolean {
+  return !getFactualCheck(aiText, ctx).passed;
+}
 
-  // Factual coherence check takes priority: replace regardless of keyword heuristics.
-  if (isFactuallyIncoherentEditorial(aiText, ctx)) return true;
+export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
+  const rulesTriggered: string[] = [];
+  const topWindow = ctx.windows?.[0];
+
+  if (!aiText || aiText === '(No AI summary)') {
+    rulesTriggered.push('missing AI summary');
+    return { passed: false, rulesTriggered };
+  }
+
+  if (!topWindow) {
+    return { passed: true, rulesTriggered };
+  }
 
   const lower = aiText.toLowerCase();
   const mentionsWindow = [
@@ -122,12 +139,23 @@ export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean 
     'alternative',
   ].some(fragment => lower.includes(fragment));
 
-  // For dontBother days the AI won't reference a window — just check for editorial value.
-  if (ctx.dontBother) return !addsInsight;
+  if (!ctx.dontBother && !mentionsWindow) {
+    rulesTriggered.push('does not reference the chosen local window');
+  }
+  if (!addsInsight) {
+    rulesTriggered.push('does not add editorial insight beyond card data');
+  }
 
-  // For positive days: replace if AI doesn't mention the window at all, or mentions it
-  // but adds no editorial insight beyond restating the card data.
-  return !mentionsWindow || !addsInsight;
+  return {
+    passed: rulesTriggered.length === 0,
+    rulesTriggered,
+  };
+}
+
+export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean {
+  const factualCheck = getFactualCheck(aiText, ctx);
+  if (!factualCheck.passed) return true;
+  return !getEditorialCheck(aiText, ctx).passed;
 }
 
 function windowRange(w: { start?: string; end?: string }): string {
@@ -190,8 +218,7 @@ export function parseGroqResponse(rawContent: string): {
         typeof spur === 'object' &&
         typeof spur.locationName === 'string' &&
         typeof spur.hookLine === 'string' &&
-        typeof spur.confidence === 'number' &&
-        spur.confidence >= 0.7
+        typeof spur.confidence === 'number'
       ) {
         spurRaw = { locationName: spur.locationName, hookLine: spur.hookLine, confidence: spur.confidence };
       }
@@ -211,7 +238,7 @@ export function parseGroqResponse(rawContent: string): {
 }
 
 export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentSuggestion | null {
-  if (!spurRaw) return null;
+  if (!spurRaw || spurRaw.confidence < 0.7) return null;
   const loc = LONG_RANGE_LOCATIONS.find(l => l.name === spurRaw.locationName);
   if (!loc) return null;
   return {
@@ -223,6 +250,15 @@ export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentS
     hookLine: spurRaw.hookLine,
     confidence: spurRaw.confidence,
   };
+}
+
+function resolveSpurDropReason(spurRaw: SpurRaw | null): string | undefined {
+  if (!spurRaw) return undefined;
+  if (spurRaw.confidence < 0.7) return `confidence below threshold (${spurRaw.confidence})`;
+  if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
+    return 'location not found in approved long-range list';
+  }
+  return undefined;
 }
 
 export function run({ $input }: N8nRuntime) {
@@ -238,12 +274,56 @@ export function run({ $input }: N8nRuntime) {
   const { editorial, compositionBullets, weekInsight, spurRaw } = parseGroqResponse(rawContent);
   const spurOfTheMoment = resolveSpurSuggestion(spurRaw);
   const normalizedAiText = normalizeAiText(editorial);
-  const aiText = shouldReplaceAiText(normalizedAiText, ctx)
-    ? buildFallbackAiText(ctx)
-    : normalizedAiText;
+  const factualCheck = getFactualCheck(normalizedAiText, ctx);
+  const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
+  const fallbackUsed = !factualCheck.passed || !editorialCheck.passed;
+  const aiText = fallbackUsed ? buildFallbackAiText(ctx) : normalizedAiText;
+
+  const debugContext = ctx.debugContext || emptyDebugContext();
+  const debugMode = ctx.debugMode === true;
+  const debugEmailTo = typeof ctx.debugEmailTo === 'string' ? ctx.debugEmailTo : '';
+
+  debugContext.metadata = {
+    ...(debugContext.metadata || {}),
+    generatedAt: debugContext.metadata?.generatedAt || new Date().toISOString(),
+    location: debugContext.metadata?.location || 'Leeds',
+    latitude: debugContext.metadata?.latitude ?? 0,
+    longitude: debugContext.metadata?.longitude ?? 0,
+    timezone: debugContext.metadata?.timezone || 'Europe/London',
+    workflowVersion: debugContext.metadata?.workflowVersion || null,
+    debugModeEnabled: debugMode,
+    debugModeSource: debugMode ? 'workflow toggle' : 'workflow default',
+    debugRecipient: debugMode ? debugEmailTo : null,
+  };
+  debugContext.ai = {
+    rawGroqResponse: rawContent,
+    normalizedAiText,
+    factualCheck,
+    editorialCheck,
+    spurSuggestion: {
+      raw: spurRaw ? `${spurRaw.locationName} (${spurRaw.confidence})` : null,
+      confidence: spurRaw?.confidence ?? null,
+      resolved: spurOfTheMoment?.locationName || null,
+      dropped: Boolean(spurRaw) && !spurOfTheMoment,
+      dropReason: resolveSpurDropReason(spurRaw),
+    },
+    fallbackUsed,
+    finalAiText: aiText,
+  };
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
   const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight, spurOfTheMoment });
+  const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
+  const debugEmailSubject = debugContext.metadata?.location
+    ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`
+    : `Photo Brief Debug - ${ctx.today || 'today'}`;
 
-  return [{ json: { telegramMsg, emailHtml } }];
+  return [{ json: {
+    telegramMsg,
+    emailHtml,
+    debugMode,
+    debugEmailTo,
+    debugEmailHtml,
+    debugEmailSubject,
+  } }];
 }

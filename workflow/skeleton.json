@@ -23,6 +23,21 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_debug-config__"
+      },
+      "id": "a1b2c3d4-0041-0041-0041-000000000041",
+      "name": "Code: Debug Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        120
+      ]
+    },
+    {
+      "parameters": {
         "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation_probability,precipitation,windspeed_10m,windgusts_10m,cape,vapour_pressure_deficit,total_column_integrated_water_vapour&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
@@ -173,6 +188,21 @@
     },
     {
       "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0042-0042-0042-000000000042",
+      "name": "Merge: Prompt + Debug Config",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        300
+      ]
+    },
+    {
+      "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
         "jsCode": "__ADAPTER_format-messages__"
@@ -182,7 +212,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
+        2420,
         300
       ]
     },
@@ -215,7 +245,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2200,
+        2640,
         200
       ],
       "retryOnFail": true,
@@ -244,7 +274,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ personalizations: [{ to: [{ email: 'callmecheez@gmail.com' }] }], from: { email: '__EMAIL_FROM__', name: 'Photo Brief' }, subject: '\ud83d\udcf7 Leeds Photo Brief \u2014 ' + $('Code: Build Prompt').first().json.today, content: [{ type: 'text/plain', value: $json.telegramMsg.replace(/<[^>]+>/g, '') }, { type: 'text/html', value: $json.emailHtml }] }) }}",
+        "body": "={{ JSON.stringify({ personalizations: [{ to: [{ email: '__PHOTO_WEATHER_EMAIL_TO__' }] }], from: { email: '__EMAIL_FROM__', name: 'Photo Brief' }, subject: '\ud83d\udcf7 Leeds Photo Brief \u2014 ' + $('Code: Build Prompt').first().json.today, content: [{ type: 'text/plain', value: $json.telegramMsg.replace(/<[^>]+>/g, '') }, { type: 'text/html', value: $json.emailHtml }] }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0012-0012-0012-000000000012",
@@ -252,8 +282,60 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2200,
+        2640,
         400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_prepare-debug-email__"
+      },
+      "id": "a1b2c3d4-0043-0043-0043-000000000043",
+      "name": "Code: Prepare Debug Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.sendgrid.com/v3/mail/send",
+        "sendHeaders": true,
+        "specifyHeaders": "keypair",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer __SENDGRID_API_KEY__"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ personalizations: [{ to: [{ email: $json.debugEmailTo }] }], from: { email: '__EMAIL_FROM__', name: 'Photo Brief Debug' }, subject: $json.debugEmailSubject, content: [{ type: 'text/html', value: $json.debugEmailHtml }] }) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0044-0044-0044-000000000044",
+      "name": "HTTP: Send Debug Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2860,
+        600
       ],
       "retryOnFail": true,
       "maxTries": 3,
@@ -712,6 +794,11 @@
       "main": [
         [
           {
+            "node": "Code: Debug Config",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "HTTP: Weather",
             "type": "main",
             "index": 0
@@ -825,6 +912,28 @@
       "main": [
         [
           {
+            "node": "Merge: Prompt + Debug Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Debug Config": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt + Debug Config",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Prompt + Debug Config": {
+      "main": [
+        [
+          {
             "node": "Code: Format Messages",
             "type": "main",
             "index": 0
@@ -842,6 +951,22 @@
           },
           {
             "node": "HTTP: Send Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Prepare Debug Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Prepare Debug Email": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Send Debug Email",
             "type": "main",
             "index": 0
           }

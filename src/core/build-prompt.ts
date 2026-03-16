@@ -1,5 +1,7 @@
 import type { Window, DailySummary, CarWash } from './best-windows.js';
 import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
+import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
+import { emptyDebugContext, type DebugContext } from './debug-context.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -37,6 +39,7 @@ export interface BuildPromptInput {
   moonPct: number;
   kpForecast?: KpEntry[];
   now?: Date;
+  debugContext?: DebugContext;
 }
 
 export interface AltLocationResult {
@@ -70,6 +73,7 @@ export interface BuildPromptOutput {
   sunDir: number | null;
   crepPeak: number;
   peakKpTonight: number | null;
+  debugContext: DebugContext;
 }
 
 function confidenceLabel(confidence: string): string {
@@ -167,6 +171,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   } = input;
 
   const now = input.now || new Date();
+  const debugContext = input.debugContext || emptyDebugContext();
 
   const sunriseStr = sunrise
     ? new Date(sunrise).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
@@ -186,6 +191,18 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
+
+  debugContext.metadata = {
+    generatedAt: now.toISOString(),
+    location: getPhotoWeatherLocation(),
+    latitude: getPhotoWeatherLat(),
+    longitude: getPhotoWeatherLon(),
+    timezone: getPhotoWeatherTimezone(),
+    workflowVersion: PHOTO_BRIEF_WORKFLOW_VERSION,
+    debugModeEnabled: false,
+    debugModeSource: null,
+    debugRecipient: null,
+  };
 
   const confNote = todayDay?.confidence && todayDay.confidence !== 'unknown'
     ? `\nForecast certainty: ${confidenceLabel(todayDay.confidence)}.` +
@@ -311,5 +328,6 @@ ${windowsText}${altText}
     sunDir: todayDay?.sunDirection ?? null,
     crepPeak: todayDay?.crepRayPeak || 0,
     peakKpTonight,
+    debugContext,
   };
 }

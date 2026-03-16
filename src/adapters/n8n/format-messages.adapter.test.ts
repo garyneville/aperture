@@ -151,7 +151,7 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
 });
 
 describe('parseGroqResponse — spurOfTheMoment', () => {
-  it('extracts spurRaw when confidence is >= 0.7 and all required fields are present', () => {
+  it('extracts spurRaw when all required fields are present', () => {
     const raw = JSON.stringify({
       editorial: 'Good conditions today.',
       composition: ['Shot idea 1', 'Shot idea 2'],
@@ -165,14 +165,18 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
     expect(result.spurRaw?.confidence).toBe(0.85);
   });
 
-  it('drops spurRaw when confidence is below 0.7', () => {
+  it('keeps spurRaw even when confidence is below 0.7 so the debug trace can explain the drop', () => {
     const raw = JSON.stringify({
       editorial: 'Good conditions today.',
       composition: [],
       weekStandout: 'Today.',
       spurOfTheMoment: { locationName: 'Mam Tor', hookLine: 'Nice upland views.', confidence: 0.65 },
     });
-    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+    expect(parseGroqResponse(raw).spurRaw).toEqual({
+      locationName: 'Mam Tor',
+      hookLine: 'Nice upland views.',
+      confidence: 0.65,
+    });
   });
 
   it('drops spurRaw when locationName is missing', () => {
@@ -202,6 +206,10 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
 describe('resolveSpurSuggestion', () => {
   it('returns null when spurRaw is null', () => {
     expect(resolveSpurSuggestion(null)).toBeNull();
+  });
+
+  it('returns null when confidence is below 0.7', () => {
+    expect(resolveSpurSuggestion({ locationName: 'Mam Tor', hookLine: 'Great.', confidence: 0.65 })).toBeNull();
   });
 
   it('returns null when locationName is not in the known list', () => {

@@ -1,3 +1,5 @@
+import { emptyDebugContext, type DebugContext } from './debug-context.js';
+
 export interface ScoredHour {
   ts: string;
   t: string;
@@ -106,6 +108,7 @@ export interface BestWindowsInput {
   todayHours: ScoredHour[];
   dailySummary: DailySummary[];
   metarNote: string;
+  debugContext?: DebugContext;
 }
 
 export interface BestWindowsOutput {
@@ -118,6 +121,7 @@ export interface BestWindowsOutput {
   sunrise: string | undefined;
   sunset: string | undefined;
   moonPct: number;
+  debugContext: DebugContext;
 }
 
 const PHOTO_THRESHOLD = 48;
@@ -323,6 +327,30 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     start: '\u2014', end: '\u2014', wind: 0, pp: 0, tmp: 0,
   };
 
+  const debugContext = input.debugContext || emptyDebugContext();
+  debugContext.windows = labelledWindows.map((window, index) => {
+    const selected = index === 0;
+    const scoreGap = selected ? 0 : Math.max(0, labelledWindows[0].peak - window.peak);
+    const selectionReason = selected
+      ? (window.fallback ? 'selected as the strongest fallback session after no clean threshold window emerged' : 'selected as the highest-scoring local window')
+      : (window.fallback
+          ? 'kept as a backup fallback session'
+          : `kept as backup window; ${scoreGap} point${scoreGap === 1 ? '' : 's'} below the selected slot`);
+
+    return {
+      label: window.label,
+      start: window.start,
+      end: window.end,
+      peak: window.peak,
+      rank: index + 1,
+      selected,
+      fallback: window.fallback,
+      selectionReason,
+      darkPhaseStart: window.darkPhaseStart ?? null,
+      postMoonsetScore: window.postMoonsetScore ?? null,
+    };
+  });
+
   return {
     windows: labelledWindows,
     dontBother,
@@ -333,5 +361,6 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     sunrise,
     sunset,
     moonPct: todayHours[0]?.moon ?? 0,
+    debugContext,
   };
 }

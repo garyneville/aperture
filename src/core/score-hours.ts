@@ -1,6 +1,7 @@
 import { findDarkSkyStart, getMoonMetrics, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
+import { emptyDebugContext, type DebugContext } from './debug-context.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
 
@@ -181,6 +182,7 @@ export interface ScoreHoursOutput {
   todayHours: ScoredHour[];
   dailySummary: DaySummary[];
   metarNote: string;
+  debugContext: DebugContext;
 }
 
 // ── Internals ────────────────────────────────────────────────────────────────
@@ -590,5 +592,46 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     if (dateKey === todayKey) todayHours = day.hours;
   });
 
-  return { todayHours, dailySummary, metarNote };
+  const todayDay = dailySummary.find(day => day.dateKey === todayKey) || dailySummary[0];
+  const debugContext = emptyDebugContext();
+
+  if (todayDay) {
+    debugContext.scores = {
+      am: todayDay.amScore,
+      pm: todayDay.pmScore,
+      astro: todayDay.astroScore,
+      overall: todayDay.headlineScore ?? todayDay.photoScore,
+      certainty: todayDay.confidence ?? null,
+      certaintySpread: todayDay.confidenceStdDev ?? null,
+    };
+  }
+
+  debugContext.hourlyScoring = todayHours
+    .filter(hour => hour.isNight)
+    .map(hour => {
+      const moonMetrics = getMoonMetrics(Date.parse(hour.ts), LAT, LON);
+      return {
+        hour: hour.hour,
+        timestamp: hour.ts,
+        final: hour.score,
+        cloud: hour.ct,
+        visK: hour.visK,
+        aod: hour.aod,
+        moonAdjustment: moonScoreAdjustment(moonMetrics),
+        aodPenalty: astroAodPenalty(hour.aod),
+        astroScore: hour.astro,
+        drama: hour.drama,
+        clarity: hour.clarity,
+        mist: hour.mist,
+        moon: {
+          altitudeDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10,
+          illuminationPct: Math.round(moonMetrics.illumination * 100),
+          azimuthDeg: moonMetrics.isUp ? Math.round(moonMetrics.azimuthDeg) : null,
+          isUp: moonMetrics.isUp,
+        },
+        tags: hour.tags,
+      };
+    });
+
+  return { todayHours, dailySummary, metarNote, debugContext };
 }

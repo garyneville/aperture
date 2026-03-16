@@ -6,6 +6,8 @@ export const PHOTO_WEATHER_CONFIG = {
   icao: '__PHOTO_WEATHER_ICAO__',
 } as const;
 
+export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
+
 function isPlaceholder(value: string): boolean {
   return /^__.+__$/.test(value);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildKitTips, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
+import { buildKitTips, formatDebugEmail, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -767,6 +767,99 @@ describe('formatEmail hero summary', () => {
     const html = formatEmail(input);
 
     expect(html).toContain('Dark from 23:00 - peak after moonset 84/100.');
+  });
+});
+
+describe('formatDebugEmail', () => {
+  it('renders the structured debug sections for a traced run', () => {
+    const html = formatDebugEmail({
+      metadata: {
+        generatedAt: '2026-03-16T12:00:00.000Z',
+        location: 'Leeds',
+        latitude: 53.8,
+        longitude: -1.57,
+        timezone: 'Europe/London',
+        workflowVersion: 'debug-trace-v1',
+        debugModeEnabled: true,
+        debugModeSource: 'workflow toggle',
+        debugRecipient: 'debug@example.com',
+      },
+      scores: {
+        am: 32,
+        pm: 15,
+        astro: 75,
+        overall: 60,
+        certainty: 'medium',
+        certaintySpread: 5,
+      },
+      hourlyScoring: [{
+        hour: '04:00',
+        timestamp: '2026-03-16T04:00:00.000Z',
+        final: 72,
+        cloud: 5,
+        visK: 20.5,
+        aod: 0.11,
+        moonAdjustment: 30,
+        aodPenalty: 1,
+        astroScore: 72,
+        drama: 0,
+        clarity: 0,
+        mist: 0,
+        moon: { altitudeDeg: -2, illuminationPct: 8, azimuthDeg: null, isUp: false },
+        tags: ['astrophotography'],
+      }],
+      windows: [{
+        label: 'Overnight astro window',
+        start: '04:00',
+        end: '06:00',
+        peak: 60,
+        rank: 1,
+        selected: true,
+        fallback: false,
+        selectionReason: 'selected as the highest-scoring local window',
+        darkPhaseStart: '04:45',
+        postMoonsetScore: 72,
+      }],
+      nearbyAlternatives: [{
+        name: 'Sutton Bank',
+        rank: 1,
+        shown: true,
+        bestScore: 85,
+        dayScore: 30,
+        astroScore: 85,
+        driveMins: 75,
+        bortle: 3,
+        darknessScore: 75,
+        darknessDelta: 50,
+        weatherDelta: 25,
+      }],
+      ai: {
+        rawGroqResponse: '{"editorial":"Good night."}',
+        normalizedAiText: 'Good night.',
+        factualCheck: { passed: true, rulesTriggered: [] },
+        editorialCheck: { passed: false, rulesTriggered: ['does not add editorial insight beyond card data'] },
+        spurSuggestion: {
+          raw: 'Kielder Forest (0.65)',
+          confidence: 0.65,
+          resolved: null,
+          dropped: true,
+          dropReason: 'confidence below threshold (0.65)',
+        },
+        fallbackUsed: true,
+        finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
+      },
+    });
+
+    expect(html).toContain('Run metadata');
+    expect(html).toContain('Day scores and certainty');
+    expect(html).toContain('Window selection trace');
+    expect(html).toContain('Hourly astro scoring');
+    expect(html).toContain('Nearby alternatives');
+    expect(html).toContain('AI editorial trace');
+    expect(html).toContain('debug@example.com');
+    expect(html).toContain('Overnight astro window');
+    expect(html).toContain('Sutton Bank');
+    expect(html).toContain('confidence below threshold');
   });
 });
 

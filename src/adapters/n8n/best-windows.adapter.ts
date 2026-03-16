@@ -2,7 +2,7 @@ import { bestWindows } from '../../core/best-windows.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {
-  const { todayHours, dailySummary, metarNote } = $input.first().json;
-  const result = bestWindows({ todayHours, dailySummary, metarNote });
+  const { todayHours, dailySummary, metarNote, debugContext } = $input.first().json;
+  const result = bestWindows({ todayHours, dailySummary, metarNote, debugContext });
   return [{ json: result }];
 }

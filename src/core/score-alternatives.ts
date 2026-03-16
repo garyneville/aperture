@@ -2,6 +2,7 @@ import { getMoonMetrics, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
+import { emptyDebugContext, type DebugContext } from './debug-context.js';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces                                                        */
@@ -100,6 +101,7 @@ export interface LeedsContext {
   sunrise: unknown;
   sunset: unknown;
   moonPct: unknown;
+  debugContext?: DebugContext;
 }
 
 /** Input to scoreAlternatives. */
@@ -114,6 +116,7 @@ export interface ScoreAlternativesOutput {
   altLocations: TodayAlt[];
   noAltsMsg: string | null;
   augmentedSummary: (DaySummary & { bestAlt: BestAltCandidate | null })[];
+  debugContext: DebugContext;
 }
 
 /* ------------------------------------------------------------------ */
@@ -294,6 +297,7 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
 export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternativesOutput {
   const { altWeatherData, altLocationMeta, leedsContext } = input;
   const { dailySummary } = leedsContext;
+  const debugContext = leedsContext.debugContext || emptyDebugContext();
 
   // Score every location across all forecast days
   const allLocScores = altWeatherData.map((wData, idx) => {
@@ -357,5 +361,42 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     ? 'No nearby locations score well enough today to recommend a trip.'
     : null;
 
-  return { altLocations: todayAlts, noAltsMsg, augmentedSummary };
+  debugContext.nearbyAlternatives = allLocScores
+    .map(({ loc, days }) => {
+      const today = days[0];
+      if (!today) return null;
+
+      const shown = today.meetsThreshold && today.bestScore > leedsHeadline + 8;
+      let discardedReason: string | undefined;
+
+      if (!today.meetsThreshold) {
+        if (today.isAstroWin) {
+          discardedReason = `astro score below threshold (${today.bestAstro} < ${ASTRO_THRESHOLD})`;
+        } else {
+          discardedReason = `daylight score below threshold (${today.bestDay} < ${DAY_THRESHOLD})`;
+        }
+      } else if (!shown) {
+        discardedReason = `score does not beat Leeds by 8 points (${today.bestScore} vs ${leedsHeadline})`;
+      }
+
+      return {
+        name: loc.name,
+        rank: 0,
+        shown,
+        bestScore: today.bestScore,
+        dayScore: today.bestDay,
+        astroScore: today.bestAstro,
+        driveMins: loc.driveMins,
+        bortle: loc.siteDarkness.bortle,
+        darknessScore: loc.siteDarkness.siteDarknessScore,
+        darknessDelta: loc.siteDarkness.siteDarknessScore - HOME_SITE_DARKNESS.siteDarknessScore,
+        weatherDelta: today.bestScore - leedsHeadline,
+        discardedReason,
+      };
+    })
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null)
+    .sort((a, b) => b.bestScore - a.bestScore)
+    .map((candidate, index) => ({ ...candidate, rank: index + 1 }));
+
+  return { altLocations: todayAlts, noAltsMsg, augmentedSummary, debugContext };
 }

@@ -32,5 +32,6 @@ export function run({ $input }: N8nRuntime) {
     sunrise: leedsContext.sunrise,
     sunset: leedsContext.sunset,
     moonPct: leedsContext.moonPct,
+    debugContext: result.debugContext,
   } }];
 }

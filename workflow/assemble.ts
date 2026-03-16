@@ -15,6 +15,7 @@ export const SKELETON_PATH = resolve(ROOT, 'workflow', 'skeleton.json');
 export const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-workflows', 'photography-weather-brief.json');
 
 export const ADAPTERS: Record<string, string> = {
+  'debug-config': 'src/adapters/n8n/debug-config.adapter.ts',
   'wrap-weather': 'src/adapters/n8n/wrap-weather.adapter.ts',
   'wrap-air-quality': 'src/adapters/n8n/wrap-air-quality.adapter.ts',
   'wrap-precip-prob': 'src/adapters/n8n/wrap-precip-prob.adapter.ts',
@@ -32,6 +33,7 @@ export const ADAPTERS: Record<string, string> = {
   'build-prompt': 'src/adapters/n8n/build-prompt.adapter.ts',
   'wrap-kp-index': 'src/adapters/n8n/wrap-kp-index.adapter.ts',
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',
+  'prepare-debug-email': 'src/adapters/n8n/prepare-debug-email.adapter.ts',
 };
 
 export async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
