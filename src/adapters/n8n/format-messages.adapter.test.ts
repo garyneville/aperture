@@ -341,3 +341,37 @@ describe('normalizeAiText — decimal spacing fix (#108)', () => {
     expect(normalizeAiText('')).toBe('(No AI summary)');
   });
 });
+
+describe('resolveSpurSuggestion — nearby alt deduplication', () => {
+  it('drops the spur when its location is already in nearbyAltNames', () => {
+    const result = resolveSpurSuggestion(
+      { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
+      ['Aysgarth Falls'],
+    );
+    expect(result).toBeNull();
+  });
+
+  it('resolves the spur when it is not in nearbyAltNames', () => {
+    const result = resolveSpurSuggestion(
+      { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
+      ['Mam Tor', 'Sutton Bank'],
+    );
+    expect(result).not.toBeNull();
+    expect(result?.locationName).toBe('Aysgarth Falls');
+  });
+
+  it('resolves the spur when nearbyAltNames is empty', () => {
+    const result = resolveSpurSuggestion(
+      { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
+      [],
+    );
+    expect(result).not.toBeNull();
+  });
+
+  it('resolves the spur when nearbyAltNames is not provided', () => {
+    const result = resolveSpurSuggestion(
+      { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
+    );
+    expect(result).not.toBeNull();
+  });
+});

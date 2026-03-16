@@ -105,12 +105,39 @@ export interface DebugAiTrace {
   finalAiText: string;
 }
 
+export interface DebugLongRangeCandidate {
+  name: string;
+  region: string;
+  tags: string[];
+  bestScore: number;
+  dayScore: number;
+  astroScore: number;
+  driveMins: number;
+  darkSky: boolean;
+  rank: number;
+}
+
+export interface DebugKitAdvisoryRule {
+  id: string;
+  threshold: string;
+  value: string;
+  matched: boolean;
+  shown: boolean;
+}
+
+export interface DebugKitAdvisory {
+  rules: DebugKitAdvisoryRule[];
+  tipsShown: string[];
+}
+
 export interface DebugContext {
   metadata?: DebugRunMetadata;
   scores?: DebugScores;
   hourlyScoring: DebugHourlyScore[];
   windows: DebugWindowTrace[];
   nearbyAlternatives: DebugNearbyAlternative[];
+  longRangeCandidates?: DebugLongRangeCandidate[];
+  kitAdvisory?: DebugKitAdvisory;
   ai?: DebugAiTrace;
 }
 

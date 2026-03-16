@@ -29,6 +29,16 @@ type BriefContext = {
     darkSky?: boolean;
     driveMins?: number;
   }>;
+  longRangeCandidates?: Array<{
+    name?: string;
+    region?: string;
+    tags?: string[];
+    bestScore?: number;
+    dayScore?: number;
+    astroScore?: number;
+    driveMins?: number;
+    darkSky?: boolean;
+  }>;
 };
 
 type WindowLike = {
@@ -258,10 +268,14 @@ export function parseGroqResponse(rawContent: string): {
   };
 }
 
-export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentSuggestion | null {
+export function resolveSpurSuggestion(
+  spurRaw: SpurRaw | null,
+  nearbyAltNames: string[] = [],
+): SpurOfTheMomentSuggestion | null {
   if (!spurRaw || spurRaw.confidence < 0.7) return null;
   const loc = LONG_RANGE_LOCATIONS.find(l => l.name === spurRaw.locationName);
   if (!loc) return null;
+  if (nearbyAltNames.includes(loc.name)) return null;
   return {
     locationName: loc.name,
     region: loc.region,
@@ -273,11 +287,14 @@ export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentS
   };
 }
 
-function resolveSpurDropReason(spurRaw: SpurRaw | null): string | undefined {
+function resolveSpurDropReason(spurRaw: SpurRaw | null, nearbyAltNames: string[] = []): string | undefined {
   if (!spurRaw) return undefined;
   if (spurRaw.confidence < 0.7) return `confidence below threshold (${spurRaw.confidence})`;
   if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
     return 'location not found in approved long-range list';
+  }
+  if (nearbyAltNames.includes(spurRaw.locationName)) {
+    return 'already shown in nearby alternatives';
   }
   return undefined;
 }
@@ -293,7 +310,8 @@ export function run({ $input }: N8nRuntime) {
   const { choices, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
-  const spurOfTheMoment = resolveSpurSuggestion(spurRaw);
+  const nearbyAltNames = (ctx.altLocations || []).map((a: { name?: string }) => a?.name).filter((n: string | undefined): n is string => Boolean(n));
+  const spurOfTheMoment = resolveSpurSuggestion(spurRaw, nearbyAltNames);
   const normalizedAiText = normalizeAiText(editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
@@ -316,6 +334,23 @@ export function run({ $input }: N8nRuntime) {
     debugModeSource: debugMode ? 'workflow toggle' : 'workflow default',
     debugRecipient: debugMode ? debugEmailTo : null,
   };
+
+  /* Populate long-range candidate pool from context */
+  if (Array.isArray(ctx.longRangeCandidates)) {
+    debugContext.longRangeCandidates = (ctx.longRangeCandidates as Array<Record<string, unknown>>)
+      .map((c, idx) => ({
+        name: typeof c?.name === 'string' ? c.name : '(unknown)',
+        region: typeof c?.region === 'string' ? c.region : '—',
+        tags: Array.isArray(c?.tags) ? (c.tags as string[]) : [],
+        bestScore: typeof c?.bestScore === 'number' ? c.bestScore : 0,
+        dayScore: typeof c?.dayScore === 'number' ? c.dayScore : 0,
+        astroScore: typeof c?.astroScore === 'number' ? c.astroScore : 0,
+        driveMins: typeof c?.driveMins === 'number' ? c.driveMins : 0,
+        darkSky: c?.darkSky === true,
+        rank: idx + 1,
+      }));
+  }
+
   debugContext.ai = {
     rawGroqResponse: rawContent,
     normalizedAiText,
@@ -326,7 +361,7 @@ export function run({ $input }: N8nRuntime) {
       confidence: spurRaw?.confidence ?? null,
       resolved: spurOfTheMoment?.locationName || null,
       dropped: Boolean(spurRaw) && !spurOfTheMoment,
-      dropReason: resolveSpurDropReason(spurRaw),
+      dropReason: resolveSpurDropReason(spurRaw, nearbyAltNames),
     },
     weekStandout: {
       parseStatus: weekStandoutParseStatus,
@@ -338,7 +373,7 @@ export function run({ $input }: N8nRuntime) {
   };
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight, spurOfTheMoment });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight, spurOfTheMoment, debugContext });
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`

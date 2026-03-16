@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildKitTips, formatDebugEmail, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
+import { buildKitTips, evaluateKitRules, formatDebugEmail, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -1437,5 +1437,154 @@ describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
     expect(html).toContain('&#39;');
     expect(html).toContain('&lt;great&gt;');
     expect(html).toContain('&amp;');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  evaluateKitRules — full rule trace                                 */
+/* ------------------------------------------------------------------ */
+
+describe('evaluateKitRules', () => {
+  const quietDay: CarWash = {
+    rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00',
+    wind: 10, pp: 20, tmp: 8,
+  };
+  const quietWindows: Window[] = [{
+    label: 'Evening astro window',
+    start: '20:00', end: '23:00', peak: 65,
+    hours: [{ hour: '20:00', score: 65, visK: 20, tpw: 18, ch: 5 }],
+    tops: ['astrophotography'],
+  }];
+
+  it('returns all 6 kit rules in the trace', () => {
+    const { trace } = evaluateKitRules(quietDay, quietWindows, 50, 30);
+    expect(trace).toHaveLength(6);
+  });
+
+  it('marks no rules matched on a quiet, clear day', () => {
+    const { trace, tipsShown } = evaluateKitRules(quietDay, quietWindows, 50, 30);
+    expect(tipsShown).toHaveLength(0);
+    expect(trace.every(r => !r.matched && !r.shown)).toBe(true);
+  });
+
+  it('marks matched and shown separately when the display cap hides a lower-priority rule', () => {
+    const extremeDay: CarWash = { ...quietDay, wind: 35, pp: 55, tmp: 0 };
+    const extremeWindows: Window[] = [{
+      label: 'Overnight astro window',
+      start: '01:00', end: '04:00', peak: 65,
+      hours: [{ hour: '01:00', score: 65, visK: 1, tpw: 40 }],
+      tops: ['astrophotography'],
+    }];
+    const { trace, tipsShown } = evaluateKitRules(extremeDay, extremeWindows, 65, 10, 2);
+    const hiddenRule = trace.find(r => r.id === 'cold')!;
+    expect(hiddenRule.matched).toBe(true);
+    expect(hiddenRule.shown).toBe(false);
+    expect(tipsShown).toHaveLength(2);
+  });
+
+  it('uses the strongest astro window in the trace, not only the first window', () => {
+    const mixedWindows: Window[] = [{
+      label: 'Evening golden hour',
+      start: '18:00', end: '19:00', peak: 65,
+      hours: [{ hour: '18:00', score: 65, visK: 20, tpw: 15 }],
+      tops: ['landscape'],
+    }, {
+      label: 'Overnight astro window',
+      start: '23:00', end: '02:00', peak: 60,
+      hours: [{ hour: '00:00', score: 60, visK: 24, tpw: 15 }],
+      tops: ['astrophotography'],
+    }];
+    const { trace, tipsShown } = evaluateKitRules(quietDay, mixedWindows, 0, 8);
+    const rule = trace.find(r => r.id === 'astro-window')!;
+    expect(rule.matched).toBe(true);
+    expect(rule.value).toContain('later Overnight astro window 23:00-02:00');
+    expect(tipsShown).toContain('astro-window');
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  formatDebugEmail — long-range pool and kit advisory sections       */
+/* ------------------------------------------------------------------ */
+
+describe('formatDebugEmail — new debug sections', () => {
+  const baseDebugContext = {
+    metadata: {
+      generatedAt: '2026-03-16T12:00:00.000Z',
+      location: 'Leeds',
+      latitude: 53.8,
+      longitude: -1.57,
+      timezone: 'Europe/London',
+      workflowVersion: null,
+      debugModeEnabled: true,
+      debugModeSource: 'workflow toggle',
+      debugRecipient: 'debug@example.com',
+    },
+    scores: { am: 30, pm: 40, astro: 75, overall: 60, certainty: 'medium', certaintySpread: 5 },
+    hourlyScoring: [],
+    windows: [],
+    nearbyAlternatives: [],
+  };
+
+  it('renders long-range pool section with candidate rows', () => {
+    const html = formatDebugEmail({
+      ...baseDebugContext,
+      longRangeCandidates: [
+        { name: 'Kielder Forest', region: 'northumberland', tags: ['dark-sky', 'forest'], bestScore: 91, dayScore: 40, astroScore: 91, driveMins: 120, darkSky: true, rank: 1 },
+        { name: 'Whernside', region: 'yorkshire-dales', tags: ['moorland'], bestScore: 79, dayScore: 79, astroScore: 30, driveMins: 55, darkSky: false, rank: 2 },
+      ],
+    });
+    expect(html).toContain('Long-range pool');
+    expect(html).toContain('Kielder Forest');
+    expect(html).toContain('Whernside');
+    expect(html).toContain('northumberland');
+  });
+
+  it('renders kit advisory trace section with matched and shown columns', () => {
+    const html = formatDebugEmail({
+      ...baseDebugContext,
+      kitAdvisory: {
+        rules: [
+          { id: 'high-wind', threshold: 'wind > 25 km/h', value: '30 km/h', matched: true, shown: true },
+          { id: 'rain-risk', threshold: 'rain > 40%', value: '20%', matched: false, shown: false },
+          { id: 'cold', threshold: 'temp < 2°C', value: '0°C', matched: true, shown: false },
+        ],
+        tipsShown: ['high-wind'],
+      },
+    });
+    expect(html).toContain('Kit advisory rule trace');
+    expect(html).toContain('Matched?');
+    expect(html).toContain('Shown?');
+    expect(html).toContain('cold');
+    expect(html).toContain('Tips shown');
+  });
+
+  it('shows empty-state message when kitAdvisory is missing', () => {
+    const html = formatDebugEmail({ ...baseDebugContext });
+    expect(html).toContain('Kit advisory rule trace');
+    expect(html).toContain('Kit advisory data not available');
+  });
+
+  it('formatEmail populates debugContext.kitAdvisory when debugContext provided', () => {
+    const dc = { hourlyScoring: [], windows: [], nearbyAlternatives: [] };
+    formatEmail({
+      dontBother: false,
+      windows: [{
+        label: 'Overnight astro window',
+        start: '01:00', end: '04:00', peak: 65,
+        hours: [{ hour: '01:00', score: 65, visK: 20, tpw: 18 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 10, pp: 20, tmp: 8 },
+      dailySummary: [{ dayLabel: 'Mon', dateKey: '2026-03-16', dayIdx: 0, photoScore: 65, photoEmoji: '📷', astroScore: 65, carWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 10, pp: 20, tmp: 8 } }],
+      altLocations: [],
+      sunriseStr: '06:00', sunsetStr: '18:00',
+      moonPct: 8, today: 'Monday 16 March', todayBestScore: 65,
+      shSunsetQ: null, shSunriseQ: null, sunDir: null, crepPeak: 0,
+      aiText: 'Good conditions tonight.',
+      debugContext: dc,
+    });
+    expect(dc.kitAdvisory).toBeDefined();
+    expect(dc.kitAdvisory!.rules).toHaveLength(6);
+    expect(dc.kitAdvisory!.tipsShown).toContain('astro-window');
   });
 });

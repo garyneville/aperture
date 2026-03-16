@@ -1,6 +1,7 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
-import type { DebugContext } from './debug-context.js';
+import { renderAiBriefingText } from './ai-briefing.js';
+import type { DebugContext, DebugKitAdvisoryRule } from './debug-context.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 
 /* ------------------------------------------------------------------ */
@@ -102,6 +103,7 @@ export interface FormatEmailInput {
   longRangeCardLabel?: string | null;
   darkSkyAlert?: DarkSkyAlertCard | null;
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
+  debugContext?: DebugContext;
 }
 
 export interface LongRangeCard {
@@ -477,13 +479,12 @@ function buildKitTipText(ruleId: string, params: KitRuleParams): string {
   }
 }
 
-export function buildKitTips(
+function buildKitRuleParams(
   todayCarWash: CarWash,
   windows: Window[],
   astroScore: number,
   moonPct: number,
-  maxTips = 3,
-): KitTip[] {
+): KitRuleParams {
   const topWindow = windows?.[0];
   const topPeakHour = peakWindowHour(topWindow);
   const astroWindow = bestAstroWindow(windows || []);
@@ -493,7 +494,7 @@ export function buildKitTips(
     astroWindowSignal(astroWindow),
   );
 
-  const params = {
+  return {
     windKmh: todayCarWash.wind,
     rainPct: todayCarWash.pp,
     tempC: todayCarWash.tmp,
@@ -505,12 +506,75 @@ export function buildKitTips(
     astroWindow,
     astroWindowIsPrimary: Boolean(astroWindow && astroWindow === topWindow),
   };
+}
+
+export function buildKitTips(
+  todayCarWash: CarWash,
+  windows: Window[],
+  astroScore: number,
+  moonPct: number,
+  maxTips = 3,
+): KitTip[] {
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
 
   return KIT_RULES
     .filter(rule => rule.predicate(params))
     .sort((a, b) => b.priority - a.priority)
     .slice(0, maxTips)
     .map(rule => ({ id: rule.id, text: buildKitTipText(rule.id, params), priority: rule.priority }));
+}
+
+/** Evaluate all kit rules and return the full trace (for debug output). */
+export function evaluateKitRules(
+  todayCarWash: CarWash,
+  windows: Window[],
+  astroScore: number,
+  moonPct: number,
+  maxTips = 3,
+): { trace: DebugKitAdvisoryRule[]; tipsShown: string[] } {
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
+
+  const thresholdLabels: Record<string, string> = {
+    'high-wind': 'wind > 25 km/h',
+    'rain-risk': 'rain > 40%',
+    'fog-mist': 'visibility < 5 km',
+    'astro-window': 'score ≥ 60, isAstroWin, moonPct < 60%',
+    'cold': 'temp < 2°C',
+    'high-moisture': 'TPW > 30mm + temp < 12°C',
+  };
+
+  const astroWindowLabel = params.astroWindow
+    ? `${params.astroWindowIsPrimary ? 'primary' : 'later'} ${params.astroWindow.label} ${windowRange(params.astroWindow)}`
+    : 'n/a';
+  const optKm = params.visibilityKm !== undefined ? `${params.visibilityKm} km` : 'n/a';
+  const optTemp = params.tempC !== undefined ? `${params.tempC}°C` : 'n/a';
+  const optTpw = params.tpwMm !== undefined ? `${params.tpwMm}mm` : 'n/a';
+
+  const valueLabels: Record<string, string> = {
+    'high-wind': `${params.windKmh} km/h`,
+    'rain-risk': `${params.rainPct}%`,
+    'fog-mist': optKm,
+    'astro-window': `score ${params.astroScore}/100, moonPct ${params.moonPct}%, astro ${params.isAstroWin ? 'Yes' : 'No'}, ${astroWindowLabel}`,
+    'cold': optTemp,
+    'high-moisture': `${optTpw} (temp ${optTemp})`,
+  };
+
+  const matchedRules = KIT_RULES
+    .filter(rule => rule.predicate(params))
+    .sort((a, b) => b.priority - a.priority);
+  const shownRules = matchedRules.slice(0, maxTips);
+  const shownIds = new Set(shownRules.map(rule => rule.id));
+
+  const trace: DebugKitAdvisoryRule[] = KIT_RULES.map(rule => ({
+    id: rule.id,
+    threshold: thresholdLabels[rule.id] ?? '—',
+    value: valueLabels[rule.id] ?? '—',
+    matched: rule.predicate(params),
+    shown: shownIds.has(rule.id),
+  }));
+
+  const tipsShown = shownRules.map(rule => rule.id);
+  return { trace, tipsShown };
 }
 
 function kitAdvisoryCard(tips: KitTip[]): string {
@@ -814,6 +878,7 @@ export function formatEmail(input: FormatEmailInput): string {
     longRangeCardLabel,
     darkSkyAlert,
     spurOfTheMoment,
+    debugContext,
   } = input;
 
   /* Hero card */
@@ -909,6 +974,12 @@ export function formatEmail(input: FormatEmailInput): string {
   /* Kit advisory */
   const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
   const kitCard = kitAdvisoryCard(kitTips);
+
+  /* Populate kit advisory trace in debug context */
+  if (debugContext) {
+    const { trace, tipsShown } = evaluateKitRules(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+    debugContext.kitAdvisory = { rules: trace, tipsShown };
+  }
 
   /* Assemble full HTML */
   return `<!DOCTYPE html>
@@ -1130,6 +1201,29 @@ export function formatDebugEmail(debugContext: DebugContext): string {
       : '—'),
     esc(alt.shown ? 'Shown' : alt.discardedReason || 'Hidden'),
   ]));
+
+  const longRangeRows = (debugContext.longRangeCandidates || []).map(c => ([
+    esc(`#${c.rank}`),
+    esc(c.name),
+    esc(c.region),
+    esc(String(c.bestScore)),
+    esc(c.darkSky ? 'Yes' : 'No'),
+    esc(c.tags.join(', ') || '—'),
+    esc(`${c.driveMins}m`),
+  ]));
+
+  const kitRows = (debugContext.kitAdvisory?.rules || []).map(rule => ([
+    esc(rule.id),
+    esc(rule.threshold),
+    esc(rule.value),
+    rule.matched
+      ? `<span style="color:${C.success};font-weight:700;">Yes ✓</span>`
+      : `<span style="color:${C.muted};">No</span>`,
+    rule.shown
+      ? `<span style="color:${C.success};font-weight:700;">Shown</span>`
+      : `<span style="color:${C.muted};">Hidden</span>`,
+  ]));
+
   const aiTrace = debugContext.ai;
 
   return `<!doctype html>
@@ -1178,12 +1272,20 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['Rank', 'Location', 'Score', 'Drive', 'Bortle', 'Dark Δ', 'Δ vs Leeds', 'Δ vs window', 'Outcome'],
           altRows,
         ))}
+        ${spacer(8)}
+        ${debugCard('Long-range pool', longRangeRows.length
+          ? debugTable(
+              ['Rank', 'Location', 'Region', 'Score', 'Dark sky', 'Tags', 'Drive'],
+              longRangeRows,
+            )
+          : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No long-range candidates met the threshold this run.</div>`
+        )}
         ${aiTrace ? `${spacer(8)}${debugCard('AI editorial trace', `
           ${debugKeyValueLines([
             ['Factual check', aiTrace.factualCheck.passed ? 'Passed' : `Failed (${aiTrace.factualCheck.rulesTriggered.join(', ')})`],
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
             ['Fallback used', aiTrace.fallbackUsed ? 'Yes' : 'No'],
-            ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` (dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'})` : ''}` : 'None'],
+            ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` → dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'}` : ' → shown'}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
             ['weekStandout', (() => {
               const ws = aiTrace.weekStandout;
@@ -1200,6 +1302,17 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Final AI text</div>
           <div style="Margin-top:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${esc(aiTrace.finalAiText || '(empty)')}</div>
         `)}` : ''}
+        ${spacer(8)}
+        ${debugCard('Kit advisory rule trace', kitRows.length
+          ? `${debugTable(
+              ['Rule', 'Threshold', 'Value', 'Matched?', 'Shown?'],
+              kitRows,
+            )}${debugContext.kitAdvisory?.tipsShown?.length
+              ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};"><span style="font-weight:700;color:${C.onPrimaryContainer};">Tips shown:</span> ${esc(debugContext.kitAdvisory.tipsShown.join(', '))}</div>`
+              : `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No tips shown — no rules matched.</div>`
+            }`
+          : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">Kit advisory data not available for this run — ensure debugContext is passed into formatEmail.</div>`
+        )}
       </td>
     </tr>
   </table>
