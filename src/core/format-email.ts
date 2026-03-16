@@ -876,8 +876,19 @@ export function formatEmail(input: FormatEmailInput): string {
         : '',
     ].filter(Boolean).join('\n');
 
+  const spurMatchesTopAlt =
+    !!spurOfTheMoment && !!topAlternative && spurOfTheMoment.locationName === topAlternative.name;
+
+  const altSpurHook = spurMatchesTopAlt ? `\n"${spurOfTheMoment!.hookLine}"` : '';
+
+  const altTimingNote = topAlternative?.isAstroWin
+    ? ` · astro from ${topAlternative.bestAstroHour || 'evening'}`
+    : topAlternative?.bestDayHour
+      ? ` · best at ${topAlternative.bestDayHour}`
+      : '';
+
   const alternativeSummary = topAlternative
-    ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${topAlternative.isAstroWin ? ` · astro from ${topAlternative.bestAstroHour || 'evening'}` : topAlternative.bestDayHour ? ` · best at ${topAlternative.bestDayHour}` : ''}`
+    ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${altTimingNote}${altSpurHook}`
     : '';
 
   const hero = card(`
@@ -1027,7 +1038,7 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${photoForecastCards(dailySummary)}</td>
           </tr>
-          ${spurOfTheMoment ? spacer(10) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
+          ${spurOfTheMoment && !spurMatchesTopAlt ? spacer(10) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
           ${spacer(10)}
           <tr>
             <td>

@@ -1259,3 +1259,106 @@ describe('formatEmail spur of the moment card', () => {
     expect(spurSection).not.toMatch(/\d+\/100/);
   });
 });
+
+describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
+  const altLocation = {
+    name: 'Sutton Bank',
+    driveMins: 75,
+    bestScore: 85,
+    bestAstroHour: '04:00',
+    bestDayHour: null as string | null | undefined,
+    isAstroWin: true,
+    darkSky: false,
+  };
+
+  const matchingSpur: SpurOfTheMomentSuggestion = {
+    locationName: 'Sutton Bank',
+    region: 'north-york-moors',
+    driveMins: 75,
+    tags: ['moorland', 'escarpment'],
+    darkSky: false,
+    hookLine: 'Darker skies await above the escarpment edge.',
+    confidence: 0.9,
+  };
+
+  const baseWithAlt: FormatEmailInput = {
+    dontBother: false,
+    windows: [{
+      label: 'Evening golden hour',
+      start: '18:00',
+      end: '19:00',
+      peak: 65,
+      hours: [{ hour: '18:00', score: 65, ch: 20, visK: 20, wind: '10', pp: 10, tpw: 15 }],
+      tops: ['landscape'],
+    }],
+    todayCarWash: {
+      rating: 'OK', label: 'Usable', score: 60,
+      start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12,
+    },
+    dailySummary: [{
+      dayLabel: 'Monday', dateKey: '2026-03-16', dayIdx: 0,
+      photoScore: 65, headlineScore: 65, photoEmoji: 'Good',
+      amScore: 30, pmScore: 65, astroScore: 20,
+      bestPhotoHour: '18:00', bestTags: 'landscape',
+      carWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12 },
+    }],
+    altLocations: [altLocation],
+    sunriseStr: '06:15', sunsetStr: '18:20', moonPct: 50,
+    today: 'Monday 16 March', todayBestScore: 65,
+    shSunsetQ: null, shSunriseQ: null, sunDir: null, crepPeak: 0,
+    aiText: 'Conditions look reasonable locally.',
+  };
+
+  it('appends hookLine to the nearby alt card when spur location matches top alt', () => {
+    const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: matchingSpur });
+    expect(html).toContain('Best nearby alternative');
+    expect(html).toContain('Sutton Bank');
+    expect(html).toContain('Darker skies await above the escarpment edge.');
+  });
+
+  it('does not render a separate Spur of the moment section when spur matches top alt', () => {
+    const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: matchingSpur });
+    expect(html).not.toContain('Spur of the moment');
+  });
+
+  it('hookLine appears inside the Best nearby alternative section, not after Days ahead', () => {
+    const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: matchingSpur });
+    const altPos = html.indexOf('Best nearby alternative');
+    const daysAheadPos = html.indexOf('Days ahead');
+    const hookPos = html.indexOf('Darker skies await above the escarpment edge.');
+    expect(altPos).toBeGreaterThan(-1);
+    expect(hookPos).toBeGreaterThan(altPos);
+    expect(hookPos).toBeLessThan(daysAheadPos);
+  });
+
+  it('renders a separate spur card when spur location differs from top alt', () => {
+    const differentSpur: SpurOfTheMomentSuggestion = {
+      locationName: 'Aysgarth Falls',
+      region: 'yorkshire-dales',
+      driveMins: 68,
+      tags: ['waterfall', 'woodland'],
+      darkSky: false,
+      hookLine: 'Overcast light is perfect for waterfalls without harsh shadows.',
+      confidence: 0.85,
+    };
+    const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: differentSpur });
+    expect(html).toContain('Spur of the moment');
+    expect(html).toContain('Aysgarth Falls');
+    expect(html).toContain('Overcast light is perfect for waterfalls without harsh shadows.');
+    // Alt card should NOT show the different spur's hookLine
+    const altSection = html.slice(html.indexOf('Best nearby alternative'), html.indexOf('Days ahead'));
+    expect(altSection).not.toContain('Overcast light is perfect for waterfalls');
+  });
+
+  it('hookLine is escaped correctly when it contains special characters', () => {
+    const spurWithSpecialChars: SpurOfTheMomentSuggestion = {
+      ...matchingSpur,
+      hookLine: "It's a <great> day & night.",
+    };
+    const html = formatEmail({ ...baseWithAlt, spurOfTheMoment: spurWithSpecialChars });
+    expect(html).not.toContain("It's a <great>");
+    expect(html).toContain('&#39;');
+    expect(html).toContain('&lt;great&gt;');
+    expect(html).toContain('&amp;');
+  });
+});
