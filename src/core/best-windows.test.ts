@@ -126,6 +126,7 @@ describe('bestWindows', () => {
         bestPmHour: '18:00',
         sunriseOcclusionRisk: null,
         sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       metarNote: 'METAR clear',
     };
@@ -223,6 +224,7 @@ describe('bestWindows', () => {
         bestPmHour: '18:00',
         sunriseOcclusionRisk: null,
         sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       metarNote: 'METAR clear',
     });
@@ -487,6 +489,7 @@ describe('bestWindows', () => {
         bestPmHour: '—',
         sunriseOcclusionRisk: null,
         sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       metarNote: '',
     };
@@ -576,6 +579,7 @@ describe('bestWindows', () => {
         bestPmHour: '—',
         sunriseOcclusionRisk: null,
         sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       metarNote: '',
     };

@@ -208,10 +208,22 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     debugRecipient: null,
   };
 
-  const confNote = todayDay?.confidence && todayDay.confidence !== 'unknown'
-    ? `\nForecast certainty: ${confidenceLabel(todayDay.confidence)}.` +
-      `${todayDay.confidenceStdDev !== null ? ` Forecast models differ by about ${todayDay.confidenceStdDev} cloud-cover points during the key shooting hours.` : ''}`
-    : '';
+  const selectedWindowIsAstro = isAstroWindow(windows[0]);
+  let confNote = '';
+  if (selectedWindowIsAstro) {
+    const ac = todayDay?.astroConfidence;
+    if (ac && ac !== 'unknown') {
+      confNote = `\nForecast certainty (astro window): ${confidenceLabel(ac)}.` +
+        (todayDay?.astroConfidenceStdDev !== null && todayDay?.astroConfidenceStdDev !== undefined
+          ? ` Night-hour models differ by about ${todayDay.astroConfidenceStdDev} cloud-cover points.`
+          : '');
+    }
+  } else if (todayDay?.confidence && todayDay.confidence !== 'unknown') {
+    confNote = `\nForecast certainty: ${confidenceLabel(todayDay.confidence)}.` +
+      (todayDay.confidenceStdDev !== null && todayDay.confidenceStdDev !== undefined
+        ? ` Forecast models differ by about ${todayDay.confidenceStdDev} cloud-cover points during the key shooting hours.`
+        : '');
+  }
 
   const shInfo = todayDay
     ? `SunsetHue golden-hour quality — sunrise: ${todayDay.shSunriseQuality ?? 'N/A'}% | sunset: ${todayDay.shSunsetQuality ?? 'N/A'}% (${todayDay.shSunsetText || 'N/A'})\n` +

@@ -17,6 +17,8 @@ export interface DebugScores {
   overall: number;
   certainty: string | null;
   certaintySpread: number | null;
+  astroConfidence: string | null;
+  astroConfidenceStdDev: number | null;
 }
 
 export interface DebugHourlyScore {

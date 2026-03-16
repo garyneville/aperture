@@ -79,6 +79,8 @@ export interface DailySummary {
   amConfidenceStdDev: number | null;
   pmConfidence: string;
   pmConfidenceStdDev: number | null;
+  astroConfidence: string;
+  astroConfidenceStdDev: number | null;
   goldAmMins: number;
   goldPmMins: number;
   amScore: number;

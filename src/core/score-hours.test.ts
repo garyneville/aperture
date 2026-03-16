@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { scoreAllDays, type ScoreHoursInput } from './score-hours.js';
 
+const BASE_WEATHER_HOURLY = {
+  cloudcover: [0, 0],
+  cloudcover_low: [0, 0],
+  cloudcover_mid: [0, 0],
+  cloudcover_high: [0, 0],
+  visibility: [30000, 30000],
+  temperature_2m: [8, 6],
+  relativehumidity_2m: [60, 65],
+  dewpoint_2m: [4, 3],
+  precipitation: [0, 0],
+  windspeed_10m: [5, 4],
+  windgusts_10m: [8, 7],
+  cape: [0, 0],
+  vapour_pressure_deficit: [0.7, 0.6],
+  total_column_integrated_water_vapour: [10, 10],
+};
+
 describe('scoreAllDays moon timeline scoring', () => {
   it('detects moonset time even when the moon sets after astronomical darkness ends', () => {
     // 2026-03-27: sunrise 05:52 UTC, sunset 18:31 UTC.
@@ -14,20 +31,7 @@ describe('scoreAllDays moon timeline scoring', () => {
       weather: {
         hourly: {
           time: ['2026-03-27T03:00:00Z', '2026-03-27T05:00:00Z'],
-          cloudcover: [0, 0],
-          cloudcover_low: [0, 0],
-          cloudcover_mid: [0, 0],
-          cloudcover_high: [0, 0],
-          visibility: [30000, 30000],
-          temperature_2m: [8, 6],
-          relativehumidity_2m: [60, 65],
-          dewpoint_2m: [4, 3],
-          precipitation: [0, 0],
-          windspeed_10m: [5, 4],
-          windgusts_10m: [8, 7],
-          cape: [0, 0],
-          vapour_pressure_deficit: [0.7, 0.6],
-          total_column_integrated_water_vapour: [10, 10],
+          ...BASE_WEATHER_HOURLY,
         },
         daily: {
           sunrise: ['2026-03-27T05:52:00Z'],
@@ -140,6 +144,121 @@ describe('scoreAllDays astronomical twilight boundary', () => {
 
     // The dark hour should be chosen as the best astro hour, not the twilight hour.
     expect(today.bestAstroHour).toBe('21:00');
+  });
+});
+
+describe('scoreAllDays astro confidence', () => {
+  it('returns astroConfidence from night-hour ensemble data', () => {
+    const nightTs = ['2026-03-27T01:00:00Z', '2026-03-27T02:00:00Z', '2026-03-27T03:00:00Z'];
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: nightTs,
+          cloudcover: [5, 8, 6],
+          cloudcover_low: [0, 0, 0],
+          cloudcover_mid: [0, 0, 0],
+          cloudcover_high: [5, 8, 6],
+          visibility: [30000, 30000, 30000],
+          temperature_2m: [6, 6, 6],
+          relativehumidity_2m: [65, 65, 65],
+          dewpoint_2m: [3, 3, 3],
+          precipitation: [0, 0, 0],
+          windspeed_10m: [4, 4, 4],
+          windgusts_10m: [7, 7, 7],
+          cape: [0, 0, 0],
+          vapour_pressure_deficit: [0.6, 0.6, 0.6],
+          total_column_integrated_water_vapour: [10, 10, 10],
+        },
+        daily: {
+          sunrise: ['2026-03-27T05:52:00Z'],
+          sunset: ['2026-03-27T18:31:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: nightTs,
+          aerosol_optical_depth: [0.05, 0.05, 0.05],
+          dust: [0, 0, 0],
+          european_aqi: [10, 10, 10],
+          uv_index: [0, 0, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: nightTs,
+          precipitation_probability: [0, 0, 0],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      // Ensemble with low spread on night hours → high astro confidence
+      ensemble: {
+        hourly: {
+          time: nightTs,
+          cloudcover_member01: [5, 8, 6],
+          cloudcover_member02: [6, 7, 5],
+          cloudcover_member03: [4, 9, 7],
+        } as Record<string, (number | null)[] | string[]>,
+      },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
+    const today = result.dailySummary[0];
+
+    // Night hours have low ensemble spread → astroConfidence should be 'high'
+    expect(today.astroConfidence).toBe('high');
+    expect(today.astroConfidenceStdDev).toBeGreaterThanOrEqual(0);
+    // Daylight confidence should be 'unknown' (no golden-hour timestamps)
+    expect(today.confidence).toBe('unknown');
+    // Debug context should carry both
+    expect(result.debugContext.scores?.astroConfidence).toBe('high');
+    expect(result.debugContext.scores?.certainty).toBe('unknown');
+  });
+
+  it('returns astroConfidence unknown when no ensemble data for night hours', () => {
+    const nightTs = ['2026-03-27T02:00:00Z'];
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: nightTs,
+          cloudcover: [10],
+          cloudcover_low: [0],
+          cloudcover_mid: [0],
+          cloudcover_high: [10],
+          visibility: [30000],
+          temperature_2m: [6],
+          relativehumidity_2m: [65],
+          dewpoint_2m: [3],
+          precipitation: [0],
+          windspeed_10m: [4],
+          windgusts_10m: [7],
+          cape: [0],
+          vapour_pressure_deficit: [0.6],
+          total_column_integrated_water_vapour: [10],
+        },
+        daily: {
+          sunrise: ['2026-03-27T05:52:00Z'],
+          sunset: ['2026-03-27T18:31:00Z'],
+        },
+      },
+      airQuality: { hourly: { time: nightTs, aerosol_optical_depth: [0.05], dust: [0], european_aqi: [10], uv_index: [0] } },
+      precipProb: { hourly: { time: nightTs, precipitation_probability: [0] } },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } }, // no ensemble data
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
+    const today = result.dailySummary[0];
+
+    expect(today.astroConfidence).toBe('unknown');
+    expect(today.astroConfidenceStdDev).toBeNull();
   });
 });
 

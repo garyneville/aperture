@@ -109,6 +109,7 @@ describe('buildPrompt', () => {
         bestPmHour: '18:00',
         sunriseOcclusionRisk: null,
         sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       altLocations: [{
         name: 'Sutton Bank',
@@ -176,6 +177,7 @@ describe('buildPrompt', () => {
         amScore: 30, pmScore: 40, astroScore: 60,
         darkSkyStartsAt: null, bestAmHour: '—', bestPmHour: '—',
         sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       altLocations: [],
       noAltsMsg: null,
@@ -214,6 +216,7 @@ describe('buildPrompt', () => {
         amScore: 20, pmScore: 25, astroScore: 15,
         darkSkyStartsAt: null, bestAmHour: '—', bestPmHour: '—',
         sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
+        astroConfidence: 'unknown', astroConfidenceStdDev: null,
       }],
       altLocations: [],
       noAltsMsg: null,

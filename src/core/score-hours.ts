@@ -165,6 +165,8 @@ export interface DaySummary {
   amConfidenceStdDev: number | null;
   pmConfidence: string;
   pmConfidenceStdDev: number | null;
+  astroConfidence: string;
+  astroConfidenceStdDev: number | null;
   goldAmMins: number;
   goldPmMins: number;
   amScore: number;
@@ -293,6 +295,12 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     }).map(({ ts }) => ts);
     const amConf = computeConf(amTimesEns);
     const pmConf = computeConf(pmTimesEns);
+    // Night-hour ensemble confidence (drives astro recommendation quality)
+    const nightTimesEns = (byDate[dateKey] || []).filter(({ ts }) => {
+      const t = new Date(ts);
+      return t < blueAmS || t > bluePmE;
+    }).map(({ ts }) => ts);
+    const astroConf = computeConf(nightTimesEns);
     // Overall confidence (backward compat)
     const goldTimes = [...amTimesEns, ...pmTimesEns];
     const goldEns = goldTimes.map(ts => ensIdx[ts]).filter(Boolean);
@@ -563,6 +571,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       confidence, confidenceStdDev, durationBonus,
       amConfidence: amConf.confidence, amConfidenceStdDev: amConf.confidenceStdDev,
       pmConfidence: pmConf.confidence, pmConfidenceStdDev: pmConf.confidenceStdDev,
+      astroConfidence: astroConf.confidence, astroConfidenceStdDev: astroConf.confidenceStdDev,
       goldAmMins: Math.round(goldAmMins), goldPmMins: Math.round(goldPmMins),
       amScore, pmScore, astroScore, bestAstroHour: bestNightH?.hour || null, darkSkyStartsAt, bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
       sunriseOcclusionRisk: sunriseOcclusionRisk !== null ? Math.round(sunriseOcclusionRisk) : null,
@@ -606,6 +615,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       overall: todayDay.headlineScore ?? todayDay.photoScore,
       certainty: todayDay.confidence ?? null,
       certaintySpread: todayDay.confidenceStdDev ?? null,
+      astroConfidence: todayDay.astroConfidence ?? null,
+      astroConfidenceStdDev: todayDay.astroConfidenceStdDev ?? null,
     };
   }
 

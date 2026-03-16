@@ -63,6 +63,8 @@ export interface DaySummary {
   bestAstroHour?: string | null;
   confidence?: string;
   confidenceStdDev?: number | null;
+  astroConfidence?: string;
+  astroConfidenceStdDev?: number | null;
   amConfidence?: string;
   pmConfidence?: string;
   bestPhotoHour?: string;
@@ -180,15 +182,28 @@ function scoreState(score: number): { label: string; fg: string; bg: string; bor
   return { label: 'Poor', fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
 }
 
-function confidenceDetail(day: DaySummary | undefined): { label: string; fg: string; bg: string; border: string } | null {
-  if (!day?.confidence || day.confidence === 'unknown') return null;
-  if (day.confidence === 'high') {
+function confidenceDetail(confidence: string | undefined | null): { label: string; fg: string; bg: string; border: string } | null {
+  if (!confidence || confidence === 'unknown') return null;
+  if (confidence === 'high') {
     return { label: 'High certainty', fg: C.success, bg: C.successContainer, border: '#B7E0CF' };
   }
-  if (day.confidence === 'medium') {
+  if (confidence === 'medium') {
     return { label: 'Fair certainty', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
   }
   return { label: 'Low certainty', fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
+}
+
+/** Pick the contextually-correct confidence for a day, based on whether the lead window is astro. */
+function effectiveConf(
+  day: DaySummary,
+  isAstroLed: boolean,
+): { confidence: string | undefined; stdDev: number | null | undefined } {
+  if (isAstroLed) {
+    const ac = day.astroConfidence;
+    if (!ac || ac === 'unknown') return { confidence: undefined, stdDev: undefined };
+    return { confidence: ac, stdDev: day.astroConfidenceStdDev };
+  }
+  return { confidence: day.confidence, stdDev: day.confidenceStdDev };
 }
 
 function pill(text: string, fg: string, bg: string, border: string): string {
@@ -292,11 +307,12 @@ function scorePill(score: number): string {
   return pill(`${state.label} - ${score}/100`, state.fg, state.bg, state.border);
 }
 
-function confidencePill(day: DaySummary): string {
-  const detail = confidenceDetail(day);
+function confidencePill(day: DaySummary, isAstroLed = false): string {
+  const { confidence, stdDev } = effectiveConf(day, isAstroLed);
+  const detail = confidenceDetail(confidence);
   if (!detail) return '';
-  const spread = day.confidenceStdDev !== null && day.confidenceStdDev !== undefined
-    ? `${detail.label} - spread ${day.confidenceStdDev} pts`
+  const spread = stdDev !== null && stdDev !== undefined
+    ? `${detail.label} - spread ${stdDev} pts`
     : detail.label;
   return pill(spread, detail.fg, detail.bg, detail.border);
 }
@@ -723,7 +739,9 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
 function photoForecastCards(dailySummary: DaySummary[]): string {
   const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
   return listRows(forecastDays.map(day => {
-    const conf = confidenceDetail(day);
+    const dayIsAstroLed = (day.astroScore ?? 0) > (day.photoScore ?? 0);
+    const { confidence: effConf } = effectiveConf(day, dayIsAstroLed);
+    const conf = confidenceDetail(effConf);
     const bestAltHour = day.bestAlt?.isAstroWin
       ? day.bestAlt.bestAstroHour
       : day.bestAlt?.bestDayHour;
@@ -740,7 +758,7 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
         ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
         ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
       </div>
-      ${conf ? `<div style="Margin-top:8px;">${confidencePill(day)}</div>` : ''}
+      ${conf ? `<div style="Margin-top:8px;">${confidencePill(day, dayIsAstroLed)}</div>` : ''}
 
       ${altLine ? `<div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
       <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
@@ -807,7 +825,9 @@ export function formatEmail(input: FormatEmailInput): string {
   const heroScore = topWindow?.peak ?? todayBestScore;
   const peakLocalHour = peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
   const todayScoreState = scoreState(heroScore);
-  const todayConfidence = confidenceDetail(todayDay);
+  const topWindowIsAstro = isAstroWindow(topWindow || undefined);
+  const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
+  const todayConfidence = confidenceDetail(todayEffConf);
   const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
   const topAltDelta = topAlternative ? topAlternative.bestScore - heroScore : 0;
   const overallAstroDelta = typeof todayDay.astroScore === 'number' ? todayDay.astroScore - heroScore : 0;
@@ -821,8 +841,8 @@ export function formatEmail(input: FormatEmailInput): string {
   if (todayConfidence) {
     factStats.push({
       label: 'Certainty',
-      value: todayDay.confidenceStdDev !== null && todayDay.confidenceStdDev !== undefined
-        ? `${todayConfidence.label} · spread ${todayDay.confidenceStdDev} pts`
+      value: todayEffStdDev !== null && todayEffStdDev !== undefined
+        ? `${todayConfidence.label} · spread ${todayEffStdDev} pts`
         : todayConfidence.label,
       tone: todayConfidence.fg,
     });
@@ -1013,7 +1033,8 @@ export function formatEmail(input: FormatEmailInput): string {
                 AM/PM = sunrise &amp; sunset light quality &middot;
                 Astro = night sky potential (clear skies + dark moon) &middot;
                 Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
-                Spread = how much forecast models disagree (lower is more reliable)
+                Spread = how much forecast models disagree (lower is more reliable) &middot;
+                Daylight spread = based on golden-hour ensemble · Astro spread = based on night-hour ensemble
               </div>
             </td>
           </tr>
@@ -1118,8 +1139,10 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['PM', scores ? `${scores.pm}/100` : null],
           ['Astro', scores ? `${scores.astro}/100` : null],
           ['Overall', scores ? `${scores.overall}/100` : null],
-          ['Certainty', scores?.certainty || null],
-          ['Spread', scores?.certaintySpread !== null && scores?.certaintySpread !== undefined ? `${scores.certaintySpread} pts` : null],
+          ['Certainty (daylight)', scores?.certainty || null],
+          ['Spread (daylight)', scores?.certaintySpread !== null && scores?.certaintySpread !== undefined ? `${scores.certaintySpread} pts` : null],
+          ['Certainty (astro)', scores?.astroConfidence && scores.astroConfidence !== 'unknown' ? scores.astroConfidence : null],
+          ['Spread (astro)', scores?.astroConfidenceStdDev !== null && scores?.astroConfidenceStdDev !== undefined ? `${scores.astroConfidenceStdDev} pts` : null],
         ]))}
         ${spacer(8)}
         ${debugCard('Window selection trace', debugTable(

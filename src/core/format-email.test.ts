@@ -791,6 +791,8 @@ describe('formatDebugEmail', () => {
         overall: 60,
         certainty: 'medium',
         certaintySpread: 5,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 8,
       },
       hourlyScoring: [{
         hour: '04:00',
@@ -857,6 +859,10 @@ describe('formatDebugEmail', () => {
 
     expect(html).toContain('Run metadata');
     expect(html).toContain('Day scores and certainty');
+    expect(html).toContain('Certainty (daylight)');
+    expect(html).toContain('Certainty (astro)');
+    expect(html).toContain('Spread (daylight)');
+    expect(html).toContain('Spread (astro)');
     expect(html).toContain('Window selection trace');
     expect(html).toContain('Hourly astro scoring');
     expect(html).toContain('Nearby alternatives');
