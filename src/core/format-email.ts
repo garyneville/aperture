@@ -1143,6 +1143,13 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Fallback used', aiTrace.fallbackUsed ? 'Yes' : 'No'],
             ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` (dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'})` : ''}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
+            ['weekStandout', (() => {
+              const ws = aiTrace.weekStandout;
+              if (ws.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
+              if (ws.parseStatus === 'absent') return 'absent from raw response — model did not generate';
+              if (!ws.used) return `present in raw response (empty string) — not used`;
+              return `present in raw response → used: "${ws.rawValue}"`;
+            })()],
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>
           <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGroqResponse || '(empty)')}</pre>

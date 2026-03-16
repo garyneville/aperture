@@ -845,6 +845,11 @@ describe('formatDebugEmail', () => {
           dropped: true,
           dropReason: 'confidence below threshold (0.65)',
         },
+        weekStandout: {
+          parseStatus: 'absent',
+          rawValue: null,
+          used: false,
+        },
         fallbackUsed: true,
         finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
       },
@@ -860,6 +865,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Overnight astro window');
     expect(html).toContain('Sutton Bank');
     expect(html).toContain('confidence below threshold');
+    expect(html).toContain('weekStandout');
+    expect(html).toContain('absent from raw response');
   });
 });
 

@@ -203,6 +203,55 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
   });
 });
 
+describe('parseGroqResponse — weekStandout parse status', () => {
+  it('reports present status and raw value when weekStandout is in the response', () => {
+    const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Wednesday is the standout day.' });
+    const result = parseGroqResponse(raw);
+    expect(result.weekStandoutParseStatus).toBe('present');
+    expect(result.weekStandoutRawValue).toBe('Wednesday is the standout day.');
+    expect(result.weekInsight).toBe('Wednesday is the standout day.');
+  });
+
+  it('reports absent status when weekStandout is missing from a valid JSON response', () => {
+    const raw = JSON.stringify({ editorial: 'Good.', composition: [] });
+    const result = parseGroqResponse(raw);
+    expect(result.weekStandoutParseStatus).toBe('absent');
+    expect(result.weekStandoutRawValue).toBeNull();
+    expect(result.weekInsight).toBe('');
+  });
+
+  it('reports absent status when weekStandout is not a string', () => {
+    const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 42 });
+    const result = parseGroqResponse(raw);
+    expect(result.weekStandoutParseStatus).toBe('absent');
+    expect(result.weekStandoutRawValue).toBeNull();
+  });
+
+  it('reports parse-failure status when the response is not valid JSON', () => {
+    const result = parseGroqResponse('Not JSON at all.');
+    expect(result.weekStandoutParseStatus).toBe('parse-failure');
+    expect(result.weekStandoutRawValue).toBeNull();
+    expect(result.weekInsight).toBe('');
+  });
+
+  it('strips Markdown code fences and successfully parses weekStandout', () => {
+    const inner = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Friday is best.' });
+    const fenced = `\`\`\`json\n${inner}\n\`\`\``;
+    const result = parseGroqResponse(fenced);
+    expect(result.weekStandoutParseStatus).toBe('present');
+    expect(result.weekStandoutRawValue).toBe('Friday is best.');
+    expect(result.weekInsight).toBe('Friday is best.');
+  });
+
+  it('strips plain Markdown code fences (no language tag) and parses weekStandout', () => {
+    const inner = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Saturday is clearest.' });
+    const fenced = `\`\`\`\n${inner}\n\`\`\``;
+    const result = parseGroqResponse(fenced);
+    expect(result.weekStandoutParseStatus).toBe('present');
+    expect(result.weekStandoutRawValue).toBe('Saturday is clearest.');
+  });
+});
+
 describe('resolveSpurSuggestion', () => {
   it('returns null when spurRaw is null', () => {
     expect(resolveSpurSuggestion(null)).toBeNull();

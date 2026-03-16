@@ -74,6 +74,14 @@ export interface DebugAiCheck {
   rulesTriggered: string[];
 }
 
+export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
+
+export interface DebugWeekStandoutTrace {
+  parseStatus: WeekStandoutParseStatus;
+  rawValue: string | null;
+  used: boolean;
+}
+
 export interface DebugAiTrace {
   rawGroqResponse: string;
   normalizedAiText: string;
@@ -86,6 +94,7 @@ export interface DebugAiTrace {
     dropped: boolean;
     dropReason?: string;
   };
+  weekStandout: DebugWeekStandoutTrace;
   fallbackUsed: boolean;
   finalAiText: string;
 }

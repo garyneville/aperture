@@ -1,7 +1,7 @@
 import { formatTelegram } from '../../core/format-telegram.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
-import { emptyDebugContext, type DebugAiCheck, type DebugContext } from '../../core/debug-context.js';
+import { emptyDebugContext, type DebugAiCheck, type DebugContext, type WeekStandoutParseStatus } from '../../core/debug-context.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 import type { N8nRuntime } from './types.js';
 
@@ -202,14 +202,23 @@ export function buildFallbackAiText(ctx: BriefContext): string {
 
 export type SpurRaw = { locationName: string; hookLine: string; confidence: number };
 
+/** Strip Markdown code fences (```json ... ``` or ``` ... ```) that Groq occasionally wraps responses in. */
+function stripMarkdownFences(content: string): string {
+  return content.replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/, '$1').trim();
+}
+
 export function parseGroqResponse(rawContent: string): {
   editorial: string;
   compositionBullets: string[];
   weekInsight: string;
   spurRaw: SpurRaw | null;
+  weekStandoutParseStatus: WeekStandoutParseStatus;
+  weekStandoutRawValue: string | null;
 } {
+  const stripped = stripMarkdownFences(rawContent);
+  let parseFailure = false;
   try {
-    const parsed = JSON.parse(rawContent);
+    const parsed = JSON.parse(stripped);
     if (parsed && typeof parsed === 'object') {
       let spurRaw: SpurRaw | null = null;
       const spur = parsed.spurOfTheMoment;
@@ -222,19 +231,31 @@ export function parseGroqResponse(rawContent: string): {
       ) {
         spurRaw = { locationName: spur.locationName, hookLine: spur.hookLine, confidence: spur.confidence };
       }
+      const weekStandoutRawValue = typeof parsed.weekStandout === 'string' ? parsed.weekStandout : null;
+      const weekStandoutParseStatus: WeekStandoutParseStatus = weekStandoutRawValue !== null ? 'present' : 'absent';
       return {
         editorial: typeof parsed.editorial === 'string' ? parsed.editorial : rawContent,
         compositionBullets: Array.isArray(parsed.composition)
           ? parsed.composition.filter((s: unknown) => typeof s === 'string')
           : [],
-        weekInsight: typeof parsed.weekStandout === 'string' ? parsed.weekStandout : '',
+        weekInsight: weekStandoutRawValue ?? '',
         spurRaw,
+        weekStandoutParseStatus,
+        weekStandoutRawValue,
       };
     }
   } catch {
     // Not JSON — treat as plain editorial text (backward compat)
+    parseFailure = true;
   }
-  return { editorial: rawContent, compositionBullets: [], weekInsight: '', spurRaw: null };
+  return {
+    editorial: rawContent,
+    compositionBullets: [],
+    weekInsight: '',
+    spurRaw: null,
+    weekStandoutParseStatus: parseFailure ? 'parse-failure' : 'absent',
+    weekStandoutRawValue: null,
+  };
 }
 
 export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentSuggestion | null {
@@ -271,7 +292,7 @@ export function run({ $input }: N8nRuntime) {
   })();
   const { choices, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
-  const { editorial, compositionBullets, weekInsight, spurRaw } = parseGroqResponse(rawContent);
+  const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
   const spurOfTheMoment = resolveSpurSuggestion(spurRaw);
   const normalizedAiText = normalizeAiText(editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
@@ -306,6 +327,11 @@ export function run({ $input }: N8nRuntime) {
       resolved: spurOfTheMoment?.locationName || null,
       dropped: Boolean(spurRaw) && !spurOfTheMoment,
       dropReason: resolveSpurDropReason(spurRaw),
+    },
+    weekStandout: {
+      parseStatus: weekStandoutParseStatus,
+      rawValue: weekStandoutRawValue,
+      used: weekStandoutParseStatus === 'present' && weekStandoutRawValue !== null && weekStandoutRawValue.length > 0,
     },
     fallbackUsed,
     finalAiText: aiText,
