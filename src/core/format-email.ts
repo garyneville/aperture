@@ -1,7 +1,7 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import { renderAiBriefingText } from './ai-briefing.js';
-import type { DebugContext, DebugKitAdvisoryRule } from './debug-context.js';
+import type { DebugContext, DebugKitAdvisoryRule, DebugOutdoorComfortHour } from './debug-context.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -57,6 +57,18 @@ export interface CarWash {
   tmp?: number;
 }
 
+export interface NextDayHour {
+  hour: string;
+  tmp: number;
+  pp: number;
+  wind: number;
+  gusts: number;
+  visK: number;
+  pr: number;
+  ct: number;
+  isNight: boolean;
+}
+
 export interface DaySummary {
   dayLabel: string;
   dateKey: string;
@@ -79,6 +91,7 @@ export interface DaySummary {
   bestTags?: string;
   bestAlt?: AltLocation | null;
   carWash: CarWash;
+  hours?: NextDayHour[];
 }
 
 export interface FormatEmailInput {
@@ -246,6 +259,69 @@ function dewRiskEntry(tpw: number | undefined, tempC: number | undefined): Array
 function daylightUtilityLine(cw: CarWash): string {
   const utilityWindow = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
   return `${UTILITY_GLYPHS} Daylight utility: ${esc(utilityWindow)} <span style="color:${C.subtle};">&middot;</span> Wind ${esc(String(cw.wind))}km/h <span style="color:${C.subtle};">&middot;</span> Rain ${esc(String(cw.pp))}% <span style="color:${C.subtle};">&middot;</span> Temp ${esc(String(cw.tmp ?? '-'))}C`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Outdoor comfort scoring (run / walk windows)                       */
+/* ------------------------------------------------------------------ */
+
+/** Outdoor comfort score 0-100 suitable for a walk or run. */
+export function outdoorComfortScore(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK' | 'pr'>): number {
+  let score = 100;
+
+  // Rain probability
+  if (h.pp > 70)      score -= 50;
+  else if (h.pp > 40) score -= 30;
+  else if (h.pp > 20) score -= 15;
+  else if (h.pp > 5)  score -= 5;
+
+  // Wind speed (km/h)
+  if (h.wind > 45)      score -= 45;
+  else if (h.wind > 30) score -= 30;
+  else if (h.wind > 20) score -= 15;
+  else if (h.wind > 12) score -= 5;
+
+  // Temperature
+  if (h.tmp < 0)       score -= 35;
+  else if (h.tmp < 4)  score -= 20;
+  else if (h.tmp < 7)  score -= 10;
+  else if (h.tmp > 32) score -= 15;
+  else if (h.tmp > 27) score -= 5;
+
+  // Visibility
+  if (h.visK < 0.5)    score -= 40;
+  else if (h.visK < 2) score -= 25;
+  else if (h.visK < 5) score -= 10;
+
+  // Actual precipitation
+  if (h.pr > 3)        score -= 30;
+  else if (h.pr > 1)   score -= 20;
+  else if (h.pr > 0.2) score -= 10;
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+/** Returns the run/walk label and styling for a comfort score. */
+export function outdoorComfortLabel(
+  score: number,
+  h: Pick<NextDayHour, 'wind' | 'tmp' | 'pp'>,
+): { text: string; fg: string; bg: string; highlight: boolean } {
+  const MAX_RUN_WIND_KMH = 22;
+  const MIN_RUN_TEMP_C = 4;
+  const MAX_RUN_TEMP_C = 25;
+  const MAX_RUN_RAIN_PCT = 40;
+  if (score >= 75) {
+    const runFriendly = h.wind <= MAX_RUN_WIND_KMH && h.tmp >= MIN_RUN_TEMP_C && h.tmp <= MAX_RUN_TEMP_C && h.pp < MAX_RUN_RAIN_PCT;
+    return {
+      text: runFriendly ? 'Best for a run' : 'Best for a walk',
+      fg: C.success,
+      bg: C.successContainer,
+      highlight: true,
+    };
+  }
+  if (score >= 55) return { text: 'Pleasant', fg: C.secondary, bg: C.secondaryContainer, highlight: true };
+  if (score >= 35) return { text: 'Acceptable', fg: C.muted, bg: C.surfaceVariant, highlight: false };
+  return { text: 'Poor conditions', fg: C.error, bg: C.errorContainer, highlight: false };
 }
 
 function moonDescriptor(moonPct: number): string {
@@ -854,6 +930,137 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
   `, '', `border-left:4px solid ${C.primary};`);
 }
 
+/* ------------------------------------------------------------------ */
+/*  Next-day hourly weather outlook                                    */
+/* ------------------------------------------------------------------ */
+
+/** Finds the longest contiguous run of highlighted hours (comfort ≥ 55). */
+function bestOutdoorWindow(
+  hours: NextDayHour[],
+  scored: Array<{ score: number; label: { text: string; highlight: boolean } }>,
+): { start: string; end: string; label: string } | null {
+  let bestRun: { start: number; end: number } | null = null;
+  let currentStart = -1;
+  let currentLen = 0;
+  let bestLen = 0;
+
+  for (let i = 0; i < hours.length; i++) {
+    if (scored[i].label.highlight) {
+      if (currentStart === -1) currentStart = i;
+      currentLen++;
+      if (currentLen > bestLen) {
+        bestLen = currentLen;
+        bestRun = { start: currentStart, end: i };
+      }
+    } else {
+      currentStart = -1;
+      currentLen = 0;
+    }
+  }
+
+  if (!bestRun) return null;
+  const startHour = hours[bestRun.start].hour;
+  const endHour = hours[bestRun.end].hour;
+  const topLabel = scored.slice(bestRun.start, bestRun.end + 1)
+    .reduce((best, h) => h.score > best.score ? h : best)
+    .label.text;
+  return { start: startHour, end: endHour, label: topLabel };
+}
+
+/** Plain-language summary line for tomorrow's outdoor outlook. */
+function outdoorSummaryLine(
+  bestWindow: { start: string; end: string; label: string } | null,
+  hours: NextDayHour[],
+): string {
+  if (!hours.length) return 'No forecast data available for tomorrow.';
+  const dayHours = hours.filter(h => !h.isNight);
+  if (!dayHours.length) return 'No daytime hours in tomorrow\'s forecast.';
+
+  const avgTmp = Math.round(dayHours.reduce((s, h) => s + h.tmp, 0) / dayHours.length);
+  const maxPp = Math.max(...dayHours.map(h => h.pp));
+  const maxWind = Math.max(...dayHours.map(h => h.wind));
+
+  const rainNote = maxPp > 60 ? 'heavy rain likely' : maxPp > 30 ? 'some rain likely' : maxPp > 10 ? 'chance of showers' : 'mostly dry';
+  const windNote = maxWind > 40 ? ' with strong winds' : maxWind > 25 ? ' with breezy spells' : '';
+  const capitalizedRain = rainNote.charAt(0).toUpperCase() + rainNote.slice(1);
+
+  if (bestWindow) {
+    return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Best outdoor window: ${bestWindow.start}–${bestWindow.end}.`;
+  }
+  return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Limited outdoor opportunities.`;
+}
+
+/** Renders the next-day hourly weather outlook card. */
+export function nextDayHourlyOutlookSection(
+  tomorrow: DaySummary | undefined,
+  debugContext?: DebugContext,
+): string {
+  const hours = (tomorrow?.hours || []).filter(h => !h.isNight);
+  if (!hours.length) return '';
+
+  const scoredHours = hours.map(h => {
+    const score = outdoorComfortScore(h);
+    const label = outdoorComfortLabel(score, h);
+    return { h, score, label };
+  });
+
+  const bestWindow = bestOutdoorWindow(hours, scoredHours.map(s => ({ score: s.score, label: s.label })));
+  const summaryLine = outdoorSummaryLine(bestWindow, tomorrow?.hours || []);
+
+  // Populate debug context
+  if (debugContext) {
+    const debugHours: DebugOutdoorComfortHour[] = scoredHours.map(({ h, score, label }) => ({
+      hour: h.hour,
+      comfortScore: score,
+      label: label.text,
+      tmp: h.tmp,
+      pp: h.pp,
+      wind: h.wind,
+      visK: h.visK,
+      pr: h.pr,
+    }));
+    debugContext.outdoorComfort = { bestWindow, hours: debugHours };
+  }
+
+  // Build the hourly rows table
+  const hourRows = scoredHours.map(({ h, score, label }) => {
+    const rowBg = label.highlight ? label.bg : 'transparent';
+    const textColor = label.highlight ? label.fg : C.muted;
+    const indicatorDot = label.highlight
+      ? `<span style="color:${label.fg};font-size:14px;">&#x25CF;</span>&ensp;`
+      : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
+    return `<tr style="background:${rowBg};">
+      <td valign="middle" style="padding:5px 8px;font-family:${FONT};font-size:12px;font-weight:700;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
+      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(Math.round(h.tmp)))}°C</td>
+      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
+      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
+      <td valign="middle" style="padding:5px 8px 5px 6px;font-family:${FONT};font-size:12px;color:${textColor};">${indicatorDot}${esc(label.text)}</td>
+      <td valign="middle" style="padding:5px 8px 5px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">${score}/100</td>
+    </tr>`;
+  }).join('');
+
+  const table = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th align="left" style="padding:5px 8px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Time</th>
+        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Temp</th>
+        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Rain</th>
+        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Wind</th>
+        <th align="left" style="padding:5px 8px 5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
+        <th align="left" style="padding:5px 8px 5px 2px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};"></th>
+      </tr>
+    </thead>
+    <tbody>${hourRows}</tbody>
+  </table>`;
+
+  return card(`
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Tomorrow at a glance</div>
+    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(summaryLine)}</div>
+    <div style="Margin-top:10px;overflow-x:auto;">${table}</div>
+    <div style="Margin-top:8px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">&#x25CF; = pleasant spell &middot; &#x25CB; = less suitable &middot; Comfort is independent of photography scoring</div>
+  `);
+}
+
 function photoForecastCards(dailySummary: DaySummary[]): string {
   const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
   return listRows(forecastDays.map(day => {
@@ -1161,6 +1368,11 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
           </tr>
+          ${(() => {
+            const tomorrow = dailySummary.find(day => day.dayIdx === 1);
+            const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
+            return outlookHtml ? spacer(10) + `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr><tr><td>${outlookHtml}</td></tr>` : '';
+          })()}
           ${spacer(10)}
           <tr>
             <td>${sectionTitle('Days ahead')}</td>
@@ -1381,6 +1593,24 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             }`
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">Kit advisory data not available for this run — ensure debugContext is passed into formatEmail.</div>`
         )}
+        ${(() => {
+          const oc = debugContext.outdoorComfort;
+          if (!oc) return `${spacer(8)}${debugCard('Outdoor comfort window trace', `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No outdoor comfort data — tomorrow\'s hourly data may be absent.</div>`)}`;
+          const ocRows = oc.hours.map(h => ([
+            esc(h.hour),
+            esc(`${h.tmp}°C`),
+            esc(`${h.pp}%`),
+            esc(`${h.wind}km/h`),
+            esc(`${h.visK}km`),
+            esc(`${h.pr}mm`),
+            esc(String(h.comfortScore)),
+            esc(h.label),
+          ]));
+          const windowLine = oc.bestWindow
+            ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};"><span style="font-weight:700;color:${C.onPrimaryContainer};">Best window:</span> ${esc(oc.bestWindow.start)}–${esc(oc.bestWindow.end)} (${esc(oc.bestWindow.label)})</div>`
+            : `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No highlighted outdoor window found.</div>`;
+          return `${spacer(8)}${debugCard('Outdoor comfort window trace', `${debugTable(['Hour', 'Temp', 'Rain', 'Wind', 'Vis', 'Precip', 'Score', 'Label'], ocRows)}${windowLine}`)}`;
+        })()}
       </td>
     </tr>
   </table>

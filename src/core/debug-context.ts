@@ -137,6 +137,22 @@ export interface DebugKitAdvisory {
   tipsShown: string[];
 }
 
+export interface DebugOutdoorComfortHour {
+  hour: string;
+  comfortScore: number;
+  label: string;
+  tmp: number;
+  pp: number;
+  wind: number;
+  visK: number;
+  pr: number;
+}
+
+export interface DebugOutdoorComfort {
+  bestWindow: { start: string; end: string; label: string } | null;
+  hours: DebugOutdoorComfortHour[];
+}
+
 export interface DebugContext {
   metadata?: DebugRunMetadata;
   scores?: DebugScores;
@@ -145,6 +161,7 @@ export interface DebugContext {
   nearbyAlternatives: DebugNearbyAlternative[];
   longRangeCandidates?: DebugLongRangeCandidate[];
   kitAdvisory?: DebugKitAdvisory;
+  outdoorComfort?: DebugOutdoorComfort;
   ai?: DebugAiTrace;
 }
 
