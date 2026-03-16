@@ -1123,6 +1123,9 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(`B${alt.bortle}`),
     esc(alt.darknessDelta >= 0 ? `+${alt.darknessDelta}` : `${alt.darknessDelta}`),
     esc(alt.weatherDelta >= 0 ? `+${alt.weatherDelta}` : `${alt.weatherDelta}`),
+    esc(alt.deltaVsWindowPeak !== null && alt.deltaVsWindowPeak !== undefined
+      ? (alt.deltaVsWindowPeak >= 0 ? `+${alt.deltaVsWindowPeak}` : `${alt.deltaVsWindowPeak}`)
+      : '—'),
     esc(alt.shown ? 'Shown' : alt.discardedReason || 'Hidden'),
   ]));
   const aiTrace = debugContext.ai;
@@ -1170,7 +1173,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ))}
         ${spacer(8)}
         ${debugCard('Nearby alternatives', debugTable(
-          ['Rank', 'Location', 'Score', 'Drive', 'Bortle', 'Dark Δ', 'Score Δ', 'Outcome'],
+          ['Rank', 'Location', 'Score', 'Drive', 'Bortle', 'Dark Δ', 'Δ vs Leeds', 'Δ vs window', 'Outcome'],
           altRows,
         ))}
         ${aiTrace ? `${spacer(8)}${debugCard('AI editorial trace', `

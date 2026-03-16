@@ -835,6 +835,7 @@ describe('formatDebugEmail', () => {
         darknessScore: 75,
         darknessDelta: 50,
         weatherDelta: 25,
+        deltaVsWindowPeak: 25,
       }],
       ai: {
         rawGroqResponse: '{"editorial":"Good night."}',
@@ -867,6 +868,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Window selection trace');
     expect(html).toContain('Hourly astro scoring');
     expect(html).toContain('Nearby alternatives');
+    expect(html).toContain('Δ vs Leeds');
+    expect(html).toContain('Δ vs window');
     expect(html).toContain('AI editorial trace');
     expect(html).toContain('debug@example.com');
     expect(html).toContain('Overnight astro window');

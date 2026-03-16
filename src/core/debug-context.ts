@@ -67,7 +67,10 @@ export interface DebugNearbyAlternative {
   bortle: number;
   darknessScore: number;
   darknessDelta: number;
+  /** Delta vs Leeds overall/headline score (used for filtering — must beat Leeds by 8+ pts). */
   weatherDelta: number;
+  /** Delta vs the selected local window peak (same baseline used in AI/fallback editorial text). */
+  deltaVsWindowPeak: number | null;
   discardedReason?: string;
 }
 

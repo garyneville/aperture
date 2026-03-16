@@ -361,6 +361,9 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     ? 'No nearby locations score well enough today to recommend a trip.'
     : null;
 
+  // The selected window peak — same baseline used in AI/fallback editorial text.
+  const selectedWindowPeak = debugContext.windows.find(w => w.selected)?.peak ?? null;
+
   debugContext.nearbyAlternatives = allLocScores
     .map(({ loc, days }) => {
       const today = days[0];
@@ -391,6 +394,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         darknessScore: loc.siteDarkness.siteDarknessScore,
         darknessDelta: loc.siteDarkness.siteDarknessScore - HOME_SITE_DARKNESS.siteDarknessScore,
         weatherDelta: today.bestScore - leedsHeadline,
+        deltaVsWindowPeak: selectedWindowPeak !== null ? today.bestScore - selectedWindowPeak : null,
         discardedReason,
       };
     })
