@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildKitTips, formatEmail, type CarWash, type FormatEmailInput, type Window } from './format-email.js';
+import { buildKitTips, formatEmail, type CarWash, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -962,5 +962,94 @@ describe('kit advisory card in formatEmail', () => {
     const html = formatEmail(input);
     expect(html.indexOf('Kit advisory')).toBeGreaterThan(html.indexOf('Today\'s window'));
     expect(html.indexOf('Kit advisory')).toBeLessThan(html.indexOf('Alternatives'));
+  });
+});
+
+describe('formatEmail spur of the moment card', () => {
+  const baseInput: FormatEmailInput = {
+    dontBother: false,
+    windows: [{
+      label: 'Evening golden hour',
+      start: '18:00',
+      end: '19:00',
+      peak: 65,
+      hours: [{ hour: '18:00', score: 65, ch: 20, visK: 20, wind: '10', pp: 10, tpw: 15 }],
+      tops: ['landscape'],
+    }],
+    todayCarWash: {
+      rating: 'OK', label: 'Usable', score: 60,
+      start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12,
+    },
+    dailySummary: [{
+      dayLabel: 'Monday', dateKey: '2026-03-16', dayIdx: 0,
+      photoScore: 65, headlineScore: 65, photoEmoji: 'Good',
+      amScore: 30, pmScore: 65, astroScore: 20,
+      bestPhotoHour: '18:00', bestTags: 'landscape',
+      carWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12 },
+    }],
+    altLocations: [],
+    sunriseStr: '06:15', sunsetStr: '18:20', moonPct: 50,
+    today: 'Monday 16 March', todayBestScore: 65,
+    shSunsetQ: null, shSunriseQ: null, sunDir: null, crepPeak: 0,
+    aiText: 'A decent evening golden hour with good visibility.',
+  };
+
+  const aysgarthSpur: SpurOfTheMomentSuggestion = {
+    locationName: 'Aysgarth Falls',
+    region: 'yorkshire-dales',
+    driveMins: 68,
+    tags: ['waterfall', 'woodland'],
+    darkSky: false,
+    hookLine: 'Overcast light is perfect for waterfalls without harsh shadows.',
+    confidence: 0.85,
+  };
+
+  it('renders the spur card with location name, hook line, drive time and region', () => {
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: aysgarthSpur });
+    expect(html).toContain('Spur of the moment');
+    expect(html).toContain('Aysgarth Falls');
+    expect(html).toContain('Overcast light is perfect for waterfalls without harsh shadows.');
+    expect(html).toContain('68 min drive');
+    expect(html).toContain('Yorkshire Dales');
+  });
+
+  it('does not render the spur section when spurOfTheMoment is null', () => {
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: null });
+    expect(html).not.toContain('Spur of the moment');
+  });
+
+  it('does not render the spur section when spurOfTheMoment is undefined', () => {
+    const html = formatEmail({ ...baseInput });
+    expect(html).not.toContain('Spur of the moment');
+  });
+
+  it('renders dark sky note when darkSky is true', () => {
+    const darkSkySpur: SpurOfTheMomentSuggestion = {
+      ...aysgarthSpur,
+      locationName: 'Wastwater',
+      region: 'lake-district',
+      tags: ['lake', 'upland'],
+      darkSky: true,
+      hookLine: 'Exceptional dark sky with mountain reflections on still water.',
+    };
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: darkSkySpur });
+    expect(html).toContain('Dark sky site');
+  });
+
+  it('does not render dark sky note when darkSky is false', () => {
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: aysgarthSpur });
+    expect(html).not.toContain('Dark sky site');
+  });
+
+  it('spur card appears after Days ahead and before the key definitions footer', () => {
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: aysgarthSpur });
+    expect(html.indexOf('Spur of the moment')).toBeGreaterThan(html.indexOf('Days ahead'));
+    expect(html.indexOf('Spur of the moment')).toBeLessThan(html.indexOf('Crepuscular rays = shafts of light'));
+  });
+
+  it('spur card does not show a score pill', () => {
+    const html = formatEmail({ ...baseInput, spurOfTheMoment: aysgarthSpur });
+    const spurSection = html.slice(html.indexOf('Spur of the moment'));
+    expect(spurSection).not.toMatch(/\d+\/100/);
   });
 });

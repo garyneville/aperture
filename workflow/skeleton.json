@@ -140,7 +140,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 600, response_format: { type: 'json_object' } }) }}",
+        "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 800, response_format: { type: 'json_object' } }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0009-0009-0009-000000000009",

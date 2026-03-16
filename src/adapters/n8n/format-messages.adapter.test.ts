@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildFallbackAiText, isFactuallyIncoherentEditorial, shouldReplaceAiText } from './format-messages.adapter.js';
+import { buildFallbackAiText, isFactuallyIncoherentEditorial, shouldReplaceAiText, parseGroqResponse, resolveSpurSuggestion } from './format-messages.adapter.js';
+import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 
 describe('format-messages adapter editorial fallback', () => {
   const ctx = {
@@ -146,5 +147,91 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
   it('shouldReplaceAiText returns false for a coherent editorial that passes keyword heuristics', () => {
     const coherentText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies if you can make the drive.';
     expect(shouldReplaceAiText(coherentText, marchCtx)).toBe(false);
+  });
+});
+
+describe('parseGroqResponse — spurOfTheMoment', () => {
+  it('extracts spurRaw when confidence is >= 0.7 and all required fields are present', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good conditions today.',
+      composition: ['Shot idea 1', 'Shot idea 2'],
+      weekStandout: 'Thursday looks best.',
+      spurOfTheMoment: { locationName: 'Aysgarth Falls', hookLine: 'Overcast light is perfect for waterfalls without harsh shadows.', confidence: 0.85 },
+    });
+    const result = parseGroqResponse(raw);
+    expect(result.spurRaw).not.toBeNull();
+    expect(result.spurRaw?.locationName).toBe('Aysgarth Falls');
+    expect(result.spurRaw?.hookLine).toBe('Overcast light is perfect for waterfalls without harsh shadows.');
+    expect(result.spurRaw?.confidence).toBe(0.85);
+  });
+
+  it('drops spurRaw when confidence is below 0.7', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good conditions today.',
+      composition: [],
+      weekStandout: 'Today.',
+      spurOfTheMoment: { locationName: 'Mam Tor', hookLine: 'Nice upland views.', confidence: 0.65 },
+    });
+    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+  });
+
+  it('drops spurRaw when locationName is missing', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good.',
+      composition: [],
+      weekStandout: 'Today.',
+      spurOfTheMoment: { hookLine: 'Great views.', confidence: 0.8 },
+    });
+    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+  });
+
+  it('returns null spurRaw when spurOfTheMoment key is absent', () => {
+    const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Today.' });
+    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+  });
+
+  it('still extracts editorial and composition when spurOfTheMoment is absent', () => {
+    const raw = JSON.stringify({ editorial: 'Fine day.', composition: ['Idea A'], weekStandout: 'Friday.' });
+    const result = parseGroqResponse(raw);
+    expect(result.editorial).toBe('Fine day.');
+    expect(result.compositionBullets).toEqual(['Idea A']);
+    expect(result.weekInsight).toBe('Friday.');
+  });
+});
+
+describe('resolveSpurSuggestion', () => {
+  it('returns null when spurRaw is null', () => {
+    expect(resolveSpurSuggestion(null)).toBeNull();
+  });
+
+  it('returns null when locationName is not in the known list', () => {
+    expect(resolveSpurSuggestion({ locationName: 'Fictional Peak', hookLine: 'Great.', confidence: 0.9 })).toBeNull();
+  });
+
+  it('returns null when locationName is a misspelled variant', () => {
+    expect(resolveSpurSuggestion({ locationName: 'Pen-Y-Ghent', hookLine: 'Great.', confidence: 0.9 })).toBeNull();
+  });
+
+  it('resolves a valid location with metadata from LONG_RANGE_LOCATIONS, not from Groq', () => {
+    const loc = LONG_RANGE_LOCATIONS.find(l => l.name === 'Aysgarth Falls')!;
+    const result = resolveSpurSuggestion({ locationName: 'Aysgarth Falls', hookLine: 'Autumn colour fills the gorge.', confidence: 0.8 });
+    expect(result).not.toBeNull();
+    expect(result?.locationName).toBe('Aysgarth Falls');
+    expect(result?.region).toBe(loc.region);
+    expect(result?.driveMins).toBe(estimatedDriveMins(loc));
+    expect(result?.tags).toEqual(loc.tags);
+    expect(result?.darkSky).toBe(loc.darkSky);
+    expect(result?.hookLine).toBe('Autumn colour fills the gorge.');
+    expect(result?.confidence).toBe(0.8);
+  });
+
+  it('correctly identifies a dark sky location', () => {
+    const result = resolveSpurSuggestion({ locationName: 'Wastwater', hookLine: 'Exceptional dark sky with mountain reflections.', confidence: 0.9 });
+    expect(result?.darkSky).toBe(true);
+  });
+
+  it('correctly identifies a non-dark-sky location', () => {
+    const result = resolveSpurSuggestion({ locationName: 'Mam Tor', hookLine: 'Dramatic ridge walk above the Hope Valley.', confidence: 0.75 });
+    expect(result?.darkSky).toBe(false);
   });
 });

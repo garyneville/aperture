@@ -1,5 +1,7 @@
 import { formatTelegram } from '../../core/format-telegram.js';
 import { formatEmail } from '../../core/format-email.js';
+import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
+import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 import type { N8nRuntime } from './types.js';
 
 type BriefContext = {
@@ -170,26 +172,57 @@ export function buildFallbackAiText(ctx: BriefContext): string {
   return firstSentence;
 }
 
-function parseGroqResponse(rawContent: string): {
+export type SpurRaw = { locationName: string; hookLine: string; confidence: number };
+
+export function parseGroqResponse(rawContent: string): {
   editorial: string;
   compositionBullets: string[];
   weekInsight: string;
+  spurRaw: SpurRaw | null;
 } {
   try {
     const parsed = JSON.parse(rawContent);
     if (parsed && typeof parsed === 'object') {
+      let spurRaw: SpurRaw | null = null;
+      const spur = parsed.spurOfTheMoment;
+      if (
+        spur &&
+        typeof spur === 'object' &&
+        typeof spur.locationName === 'string' &&
+        typeof spur.hookLine === 'string' &&
+        typeof spur.confidence === 'number' &&
+        spur.confidence >= 0.7
+      ) {
+        spurRaw = { locationName: spur.locationName, hookLine: spur.hookLine, confidence: spur.confidence };
+      }
       return {
         editorial: typeof parsed.editorial === 'string' ? parsed.editorial : rawContent,
         compositionBullets: Array.isArray(parsed.composition)
           ? parsed.composition.filter((s: unknown) => typeof s === 'string')
           : [],
         weekInsight: typeof parsed.weekStandout === 'string' ? parsed.weekStandout : '',
+        spurRaw,
       };
     }
   } catch {
     // Not JSON — treat as plain editorial text (backward compat)
   }
-  return { editorial: rawContent, compositionBullets: [], weekInsight: '' };
+  return { editorial: rawContent, compositionBullets: [], weekInsight: '', spurRaw: null };
+}
+
+export function resolveSpurSuggestion(spurRaw: SpurRaw | null): SpurOfTheMomentSuggestion | null {
+  if (!spurRaw) return null;
+  const loc = LONG_RANGE_LOCATIONS.find(l => l.name === spurRaw.locationName);
+  if (!loc) return null;
+  return {
+    locationName: loc.name,
+    region: loc.region,
+    driveMins: estimatedDriveMins(loc),
+    tags: loc.tags,
+    darkSky: loc.darkSky,
+    hookLine: spurRaw.hookLine,
+    confidence: spurRaw.confidence,
+  };
 }
 
 export function run({ $input }: N8nRuntime) {
@@ -202,14 +235,15 @@ export function run({ $input }: N8nRuntime) {
   })();
   const { choices, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
-  const { editorial, compositionBullets, weekInsight } = parseGroqResponse(rawContent);
+  const { editorial, compositionBullets, weekInsight, spurRaw } = parseGroqResponse(rawContent);
+  const spurOfTheMoment = resolveSpurSuggestion(spurRaw);
   const normalizedAiText = normalizeAiText(editorial);
   const aiText = shouldReplaceAiText(normalizedAiText, ctx)
     ? buildFallbackAiText(ctx)
     : normalizedAiText;
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets, weekInsight, spurOfTheMoment });
 
   return [{ json: { telegramMsg, emailHtml } }];
 }

@@ -93,6 +93,7 @@ export interface FormatEmailInput {
   longRangeTop?: LongRangeCard | null;
   longRangeCardLabel?: string | null;
   darkSkyAlert?: DarkSkyAlertCard | null;
+  spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
 }
 
 export interface LongRangeCard {
@@ -114,6 +115,16 @@ export interface DarkSkyAlertCard {
   driveMins: number;
   astroScore: number;
   bestAstroHour: string | null;
+}
+
+export interface SpurOfTheMomentSuggestion {
+  locationName: string;
+  region: string;
+  driveMins: number;
+  tags: string[];
+  darkSky: boolean;
+  hookLine: string;
+  confidence: number;
 }
 
 /* ------------------------------------------------------------------ */
@@ -640,6 +651,24 @@ function longRangeSection(
   return listRows(cards);
 }
 
+function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
+  const regionLabel = spur.region.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const tagChips = spur.tags
+    .slice(0, 3)
+    .map(tag => metricChip(tag, ''))
+    .join('');
+  const darkSkyNote = spur.darkSky
+    ? `<span style="font-family:${FONT};font-size:12px;color:${C.secondary};">&#x2605; Dark sky site</span>`
+    : '';
+
+  return card(`
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:13px;font-weight:700;color:${C.ink};">${esc(spur.locationName)}</div>
+    <div style="Margin:0 0 8px;font-family:${FONT};font-size:12px;color:${C.muted};">${esc(regionLabel)} &middot; ${spur.driveMins} min drive</div>
+    <div style="font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};font-style:italic;">${esc(spur.hookLine)}</div>
+    ${tagChips || darkSkyNote ? `<div style="Margin-top:8px;">${tagChips}${darkSkyNote}</div>` : ''}
+  `, '', `border-left:4px solid ${C.primary};`);
+}
+
 function photoForecastCards(dailySummary: DaySummary[]): string {
   const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
   return listRows(forecastDays.map(day => {
@@ -718,6 +747,7 @@ export function formatEmail(input: FormatEmailInput): string {
     longRangeTop,
     longRangeCardLabel,
     darkSkyAlert,
+    spurOfTheMoment,
   } = input;
 
   /* Hero card */
@@ -923,6 +953,7 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${photoForecastCards(dailySummary)}</td>
           </tr>
+          ${spurOfTheMoment ? spacer(10) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
           ${spacer(10)}
           <tr>
             <td>

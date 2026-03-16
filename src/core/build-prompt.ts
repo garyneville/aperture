@@ -1,4 +1,7 @@
 import type { Window, DailySummary, CarWash } from './best-windows.js';
+import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
+
+const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
 const SEASONAL_CONTEXT: Record<number, string> = {
   1:  'January — frost and snow possible on high ground; bare trees; frozen reservoirs.',
@@ -215,11 +218,14 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       : '';
     prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words naming the standout day this week>"}
+{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"<1 sentence max 30 words naming the standout day this week>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
 ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}
-5-day outlook: ${weekLine}`;
+5-day outlook: ${weekLine}
+
+SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out.
+Locations: ${SPUR_LOCATION_NAMES}`;
   } else {
     const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
     const bestWin = windows[0];
@@ -259,7 +265,7 @@ ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${au
 
     prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"<1 sentence max 30 words>"}
+{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"<1 sentence max 30 words>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 EDITORIAL (2 sentences, max 55 words total):
 Sentence 1: name the best local window exactly as labelled, include its time and score, add one useful detail (peak time or how session changes).
@@ -271,6 +277,9 @@ Suggest 2 concrete shot ideas for the best window. Each must name a specific sub
 
 WEEK STANDOUT (1 sentence, max 30 words):
 Name the standout photography day this week and why. If today is the best, say so.
+
+SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out.
+Locations: ${SPUR_LOCATION_NAMES}
 
 Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
 ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
