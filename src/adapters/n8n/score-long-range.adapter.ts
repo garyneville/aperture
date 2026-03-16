@@ -26,5 +26,11 @@ export function run({ $input }: N8nRuntime) {
     isWeekday,
   });
 
-  return [{ json: result }];
+  return [{ json: {
+    longRangeTop: result.longRangeTop,
+    longRangeCardLabel: result.cardLabel,
+    darkSkyAlert: result.darkSkyAlert,
+    longRangeCandidates: result.longRangeCandidates,
+    longRangeDebugCandidates: result.longRangeDebugCandidates,
+  } }];
 }

@@ -375,6 +375,8 @@ describe('workflow assembly', () => {
     );
 
     expect(result[0]?.json?.longRangeTop?.name).toBe('Kielder Forest');
+    expect(result[0]?.json).toHaveProperty('longRangeCardLabel');
+    expect(result[0]?.json?.cardLabel).toBeUndefined();
     expect(result[0]?.json?.longRangeCandidates?.[0]?.name).toBe('Kielder Forest');
     expect(result[0]?.json?.longRangeDebugCandidates?.[0]?.name).toBe('Kielder Forest');
     expect(result[0]?.json?.longRangeDebugCandidates?.[0]?.shown).toBe(true);

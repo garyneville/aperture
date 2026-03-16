@@ -1582,6 +1582,104 @@ describe('formatEmail spur-of-the-moment merge into nearby alt card', () => {
   });
 });
 
+describe('formatEmail long-range section', () => {
+  it('renders the long-range card when a qualified long-range recommendation is present', () => {
+    const html = formatEmail({
+      dontBother: true,
+      windows: [],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Great',
+        score: 60,
+        start: '06:00',
+        end: '08:00',
+        wind: 12,
+        pp: 22,
+        tmp: 5,
+      },
+      dailySummary: [{
+        dayLabel: 'Monday',
+        dateKey: '2026-03-16',
+        dayIdx: 0,
+        photoScore: 32,
+        headlineScore: 42,
+        photoEmoji: 'Marginal',
+        amScore: 32,
+        pmScore: 19,
+        astroScore: 52,
+        confidence: 'high',
+        confidenceStdDev: 5,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 11,
+        amConfidence: 'high',
+        pmConfidence: 'high',
+        bestPhotoHour: '07:00',
+        bestTags: 'landscape, clear light path',
+        bestAstroHour: '04:00',
+        darkSkyStartsAt: '00:00',
+        carWash: {
+          rating: 'OK',
+          label: 'Great',
+          score: 60,
+          start: '06:00',
+          end: '08:00',
+          wind: 12,
+          pp: 22,
+          tmp: 5,
+        },
+      }],
+      altLocations: [{
+        name: 'Brimham Rocks',
+        driveMins: 40,
+        bestScore: 81,
+        bestDayHour: null,
+        bestAstroHour: '02:00',
+        isAstroWin: true,
+        darkSky: false,
+      }],
+      noAltsMsg: undefined,
+      sunriseStr: '06:18',
+      sunsetStr: '18:11',
+      moonPct: 8,
+      metarNote: '',
+      today: 'Monday 16 March',
+      todayBestScore: 42,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Leeds is not worth it today due to poor conditions. Brimham Rocks is a better alternative.',
+      longRangeTop: {
+        name: 'Goathland',
+        region: 'north-york-moors',
+        driveMins: 74,
+        tags: ['waterfall', 'moorland'],
+        darkSky: true,
+        elevation: 170,
+        bestScore: 88,
+        bestDayHour: '07:00',
+        bestAstroHour: '02:00',
+        isAstroWin: true,
+      },
+      longRangeCardLabel: 'Weekend opportunity',
+      darkSkyAlert: {
+        name: 'Goathland',
+        region: 'north-york-moors',
+        driveMins: 74,
+        astroScore: 88,
+        bestAstroHour: '02:00',
+      },
+    });
+
+    expect(html).toContain('If you had the day');
+    expect(html).toContain('Weekend opportunity');
+    expect(html).toContain('Goathland');
+    expect(html).toContain('Best astro around 02:00 - dark sky site');
+    expect(html).not.toContain('Dark sky alert</div>');
+  });
+});
+
 /* ------------------------------------------------------------------ */
 /*  evaluateKitRules — full rule trace                                 */
 /* ------------------------------------------------------------------ */
