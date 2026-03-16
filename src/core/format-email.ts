@@ -331,6 +331,112 @@ function forecastBestLine(day: DaySummary): string {
   return `Best at ${day.bestPhotoHour || '-'} - ${displayBestTags(day.bestTags)}`;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Kit advisory                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface KitTip {
+  id: string;
+  text: string;
+  priority: number;
+}
+
+interface KitRuleParams {
+  windKmh: number;
+  rainPct: number;
+  tempC: number | undefined;
+  visibilityKm: number | undefined;
+  tpwMm: number | undefined;
+  astroScore: number;
+  isAstroWin: boolean;
+  moonPct: number;
+}
+
+interface KitRule {
+  id: string;
+  predicate: (params: KitRuleParams) => boolean;
+  text: string;
+  priority: number;
+}
+
+const KIT_RULES: KitRule[] = [
+  {
+    id: 'high-wind',
+    predicate: ({ windKmh }) => windKmh > 25,
+    text: 'High wind: ballast your tripod or avoid long exposures; shoot parallel to gusts.',
+    priority: 10,
+  },
+  {
+    id: 'rain-risk',
+    predicate: ({ rainPct }) => rainPct > 40,
+    text: 'Rain expected: verify weather sealing on body and lens; pack a microfibre cloth for the front element.',
+    priority: 9,
+  },
+  {
+    id: 'fog-mist',
+    predicate: ({ visibilityKm }) => visibilityKm !== undefined && visibilityKm < 5,
+    text: 'Low visibility: telephoto compression will look great; switch to manual focus and bracket exposures.',
+    priority: 8,
+  },
+  {
+    id: 'astro-window',
+    predicate: ({ astroScore, isAstroWin, moonPct }) => isAstroWin && astroScore >= 60 && moonPct < 60,
+    text: 'Astro window: fastest wide-aperture lens; intervalometer for star trails; red torch to preserve night vision.',
+    priority: 7,
+  },
+  {
+    id: 'cold',
+    predicate: ({ tempC }) => tempC !== undefined && tempC < 2,
+    text: 'Near-freezing: battery performance drops — carry spares in an inside pocket.',
+    priority: 6,
+  },
+  {
+    id: 'high-moisture',
+    predicate: ({ tpwMm, tempC }) => tpwMm !== undefined && tpwMm > 30 && (tempC === undefined || tempC < 12),
+    text: 'High atmospheric moisture: risk of lens fogging — let glass acclimatise before shooting.',
+    priority: 5,
+  },
+];
+
+export function buildKitTips(
+  todayCarWash: CarWash,
+  windows: Window[],
+  astroScore: number,
+  moonPct: number,
+  maxTips = 3,
+): KitTip[] {
+  const topWindow = windows?.[0];
+  const peakHour = topWindow?.hours?.find(h => h.score === topWindow.peak) || topWindow?.hours?.[0];
+
+  const params = {
+    windKmh: todayCarWash.wind,
+    rainPct: todayCarWash.pp,
+    tempC: todayCarWash.tmp,
+    visibilityKm: peakHour?.visK,
+    tpwMm: peakHour?.tpw,
+    astroScore,
+    isAstroWin: isAstroWindow(topWindow),
+    moonPct,
+  };
+
+  return KIT_RULES
+    .filter(rule => rule.predicate(params))
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, maxTips)
+    .map(rule => ({ id: rule.id, text: rule.text, priority: rule.priority }));
+}
+
+function kitAdvisoryCard(tips: KitTip[]): string {
+  if (!tips.length) return '';
+  const items = tips.map(tip =>
+    `<div style="Margin-bottom:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(tip.text)}</div>`
+  ).join('');
+  return card(`
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Kit advisory</div>
+    <div style="Margin-top:4px;">${items}</div>
+  `, '', `border-left:4px solid ${C.tertiary};`);
+}
+
 function windowCard(w: Window, index: number, windows: Window[]): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
@@ -684,6 +790,10 @@ export function formatEmail(input: FormatEmailInput): string {
   /* Signal cards */
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight);
 
+  /* Kit advisory */
+  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+  const kitCard = kitAdvisoryCard(kitTips);
+
   /* Assemble full HTML */
   return `<!DOCTYPE html>
 <html lang="en">
@@ -789,6 +899,7 @@ export function formatEmail(input: FormatEmailInput): string {
           <tr>
             <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows, compositionBullets)}</td>
           </tr>
+          ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
           ${spacer(10)}
           <tr>
             <td>${sectionTitle('Alternatives')}</td>
