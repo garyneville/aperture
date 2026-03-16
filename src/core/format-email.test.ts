@@ -111,8 +111,12 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('right as the window opens');
     expect(html).not.toContain('near the end of the window');
     expect(html).not.toContain('within the window');
-    // at-a-glance must not include alternative score deltas (local Leeds only)
+    // at-a-glance must not include alternative score deltas — metric language banned (issue #71)
     expect(html).not.toContain('adds 25 points');
+    expect(html).not.toContain('points stronger');
+    // at-a-glance shows prose-only alt recommendation when delta >= 25 (Malham Cove: 85-60=25)
+    expect(html).toContain('Or consider Malham Cove instead');
+    expect(html).toContain('for dark sky photography');
   });
 
   it('adds a later-night distinction when both local windows are astro', () => {
@@ -593,12 +597,12 @@ describe('formatEmail hero summary', () => {
     const input: FormatEmailInput = {
       dontBother: false,
       windows: [{
-        label: 'Evening light window',
-        start: '18:00',
-        end: '20:00',
-        peak: 62,
-        hours: [{ hour: '19:00', score: 62, ch: 40, visK: 12.0, wind: '10', pp: 5 }],
-        tops: ['landscape'],
+        label: 'Overnight astro window',
+        start: '04:00',
+        end: '04:00',
+        peak: 60,
+        hours: [{ hour: '04:00', score: 60, ch: 10, visK: 20.5, wind: '6', pp: 0 }],
+        tops: ['astrophotography'],
       }],
       todayCarWash: {
         rating: 'OK',
@@ -614,18 +618,18 @@ describe('formatEmail hero summary', () => {
         dayLabel: 'Sunday',
         dateKey: '2026-03-15',
         dayIdx: 0,
-        photoScore: 62,
-        headlineScore: 62,
+        photoScore: 60,
+        headlineScore: 72,
         photoEmoji: 'Good',
         amScore: 30,
-        pmScore: 62,
-        astroScore: 20,
+        pmScore: 35,
+        astroScore: 72,
         confidence: 'medium',
         confidenceStdDev: 12,
         amConfidence: 'medium',
         pmConfidence: 'medium',
-        bestPhotoHour: '19:00',
-        bestTags: 'landscape',
+        bestPhotoHour: '04:00',
+        bestTags: 'astrophotography',
         carWash: {
           rating: 'OK',
           label: 'Usable',
@@ -644,21 +648,21 @@ describe('formatEmail hero summary', () => {
       moonPct: 50,
       metarNote: '',
       today: 'Sunday 15 March',
-      todayBestScore: 62,
+      todayBestScore: 60,
       shSunsetQ: 55,
       shSunriseQ: null,
       shSunsetText: 'Moderate texture',
       sunDir: 260,
       crepPeak: 0,
-      aiText: 'The evening light window scores 62/100. Expect patchy cloud with good visibility for landscape work.',
+      aiText: 'Overnight astro window at 04:00 scores 60/100, peak time with 20.5km visibility. Darker skies arrive after moonset, so the wider night still carries more promise than this narrow slot.',
     };
 
     const html = formatEmail(input);
 
     // The opener restating the window label + score should be stripped
-    expect(html).not.toContain('The evening light window scores 62/100.');
+    expect(html).not.toContain('Overnight astro window at 04:00 scores 60/100, peak time with 20.5km visibility.');
     // The remaining editorial context should still be present
-    expect(html).toContain('Expect patchy cloud with good visibility for landscape work.');
+    expect(html).toContain('Darker skies arrive after moonset, so the wider night still carries more promise than this narrow slot.');
     expect(html).toContain('AI briefing');
   });
 

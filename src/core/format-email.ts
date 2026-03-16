@@ -1,6 +1,7 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import type { DebugContext } from './debug-context.js';
+import { renderAiBriefingText } from './ai-briefing.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -33,8 +34,8 @@ export interface AltLocation {
   name: string;
   driveMins: number;
   bestScore: number;
-  bestDayHour?: string;
-  bestAstroHour?: string;
+  bestDayHour?: string | null;
+  bestAstroHour?: string | null;
   types?: string[];
   isAstroWin?: boolean;
   darkSky?: boolean;
@@ -568,28 +569,13 @@ function poorDayFallbackLine(windows: Window[] | undefined): string {
   return `If you still go: ${fallbackWindow.label.toLowerCase()} around ${peakHour || 'time TBD'} at ${fallbackWindow.peak}/100.`;
 }
 
-function stripRedundantAiOpener(aiText: string, topWindow: Window | null | undefined): string {
-  if (!topWindow || !aiText) return aiText;
-  const dotIndex = aiText.indexOf('.');
-  if (dotIndex < 0) return aiText;
-  const firstSentence = aiText.slice(0, dotIndex).toLowerCase();
-  const labelLower = topWindow.label.toLowerCase();
-  const scoreStr = `${topWindow.peak}/100`;
-  const labelPos = firstSentence.indexOf(labelLower);
-  const scorePos = firstSentence.indexOf(scoreStr);
-  // Only strip when label appears before score — the classic restatement pattern.
-  if (labelPos >= 0 && scorePos > labelPos) {
-    const remainder = aiText.slice(dotIndex + 1).trimStart();
-    return remainder || aiText;
-  }
-  return aiText;
-}
-
 function todayWindowSection(
   dontBother: boolean,
   todayBestScore: number,
   aiText: string,
   windows: Window[] | undefined,
+  dailySummary: DaySummary[],
+  altLocations: AltLocation[] | undefined,
   compositionBullets?: string[],
 ): string {
   if (dontBother) {
@@ -600,8 +586,8 @@ function todayWindowSection(
       <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:4px solid ${C.error};`);
   }
-  const topWindow = windows?.[0] ?? null;
-  const trimmedAiText = stripRedundantAiOpener(aiText, topWindow);
+  const renderedAi = renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations });
+  const trimmedAiText = renderedAi.text || aiText;
   const compCard = compositionCard(compositionBullets || []);
   return listRows([
     ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
@@ -831,6 +817,9 @@ export function formatEmail(input: FormatEmailInput): string {
   const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
   const todayConfidence = confidenceDetail(todayEffConf);
   const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
+  const topAltDelta = topAlternative && topWindow
+    ? topAlternative.bestScore - topWindow.peak
+    : 0;
   const astroGap = topWindow
     ? explainAstroScoreGap({ window: topWindow, today: todayDay })
     : null;
@@ -873,6 +862,9 @@ export function formatEmail(input: FormatEmailInput): string {
         : '',
       nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
         ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
+        : '',
+      topAltDelta >= 25 && topAlternative
+        ? `Or consider ${topAlternative.name} instead — significantly better conditions${topAlternative.darkSky ? ' for dark sky photography' : ''} (${topAlternative.driveMins} min drive).`
         : '',
     ].filter(Boolean).join('\n');
 
@@ -1012,7 +1004,7 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>${sectionTitle('Today\'s window')}</td>
           </tr>
           <tr>
-            <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows, compositionBullets)}</td>
+            <td>${todayWindowSection(dontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
           </tr>
           ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
           ${spacer(10)}

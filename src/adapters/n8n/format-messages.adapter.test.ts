@@ -40,14 +40,23 @@ describe('format-messages adapter editorial fallback', () => {
     const aiText = 'For Leeds, the Evening astro window from 19:00-22:00 scores 61/100 with 0% cloud cover and 15.2km visibility.';
 
     expect(shouldReplaceAiText(aiText, ctx)).toBe(true);
-    expect(buildFallbackAiText(ctx)).toContain('Local peak is around 22:00');
-    expect(buildFallbackAiText(ctx)).toContain('Sutton Bank is 24 points stronger thanks to darker skies around 20:00 if you can make the 75-minute drive.');
+    const fallback = buildFallbackAiText(ctx);
+    expect(fallback).toContain('Local peak is around 22:00');
+    expect(fallback).toContain('Consider Sutton Bank for better dark sky conditions');
+    expect(fallback).not.toContain('points stronger');
+    expect(fallback).not.toContain('/100');
   });
 
-  it('keeps AI copy that already adds comparative insight', () => {
-    const aiText = 'Local peak is around 22:00 near the end of the Evening astro window. Sutton Bank is 24 points stronger thanks to darker skies if you can make the drive.';
+  it('keeps AI copy that uses prose-only alt recommendation without metric language', () => {
+    const aiText = 'Conditions improve through the evening astro window towards 22:00. Consider Sutton Bank for better dark sky conditions if you can make the drive.';
 
     expect(shouldReplaceAiText(aiText, ctx)).toBe(false);
+  });
+
+  it('replaces AI copy that mentions alt score delta even when factually correct (Rule 4)', () => {
+    const metricLeakText = 'Local peak is around 22:00 near the end of the Evening astro window. Sutton Bank is 24 points stronger thanks to darker skies if you can make the drive.';
+
+    expect(shouldReplaceAiText(metricLeakText, ctx)).toBe(true);
   });
 
   it('does not repeat start-end range for single-hour fallback windows', () => {
@@ -72,7 +81,8 @@ describe('format-messages adapter editorial fallback', () => {
     const text = buildFallbackAiText(singleHourCtx);
     expect(text).not.toContain('07:00-07:00');
     expect(text).toContain('07:00');
-    expect(text).toContain('Sutton Bank is 29 points stronger');
+    expect(text).toContain('Consider Sutton Bank for better dark sky conditions');
+    expect(text).not.toContain('points stronger');
   });
 
   it('uses generic wording for astro-delta on morning windows', () => {
@@ -135,9 +145,16 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
     expect(isFactuallyIncoherentEditorial(wrongScoreText, marchCtx)).toBe(true);
   });
 
-  it('does not flag a coherent editorial with the alt in the second sentence', () => {
-    const coherentText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies.';
-    expect(isFactuallyIncoherentEditorial(coherentText, marchCtx)).toBe(false);
+  it('flags metric alt language even when factually correct (Rule 4 — 16 March regression)', () => {
+    // "30 points stronger" is factually accurate (85 - 55 = 30) but is a metric leak.
+    // Rule 4 catches this regardless of accuracy. Editorial must use prose only.
+    const metricLeakText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies.';
+    expect(isFactuallyIncoherentEditorial(metricLeakText, marchCtx)).toBe(true);
+  });
+
+  it('does not flag a prose-only alt mention in the second sentence', () => {
+    const proseText = 'Local peak is around 20:00 in the evening astro window. Consider Sutton Bank for better dark sky conditions if you can make the drive.';
+    expect(isFactuallyIncoherentEditorial(proseText, marchCtx)).toBe(false);
   });
 
   it('shouldReplaceAiText returns true for the 15 March hallucination', () => {
@@ -145,9 +162,14 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
     expect(shouldReplaceAiText(hallucinatedText, marchCtx)).toBe(true);
   });
 
-  it('shouldReplaceAiText returns false for a coherent editorial that passes keyword heuristics', () => {
-    const coherentText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies if you can make the drive.';
-    expect(shouldReplaceAiText(coherentText, marchCtx)).toBe(false);
+  it('shouldReplaceAiText returns true for metric alt language even when factually correct', () => {
+    const metricLeakText = 'Local peak is around 20:00 in the evening astro window. Sutton Bank is 30 points stronger thanks to darker skies if you can make the drive.';
+    expect(shouldReplaceAiText(metricLeakText, marchCtx)).toBe(true);
+  });
+
+  it('shouldReplaceAiText returns false for a prose-only alt recommendation', () => {
+    const proseText = 'Local peak is around 20:00 in the evening astro window. Consider Sutton Bank for better dark sky conditions if you can make the drive.';
+    expect(shouldReplaceAiText(proseText, marchCtx)).toBe(false);
   });
 });
 
@@ -295,15 +317,12 @@ describe('resolveSpurSuggestion', () => {
 });
 
 describe('normalizeAiText — decimal spacing fix (#108)', () => {
-  it('fixes "X. Y" decimal spacing artifact from AI output (the bug case)', () => {
-    // Groq sometimes echoes "20. 5km" treating the decimal point as a sentence end.
+  it('fixes "X. Y" decimal spacing from AI output (the main bug case)', () => {
     expect(normalizeAiText('Visibility drops to 20. 5km through the window.')).toBe('Visibility drops to 20.5km through the window.');
   });
 
-  it('fixes decimal at a sentence-splitter boundary', () => {
-    // The sentence regex splits on any "."; "18.3km" becomes ["Tonight reaches 18.", "3km ..."].
-    // When rejoined the decimal fix must restore the original value.
-    expect(normalizeAiText('Tonight reaches 18. 3km visibility making this a solid astro night.')).toBe('Tonight reaches 18.3km visibility making this a solid astro night.');
+  it('fixes a decimal that falls at the sentence splitter boundary', () => {
+    expect(normalizeAiText('Vis 20. 5km tonight. Darker skies after moonset.')).toBe('Vis 20.5km tonight. Darker skies after moonset.');
   });
 
   it('does not alter a correctly formatted decimal', () => {

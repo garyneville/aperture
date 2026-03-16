@@ -285,7 +285,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
         ? `- ${astroGap.text}`
         : '',
       bestAltDelta >= 10 && topAlt
-        ? `- ${topAlt.name} is ${bestAltDelta} points stronger${topAlt.darkSky ? ' mainly because of darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}.`
+        ? `- Consider ${topAlt.name} today${topAlt.darkSky ? ' — better dark sky conditions' : ' — better overall conditions'}${topAlt.driveMins ? ` (${topAlt.driveMins} min drive)` : ''}.`
         : '',
       nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
         ? `- If you miss the first slot, ${nextWin.label.toLowerCase()} is the later, darker fallback from ${nextWin.start}\u2013${nextWin.end}.`
@@ -303,10 +303,12 @@ Locations: ${SPUR_LOCATION_NAMES}`;
 Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"<1 sentence max 30 words>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
-EDITORIAL (2 sentences, max 55 words total):
-Sentence 1: name the best local window exactly as labelled, include its time and score, add one useful detail (peak time or how session changes).
+EDITORIAL (exactly 2 sentences, max 55 words total):
+Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.
 Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
-Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Do not call conditions ideal unless score ≥ 70.
+The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.
+Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
+When an insight line mentions a nearby alternative, use a prose recommendation only — no score numbers, point deltas, or '/100' references in the editorial. All metric detail is in the alternative card below.
 
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.

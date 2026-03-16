@@ -1,0 +1,258 @@
+import { explainAstroScoreGap } from './astro-score-explanation.js';
+
+export interface AiBriefingWindowHour {
+  hour?: string;
+  score?: number;
+}
+
+export interface AiBriefingWindow {
+  label?: string;
+  start?: string;
+  end?: string;
+  peak?: number;
+  hours?: AiBriefingWindowHour[];
+}
+
+export interface AiBriefingDaySummary {
+  bestPhotoHour?: string;
+  astroScore?: number;
+  bestAstroHour?: string | null;
+  darkSkyStartsAt?: string | null;
+}
+
+export interface AiBriefingAltLocation {
+  name?: string;
+  bestScore?: number;
+  bestAstroHour?: string | null;
+  darkSky?: boolean;
+  driveMins?: number;
+}
+
+export interface AiBriefingContext {
+  dontBother?: boolean;
+  windows?: AiBriefingWindow[];
+  dailySummary?: AiBriefingDaySummary[];
+  altLocations?: AiBriefingAltLocation[];
+}
+
+export interface RenderAiBriefingResult {
+  text: string;
+  strippedOpener: boolean;
+  usedFallback: boolean;
+}
+
+const VALUE_CUES = [
+  ' because ',
+  ' but ',
+  ' however ',
+  ' although ',
+  ' despite ',
+  ' while ',
+  ' expect ',
+  ' expected ',
+  ' likely ',
+  ' unlikely ',
+  ' should ',
+  ' may ',
+  ' might ',
+  ' once ',
+  ' until ',
+  ' before ',
+  ' after ',
+  ' brief ',
+  ' only ',
+  ' improving ',
+  ' improve ',
+  ' clearing ',
+  ' clearer ',
+  ' thinning ',
+  ' thinner ',
+  ' building ',
+  ' fading ',
+  ' stronger ',
+  ' weaker ',
+  ' darker ',
+  ' brighter ',
+  ' cleaner ',
+  ' clearest ',
+  ' cleanest ',
+  ' held back ',
+  ' fallback ',
+  ' if you miss ',
+];
+
+export function splitAiSentences(text: string): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+
+  const sentences: string[] = [];
+  let start = 0;
+
+  for (let index = 0; index < trimmed.length; index += 1) {
+    const char = trimmed[index];
+    if (!'.!?'.includes(char)) continue;
+
+    const prev = trimmed[index - 1];
+    const next = trimmed[index + 1];
+    if (char === '.' && /\d/.test(prev || '') && /\d/.test(next || '')) {
+      continue;
+    }
+
+    let nextIndex = index + 1;
+    while (nextIndex < trimmed.length && /\s/.test(trimmed[nextIndex])) {
+      nextIndex += 1;
+    }
+
+    if (nextIndex >= trimmed.length || /[A-Z0-9"'(]/.test(trimmed[nextIndex])) {
+      sentences.push(trimmed.slice(start, nextIndex).trim());
+      start = nextIndex;
+    }
+  }
+
+  if (start < trimmed.length) {
+    sentences.push(trimmed.slice(start).trim());
+  }
+
+  return sentences.filter(Boolean);
+}
+
+function peakHourForWindow(window: AiBriefingWindow | undefined): string | null {
+  if (!window?.hours?.length) return null;
+  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
+  return peakHour?.hour || null;
+}
+
+function windowRange(window: AiBriefingWindow | undefined): string {
+  if (!window?.start || !window?.end) return '';
+  return window.start === window.end ? window.start : `${window.start}-${window.end}`;
+}
+
+function hasRedundantOpening(sentence: string, topWindow: AiBriefingWindow | undefined): boolean {
+  if (!topWindow?.label || typeof topWindow.peak !== 'number') return false;
+  const lower = sentence.toLowerCase();
+  const labelLower = topWindow.label.toLowerCase();
+  const scoreLower = `${topWindow.peak}/100`;
+  const labelPos = lower.indexOf(labelLower);
+  const scorePos = lower.indexOf(scoreLower);
+  return labelPos >= 0 && scorePos > labelPos;
+}
+
+function sentenceAddsEditorialValue(sentence: string, topWindow: AiBriefingWindow | undefined): boolean {
+  const lower = ` ${sentence.toLowerCase()} `;
+  if (VALUE_CUES.some(cue => lower.includes(cue))) return true;
+
+  const knownFragments = [
+    topWindow?.label?.toLowerCase() || '',
+    typeof topWindow?.peak === 'number' ? `${topWindow.peak}/100` : '',
+    topWindow?.start?.toLowerCase() || '',
+    topWindow?.end?.toLowerCase() || '',
+    windowRange(topWindow).toLowerCase(),
+    peakHourForWindow(topWindow)?.toLowerCase() || '',
+  ].filter(Boolean);
+
+  let stripped = lower;
+  for (const fragment of knownFragments) {
+    stripped = stripped.split(fragment).join(' ');
+  }
+
+  stripped = stripped
+    .replace(/\b\d+(?:\.\d+)?(?:\/100|km\/h|km|%)\b/g, ' ')
+    .replace(/\b(?:score|scores|scoring|window|local|best|peak|time|visibility|cloud|cover|rain|wind|conditions|condition|session|slot|forecast|with|and|the|a|an|at|from|around|in|for|today|tonight|near|good|great|offers|offer|gives|give|shows|show|high|low|patchy|work)\b/g, ' ')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return stripped.length > 0;
+}
+
+export function isSingleSentenceCardRestatement(aiText: string, ctx: AiBriefingContext): boolean {
+  const topWindow = ctx.windows?.[0];
+  if (!topWindow || !aiText) return false;
+  const sentences = splitAiSentences(aiText);
+  if (sentences.length !== 1) return false;
+  if (!hasRedundantOpening(sentences[0], topWindow)) return false;
+  return !sentenceAddsEditorialValue(sentences[0], topWindow);
+}
+
+export function buildFallbackAiText(ctx: AiBriefingContext): string {
+  const topWindow = ctx.windows?.[0];
+  const nextWindow = ctx.windows?.[1];
+  const today = ctx.dailySummary?.[0];
+  const topAlt = ctx.altLocations?.[0];
+
+  if (ctx.dontBother) {
+    if (topAlt && typeof topAlt.bestScore === 'number') {
+      return `Conditions in Leeds are not worth shooting today.${topAlt.driveMins ? ` ${topAlt.name} is the best nearby option at ${topAlt.bestScore}/100 - ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
+    }
+    return 'Conditions in Leeds are not worth shooting today.';
+  }
+
+  if (!topWindow) return '(No AI summary)';
+
+  const isSingleHour = topWindow.start === topWindow.end;
+  const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
+  const range = windowRange(topWindow);
+  const firstSentence = isSingleHour
+    ? `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}.`
+    : `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${range ? ` from ${range}` : ''}.`;
+
+  if (topAlt && typeof topAlt.bestScore === 'number' && typeof topWindow.peak === 'number' && topAlt.bestScore - topWindow.peak >= 10) {
+    const altDrive = topAlt.driveMins ? ` — ${topAlt.driveMins}-minute drive` : '';
+    const altConditions = topAlt.darkSky ? ' for better dark sky conditions' : ' for better overall conditions';
+    return `${firstSentence} Consider ${topAlt.name}${altConditions}${altDrive}.`;
+  }
+
+  const astroGap = explainAstroScoreGap({ window: topWindow, today });
+  if (astroGap) {
+    return `${firstSentence} ${astroGap.text}`;
+  }
+
+  if (nextWindow?.label && nextWindow.start && nextWindow.end) {
+    return `${firstSentence} If you miss it, ${nextWindow.label.toLowerCase()} is the later fallback from ${windowRange(nextWindow)}.`;
+  }
+
+  return firstSentence;
+}
+
+export function renderAiBriefingText(aiText: string, ctx: AiBriefingContext): RenderAiBriefingResult {
+  const topWindow = ctx.windows?.[0];
+  if (!topWindow || !aiText) {
+    return {
+      text: aiText,
+      strippedOpener: false,
+      usedFallback: false,
+    };
+  }
+
+  const sentences = splitAiSentences(aiText);
+  if (!sentences.length || !hasRedundantOpening(sentences[0], topWindow)) {
+    return {
+      text: aiText,
+      strippedOpener: false,
+      usedFallback: false,
+    };
+  }
+
+  const remainder = sentences.slice(1).join(' ').trim();
+  if (remainder) {
+    return {
+      text: remainder,
+      strippedOpener: true,
+      usedFallback: false,
+    };
+  }
+
+  if (sentenceAddsEditorialValue(sentences[0], topWindow)) {
+    return {
+      text: aiText,
+      strippedOpener: false,
+      usedFallback: false,
+    };
+  }
+
+  return {
+    text: buildFallbackAiText(ctx),
+    strippedOpener: false,
+    usedFallback: true,
+  };
+}

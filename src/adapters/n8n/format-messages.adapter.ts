@@ -1,5 +1,9 @@
 import { formatTelegram } from '../../core/format-telegram.js';
-import { explainAstroScoreGap } from '../../core/astro-score-explanation.js';
+import {
+  buildFallbackAiText as buildSharedFallbackAiText,
+  isSingleSentenceCardRestatement,
+  splitAiSentences,
+} from '../../core/ai-briefing.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
 import { emptyDebugContext, type DebugAiCheck, type DebugContext, type WeekStandoutParseStatus } from '../../core/debug-context.js';
@@ -37,10 +41,11 @@ type WindowLike = {
 };
 
 export function normalizeAiText(text: string): string {
-  const cleaned = text.replace(/\s+/g, ' ').trim();
+  const decimalFixed = text.replace(/(\d)\.\s+(\d)/g, '$1.$2');
+  const cleaned = decimalFixed.replace(/\s+/g, ' ').trim();
   if (!cleaned) return '(No AI summary)';
 
-  const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(sentence => sentence.trim()) || [cleaned];
+  const sentences = splitAiSentences(cleaned);
   const shortened = sentences.slice(0, 2).join(' ').trim();
 
   const result = shortened.length > 280
@@ -52,12 +57,6 @@ export function normalizeAiText(text: string): string {
   // decimal as a sentence boundary and the subsequent join reintroduces a space,
   // so \s* catches both that reintroduced space and any spacing in the raw AI output.
   return result.replace(/(\d)\.\s*(\d)/g, '$1.$2');
-}
-
-function peakHourForWindow(window: WindowLike | undefined): string | null {
-  if (!window?.hours?.length) return null;
-  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
-  return peakHour?.hour || null;
 }
 
 export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
@@ -105,6 +104,17 @@ export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck
     }
   }
 
+  // Rule 4: reject if the editorial contains metric alt language — score deltas or point counts tied
+  // to the alternative location. These are metric leaks regardless of factual accuracy. The editorial
+  // must use prose recommendations only; all score detail belongs in the alternative card.
+  if (topAlt?.name) {
+    const altMetricPattern = /\b(\d+)\s+points?\b|\badds\s+\d+\s+points?\b/gi;
+    const hasAltMetric = altMetricPattern.test(aiText) && aiText.toLowerCase().includes(topAlt.name.toLowerCase());
+    if (hasAltMetric) {
+      rulesTriggered.push('editorial contains metric alt language (score delta or point count) — use prose recommendation only');
+    }
+  }
+
   return {
     passed: rulesTriggered.length === 0,
     rulesTriggered,
@@ -136,19 +146,37 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
   ].filter((fragment): fragment is string => Boolean(fragment)).some(fragment => lower.includes(fragment));
 
   const addsInsight = [
-    'peak',
+    'because',
+    'expect',
+    'likely',
+    'should',
+    'may',
     'darker',
     'stronger',
     'later',
     'astro sub-score',
     'full weighting',
     'weighted',
+    'near the end',
+    'right at the start',
+    'improving',
+    'clearing',
+    'thin',
+    'moonset',
+    'consider',
+    'better',
+    'dark sky',
+    'overall astro',
+    'held back',
     'drive',
     'fallback',
     'not worth',
     'alternative',
   ].some(fragment => lower.includes(fragment));
 
+  if (isSingleSentenceCardRestatement(aiText, ctx)) {
+    rulesTriggered.push('single sentence only restates the visible window card');
+  }
   if (!ctx.dontBother && !mentionsWindow) {
     rulesTriggered.push('does not reference the chosen local window');
   }
@@ -168,47 +196,8 @@ export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean 
   return !getEditorialCheck(aiText, ctx).passed;
 }
 
-function windowRange(w: { start?: string; end?: string }): string {
-  if (!w.start || !w.end) return '';
-  return w.start === w.end ? w.start : `${w.start}-${w.end}`;
-}
-
 export function buildFallbackAiText(ctx: BriefContext): string {
-  const topWindow = ctx.windows?.[0];
-  const nextWindow = ctx.windows?.[1];
-  const today = ctx.dailySummary?.[0];
-  const topAlt = ctx.altLocations?.[0];
-
-  if (ctx.dontBother) {
-    if (topAlt && typeof topAlt.bestScore === 'number') {
-      return `Conditions in Leeds are not worth shooting today.${topAlt.driveMins ? ` ${topAlt.name} is the best nearby option at ${topAlt.bestScore}/100 — ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
-    }
-    return 'Conditions in Leeds are not worth shooting today.';
-  }
-
-  if (!topWindow) return '(No AI summary)';
-
-  const isSingleHour = topWindow.start === topWindow.end;
-  const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
-  const range = windowRange(topWindow);
-  const firstSentence = isSingleHour
-    ? `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}.`
-    : `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${range ? ` from ${range}` : ''}.`;
-
-  if (topAlt && typeof topAlt.bestScore === 'number' && typeof topWindow.peak === 'number' && topAlt.bestScore - topWindow.peak >= 10) {
-    return `${firstSentence} ${topAlt.name} is ${topAlt.bestScore - topWindow.peak} points stronger${topAlt.darkSky ? ' thanks to darker skies' : ''}${topAlt.bestAstroHour ? ` around ${topAlt.bestAstroHour}` : ''}${topAlt.driveMins ? ` if you can make the ${topAlt.driveMins}-minute drive` : ''}.`;
-  }
-
-  const astroGap = explainAstroScoreGap({ window: topWindow, today });
-  if (astroGap) {
-    return `${firstSentence} ${astroGap.text}`;
-  }
-
-  if (nextWindow?.label && nextWindow.start && nextWindow.end) {
-    return `${firstSentence} If you miss it, ${nextWindow.label.toLowerCase()} is the later fallback from ${nextWindow.start}-${nextWindow.end}.`;
-  }
-
-  return firstSentence;
+  return buildSharedFallbackAiText(ctx);
 }
 
 export type SpurRaw = { locationName: string; hookLine: string; confidence: number };

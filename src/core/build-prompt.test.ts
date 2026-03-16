@@ -134,14 +134,18 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('"editorial":"<2 sentences max 55 words>"');
     expect(result.prompt).toContain('"composition":["<shot idea 1>","<shot idea 2>"]');
     expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words>"');
-    expect(result.prompt).toContain('Sentence 1: name the best local window exactly as labelled, include its time and score, add one useful detail');
+    expect(result.prompt).toContain('Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.');
     expect(result.prompt).toContain('Sentence 2: use one editorial insight line below with light paraphrase.');
+    expect(result.prompt).toContain('Do not open by repeating the visible window name, time, score, or visibility line.');
+    expect(result.prompt).toContain('Never return a single sentence.');
     expect(result.prompt).toContain('No camera tips, composition advice, hype, or filler.');
     expect(result.prompt).toContain('Seasonal context: March — early spring; blossom building; frost on clear nights still likely.');
     expect(result.prompt).toContain('Dark-sky conditions improve from 22:00 once the moon is down.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
     expect(result.prompt).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
-    expect(result.prompt).toContain('Sutton Bank is 25 points stronger mainly because of darker skies around 20:00.');
+    expect(result.prompt).toContain('Consider Sutton Bank today — better dark sky conditions (75 min drive).');
+    expect(result.prompt).not.toContain('points stronger');
+    expect(result.prompt).toContain('When an insight line mentions a nearby alternative, use a prose recommendation only');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
     expect(result.peakKpTonight).toBeNull();
     // Visibility must be a whole number in the prompt (no decimal) so the LLM
@@ -269,6 +273,8 @@ describe('buildPrompt', () => {
       amScore: 30,
       pmScore: 40,
       astroScore: 50,
+      astroConfidence: 'unknown',
+      astroConfidenceStdDev: null,
       darkSkyStartsAt: null,
       bestAmHour: '07:00',
       bestPmHour: '18:00',
