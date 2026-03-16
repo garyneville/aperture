@@ -364,12 +364,13 @@ interface KitRuleParams {
   astroScore: number;
   isAstroWin: boolean;
   moonPct: number;
+  astroWindow: Window | undefined;
+  astroWindowIsPrimary: boolean;
 }
 
 interface KitRule {
   id: string;
   predicate: (params: KitRuleParams) => boolean;
-  text: string;
   priority: number;
 }
 
@@ -377,40 +378,76 @@ const KIT_RULES: KitRule[] = [
   {
     id: 'high-wind',
     predicate: ({ windKmh }) => windKmh > 25,
-    text: 'High wind: ballast your tripod or avoid long exposures; shoot parallel to gusts.',
     priority: 10,
   },
   {
     id: 'rain-risk',
     predicate: ({ rainPct }) => rainPct > 40,
-    text: 'Rain expected: verify weather sealing on body and lens; pack a microfibre cloth for the front element.',
     priority: 9,
   },
   {
     id: 'fog-mist',
     predicate: ({ visibilityKm }) => visibilityKm !== undefined && visibilityKm < 5,
-    text: 'Low visibility: telephoto compression will look great; switch to manual focus and bracket exposures.',
     priority: 8,
   },
   {
     id: 'astro-window',
     predicate: ({ astroScore, isAstroWin, moonPct }) => isAstroWin && astroScore >= 60 && moonPct < 60,
-    text: 'Astro window: fastest wide-aperture lens; intervalometer for star trails; red torch to preserve night vision.',
     priority: 7,
   },
   {
     id: 'cold',
     predicate: ({ tempC }) => tempC !== undefined && tempC < 2,
-    text: 'Near-freezing: battery performance drops — carry spares in an inside pocket.',
     priority: 6,
   },
   {
     id: 'high-moisture',
     predicate: ({ tpwMm, tempC }) => tpwMm !== undefined && tpwMm > 30 && (tempC === undefined || tempC < 12),
-    text: 'High atmospheric moisture: risk of lens fogging — let glass acclimatise before shooting.',
     priority: 5,
   },
 ];
+
+function peakWindowHour(window: Window | undefined): WindowHour | undefined {
+  if (!window?.hours?.length) return undefined;
+  return window.hours.find(hour => hour.score === window.peak) || window.hours[0];
+}
+
+function astroWindowSignal(window: Window | undefined): number {
+  if (!window) return 0;
+  const hourPeak = Math.max(...(window.hours?.map(hour => hour.score) || [0]));
+  return Math.max(window.peak || 0, window.postMoonsetScore || 0, hourPeak);
+}
+
+function bestAstroWindow(windows: Window[]): Window | undefined {
+  return windows
+    .filter(window => isAstroWindow(window))
+    .sort((a, b) => astroWindowSignal(b) - astroWindowSignal(a))[0];
+}
+
+function buildKitTipText(ruleId: string, params: KitRuleParams): string {
+  switch (ruleId) {
+    case 'high-wind':
+      return 'High wind: ballast your tripod or avoid long exposures; shoot parallel to gusts.';
+    case 'rain-risk':
+      return 'Rain expected: verify weather sealing on body and lens; pack a microfibre cloth for the front element.';
+    case 'fog-mist':
+      return 'Low visibility: telephoto compression will look great; switch to manual focus and bracket exposures.';
+    case 'astro-window': {
+      const astroWindow = params.astroWindow;
+      const windowLabel = astroWindow
+        ? `${params.astroWindowIsPrimary ? 'Astro window' : 'Later astro window'} ${windowRange(astroWindow)}`
+        : 'Astro window';
+      const darkPhaseNote = astroWindow?.darkPhaseStart ? ` Darker after ${astroWindow.darkPhaseStart}.` : '';
+      return `${windowLabel}: fastest wide-aperture lens; intervalometer for star trails; red torch to preserve night vision.${darkPhaseNote}`;
+    }
+    case 'cold':
+      return 'Near-freezing: battery performance drops - carry spares in an inside pocket.';
+    case 'high-moisture':
+      return 'High atmospheric moisture: risk of lens fogging - let glass acclimatise before shooting.';
+    default:
+      return '';
+  }
+}
 
 export function buildKitTips(
   todayCarWash: CarWash,
@@ -420,24 +457,32 @@ export function buildKitTips(
   maxTips = 3,
 ): KitTip[] {
   const topWindow = windows?.[0];
-  const peakHour = topWindow?.hours?.find(h => h.score === topWindow.peak) || topWindow?.hours?.[0];
+  const topPeakHour = peakWindowHour(topWindow);
+  const astroWindow = bestAstroWindow(windows || []);
+  const astroPeakHour = peakWindowHour(astroWindow);
+  const resolvedAstroScore = Math.max(
+    astroScore || 0,
+    astroWindowSignal(astroWindow),
+  );
 
   const params = {
     windKmh: todayCarWash.wind,
     rainPct: todayCarWash.pp,
     tempC: todayCarWash.tmp,
-    visibilityKm: peakHour?.visK,
-    tpwMm: peakHour?.tpw,
-    astroScore,
-    isAstroWin: isAstroWindow(topWindow),
+    visibilityKm: topPeakHour?.visK ?? astroPeakHour?.visK,
+    tpwMm: topPeakHour?.tpw ?? astroPeakHour?.tpw,
+    astroScore: resolvedAstroScore,
+    isAstroWin: Boolean(astroWindow),
     moonPct,
+    astroWindow,
+    astroWindowIsPrimary: Boolean(astroWindow && astroWindow === topWindow),
   };
 
   return KIT_RULES
     .filter(rule => rule.predicate(params))
     .sort((a, b) => b.priority - a.priority)
     .slice(0, maxTips)
-    .map(rule => ({ id: rule.id, text: rule.text, priority: rule.priority }));
+    .map(rule => ({ id: rule.id, text: buildKitTipText(rule.id, params), priority: rule.priority }));
 }
 
 function kitAdvisoryCard(tips: KitTip[]): string {

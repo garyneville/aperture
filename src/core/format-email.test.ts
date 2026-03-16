@@ -930,6 +930,35 @@ describe('buildKitTips', () => {
     expect(tips.some(t => t.id === 'astro-window')).toBe(true);
   });
 
+  it('returns astro-window tip when the astro window itself clears the threshold even if the summary astro score is missing', () => {
+    const astroWindows: Window[] = [{
+      label: 'Evening astro window',
+      start: '22:00',
+      end: '02:00',
+      peak: 60,
+      hours: [{ hour: '23:00', score: 60, ch: 5, visK: 25, wind: '5', pp: 0, tpw: 15 }],
+      tops: ['astrophotography'],
+    }];
+    const tips = buildKitTips(baseCarWash, astroWindows, 0, 25);
+    expect(tips.some(t => t.id === 'astro-window')).toBe(true);
+  });
+
+  it('returns astro-window tip for a later astro backup even when the first window is daylight', () => {
+    const mixedWindows: Window[] = [{
+      ...baseWindows[0],
+    }, {
+      label: 'Overnight astro window',
+      start: '23:00',
+      end: '02:00',
+      peak: 60,
+      hours: [{ hour: '00:00', score: 60, ch: 5, visK: 24, wind: '5', pp: 0, tpw: 15 }],
+      tops: ['astrophotography'],
+    }];
+    const tips = buildKitTips(baseCarWash, mixedWindows, 0, 8);
+    expect(tips.some(t => t.id === 'astro-window')).toBe(true);
+    expect(tips.find(t => t.id === 'astro-window')?.text).toContain('Later astro window 23:00-02:00');
+  });
+
   it('does not return astro-window tip when moon is too bright (≥ 60%)', () => {
     const astroWindows: Window[] = [{
       label: 'Evening astro window',
@@ -1096,6 +1125,35 @@ describe('kit advisory card in formatEmail', () => {
     const html = formatEmail(input);
     expect(html.indexOf('Kit advisory')).toBeGreaterThan(html.indexOf('Today\'s window'));
     expect(html.indexOf('Kit advisory')).toBeLessThan(html.indexOf('Alternatives'));
+  });
+
+  it('renders astro kit advice from a later night window even when the top window is daylight', () => {
+    const input: FormatEmailInput = {
+      ...baseInput,
+      windows: [{
+        label: 'Evening golden hour',
+        start: '18:00',
+        end: '19:00',
+        peak: 65,
+        hours: [{ hour: '18:00', score: 65, ch: 20, visK: 20, wind: '10', pp: 10, tpw: 15 }],
+        tops: ['landscape'],
+      }, {
+        label: 'Overnight astro window',
+        start: '23:00',
+        end: '02:00',
+        peak: 60,
+        hours: [{ hour: '00:00', score: 60, ch: 5, visK: 24, wind: '5', pp: 0, tpw: 15 }],
+        tops: ['astrophotography'],
+      }],
+      dailySummary: [{
+        ...baseInput.dailySummary[0],
+        astroScore: undefined,
+      }],
+      moonPct: 8,
+    };
+    const html = formatEmail(input);
+    expect(html).toContain('Kit advisory');
+    expect(html).toContain('Later astro window 23:00-02:00');
   });
 });
 
