@@ -389,11 +389,11 @@ export function resolveSpurSuggestion(
 function resolveSpurDropReason(spurRaw: SpurRaw | null, nearbyAltNames: string[] = []): string | undefined {
   if (!spurRaw) return undefined;
   if (spurRaw.confidence < 0.7) return `confidence below threshold (${spurRaw.confidence})`;
-  if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
-    return 'location not found in approved long-range list';
-  }
   if (nearbyAltNames.includes(spurRaw.locationName)) {
     return 'already shown in nearby alternatives';
+  }
+  if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
+    return 'location not found in approved long-range list';
   }
   return undefined;
 }
