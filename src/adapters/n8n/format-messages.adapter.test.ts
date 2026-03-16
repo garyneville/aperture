@@ -430,6 +430,15 @@ describe('resolveSpurSuggestion — nearby alt deduplication', () => {
     );
     expect(result).not.toBeNull();
   });
+
+  it('drops the spur when the long-range scoring pool already rejected that location', () => {
+    const result = resolveSpurSuggestion(
+      { locationName: 'Aysgarth Falls', hookLine: 'Autumn colour.', confidence: 0.85 },
+      [],
+      [{ name: 'Aysgarth Falls', shown: false, discardedReason: 'does not beat Leeds by 10 points (50 vs 42)' }],
+    );
+    expect(result).toBeNull();
+  });
 });
 
 describe('run — weekStandout validation', () => {
@@ -646,5 +655,109 @@ describe('run — weekStandout validation', () => {
     expect(result.emailHtml).not.toContain('Misty dawn at the viaduct');
     expect(result.debugEmailHtml).toContain('Ribblehead Viaduct (0.8) → dropped: already scored in nearby alternatives');
     expect(result.debugEmailHtml).not.toContain('Resolved spur:</span> Ribblehead Viaduct');
+  });
+
+  it('drops a spur suggestion when the long-range pool already rejected that location', () => {
+    const content = JSON.stringify({
+      editorial: 'Leeds is not ideal today due to poor conditions. Brimham Rocks is a better alternative.',
+      composition: [],
+      weekStandout: 'Today is the most reliable forecast; Wednesday may score higher but with much lower certainty',
+      spurOfTheMoment: {
+        locationName: 'Aysgarth Falls',
+        hookLine: 'Frozen waterfalls in early spring',
+        confidence: 0.8,
+      },
+    });
+
+    const result = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content } }],
+            dontBother: true,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [],
+            dailySummary: [
+              makeDay('Today', 0, 42, 'high', 5),
+              makeDay('Tomorrow', 1, 50, 'medium', 12),
+              makeDay('Wednesday', 2, 57, 'medium', 22),
+            ],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 12,
+              pp: 22,
+              tmp: 5,
+            },
+            altLocations: [{
+              name: 'Brimham Rocks',
+              bestScore: 81,
+              bestAstroHour: '02:00',
+              darkSky: false,
+              driveMins: 40,
+            }],
+            longRangeDebugCandidates: [{
+              name: 'Goathland',
+              region: 'north-york-moors',
+              tags: ['waterfall', 'moorland'],
+              bestScore: 88,
+              dayScore: 28,
+              astroScore: 88,
+              driveMins: 80,
+              darkSky: true,
+              rank: 1,
+              deltaVsLeeds: 46,
+              shown: true,
+            }, {
+              name: 'Aysgarth Falls',
+              region: 'yorkshire-dales',
+              tags: ['waterfall', 'woodland'],
+              bestScore: 50,
+              dayScore: 16,
+              astroScore: 50,
+              driveMins: 51,
+              darkSky: false,
+              rank: 14,
+              deltaVsLeeds: 8,
+              shown: false,
+              discardedReason: 'does not beat Leeds by 10 points (50 vs 42)',
+            }],
+            debugContext: {
+              hourlyScoring: [],
+              windows: [],
+              nearbyAlternatives: [],
+            },
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 42,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as {
+      emailHtml: string;
+      debugEmailHtml: string;
+    };
+
+    expect(result.emailHtml).not.toContain('Frozen waterfalls in early spring');
+    expect(result.debugEmailHtml).toContain('Aysgarth Falls (0.8) → dropped: long-range candidate rejected: does not beat Leeds by 10 points (50 vs 42)');
+    expect(result.debugEmailHtml).not.toContain('Resolved spur:</span> Aysgarth Falls');
   });
 });

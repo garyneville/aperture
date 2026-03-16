@@ -244,6 +244,7 @@ export function buildFallbackAiText(ctx: BriefContext): string {
 }
 
 export type SpurRaw = { locationName: string; hookLine: string; confidence: number };
+type LongRangeSpurCandidate = { name?: string; shown?: boolean; discardedReason?: string };
 
 function isAstroWindow(window: WindowLike | undefined): boolean {
   if (!window) return false;
@@ -398,11 +399,17 @@ export function filterCompositionBullets(rawBullets: string[], ctx: BriefContext
 export function resolveSpurSuggestion(
   spurRaw: SpurRaw | null,
   nearbyAltNames: string[] = [],
+  longRangePool: LongRangeSpurCandidate[] = [],
 ): SpurOfTheMomentSuggestion | null {
   if (!spurRaw || spurRaw.confidence < 0.7) return null;
   const loc = LONG_RANGE_LOCATIONS.find(l => l.name === spurRaw.locationName);
   if (!loc) return null;
   if (nearbyAltNames.includes(loc.name)) return null;
+  const longRangeCandidate = longRangePool.find(candidate => candidate?.name === loc.name);
+  if (longRangeCandidate?.shown === true) return null;
+  if (typeof longRangeCandidate?.discardedReason === 'string' && longRangeCandidate.discardedReason.trim().length > 0) {
+    return null;
+  }
   return {
     locationName: loc.name,
     region: loc.region,
@@ -414,11 +421,22 @@ export function resolveSpurSuggestion(
   };
 }
 
-function resolveSpurDropReason(spurRaw: SpurRaw | null, nearbyAltNames: string[] = []): string | undefined {
+function resolveSpurDropReason(
+  spurRaw: SpurRaw | null,
+  nearbyAltNames: string[] = [],
+  longRangePool: LongRangeSpurCandidate[] = [],
+): string | undefined {
   if (!spurRaw) return undefined;
   if (spurRaw.confidence < 0.7) return `confidence below threshold (${spurRaw.confidence})`;
   if (nearbyAltNames.includes(spurRaw.locationName)) {
     return 'already scored in nearby alternatives';
+  }
+  const longRangeCandidate = longRangePool.find(candidate => candidate?.name === spurRaw.locationName);
+  if (longRangeCandidate?.shown === true) {
+    return 'already shown in long-range recommendations';
+  }
+  if (typeof longRangeCandidate?.discardedReason === 'string' && longRangeCandidate.discardedReason.trim().length > 0) {
+    return `long-range candidate rejected: ${longRangeCandidate.discardedReason}`;
   }
   if (!LONG_RANGE_LOCATIONS.find(location => location.name === spurRaw.locationName)) {
     return 'location not found in approved long-range list';
@@ -586,11 +604,16 @@ export function run({ $input }: N8nRuntime) {
   const { choices, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
+  const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
+    ? ctx.longRangeDebugCandidates
+    : Array.isArray(ctx.longRangeCandidates)
+      ? ctx.longRangeCandidates
+      : [];
   const nearbyAltNames = [
     ...(ctx.altLocations || []).map((a: { name?: string }) => a?.name),
     ...((ctx.debugContext?.nearbyAlternatives || []).map((a: { name?: string }) => a?.name)),
   ].filter((n: string | undefined): n is string => Boolean(n));
-  const spurOfTheMoment = resolveSpurSuggestion(spurRaw, nearbyAltNames);
+  const spurOfTheMoment = resolveSpurSuggestion(spurRaw, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]);
   const normalizedAiText = normalizeAiText(editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
@@ -620,9 +643,6 @@ export function run({ $input }: N8nRuntime) {
   };
 
   /* Populate long-range candidate pool from context */
-  const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
-    ? ctx.longRangeDebugCandidates
-    : ctx.longRangeCandidates;
   if (Array.isArray(longRangeDebugPool)) {
     debugContext.longRangeCandidates = (longRangeDebugPool as Array<Record<string, unknown>>)
       .map((c, idx) => normaliseLongRangeCandidate(c, idx + 1));
@@ -638,7 +658,7 @@ export function run({ $input }: N8nRuntime) {
       confidence: spurRaw?.confidence ?? null,
       resolved: spurOfTheMoment?.locationName || null,
       dropped: Boolean(spurRaw) && !spurOfTheMoment,
-      dropReason: resolveSpurDropReason(spurRaw, nearbyAltNames),
+      dropReason: resolveSpurDropReason(spurRaw, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]),
     },
     weekStandout: {
       parseStatus: weekStandoutParseStatus,
