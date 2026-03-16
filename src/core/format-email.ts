@@ -224,6 +224,15 @@ function metricRun(items: Array<{ label: string; value: string | number; tone?: 
     .join(`<span style="color:${C.subtle};"> &middot; </span>`);
 }
 
+function dewRiskEntry(tpw: number | undefined, tempC: number | undefined): Array<{ label: string; value: string; tone: string }> {
+  if (tpw === undefined || tpw < 15) return [];
+  if (tpw > 30 && (tempC === undefined || tempC < 12)) {
+    return [{ label: 'Dew risk', value: 'High', tone: C.error }];
+  }
+  if (tempC !== undefined && tempC >= 16) return [];
+  return [{ label: 'Dew risk', value: 'Moderate', tone: C.secondary }];
+}
+
 function daylightUtilityLine(cw: CarWash): string {
   const utilityWindow = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
   return `${UTILITY_GLYPHS} Daylight utility: ${esc(utilityWindow)} <span style="color:${C.subtle};">&middot;</span> Wind ${esc(String(cw.wind))}km/h <span style="color:${C.subtle};">&middot;</span> Rain ${esc(String(cw.pp))}% <span style="color:${C.subtle};">&middot;</span> Temp ${esc(String(cw.tmp ?? '-'))}C`;
@@ -462,7 +471,7 @@ function buildKitTipText(ruleId: string, params: KitRuleParams): string {
     case 'cold':
       return 'Near-freezing: battery performance drops - carry spares in an inside pocket.';
     case 'high-moisture':
-      return 'High atmospheric moisture: risk of lens fogging - let glass acclimatise before shooting.';
+      return 'High dew risk: atmospheric moisture may cause lens fogging - let glass acclimatise before shooting.';
     default:
       return '';
   }
@@ -532,7 +541,7 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
     { label: 'Visibility', value: `${h.visK ?? '-'}km`, tone: C.secondary },
     { label: 'Wind', value: `${h.wind ?? '-'}km/h`, tone: C.tertiary },
     { label: 'Rain', value: `${h.pp ?? '-'}%`, tone: C.error },
-    ...(h.tpw ? [{ label: 'Moisture', value: `${h.tpw}mm`, tone: C.primary }] : []),
+    ...(dewRiskEntry(h.tpw, h.tmp)),
   ]);
   const tags = (w.tops || []).length
     ? `<div style="Margin-top:8px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`

@@ -96,7 +96,8 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
     expect(html).toContain('Daylight utility');
     expect(html).toContain('&#x1F697; / &#x1F6B6;');
-    expect(html).toContain('>Moisture</span> 20mm');
+    expect(html).toContain('>Dew risk</span> Moderate');
+    expect(html).not.toContain('Moisture');
     expect(html).not.toContain('TPW');
     expect(html).not.toContain('5-day car wash');
     expect(html).toContain('&middot;');
@@ -772,6 +773,74 @@ describe('formatEmail hero summary', () => {
     const html = formatEmail(input);
 
     expect(html).toContain('Dark from 23:00 - peak after moonset 84/100.');
+  });
+
+  it('shows Dew risk High for TPW above 30mm', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Evening astro window',
+        start: '19:00',
+        end: '21:00',
+        peak: 60,
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 35 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 14, pp: 24, tmp: 9 },
+      dailySummary: [],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:23',
+      sunsetStr: '18:07',
+      moonPct: 23,
+      metarNote: '',
+      today: 'Saturday 14 March',
+      todayBestScore: 60,
+      shSunsetQ: 70,
+      shSunriseQ: null,
+      shSunsetText: 'Good texture',
+      sunDir: 251,
+      crepPeak: 0,
+      aiText: '',
+    };
+    const html = formatEmail(input);
+    expect(html).toContain('>Dew risk</span> High');
+    expect(html).not.toContain('Moisture');
+    expect(html).not.toContain('TPW');
+  });
+
+  it('omits dew risk entry for TPW below 15mm', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Evening astro window',
+        start: '19:00',
+        end: '21:00',
+        peak: 60,
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 10 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: { rating: 'OK', label: 'Usable', score: 60, start: '15:00', end: '17:00', wind: 14, pp: 24, tmp: 9 },
+      dailySummary: [],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '06:23',
+      sunsetStr: '18:07',
+      moonPct: 23,
+      metarNote: '',
+      today: 'Saturday 14 March',
+      todayBestScore: 60,
+      shSunsetQ: 70,
+      shSunriseQ: null,
+      shSunsetText: 'Good texture',
+      sunDir: 251,
+      crepPeak: 0,
+      aiText: '',
+    };
+    const html = formatEmail(input);
+    expect(html).not.toContain('Dew risk');
+    expect(html).not.toContain('Moisture');
+    expect(html).not.toContain('TPW');
   });
 });
 
