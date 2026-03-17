@@ -1051,6 +1051,16 @@
             "node": "HTTP: Kp Index",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "HTTP: AuroraWatch UK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: NASA DONKI CME",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
