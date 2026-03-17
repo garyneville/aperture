@@ -50,7 +50,7 @@ describe('format-messages adapter editorial fallback', () => {
 
     expect(shouldReplaceAiText(aiText, ctx)).toBe(true);
     const fallback = buildFallbackAiText(ctx);
-    expect(fallback).toContain('Local peak is around 22:00');
+    expect(fallback).toContain('The evening astro window from 19:00-22:00 is the strongest local slot today.');
     // Editorial fallback is Leeds-only — alternative location must not appear (issue #71)
     expect(fallback).not.toContain('Consider Sutton Bank');
     expect(fallback).not.toContain('points stronger');
@@ -109,7 +109,7 @@ describe('format-messages adapter editorial fallback', () => {
     };
 
     const text = buildFallbackAiText(morningCtx);
-    expect(text).toContain('Peak astro sub-score is 55/100 at 07:00, with the final window score at 36/100 after full weighting.');
+    expect(text).toContain('The window tops out at 36/100 overall — cloud or haze weigh it down from the raw astro peak of 55/100 (07:00).');
     expect(text).not.toContain('evening');
   });
 

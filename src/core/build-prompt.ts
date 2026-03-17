@@ -465,6 +465,7 @@ Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 EDITORIAL (exactly 2 sentences, max 55 words total):
+Selected primary window: ${bestWin.label} (${windowRange(bestWin)}). Your editorial must reference this window by name or time range. Do not describe conditions outside this window unless making a direct comparison.
 Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.
 Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
 The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.

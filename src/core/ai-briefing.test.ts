@@ -26,8 +26,8 @@ describe('renderAiBriefingText', () => {
     );
 
     expect(result.usedFallback).toBe(true);
-    expect(result.text).toContain('Local peak is around 04:00 in the overnight astro window.');
-    expect(result.text).toContain('Peak astro sub-score is 72/100 at 04:00, with the final window score at 60/100 after full weighting.');
+    expect(result.text).toContain('Best conditions are around 04:00 in the overnight astro window.');
+    expect(result.text).toContain('The window tops out at 60/100 overall — cloud or haze weigh it down from the raw astro peak of 72/100 (04:00).');
   });
 
   it('strips a redundant opener when a useful second sentence follows', () => {

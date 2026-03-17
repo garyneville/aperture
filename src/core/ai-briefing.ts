@@ -214,9 +214,10 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
   const isSingleHour = topWindow.start === topWindow.end;
   const peakHour = peakHourForWindow(topWindow) || today?.bestPhotoHour || topWindow.end || topWindow.start || 'later';
   const range = windowRange(topWindow);
+  const labelLower = topWindow.label?.toLowerCase() || 'best window';
   const firstSentence = isSingleHour
-    ? `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}.`
-    : `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${range ? ` from ${range}` : ''}.`;
+    ? `Best conditions are around ${peakHour} in the ${labelLower}.`
+    : `The ${labelLower} from ${range} is the strongest local slot today.`;
 
   const astroGap = explainAstroScoreGap({ window: topWindow, today });
   if (astroGap) {

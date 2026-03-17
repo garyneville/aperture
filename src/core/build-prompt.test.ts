@@ -134,6 +134,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('"editorial":"<2 sentences max 55 words>"');
     expect(result.prompt).toContain('"composition":["<shot idea 1>","<shot idea 2>"]');
     expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>"');
+    expect(result.prompt).toContain('Selected primary window: Evening astro window (19:00-21:00). Your editorial must reference this window by name or time range. Do not describe conditions outside this window unless making a direct comparison.');
     expect(result.prompt).toContain('Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.');
     expect(result.prompt).toContain('Sentence 2: use one editorial insight line below with light paraphrase.');
     expect(result.prompt).toContain('Do not open by repeating the visible window name, time, score, or visibility line.');
@@ -142,7 +143,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Seasonal context: March — early spring; blossom building; frost on clear nights still likely.');
     expect(result.prompt).toContain('Dark-sky conditions improve from 22:00 once the moon is down.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
-    expect(result.prompt).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
+    expect(result.prompt).toContain('The window tops out at 60/100 overall — cloud or haze weigh it down from the raw astro peak of 75/100 (19:00).');
     expect(result.prompt).not.toContain('Consider Sutton Bank today — better dark sky conditions (75 min drive).');
     expect(result.prompt).not.toContain('points stronger');
     expect(result.prompt).toContain('The editorial must describe Leeds conditions only.');

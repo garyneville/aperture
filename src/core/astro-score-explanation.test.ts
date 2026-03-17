@@ -16,7 +16,7 @@ describe('explainAstroScoreGap', () => {
     });
 
     expect(result?.reason).toBe('weighted-gap');
-    expect(result?.text).toBe('Peak astro sub-score is 63/100 at 04:00, with the final window score at 51/100 after full weighting.');
+    expect(result?.text).toBe('The window tops out at 51/100 overall — cloud or haze weigh it down from the raw astro peak of 63/100 (04:00).');
   });
 
   it('calls out when the strongest astro hour sits outside the named window', () => {

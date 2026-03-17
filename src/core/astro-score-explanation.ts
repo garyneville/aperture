@@ -83,12 +83,12 @@ export function explainAstroScoreGap(input: {
     };
   }
 
-  const timing = astroHour ? ` at ${astroHour}` : '';
+  const timing = astroHour ? ` (${astroHour})` : '';
   return {
     astroScore,
     windowScore,
     astroHour,
     reason: 'weighted-gap',
-    text: `Peak astro sub-score is ${astroScore}/100${timing}, with the final window score at ${windowScore}/100 after full weighting.`,
+    text: `The window tops out at ${windowScore}/100 overall — cloud or haze weigh it down from the raw astro peak of ${astroScore}/100${timing}.`,
   };
 }
