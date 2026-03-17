@@ -201,10 +201,12 @@ function htmlText(text: string): string {
     .join('');
 }
 
+const SCORE_THRESHOLDS = { excellent: 75, good: 58, marginal: 42 } as const;
+
 function scoreState(score: number): { label: string; fg: string; bg: string; border: string } {
-  if (score >= 75) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#B7E0CF' };
-  if (score >= 58) return { label: 'Good', fg: C.primary, bg: C.primaryContainer, border: '#C5D6FF' };
-  if (score >= 42) return { label: 'Marginal', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
+  if (score >= SCORE_THRESHOLDS.excellent) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#B7E0CF' };
+  if (score >= SCORE_THRESHOLDS.good) return { label: 'Good', fg: C.primary, bg: C.primaryContainer, border: '#C5D6FF' };
+  if (score >= SCORE_THRESHOLDS.marginal) return { label: 'Marginal', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
   return { label: 'Poor', fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
 }
 
@@ -1413,11 +1415,12 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>
               <div style="padding:8px 4px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">
                 <b>Key</b> &middot;
+                <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
                 AM/PM = sunrise &amp; sunset light quality &middot;
                 Astro = night sky potential (clear skies + dark moon) &middot;
                 Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
                 Spread = how much forecast models disagree (lower is more reliable) &middot;
-                Daylight spread = based on golden-hour ensemble · Astro spread = based on night-hour ensemble
+                Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
               </div>
             </td>
           </tr>

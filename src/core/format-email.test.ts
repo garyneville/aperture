@@ -109,6 +109,11 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Days ahead');
     expect(html).not.toContain('5-day photography');
     expect(html).toContain('Key');
+    expect(html).toContain('Score bands');
+    expect(html).toContain('Excellent');
+    expect(html).toContain('Good 58');
+    expect(html).toContain('Marginal 42');
+    expect(html).toContain('Poor');
     expect(html).toContain('Crepuscular rays = shafts of light');
     // at-a-glance must not restate peak time already visible in the hero grid
     expect(html).not.toContain('right as the window opens');
