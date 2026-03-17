@@ -1681,6 +1681,7 @@ describe('formatEmail long-range section', () => {
     expect(html).toContain('Out of town options');
     expect(html).toContain('Weekend opportunity');
     expect(html).toContain('Goathland');
+    expect(html).toContain('88/100 astro');
     expect(html).toContain('Best astro around 02:00 - dark sky site');
     expect(html).not.toContain('Dark sky alert</div>');
   });

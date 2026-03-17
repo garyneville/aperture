@@ -407,9 +407,10 @@ function dayHeading(day: DaySummary): string {
   return `${day.dayLabel} ${short}`;
 }
 
-function scorePill(score: number): string {
+function scorePill(score: number, suffix?: string): string {
   const state = scoreState(score);
-  return pill(`${state.label} - ${score}/100`, state.fg, state.bg, state.border);
+  const label = `${state.label} - ${score}/100${suffix ? ` ${suffix}` : ''}`;
+  return pill(label, state.fg, state.bg, state.border);
 }
 
 function confidencePill(day: DaySummary, isAstroLed = false): string {
@@ -895,7 +896,7 @@ function longRangeSection(
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">${esc(cardLabel)}</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(longRangeTop.name)}</div>
       <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
-      <div style="Margin-top:8px;">${scorePill(longRangeTop.bestScore)}</div>
+      <div style="Margin-top:8px;">${scorePill(longRangeTop.bestScore, longRangeTop.isAstroWin ? 'astro' : undefined)}</div>
       <div style="Margin-top:6px;">
         ${metricChip('AM', longRangeTop.amScore ?? 0, scoreState(longRangeTop.amScore ?? 0).fg)}
         ${metricChip('PM', longRangeTop.pmScore ?? 0, scoreState(longRangeTop.pmScore ?? 0).fg)}
