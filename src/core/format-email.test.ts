@@ -93,7 +93,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
     expect(html).toContain('Low moon glow — good for astrophotography');
-    expect(html).toContain('Best time');
+    expect(html).toContain('Best astro');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
     expect(html).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
     expect(html).toContain('Daylight utility');

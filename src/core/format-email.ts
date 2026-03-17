@@ -472,12 +472,19 @@ function windowRange(w: { start: string; end: string }): string {
   return w.start === w.end ? w.start : `${w.start}-${w.end}`;
 }
 
+function bestTimeLabel(window: Window | null | undefined): string {
+  if (isAstroWindow(window ?? undefined)) return 'Best astro';
+  if (window && !window.fallback) return 'Best light';
+  return 'Best time';
+}
+
 function peakTimeNote(window: Window | null | undefined, peakHour: string | undefined): string {
   if (!window || !peakHour) return '';
   if (window.start === window.end) return '';
-  if (peakHour === window.end) return `Best time: ${peakHour}, near the end of the window.`;
-  if (peakHour === window.start) return `Best time: ${peakHour}, right as the window opens.`;
-  return `Best time: ${peakHour}, within the window.`;
+  const label = bestTimeLabel(window);
+  if (peakHour === window.end) return `${label}: ${peakHour}, near the end of the window.`;
+  if (peakHour === window.start) return `${label}: ${peakHour}, right as the window opens.`;
+  return `${label}: ${peakHour}, within the window.`;
 }
 
 function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditions'): string {
@@ -1312,7 +1319,7 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
     { label: 'Peak astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
-    { label: 'Best time', value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
+    { label: bestTimeLabel(topWindow), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
   const localSummary = effectiveDontBother
