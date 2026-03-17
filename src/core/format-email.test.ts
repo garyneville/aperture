@@ -2041,6 +2041,17 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(html).toContain('🌧️');
   });
 
+  it('explains outdoor comfort scores with short reason text', () => {
+    const tomorrow = makeTomorrowDay([
+      { hour: '09:00', tmp: 14, pp: 0, wind: 8, pr: 0, visK: 20, isNight: false },
+      { hour: '10:00', tmp: 6, pp: 85, wind: 40, pr: 3, visK: 1.5, isNight: false },
+    ]);
+    const html = nextDayHourlyOutlookSection(tomorrow);
+
+    expect(html).toContain('comfortable baseline');
+    expect(html).toContain('rain-heavy, strong wind');
+  });
+
   it('highlights pleasant hours and de-emphasises poor ones', () => {
     const tomorrow = makeTomorrowDay([
       { hour: '09:00', tmp: 15, pp: 2, wind: 6, pr: 0, visK: 20, isNight: false },

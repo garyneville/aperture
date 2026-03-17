@@ -324,6 +324,23 @@ export function outdoorComfortLabel(
   return { text: 'Poor conditions', fg: C.error, bg: C.errorContainer, highlight: false };
 }
 
+function outdoorComfortReason(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK' | 'pr'>): string {
+  const reasons: string[] = [];
+  if (h.pr > 1 || h.pp >= 60) reasons.push('rain-heavy');
+  else if (h.pr > 0.2 || h.pp >= 35) reasons.push('rain risk');
+
+  if (h.wind >= 35) reasons.push('strong wind');
+  else if (h.wind >= 22) reasons.push('breezy');
+
+  if (h.tmp < 3) reasons.push('cold');
+  else if (h.tmp > 28) reasons.push('warm');
+
+  if (h.visK < 2) reasons.push('low visibility');
+
+  if (!reasons.length) return 'comfortable baseline';
+  return reasons.slice(0, 2).join(', ');
+}
+
 function moonDescriptor(moonPct: number): string {
   if (moonPct <= 5) return 'New-ish';
   if (moonPct <= 35) return 'Crescent';
@@ -1051,7 +1068,10 @@ export function nextDayHourlyOutlookSection(
       <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
       <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
       <td valign="middle" style="padding:5px 8px 5px 6px;font-family:${FONT};font-size:12px;color:${textColor};">${indicatorDot}${esc(label.text)}</td>
-      <td valign="middle" style="padding:5px 8px 5px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">${score}/100</td>
+      <td valign="middle" style="padding:5px 8px 5px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">
+        <div>${score}/100</div>
+        <div style="font-size:10px;color:${C.subtle};opacity:0.9;">${esc(outdoorComfortReason(h))}</div>
+      </td>
     </tr>`;
   }).join('');
 
