@@ -834,9 +834,9 @@ function todayWindowSection(
   return listRows([
     ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
     card(`
-      <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
+      <div style="Margin:0 0 8px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
       ${htmlText(trimmedAiText)}
-    `, '', `border-left:3px solid ${C.primary};`),
+    `),
     ...(compCard ? [compCard] : []),
   ]);
 }
@@ -1259,17 +1259,31 @@ function daylightUtilityTodayCard(todayCarWash: CarWash): string {
     : cw.score >= 50
       ? { fg: C.primary, bg: C.primaryContainer, border: '#A8D4FB' }
       : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
-  const window = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
-  return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Daylight utility</div>
-    <div style="Margin-top:6px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
-    <div style="Margin-top:10px;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${UTILITY_GLYPHS} ${esc(window)}</div>
-    <div style="Margin-top:10px;">
-      ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
-      ${metricChip('Rain', `${cw.pp}%`, C.error)}
-      ${metricChip('Temp', `${cw.tmp}C`, C.secondary)}
-    </div>
-  `);
+  const window = cw.start !== '\u2014' ? `${cw.start}–${cw.end}` : '\u2014';
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:${C.surfaceVariant};border-radius:10px;">
+    <tr>
+      <td style="padding:10px 14px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td valign="middle">
+              <span style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:${C.subtle};">Daylight utility</span>
+              <span style="font-family:${FONT};font-size:13px;font-weight:600;color:${C.ink};margin-left:10px;">${UTILITY_GLYPHS} ${esc(window)}</span>
+            </td>
+            <td align="right" valign="middle">
+              ${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}
+            </td>
+          </tr>
+          <tr>
+            <td colspan="2" style="padding-top:7px;">
+              ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
+              ${metricChip('Rain', `${cw.pp}%`, C.error)}
+              ${metricChip('Temp', `${cw.tmp}°C`, C.secondary)}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1332,7 +1346,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
     { label: 'Sunset', value: sunsetStr, tone: C.primary },
-    { label: 'Moon', value: `${moonDescriptor(moonPct)} · ${moonPct}% lit · ${moonAstroContext(moonPct)}`, tone: C.tertiary },
+    { label: 'Moon', value: `${moonDescriptor(moonPct)} · ${moonPct}% lit`, tone: C.tertiary },
   ];
 
   if (todayConfidence) {
@@ -1421,9 +1435,11 @@ export function formatEmail(input: FormatEmailInput): string {
   <div style="height:1px;background:rgba(255,255,255,0.10);margin:16px 0;"></div>
   <!-- ── Stats grids ── -->
   <div style="border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
+  <div style="Margin-top:5px;padding:0 2px;font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.36);">${esc(moonAstroContext(moonPct))}</div>
   <div style="Margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
-  ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
-  ${alternativeSummary ? summaryNote(alternativeSummaryTitle(topAlternative), alternativeSummary) : ''}
+  ${localSummary || alternativeSummary ? `<div style="height:1px;background:rgba(255,255,255,0.10);margin:14px 0 10px;"></div>` : ''}
+  ${localSummary ? `<div style="font-family:${FONT};font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(localSummary.replace(/\n/g, ' · '))}</div>` : ''}
+  ${alternativeSummary ? `<div style="font-family:${FONT};font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">${esc(alternativeSummaryTitle(topAlternative))}: ${esc(alternativeSummary)}</div>` : ''}
 `, 'hero-card', `background:linear-gradient(160deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.08);`);
 
   /* Signal cards */
