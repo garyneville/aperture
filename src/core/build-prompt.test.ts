@@ -655,8 +655,8 @@ describe('buildPrompt', () => {
     sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
   });
 
-  it('includes home Bortle class in sky quality constraints for an astro window', () => {
-    // March: out of Milky Way season — home Bortle constraint should always appear for astro
+  it('includes Leeds-local landmark guidance when an astro window is clear enough', () => {
+    // March: out of Milky Way season — local-only and urban-skyglow constraints should appear for astro
     const result = buildPrompt({
       windows: [makeAstroWindow('2026-03-16')],
       dontBother: false,

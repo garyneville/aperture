@@ -92,6 +92,7 @@ export interface BuildPromptOutput {
   longRangeDebugCandidates?: LongRangeDebugCandidate[];
 }
 
+
 function confidenceLabel(confidence: string): string {
   if (confidence === 'high') return 'high';
   if (confidence === 'medium') return 'fair';
@@ -254,6 +255,14 @@ function isMilkyWaySeason(month: number): boolean {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** Returns the Europe/London calendar month as a 1-based month number (1-12). */
+function getLondonMonthOneIndexed(date: Date): number {
+  return Number.parseInt(
+    new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: 'Europe/London' }).format(date),
+    10,
+  );
+}
+
 /**
  * Generates sky-quality constraints for the COMPOSITION prompt section.
  * Conditions local shot ideas on Bortle class, season, moon phase, and whether
@@ -316,6 +325,7 @@ function skyQualityConstraints(
     }
   }
 
+
   return `Sky quality constraints for shot ideas:\n${parts.map(p => `- ${p}`).join('\n')}`;
 }
 
@@ -330,6 +340,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
 
   const now = input.now || new Date();
   const debugContext = input.debugContext || emptyDebugContext();
+  const homeLocation = getPhotoWeatherLocation();
 
   const sunriseStr = sunrise
     ? new Date(sunrise).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
@@ -341,7 +352,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London',
   });
 
-  const seasonalNote = SEASONAL_CONTEXT[now.getMonth() + 1] || '';
+  const currentMonth = getLondonMonthOneIndexed(now);
+  const seasonalNote = SEASONAL_CONTEXT[currentMonth] || '';
   const peakKpTonight = peakKpForNight(kpForecast, now);
   const auroraNote = buildAuroraNote(peakKpTonight, auroraSignal);
   const weekLine = weekSummaryLine(dailySummary);
@@ -447,7 +459,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
     ].filter(Boolean).join('\n');
 
     const shotConstraints = skyQualityConstraints(
-      now.getMonth() + 1,
+      currentMonth,
       moonPct,
       topAlt,
       isAstroWindow(bestWin),
@@ -460,7 +472,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
    Tags: ${(w.tops || []).join(', ')}`;
     }).join('\n\n');
 
-    prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for Leeds, West Yorkshire.
+    prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for ${homeLocation}.
 Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
@@ -485,7 +497,7 @@ ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${au
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 
-Leeds shooting windows:
+${homeLocation} shooting windows:
 ${windowsText}${altText}
 5-day outlook: ${weekLine}`;
   }
