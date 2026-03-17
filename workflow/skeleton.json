@@ -871,6 +871,93 @@
         1540,
         400
       ]
+    },
+    {
+      "parameters": {
+        "url": "https://aurorawatch.lancs.ac.uk/api/0.1/status/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "a1b2c3d4-0041-0041-0041-000000000041",
+      "name": "HTTP: AuroraWatch UK",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        680
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ 'https://api.nasa.gov/DONKI/CME?startDate=' + $now.minus({days: 3}).toFormat('yyyy-MM-dd') + '&endDate=' + $now.plus({days: 4}).toFormat('yyyy-MM-dd') + '&api_key=__NASA_API_KEY__' }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0042-0042-0042-000000000042",
+      "name": "HTTP: NASA DONKI CME",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        860
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0043-0043-0043-000000000043",
+      "name": "Merge: Aurora HTTP",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        880,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-aurora__"
+      },
+      "id": "a1b2c3d4-0044-0044-0044-000000000044",
+      "name": "Code: Wrap Aurora",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        680
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0045-0045-0045-000000000045",
+      "name": "Merge: Scoring + Aurora",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1540,
+        500
+      ]
     }
   ],
   "connections": {
@@ -1197,7 +1284,7 @@
       "main": [
         [
           {
-            "node": "Code: Build Prompt",
+            "node": "Merge: Scoring + Aurora",
             "type": "main",
             "index": 0
           }
@@ -1433,6 +1520,61 @@
         [
           {
             "node": "Code: Build Score Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: AuroraWatch UK": {
+      "main": [
+        [
+          {
+            "node": "Merge: Aurora HTTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: NASA DONKI CME": {
+      "main": [
+        [
+          {
+            "node": "Merge: Aurora HTTP",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Aurora HTTP": {
+      "main": [
+        [
+          {
+            "node": "Code: Wrap Aurora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Aurora": {
+      "main": [
+        [
+          {
+            "node": "Merge: Scoring + Aurora",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Scoring + Aurora": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Prompt",
             "type": "main",
             "index": 0
           }

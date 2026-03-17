@@ -5,6 +5,7 @@ import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocati
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
 import { HOME_SITE_DARKNESS } from './site-darkness.js';
 import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from './score-long-range.js';
+import type { AuroraSignal } from './aurora-providers.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -41,6 +42,7 @@ export interface BuildPromptInput {
   sunset?: string;
   moonPct: number;
   kpForecast?: KpEntry[];
+  auroraSignal?: AuroraSignal | null;
   now?: Date;
   debugContext?: DebugContext;
   longRangeTop?: LongRangeCandidate | null;
@@ -81,6 +83,7 @@ export interface BuildPromptOutput {
   sunDir: number | null;
   crepPeak: number;
   peakKpTonight: number | null;
+  auroraSignal?: AuroraSignal | null;
   debugContext: DebugContext;
   longRangeTop?: LongRangeCandidate | null;
   longRangeCardLabel?: string | null;
@@ -192,6 +195,42 @@ function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | 
   return peak;
 }
 
+function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSignal | null): string {
+  const parts: string[] = [];
+
+  // Near-term: AuroraWatch UK takes priority over Kp when available and active.
+  // Only fall back to the NOAA Kp index when AuroraWatch UK is not available.
+  const nearTerm = auroraSignal?.nearTerm;
+  const awukActive = nearTerm && !nearTerm.isStale && nearTerm.level !== 'green';
+
+  if (awukActive) {
+    const levelLabel: Record<string, string> = {
+      yellow: 'Minor geomagnetic activity',
+      amber: 'Moderate geomagnetic activity',
+      red: 'Storm-level activity',
+    };
+    const label = levelLabel[nearTerm.level] ?? nearTerm.level;
+    parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight at ~54°N.`);
+  } else if (peakKpTonight !== null && peakKpTonight >= 5) {
+    // Fall back to NOAA Kp when AuroraWatch UK is unavailable or green
+    parts.push(`Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`);
+  }
+
+  // Long-range: NASA DONKI CME (always shown when upcoming, independent of near-term)
+  const upcomingCmeCount = auroraSignal?.upcomingCmeCount ?? 0;
+  const nextArrival = auroraSignal?.nextCmeArrival;
+  if (upcomingCmeCount > 0 && nextArrival) {
+    const arrivalDate = new Date(nextArrival);
+    const arrivalStr = isNaN(arrivalDate.getTime())
+      ? nextArrival
+      : arrivalDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const cmeLabel = upcomingCmeCount === 1 ? 'Earth-directed CME' : `${upcomingCmeCount} Earth-directed CMEs`;
+    parts.push(`Aurora prediction: ${cmeLabel} expected ~${arrivalStr} (NASA DONKI) — elevated aurora probability 1–3 days ahead.`);
+  }
+
+  return parts.join(' ');
+}
+
 function weekSummaryLine(dailySummary: DailySummary[]): string {
   return dailySummary.slice(0, 5).map(d => {
     const score = d.headlineScore ?? d.photoScore;
@@ -284,7 +323,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, noAltsMsg, metarNote,
-    sunrise, sunset, moonPct, kpForecast,
+    sunrise, sunset, moonPct, kpForecast, auroraSignal,
     longRangeTop, longRangeCardLabel, darkSkyAlert,
     longRangeCandidates, longRangeDebugCandidates,
   } = input;
@@ -304,9 +343,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
 
   const seasonalNote = SEASONAL_CONTEXT[now.getMonth() + 1] || '';
   const peakKpTonight = peakKpForNight(kpForecast, now);
-  const auroraNote = peakKpTonight !== null && peakKpTonight >= 5
-    ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`
-    : '';
+  const auroraNote = buildAuroraNote(peakKpTonight, auroraSignal);
   const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
@@ -472,6 +509,7 @@ ${windowsText}${altText}
     sunDir: todayDay?.sunDirection ?? null,
     crepPeak: todayDay?.crepRayPeak || 0,
     peakKpTonight,
+    auroraSignal: auroraSignal ?? null,
     debugContext,
     longRangeTop,
     longRangeCardLabel,
