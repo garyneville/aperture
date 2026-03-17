@@ -907,8 +907,8 @@ function alternativeSection(
   const astroAlternatives = altLocations.filter(loc => loc.isAstroWin);
   const goldenHourAlternatives = altLocations.filter(loc => !loc.isAstroWin);
   const sections = [
-    renderGroup('Astro alternatives', astroAlternatives),
-    renderGroup('Golden-hour alternatives', goldenHourAlternatives),
+    renderGroup('Nearby astro options', astroAlternatives),
+    renderGroup('Nearby landscape options', goldenHourAlternatives),
   ].filter(Boolean);
 
   return card(sections.join(`<div style="height:12px;"></div>`));

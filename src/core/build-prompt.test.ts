@@ -345,9 +345,9 @@ describe('buildPrompt', () => {
     });
 
     expect(result.prompt).toContain('Nearby alternatives worth considering:');
-    expect(result.prompt).toContain('Astro alternatives:');
+    expect(result.prompt).toContain('Nearby astro options:');
     expect(result.prompt).toContain('- Brimham Rocks (40min): 81/100 best astro 02:00');
-    expect(result.prompt).toContain('Golden-hour alternatives:');
+    expect(result.prompt).toContain('Nearby landscape options:');
     expect(result.prompt).toContain('- Bolton Abbey (35min): 64/100 morning golden hour around 06:45');
   });
 
