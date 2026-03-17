@@ -353,8 +353,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const goldenHourAlternatives = (altLocations || []).filter(location => !location.isAstroWin);
   const altText = altLocations && altLocations.length
     ? `\nNearby alternatives worth considering:\n${[
-      alternativePromptSection('Astro alternatives', astroAlternatives),
-      alternativePromptSection('Golden-hour alternatives', goldenHourAlternatives),
+      alternativePromptSection('Nearby astro options', astroAlternatives),
+      alternativePromptSection('Nearby landscape options', goldenHourAlternatives),
     ].filter(Boolean).join('\n')}`
     : '';
 

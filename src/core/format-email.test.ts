@@ -364,10 +364,10 @@ describe('formatEmail hero summary', () => {
     const html = formatEmail(input);
 
     expect(html).toContain('Best nearby astro alternative');
-    expect(html).toContain('Astro alternatives');
+    expect(html).toContain('Nearby astro options');
     expect(html).toContain('Brimham Rocks');
     expect(html).toContain('Astro - best 02:00 - 40 min drive');
-    expect(html).toContain('Golden-hour alternatives');
+    expect(html).toContain('Nearby landscape options');
     expect(html).toContain('Bolton Abbey');
     expect(html).toContain('Morning golden hour - best 06:45 - 35 min drive');
   });
