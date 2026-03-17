@@ -10,8 +10,8 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
 
-  const altWeatherData = mergedItems.map(({ name: _name, lat: _lat, lon: _lon, driveMins: _driveMins, types: _types, siteDarkness: _siteDarkness, darkSky: _darkSky, url: _url, leedsContext: _leedsContext, ...weather }) => weather);
-  const altLocationMeta = mergedItems.map(({ name, lat, lon, driveMins, types, siteDarkness, darkSky }) => ({ name, lat, lon, driveMins, types, siteDarkness, darkSky }));
+  const altWeatherData = mergedItems.map(({ name: _name, lat: _lat, lon: _lon, driveMins: _driveMins, types: _types, siteDarkness: _siteDarkness, darkSky: _darkSky, elevationM: _elevationM, isUpland: _isUpland, mwisArea: _mwisArea, url: _url, leedsContext: _leedsContext, ...weather }) => weather);
+  const altLocationMeta = mergedItems.map(({ name, lat, lon, driveMins, types, siteDarkness, darkSky, elevationM, isUpland, mwisArea }) => ({ name, lat, lon, driveMins, types, siteDarkness, darkSky, elevationM: elevationM ?? 0, isUpland: isUpland ?? false, mwisArea: mwisArea ?? null }));
   const leedsContext = mergedItems[0]?.leedsContext ?? {};
 
   const result = scoreAlternatives({
