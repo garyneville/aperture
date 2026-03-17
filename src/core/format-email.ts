@@ -2,6 +2,7 @@ import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import type { DebugContext, DebugKitAdvisoryRule, DebugOutdoorComfortHour } from './debug-context.js';
+import type { AuroraSignal } from './aurora-providers.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -116,6 +117,7 @@ export interface FormatEmailInput {
   compositionBullets?: string[];
   weekInsight?: string;
   peakKpTonight?: number | null;
+  auroraSignal?: AuroraSignal | null;
   longRangeTop?: LongRangeCard | null;
   longRangeCardLabel?: string | null;
   darkSkyAlert?: DarkSkyAlertCard | null;
@@ -775,9 +777,38 @@ function signalCards(
   crepPeak: number,
   metarNote: string | undefined,
   peakKpTonight?: number | null,
+  auroraSignal?: AuroraSignal | null,
 ): string {
   const cards: string[] = [];
-  if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
+
+  // Aurora card — prefer AuroraWatch UK when available, fall back to Kp index
+  const awukLevel = auroraSignal?.nearTerm?.level;
+  const awukFresh = auroraSignal?.nearTerm && !auroraSignal.nearTerm.isStale;
+  const upcomingCmeCount = auroraSignal?.upcomingCmeCount ?? 0;
+  const nextCmeArrival = auroraSignal?.nextCmeArrival;
+
+  if (awukFresh && awukLevel && awukLevel !== 'green') {
+    // AuroraWatch UK active alert (yellow/amber/red)
+    const levelMeta: Record<string, { label: string; fg: string; bg: string; border: string }> = {
+      yellow: { label: 'Minor activity', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' },
+      amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#F0A858' },
+      red:    { label: 'Storm conditions', fg: C.success, bg: C.successContainer, border: '#B7E0CF' },
+    };
+    const meta = levelMeta[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
+    const levelDescriptions: Record<string, string> = {
+      yellow: 'Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from northern Scotland; conditions at 54°N (Leeds) are marginal.',
+      amber: 'Moderate geomagnetic activity. Aurora possible across northern England on clear nights. Worth watching if skies are clear.',
+      red: 'Storm-level geomagnetic activity. Aurora likely visible across much of the UK, including Yorkshire, on clear nights.',
+    };
+    const desc = levelDescriptions[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
+    cards.push(card(`
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Aurora signal tonight</div>
+      <div style="Margin-top:8px;">${pill(`AuroraWatch UK — ${meta.label}`, meta.fg, meta.bg, meta.border)}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(desc)}</div>
+    `));
+  } else if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
+    // Fall back to NOAA Kp index when AuroraWatch UK is unavailable or green
     const kpDisplay = peakKpTonight.toFixed(1);
     const visible = peakKpTonight >= 6;
     const fg = visible ? C.success : C.warning;
@@ -794,6 +825,24 @@ function signalCards(
       </div>
     `));
   }
+
+  // Long-range CME prediction card (separate from near-term)
+  if (upcomingCmeCount > 0 && nextCmeArrival) {
+    const arrivalDate = new Date(nextCmeArrival);
+    const arrivalStr = isNaN(arrivalDate.getTime())
+      ? nextCmeArrival
+      : arrivalDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    const cmeLabel = upcomingCmeCount === 1 ? 'Earth-directed CME' : `${upcomingCmeCount} Earth-directed CMEs`;
+    cards.push(card(`
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Aurora prediction</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">CME forecast: ${esc(arrivalStr)}</div>
+      <div style="Margin-top:8px;">${pill(`${cmeLabel} — NASA DONKI`, C.warning, C.warningContainer, '#F0D58D')}</div>
+      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+        Elevated aurora probability around ${esc(arrivalStr)}. Monitor AuroraWatch UK as arrival approaches. Confidence is moderate — CME trajectory models carry uncertainty.
+      </div>
+    `));
+  }
+
   if (shSunriseQ !== null || shSunsetQ !== null) {
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Twilight signal</div>
@@ -1143,6 +1192,7 @@ export function formatEmail(input: FormatEmailInput): string {
     compositionBullets,
     weekInsight,
     peakKpTonight,
+    auroraSignal,
     longRangeTop,
     longRangeCardLabel,
     darkSkyAlert,
@@ -1240,7 +1290,7 @@ export function formatEmail(input: FormatEmailInput): string {
 `, 'hero-card', `background:${C.primaryContainer};border-color:#C5D6FF;`);
 
   /* Signal cards */
-  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight);
+  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
 
   /* Kit advisory */
   const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);

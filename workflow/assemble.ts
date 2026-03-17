@@ -34,6 +34,7 @@ export const ADAPTERS: Record<string, string> = {
   'score-long-range': 'src/adapters/n8n/score-long-range.adapter.ts',
   'build-prompt': 'src/adapters/n8n/build-prompt.adapter.ts',
   'wrap-kp-index': 'src/adapters/n8n/wrap-kp-index.adapter.ts',
+  'wrap-aurora': 'src/adapters/n8n/wrap-aurora.adapter.ts',
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',
   'prepare-debug-email': 'src/adapters/n8n/prepare-debug-email.adapter.ts',
 };

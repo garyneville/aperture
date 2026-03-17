@@ -17,6 +17,7 @@ export function run({ $input }: N8nRuntime) {
     sunset: input.sunset,
     moonPct: input.moonPct,
     kpForecast: input.kpForecast,
+    auroraSignal: input.auroraSignal,
     debugContext: input.debugContext,
     longRangeTop: input.longRangeTop,
     longRangeCardLabel: input.longRangeCardLabel,
