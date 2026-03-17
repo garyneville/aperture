@@ -210,8 +210,8 @@ export function parseNasaDonkiCme(
         }
       }
 
-      // Also check note/instruments for "Earth" mention as a fallback
-      if (!isEarthDirected && (note.toLowerCase().includes('earth') || note.toLowerCase().includes('halo'))) {
+      // Also check note/instruments for "Earth" mention as a fallback (word boundary to avoid false positives)
+      if (!isEarthDirected && (/\bearth\b/i.test(note) || /\bhalo\b/i.test(note))) {
         isEarthDirected = true;
       }
 

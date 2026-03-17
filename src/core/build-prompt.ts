@@ -198,26 +198,25 @@ function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | 
 function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSignal | null): string {
   const parts: string[] = [];
 
-  // Near-term: NOAA Kp (legacy path, kept for compatibility)
-  if (peakKpTonight !== null && peakKpTonight >= 5) {
-    parts.push(`Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`);
-  }
-
-  // Near-term: AuroraWatch UK (supersedes Kp note when available and active)
+  // Near-term: AuroraWatch UK takes priority over Kp when available and active.
+  // Only fall back to the NOAA Kp index when AuroraWatch UK is not available.
   const nearTerm = auroraSignal?.nearTerm;
-  if (nearTerm && !nearTerm.isStale && nearTerm.level !== 'green') {
+  const awukActive = nearTerm && !nearTerm.isStale && nearTerm.level !== 'green';
+
+  if (awukActive) {
     const levelLabel: Record<string, string> = {
       yellow: 'Minor geomagnetic activity',
       amber: 'Moderate geomagnetic activity',
       red: 'Storm-level activity',
     };
     const label = levelLabel[nearTerm.level] ?? nearTerm.level;
-    // Replace Kp note if AWUK provides a more direct UK signal
-    if (parts.length > 0) parts.pop();
     parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight at ~54°N.`);
+  } else if (peakKpTonight !== null && peakKpTonight >= 5) {
+    // Fall back to NOAA Kp when AuroraWatch UK is unavailable or green
+    parts.push(`Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`);
   }
 
-  // Long-range: NASA DONKI CME
+  // Long-range: NASA DONKI CME (always shown when upcoming, independent of near-term)
   const upcomingCmeCount = auroraSignal?.upcomingCmeCount ?? 0;
   const nextArrival = auroraSignal?.nextCmeArrival;
   if (upcomingCmeCount > 0 && nextArrival) {

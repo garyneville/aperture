@@ -769,6 +769,19 @@ function todayWindowSection(
   ]);
 }
 
+/** AuroraWatch UK level → display metadata (extracted for reuse and testability). */
+const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; border: string }> = {
+  yellow: { label: 'Minor activity',    fg: C.warning, bg: C.warningContainer, border: '#F0D58D' },
+  amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#F0A858' },
+  red:    { label: 'Storm conditions',  fg: C.success, bg: C.successContainer, border: '#B7E0CF' },
+};
+
+const AWUK_LEVEL_DESCRIPTIONS: Record<string, string> = {
+  yellow: 'Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from northern Scotland; conditions at 54°N (Leeds) are marginal.',
+  amber:  'Moderate geomagnetic activity. Aurora possible across northern England on clear nights. Worth watching if skies are clear.',
+  red:    'Storm-level geomagnetic activity. Aurora likely visible across much of the UK, including Yorkshire, on clear nights.',
+};
+
 function signalCards(
   shSunriseQ: number | null,
   shSunsetQ: number | null,
@@ -789,18 +802,8 @@ function signalCards(
 
   if (awukFresh && awukLevel && awukLevel !== 'green') {
     // AuroraWatch UK active alert (yellow/amber/red)
-    const levelMeta: Record<string, { label: string; fg: string; bg: string; border: string }> = {
-      yellow: { label: 'Minor activity', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' },
-      amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#F0A858' },
-      red:    { label: 'Storm conditions', fg: C.success, bg: C.successContainer, border: '#B7E0CF' },
-    };
-    const meta = levelMeta[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
-    const levelDescriptions: Record<string, string> = {
-      yellow: 'Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from northern Scotland; conditions at 54°N (Leeds) are marginal.',
-      amber: 'Moderate geomagnetic activity. Aurora possible across northern England on clear nights. Worth watching if skies are clear.',
-      red: 'Storm-level geomagnetic activity. Aurora likely visible across much of the UK, including Yorkshire, on clear nights.',
-    };
-    const desc = levelDescriptions[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
+    const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
+    const desc = AWUK_LEVEL_DESCRIPTIONS[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Aurora signal tonight</div>

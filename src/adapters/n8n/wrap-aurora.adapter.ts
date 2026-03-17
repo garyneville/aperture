@@ -22,12 +22,12 @@ export function run({ $ }: N8nRuntime) {
     const donkiRaw = (() => {
       try {
         const items = $('HTTP: NASA DONKI CME').all();
-        if (items.length === 1 && Array.isArray(items[0].json)) {
+        if (items.length === 1 && Array.isArray(items[0]?.json)) {
           // n8n returned the JSON array as items[0].json
-          return items[0].json;
+          return items[0].json as unknown[];
         }
         if (items.length > 1) {
-          // n8n split the array into multiple items
+          // n8n split the array into multiple items (one per CME event)
           return items.map(i => i.json);
         }
         return items[0]?.json ?? null;
