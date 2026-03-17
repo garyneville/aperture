@@ -380,3 +380,133 @@ describe('scoreAllDays AOD astro scoring', () => {
     expect(hazyHour?.aod).toBe(0.4);
   });
 });
+
+describe('scoreAllDays clear-sky AM/PM scoring', () => {
+  // Regression test for: https://github.com/garyneville/home/issues/166
+  // A cloudless day with 0% rain, good visibility, and low wind was scoring
+  // 25 (AM) / 35 (PM) — too punitive for an objectively pleasant shooting day.
+  it('gives a golden-hour score above 35 on a cloudless, low-wind morning with decent visibility', () => {
+    // 17 Mar 2026: sunrise 06:20 UTC, sunset 18:12 UTC.
+    // Simulate the golden-hour window at 07:00 UTC — clear skies, 10 km visibility, 5 km/h wind.
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-03-17T07:00:00Z'],
+          cloudcover: [0],
+          cloudcover_low: [0],
+          cloudcover_mid: [0],
+          cloudcover_high: [0],
+          visibility: [10000],
+          temperature_2m: [8],
+          relativehumidity_2m: [65],
+          dewpoint_2m: [4],
+          precipitation: [0],
+          windspeed_10m: [5],
+          windgusts_10m: [8],
+          cape: [0],
+          vapour_pressure_deficit: [0.6],
+          total_column_integrated_water_vapour: [10],
+        },
+        daily: {
+          sunrise: ['2026-03-17T06:20:00Z'],
+          sunset: ['2026-03-17T18:12:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-17T07:00:00Z'],
+          aerosol_optical_depth: [0.1],
+          dust: [0],
+          european_aqi: [10],
+          uv_index: [0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-17T07:00:00Z'],
+          precipitation_probability: [0],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-17T12:00:00Z'));
+    const today = result.dailySummary[0];
+    const goldenHour = today.hours.find(h => h.hour === '07:00');
+
+    // Hour should be classified as golden AM
+    expect(goldenHour?.isGoldAm).toBe(true);
+    // Cloudless golden hours must score above 35 — clear skies + decent visibility are photogenic
+    expect(goldenHour?.score).toBeGreaterThan(35);
+    // Drama should reflect the clear-sky bonus (ct < 15 → +12)
+    expect(goldenHour?.drama).toBeGreaterThan(40);
+    // Clarity should reflect the clear-sky visibility bonus (ct < 20, visK > 5 → +6)
+    expect(goldenHour?.clarity).toBeGreaterThan(40);
+  });
+
+  it('gives a PM golden-hour score above 40 on a cloudless afternoon with excellent visibility', () => {
+    // Simulate a PM golden-hour window at 18:00 UTC — clear skies, 19 km visibility, 14 km/h wind.
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-03-17T18:00:00Z'],
+          cloudcover: [0],
+          cloudcover_low: [0],
+          cloudcover_mid: [0],
+          cloudcover_high: [0],
+          visibility: [19000],
+          temperature_2m: [17],
+          relativehumidity_2m: [55],
+          dewpoint_2m: [7],
+          precipitation: [0],
+          windspeed_10m: [14],
+          windgusts_10m: [20],
+          cape: [0],
+          vapour_pressure_deficit: [1.0],
+          total_column_integrated_water_vapour: [12],
+        },
+        daily: {
+          sunrise: ['2026-03-17T06:20:00Z'],
+          sunset: ['2026-03-17T18:12:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-17T18:00:00Z'],
+          aerosol_optical_depth: [0.1],
+          dust: [0],
+          european_aqi: [10],
+          uv_index: [2],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-17T18:00:00Z'],
+          precipitation_probability: [0],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-17T12:00:00Z'));
+    const today = result.dailySummary[0];
+    const pmHour = today.hours.find(h => h.hour === '18:00');
+
+    // Hour should be classified as golden PM
+    expect(pmHour?.isGoldPm).toBe(true);
+    // Cloudless PM with excellent visibility must score above 40
+    expect(pmHour?.score).toBeGreaterThan(40);
+    // Clarity should reflect the clear-sky visibility bonus (ct < 20, visK > 10 → +12)
+    expect(pmHour?.clarity).toBeGreaterThan(55);
+  });
+});

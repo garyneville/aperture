@@ -398,6 +398,10 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       if (prev > 0.5 && pr < 0.1) drama += 10;
       if (pr > 0.5)  drama -= 20;
 
+      // Clear-sky bonus: near-cloudless golden/blue hours still produce clean, directional light
+      if ((isGolden || isBlue) && ct < 15) drama += 12;
+      else if ((isGolden || isBlue) && ct < 30) drama += 5;
+
       // Solar azimuth scan
       if (azimuthRisk !== null) {
         if (azimuthRisk > 75) drama -= 22;
@@ -420,6 +424,9 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       if (tpw < 15)       clarity += 5;
       else if (tpw > 30)  clarity -= Math.round((tpw - 30) / 4);
       if (azimuthLowRisk !== null && azimuthLowRisk > 60) clarity -= 4;
+      // Clear-sky visibility bonus: cloudless sky + good visibility partially offsets cloud drama deficit
+      if (ct < 20 && visK > 10) clarity += 12;
+      else if (ct < 20 && visK > 5) clarity += 6;
       clarity = clamp(clarity);
 
       // ── MIST / MOOD ───────────────────────────────────────────────────
