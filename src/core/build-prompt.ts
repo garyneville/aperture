@@ -404,9 +404,6 @@ Locations: ${SPUR_LOCATION_NAMES}`;
       astroGap
         ? `- ${astroGap.text}`
         : '',
-      bestAltDelta >= 10 && topAlt
-        ? `- Consider ${topAlt.name} today${topAlt.darkSky ? ' — better dark sky conditions' : ' — better overall conditions'}${topAlt.driveMins ? ` (${topAlt.driveMins} min drive)` : ''}.`
-        : '',
       nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
         ? `- If you miss the first slot, ${nextWin.label.toLowerCase()} is the later, darker fallback from ${nextWin.start}\u2013${nextWin.end}.`
         : '',
@@ -435,7 +432,7 @@ Sentence 1: explain why the best local window is worth attention using one suppl
 Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
 The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.
 Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
-When an insight line mentions a nearby alternative, use a prose recommendation only — no score numbers, point deltas, or '/100' references in the editorial. All metric detail is in the alternative card below.
+The editorial must describe Leeds conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
 
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.

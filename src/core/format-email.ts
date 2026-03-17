@@ -1229,9 +1229,6 @@ export function formatEmail(input: FormatEmailInput): string {
       nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
         ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
         : '',
-      topAltDelta >= 25 && topAlternative
-        ? `Or consider ${topAlternative.name} instead — significantly better conditions${topAlternative.darkSky ? ' for dark sky photography' : ''} (${topAlternative.driveMins} min drive).`
-        : '',
     ].filter(Boolean).join('\n');
 
   const spurMatchesTopAlt =

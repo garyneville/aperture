@@ -174,6 +174,18 @@ export function isSingleSentenceCardRestatement(aiText: string, ctx: AiBriefingC
   return !sentenceAddsEditorialValue(sentences[0], topWindow);
 }
 
+function stripAltLocationSentences(text: string, altLocations: AiBriefingAltLocation[] | undefined): { text: string; stripped: boolean } {
+  const altNames = (altLocations || []).map(a => a.name).filter((n): n is string => Boolean(n));
+  if (!altNames.length) return { text, stripped: false };
+
+  const patterns = altNames.map(name => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`));
+  const sentences = splitAiSentences(text);
+  const kept = sentences.filter(s => !patterns.some(re => re.test(s)));
+  if (kept.length === sentences.length) return { text, stripped: false };
+
+  return { text: kept.join(' ').trim(), stripped: true };
+}
+
 export function buildFallbackAiText(ctx: AiBriefingContext): string {
   const topWindow = ctx.windows?.[0];
   const nextWindow = ctx.windows?.[1];
@@ -206,12 +218,6 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
     ? `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}.`
     : `Local peak is around ${peakHour} in the ${topWindow.label?.toLowerCase() || 'best window'}${range ? ` from ${range}` : ''}.`;
 
-  if (topAlt && typeof topAlt.bestScore === 'number' && typeof topWindow.peak === 'number' && topAlt.bestScore - topWindow.peak >= 10) {
-    const altDrive = topAlt.driveMins ? ` — ${topAlt.driveMins}-minute drive` : '';
-    const altConditions = topAlt.darkSky ? ' for better dark sky conditions' : ' for better overall conditions';
-    return `${firstSentence} Consider ${topAlt.name}${altConditions}${altDrive}.`;
-  }
-
   const astroGap = explainAstroScoreGap({ window: topWindow, today });
   if (astroGap) {
     return `${firstSentence} ${astroGap.text}`;
@@ -242,12 +248,16 @@ export function renderAiBriefingText(aiText: string, ctx: AiBriefingContext): Re
     };
   }
 
-  const sentences = splitAiSentences(aiText);
+  const filtered = stripAltLocationSentences(aiText, ctx.altLocations);
+  const workingText = filtered.text || buildFallbackAiText(ctx);
+  const usedFallbackAfterFilter = !filtered.text;
+
+  const sentences = splitAiSentences(workingText);
   if (!sentences.length || !hasRedundantOpening(sentences[0], topWindow)) {
     return {
-      text: aiText,
+      text: workingText,
       strippedOpener: false,
-      usedFallback: false,
+      usedFallback: usedFallbackAfterFilter,
     };
   }
 
@@ -256,15 +266,15 @@ export function renderAiBriefingText(aiText: string, ctx: AiBriefingContext): Re
     return {
       text: remainder,
       strippedOpener: true,
-      usedFallback: false,
+      usedFallback: usedFallbackAfterFilter,
     };
   }
 
   if (sentenceAddsEditorialValue(sentences[0], topWindow)) {
     return {
-      text: aiText,
+      text: workingText,
       strippedOpener: false,
-      usedFallback: false,
+      usedFallback: usedFallbackAfterFilter,
     };
   }
 

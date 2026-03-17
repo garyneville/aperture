@@ -143,9 +143,9 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Dark-sky conditions improve from 22:00 once the moon is down.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
     expect(result.prompt).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');
-    expect(result.prompt).toContain('Consider Sutton Bank today — better dark sky conditions (75 min drive).');
+    expect(result.prompt).not.toContain('Consider Sutton Bank today — better dark sky conditions (75 min drive).');
     expect(result.prompt).not.toContain('points stronger');
-    expect(result.prompt).toContain('When an insight line mentions a nearby alternative, use a prose recommendation only');
+    expect(result.prompt).toContain('The editorial must describe Leeds conditions only.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
     expect(result.peakKpTonight).toBeNull();
     // Visibility must be a whole number in the prompt (no decimal) so the LLM
