@@ -178,12 +178,42 @@
         "options": {}
       },
       "id": "a1b2c3d4-0024-0024-0024-000000000024",
-      "name": "Merge: Prompt Context",
+      "name": "Merge: Prompt + Groq",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
         1980,
         300
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0065-0065-0065-000000000065",
+      "name": "Merge: Prompt + Gemini FB",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2200,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0066-0066-0066-000000000066",
+      "name": "Merge: Prompt Context",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2420,
+        420
       ]
     },
     {
@@ -1149,7 +1179,7 @@
             "index": 0
           },
           {
-            "node": "Merge: Prompt Context",
+            "node": "Merge: Prompt + Groq",
             "type": "main",
             "index": 0
           },
@@ -1181,9 +1211,9 @@
       "main": [
         [
           {
-            "node": "Merge: Prompt Context",
+            "node": "Merge: Prompt + Gemini FB",
             "type": "main",
-            "index": 2
+            "index": 1
           }
         ]
       ]
@@ -1216,7 +1246,7 @@
           {
             "node": "Merge: Prompt Context",
             "type": "main",
-            "index": 3
+            "index": 1
           }
         ]
       ]
@@ -1225,9 +1255,31 @@
       "main": [
         [
           {
-            "node": "Merge: Prompt Context",
+            "node": "Merge: Prompt + Groq",
             "type": "main",
             "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Prompt + Groq": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt + Gemini FB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge: Prompt + Gemini FB": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
