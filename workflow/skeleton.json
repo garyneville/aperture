@@ -1040,7 +1040,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.inspirePrompt }] }], generationConfig: { temperature: 1.0, maxOutputTokens: 400 } }) }}",
+        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.inspirePrompt }] }], generationConfig: { temperature: 1.0, maxOutputTokens: 800 } }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0063-0063-0063-000000000063",
