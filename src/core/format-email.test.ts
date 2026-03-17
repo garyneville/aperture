@@ -2019,10 +2019,26 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(html).toContain('09:00');
     expect(html).toContain('10:00');
     expect(html).toContain('Time');
+    expect(html).toContain('Wx');
     expect(html).toContain('Temp');
     expect(html).toContain('Rain');
     expect(html).toContain('Wind');
     expect(html).toContain('Outdoor');
+  });
+
+  it('renders weather emoji from cloud and rain signals', () => {
+    const tomorrow = makeTomorrowDay([
+      { hour: '09:00', ct: 10, pp: 0, pr: 0, isNight: false },
+      { hour: '10:00', ct: 70, pp: 5, pr: 0, isNight: false },
+      { hour: '11:00', ct: 45, pp: 55, pr: 0, isNight: false },
+      { hour: '12:00', ct: 85, pp: 90, pr: 3, isNight: false },
+    ]);
+    const html = nextDayHourlyOutlookSection(tomorrow);
+
+    expect(html).toContain('☀️');
+    expect(html).toContain('☁️');
+    expect(html).toContain('🌦️');
+    expect(html).toContain('🌧️');
   });
 
   it('highlights pleasant hours and de-emphasises poor ones', () => {

@@ -997,6 +997,14 @@ function outdoorSummaryLine(
   return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Limited outdoor opportunities.`;
 }
 
+function weatherEmojiForHour(h: Pick<NextDayHour, 'ct' | 'pp' | 'pr'>): string {
+  if (h.pr >= 2 || h.pp >= 80) return '🌧️';
+  if (h.pr > 0 || h.pp >= 45) return '🌦️';
+  if (h.ct <= 20) return '☀️';
+  if (h.ct <= 60) return '⛅';
+  return '☁️';
+}
+
 /** Renders the next-day hourly weather outlook card. */
 export function nextDayHourlyOutlookSection(
   tomorrow: DaySummary | undefined,
@@ -1038,6 +1046,7 @@ export function nextDayHourlyOutlookSection(
       : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
     return `<tr style="background:${rowBg};">
       <td valign="middle" style="padding:5px 8px;font-family:${FONT};font-size:12px;font-weight:700;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
+      <td valign="middle" style="padding:5px 4px;font-family:${FONT};font-size:14px;text-align:center;white-space:nowrap;">${weatherEmojiForHour(h)}</td>
       <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(Math.round(h.tmp)))}°C</td>
       <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
       <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
@@ -1050,6 +1059,7 @@ export function nextDayHourlyOutlookSection(
     <thead>
       <tr>
         <th align="left" style="padding:5px 8px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Time</th>
+        <th align="center" style="padding:5px 4px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Wx</th>
         <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Temp</th>
         <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Rain</th>
         <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Wind</th>
