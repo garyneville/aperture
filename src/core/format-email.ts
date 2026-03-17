@@ -332,6 +332,13 @@ function moonDescriptor(moonPct: number): string {
   return 'Full-ish';
 }
 
+function moonAstroContext(moonPct: number): string {
+  if (moonPct <= 15) return 'Excellent for astro';
+  if (moonPct <= 35) return 'Good for astro';
+  if (moonPct <= 65) return 'Mixed for astro';
+  return 'Bright moon - weaker astro contrast';
+}
+
 interface SummaryStat {
   label: string;
   value: string;
@@ -1174,7 +1181,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
     { label: 'Sunset', value: sunsetStr, tone: C.primary },
-    { label: 'Moon', value: `${moonDescriptor(moonPct)} · ${moonPct}% lit`, tone: C.tertiary },
+    { label: 'Moon', value: `${moonDescriptor(moonPct)} · ${moonPct}% lit · ${moonAstroContext(moonPct)}`, tone: C.tertiary },
   ];
 
   if (todayConfidence) {

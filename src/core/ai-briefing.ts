@@ -182,21 +182,21 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
 
   if (ctx.dontBother) {
     if (topAlt && typeof topAlt.bestScore === 'number') {
-      return `Conditions in Leeds are not worth shooting today.${topAlt.driveMins ? ` ${topAlt.name} is the best nearby option at ${topAlt.bestScore}/100 - ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
+      return `Leeds looks poor for photography today.${topAlt.driveMins ? ` ${topAlt.name} is the strongest nearby option at ${topAlt.bestScore}/100 - ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
     }
-    return 'Conditions in Leeds are not worth shooting today.';
+    return 'Leeds looks poor for photography today.';
   }
 
   if (!topWindow) {
     if (topAlt?.name) {
       const altDrive = topAlt.driveMins ? ` — ${topAlt.driveMins}-minute drive` : '';
       const altConditions = topAlt.darkSky ? ' for better dark sky conditions' : ' for better overall conditions';
-      return `No local window clears the threshold in Leeds today. Consider ${topAlt.name}${altConditions}${altDrive}.`;
+      return `No strong local photo window in Leeds today. Consider ${topAlt.name}${altConditions}${altDrive}.`;
     }
     if (today?.darkSkyStartsAt) {
-      return `No local window clears the threshold in Leeds today. Darkness improves from ${today.darkSkyStartsAt}, but no local slot survives the full weighting.`;
+      return `No strong local photo window in Leeds today. Skies get darker from ${today.darkSkyStartsAt}, but local conditions still stay marginal.`;
     }
-    return 'No local window clears the threshold in Leeds today.';
+    return 'No strong local photo window in Leeds today.';
   }
 
   const isSingleHour = topWindow.start === topWindow.end;

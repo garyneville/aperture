@@ -92,6 +92,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Best nearby astro alternative');
     expect(html).toContain('Malham Cove');
     expect(html).toContain('Crescent');
+    expect(html).toContain('Good for astro');
     expect(html).toContain('Best time');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
     expect(html).toContain('Peak astro sub-score is 75/100 at 19:00, with the final window score at 60/100 after full weighting.');

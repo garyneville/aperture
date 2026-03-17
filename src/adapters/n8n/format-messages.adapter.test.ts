@@ -134,7 +134,7 @@ describe('format-messages adapter editorial fallback', () => {
     const aiText = 'Darkness improves from 00:00. Consider Brimham Rocks today — better overall conditions (40 min drive).';
 
     expect(shouldReplaceAiText(aiText, noWindowCtx)).toBe(true);
-    expect(buildFallbackAiText(noWindowCtx)).toContain('No local window clears the threshold in Leeds today');
+    expect(buildFallbackAiText(noWindowCtx)).toContain('No strong local photo window in Leeds today');
   });
 
   it('filters remote composition bullets and backfills local-only ideas', () => {
