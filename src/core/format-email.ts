@@ -130,6 +130,7 @@ export interface FormatEmailInput {
   longRangeCardLabel?: string | null;
   darkSkyAlert?: DarkSkyAlertCard | null;
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
+  geminiInspire?: string;
   debugContext?: DebugContext;
 }
 
@@ -424,6 +425,13 @@ function sectionTitle(title: string): string {
   return `<div style="padding:0 2px 6px 2px;">
     <div class="section-title" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.2;color:${C.ink};">${esc(title)}</div>
   </div>`;
+}
+
+function creativeSpark(text: string): string {
+  return card(`
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9b59b6;">✦ Creative spark</div>
+    <div style="Margin:0;font-family:${FONT};font-size:14px;line-height:1.55;color:${C.ink};font-style:italic;">${esc(text)}</div>
+  `, '', `border-left:4px solid #9b59b6;`);
 }
 
 function dayHeading(day: DaySummary): string {
@@ -1275,6 +1283,7 @@ export function formatEmail(input: FormatEmailInput): string {
     longRangeCardLabel,
     darkSkyAlert,
     spurOfTheMoment,
+    geminiInspire,
     debugContext,
   } = input;
 
@@ -1488,6 +1497,7 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
           </tr>
           ` : ''}
+          ${geminiInspire ? spacer(6) + `<tr><td>${creativeSpark(geminiInspire)}</td></tr>` : ''}
           ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
           ${spacer(10)}
           ${(altLocations?.length || longRangeTop) ? `

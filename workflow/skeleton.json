@@ -958,6 +958,79 @@
         1540,
         500
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=__GEMINI_API_KEY__",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 800, responseMimeType: 'application/json' } }) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0060-0060-0060-000000000060",
+      "name": "HTTP: Gemini Fallback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 520],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\nconst text = item?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;\nreturn [{ json: { geminiResponse: text } }];"
+      },
+      "id": "a1b2c3d4-0061-0061-0061-000000000061",
+      "name": "Code: Extract Gemini Fallback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 520]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\nconst windows = item.windows || [];\nconst topWindow = windows[0];\nconst altLocations = item.altLocations || [];\nconst dontBother = item.dontBother === true;\nconst isAstro = topWindow?.label?.toLowerCase().includes('astro');\nconst isSingleHour = topWindow?.start === topWindow?.end;\nconst range = topWindow?.start && topWindow?.end && !isSingleHour ? `${topWindow.start}–${topWindow.end}` : topWindow?.start || '';\nconst altNames = altLocations.slice(0, 2).map(a => a.name).filter(Boolean).join(' and ');\nlet context;\nif (dontBother) {\n  context = `Today the conditions are genuinely poor for photography in Leeds.${altNames ? ` There are better options nearby: ${altNames}.` : ''} Be honest but find inspiration anyway.`;\n} else if (topWindow) {\n  const label = topWindow.label?.toLowerCase() || 'a window';\n  context = `Today's best window is ${label}${range ? ` from ${range}` : ''}, scoring ${topWindow.peak}/100. ${altNames ? `Nearby options: ${altNames}.` : ''} Conditions lean toward ${isAstro ? 'astrophotography and night skies' : 'golden light and landscape shots'}.`;\n} else {\n  context = 'Conditions today are uncertain in Leeds.';\n}\nconst prompt = `You are a creative photography inspiration companion for a photographer based in Leeds, West Yorkshire.\\n\\n${context}\\n\\nIn 2–3 sentences: where should they go today, what should they look for, what feeling should they chase? Be poetic, evocative, whimsical — no scores, no metrics, no technical advice. Just pure inspiration. Surprise them.`;\nreturn [{ json: { inspirePrompt: prompt } }];"
+      },
+      "id": "a1b2c3d4-0062-0062-0062-000000000062",
+      "name": "Code: Build Inspire Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1540, 740]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=__GEMINI_API_KEY__",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.inspirePrompt }] }], generationConfig: { temperature: 1.0, maxOutputTokens: 200 } }) }}",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0063-0063-0063-000000000063",
+      "name": "HTTP: Gemini Inspire",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1760, 740],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const item = $input.first().json;\nconst text = item?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;\nreturn [{ json: { geminiInspire: text } }];"
+      },
+      "id": "a1b2c3d4-0064-0064-0064-000000000064",
+      "name": "Code: Extract Gemini Inspire",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1980, 740]
     }
   ],
   "connections": {
@@ -1069,6 +1142,71 @@
             "node": "Merge: Prompt Context",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "HTTP: Gemini Fallback",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Build Inspire Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Gemini Fallback": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract Gemini Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract Gemini Fallback": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Code: Build Inspire Prompt": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Gemini Inspire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Gemini Inspire": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract Gemini Inspire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract Gemini Inspire": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 3
           }
         ]
       ]

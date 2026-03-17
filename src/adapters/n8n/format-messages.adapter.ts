@@ -601,7 +601,7 @@ export function run({ $input }: N8nRuntime) {
       return {};
     }
   })();
-  const { choices, ...ctx } = input;
+  const { choices, geminiResponse, geminiInspire, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
   const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
@@ -617,8 +617,18 @@ export function run({ $input }: N8nRuntime) {
   const normalizedAiText = normalizeAiText(editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
-  const fallbackUsed = !factualCheck.passed || !editorialCheck.passed;
-  const aiText = fallbackUsed ? buildFallbackAiText(ctx) : normalizedAiText;
+  const groqFailed = !factualCheck.passed || !editorialCheck.passed;
+
+  // If Groq output fails validation, try Gemini fallback before using the template
+  const geminiNormalized = typeof geminiResponse === 'string' ? normalizeAiText(geminiResponse) : '';
+  const geminiFactualCheck = groqFailed && geminiNormalized ? getFactualCheck(geminiNormalized, ctx) : null;
+  const geminiEditorialCheck = groqFailed && geminiNormalized ? getEditorialCheck(geminiNormalized, ctx) : null;
+  const geminiPassed = Boolean(geminiFactualCheck?.passed && geminiEditorialCheck?.passed);
+
+  const fallbackUsed = groqFailed && !geminiPassed;
+  const aiText = groqFailed
+    ? (geminiPassed ? geminiNormalized : buildFallbackAiText(ctx))
+    : normalizedAiText;
   const resolvedWeekStandout = validateWeekInsight(weekInsight, ctx.dailySummary);
   const safeCompositionBullets = filterCompositionBullets(compositionBullets, ctx);
 
@@ -651,8 +661,8 @@ export function run({ $input }: N8nRuntime) {
   debugContext.ai = {
     rawGroqResponse: rawContent,
     normalizedAiText,
-    factualCheck,
-    editorialCheck,
+    factualCheck: groqFailed && geminiPassed ? geminiFactualCheck! : factualCheck,
+    editorialCheck: groqFailed && geminiPassed ? geminiEditorialCheck! : editorialCheck,
     spurSuggestion: {
       raw: spurRaw ? `${spurRaw.locationName} (${spurRaw.confidence})` : null,
       confidence: spurRaw?.confidence ?? null,
@@ -672,8 +682,12 @@ export function run({ $input }: N8nRuntime) {
     finalAiText: aiText,
   };
 
+  const safeGeminiInspire = typeof geminiInspire === 'string' && geminiInspire.trim().length > 0
+    ? geminiInspire.trim()
+    : undefined;
+
   const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, debugContext });
+  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, geminiInspire: safeGeminiInspire, debugContext });
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`
