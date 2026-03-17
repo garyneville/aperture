@@ -170,35 +170,43 @@ export interface SpurOfTheMomentSuggestion {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Material Design 3 colour system                                    */
+/*  Brand colour system                                                */
 /* ------------------------------------------------------------------ */
 
 const C = {
-  page: '#F7F8FC',
+  page: '#F6F8FA',
   surface: '#FFFFFF',
-  surfaceVariant: '#EEF2F7',
-  outline: '#D2D8E2',
-  ink: '#171C24',
-  muted: '#5F6877',
-  subtle: '#7C8799',
-  primary: '#3559A8',
-  primaryContainer: '#DEE7FF',
-  onPrimaryContainer: '#102A5C',
-  secondary: '#246B6A',
-  secondaryContainer: '#D7F2EF',
-  tertiary: '#8A5B00',
-  tertiaryContainer: '#FFE2B8',
-  warning: '#7A5A00',
-  warningContainer: '#FFF0CE',
-  success: '#1C5E42',
-  successContainer: '#D8F3E6',
-  error: '#B3261E',
-  errorContainer: '#F9DEDC',
-  shadow: 'rgba(30, 44, 63, 0.08)',
+  surfaceVariant: '#F0F3F6',
+  outline: '#D1D9E0',
+  ink: '#1F2328',
+  muted: '#59636E',
+  subtle: '#6E7781',
+  primary: '#0969DA',
+  primaryContainer: '#DDF4FF',
+  onPrimaryContainer: '#0A3069',
+  secondary: '#1A7F37',
+  secondaryContainer: '#DAFBE1',
+  tertiary: '#9A6700',
+  tertiaryContainer: '#FFF8C5',
+  warning: '#9A6700',
+  warningContainer: '#FFF8C5',
+  success: '#1A7F37',
+  successContainer: '#DAFBE1',
+  error: '#CF222E',
+  errorContainer: '#FFD8D3',
+  shadow: 'rgba(31, 35, 40, 0.04)',
+  accent: '#8250DF',
+  accentContainer: '#FBEFFF',
+  heroGradientStart: '#0A3069',
+  heroGradientEnd: '#0550AE',
 };
 
-const FONT = "Roboto, 'Noto Sans', 'Segoe UI', Helvetica, Arial, sans-serif";
+const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif";
+const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
 const UTILITY_GLYPHS = '<span aria-hidden="true">&#x1F697; / &#x1F6B6;</span>';
+
+/** Inline SVG brand mark — an aperture icon representing the photography lens. */
+const BRAND_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>`;
 
 /* ------------------------------------------------------------------ */
 /*  HTML builder helpers                                               */
@@ -208,28 +216,28 @@ function htmlText(text: string): string {
   const safe = esc(text || '');
   return safe
     .split(/\n{2,}/)
-    .map(chunk => `<p style="Margin:0 0 8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">${chunk.replace(/\n/g, '<br>')}</p>`)
+    .map(chunk => `<p style="Margin:0 0 10px;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink};">${chunk.replace(/\n/g, '<br>')}</p>`)
     .join('');
 }
 
 const SCORE_THRESHOLDS = { excellent: 75, good: 58, marginal: 42 } as const;
 
 function scoreState(score: number): { label: string; fg: string; bg: string; border: string } {
-  if (score >= SCORE_THRESHOLDS.excellent) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#B7E0CF' };
-  if (score >= SCORE_THRESHOLDS.good) return { label: 'Good', fg: C.primary, bg: C.primaryContainer, border: '#C5D6FF' };
-  if (score >= SCORE_THRESHOLDS.marginal) return { label: 'Marginal', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
-  return { label: 'Poor', fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
+  if (score >= SCORE_THRESHOLDS.excellent) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#A3D9B1' };
+  if (score >= SCORE_THRESHOLDS.good) return { label: 'Good', fg: C.primary, bg: C.primaryContainer, border: '#A8D4FB' };
+  if (score >= SCORE_THRESHOLDS.marginal) return { label: 'Marginal', fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
+  return { label: 'Poor', fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
 }
 
 function confidenceDetail(confidence: string | undefined | null): { label: string; fg: string; bg: string; border: string } | null {
   if (!confidence || confidence === 'unknown') return null;
   if (confidence === 'high') {
-    return { label: 'High certainty', fg: C.success, bg: C.successContainer, border: '#B7E0CF' };
+    return { label: 'High certainty', fg: C.success, bg: C.successContainer, border: '#A3D9B1' };
   }
   if (confidence === 'medium') {
-    return { label: 'Fair certainty', fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
+    return { label: 'Fair certainty', fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
   }
-  return { label: 'Low certainty', fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
+  return { label: 'Low certainty', fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
 }
 
 /** Pick the contextually-correct confidence for a day, based on whether the lead window is astro. */
@@ -246,18 +254,18 @@ function effectiveConf(
 }
 
 function pill(text: string, fg: string, bg: string, border: string): string {
-  return `<span class="pill" style="display:inline-block;padding:4px 10px;border-radius:10px;background:${bg};border:1px solid ${border};font-family:${FONT};font-size:12px;font-weight:700;line-height:1.2;color:${fg};">${esc(text)}</span>`;
+  return `<span class="pill" style="display:inline-block;padding:4px 12px;border-radius:20px;background:${bg};border:1px solid ${border};font-family:${FONT};font-size:12px;font-weight:600;line-height:1.4;color:${fg};">${esc(text)}</span>`;
 }
 
 function metricChip(label: string, value: string | number, tone?: string): string {
   const toneColor = tone || C.primary;
-  return `<span class="chip" style="display:inline-block;margin:2px 4px 0 0;padding:3px 7px;border-radius:8px;background:${C.surfaceVariant};border:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.25;color:${C.ink};"><span style="font-weight:700;color:${toneColor};">${esc(label)}</span> ${esc(value)}</span>`;
+  return `<span class="chip" style="display:inline-block;margin:2px 4px 2px 0;padding:3px 8px;border-radius:6px;background:${C.surfaceVariant};border:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.3;color:${C.ink};"><span style="font-weight:600;color:${toneColor};">${esc(label)}</span> ${esc(value)}</span>`;
 }
 
 function metricRun(items: Array<{ label: string; value: string | number; tone?: string }>): string {
   return items
-    .map(item => `<span style="display:inline;color:${C.ink};"><span style="font-weight:700;color:${item.tone || C.primary};">${esc(item.label)}</span> ${esc(item.value)}</span>`)
-    .join(`<span style="color:${C.subtle};"> &middot; </span>`);
+    .map(item => `<span style="display:inline;color:${C.ink};"><span style="font-weight:600;color:${item.tone || C.primary};">${esc(item.label)}</span> ${esc(item.value)}</span>`)
+    .join(`<span style="color:${C.subtle};padding:0 2px;"> &middot; </span>`);
 }
 
 function dewRiskEntry(tpw: number | undefined, tempC: number | undefined): Array<{ label: string; value: string; tone: string }> {
@@ -386,14 +394,14 @@ function summaryGrid(items: SummaryStat[], columns = 2): string {
     ${rows.map(row => `
       <tr>
         ${row.map((item, itemIndex) => `
-          <td valign="top" style="width:${100 / columns}%;padding:0;${itemIndex > 0 ? `border-left:1px solid rgba(16,42,92,0.12);` : ''}">
-            <div style="padding:9px 10px;">
-              <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.7;">${esc(item.label)}</div>
-              <div style="Margin-top:4px;font-family:${FONT};font-size:15px;font-weight:700;line-height:1.25;color:${item.tone || C.onPrimaryContainer};">${esc(item.value)}</div>
+          <td valign="top" style="width:${100 / columns}%;padding:0;${itemIndex > 0 ? `border-left:1px solid rgba(255,255,255,0.2);` : ''}">
+            <div style="padding:10px 12px;">
+              <div style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:rgba(255,255,255,0.7);">${esc(item.label)}</div>
+              <div style="Margin-top:4px;font-family:${FONT};font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">${esc(item.value)}</div>
             </div>
           </td>
         `).join('')}
-        ${row.length < columns ? `<td style="width:${100 / columns}%;padding:0;border-left:1px solid rgba(16,42,92,0.12);">&nbsp;</td>`.repeat(columns - row.length) : ''}
+        ${row.length < columns ? `<td style="width:${100 / columns}%;padding:0;border-left:1px solid rgba(255,255,255,0.2);">&nbsp;</td>`.repeat(columns - row.length) : ''}
       </tr>
     `).join('')}
   </table>`;
@@ -401,9 +409,9 @@ function summaryGrid(items: SummaryStat[], columns = 2): string {
 
 function summaryNote(label: string, value: string): string {
   const content = esc(value).replace(/\n/g, '<br>');
-  return `<div style="Margin-top:10px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,0.55);border:1px solid rgba(16,42,92,0.12);">
-    <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.72;">${esc(label)}</div>
-    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.onPrimaryContainer};">${content}</div>
+  return `<div style="Margin-top:12px;padding:12px 14px;border-radius:10px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.15);">
+    <div style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:rgba(255,255,255,0.7);">${esc(label)}</div>
+    <div style="Margin-top:5px;font-family:${FONT};font-size:14px;line-height:1.5;color:rgba(255,255,255,0.92);">${content}</div>
   </div>`;
 }
 
@@ -412,9 +420,9 @@ function spacer(size: number): string {
 }
 
 function card(inner: string, extraClass = '', extraStyle = ''): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card ${extraClass}" style="width:100%;border-collapse:separate;background:${C.surface};border:1px solid ${C.outline};border-radius:14px;box-shadow:0 2px 8px ${C.shadow};${extraStyle}">
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card ${extraClass}" style="width:100%;border-collapse:separate;background:${C.surface};border:1px solid ${C.outline};border-radius:12px;box-shadow:0 1px 3px ${C.shadow}, 0 1px 2px rgba(31,35,40,0.06);${extraStyle}">
     <tr>
-      <td class="card-pad" style="padding:12px 12px;">
+      <td class="card-pad" style="padding:16px;">
         ${inner}
       </td>
     </tr>
@@ -422,16 +430,16 @@ function card(inner: string, extraClass = '', extraStyle = ''): string {
 }
 
 function sectionTitle(title: string): string {
-  return `<div style="padding:0 2px 6px 2px;">
-    <div class="section-title" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.2;color:${C.ink};">${esc(title)}</div>
+  return `<div style="padding:0 2px 8px 2px;">
+    <div class="section-title" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;letter-spacing:-0.01em;color:${C.ink};">${esc(title)}</div>
   </div>`;
 }
 
 function creativeSpark(text: string): string {
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#9b59b6;">✦ Creative spark</div>
-    <div style="Margin:0;font-family:${FONT};font-size:14px;line-height:1.55;color:${C.ink};font-style:italic;">${esc(text)}</div>
-  `, '', `border-left:4px solid #9b59b6;`);
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.accent};">✦ Creative spark</div>
+    <div style="Margin:0;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink};font-style:italic;">${esc(text)}</div>
+  `, '', `border-left:3px solid ${C.accent};`);
 }
 
 function dayHeading(day: DaySummary): string {
@@ -724,12 +732,12 @@ export function evaluateKitRules(
 function kitAdvisoryCard(tips: KitTip[]): string {
   if (!tips.length) return '';
   const items = tips.map(tip =>
-    `<div style="Margin-bottom:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(tip.text)}</div>`
+    `<div style="Margin-bottom:6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(tip.text)}</div>`
   ).join('');
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Kit advisory</div>
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Kit advisory</div>
     <div style="Margin-top:4px;">${items}</div>
-  `, '', `border-left:4px solid ${C.tertiary};`);
+  `, '', `border-left:3px solid ${C.tertiary};`);
 }
 
 function windowCard(w: Window, index: number, windows: Window[]): string {
@@ -752,31 +760,31 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
     ...(dewRiskEntry(h.tpw, h.tmp)),
   ]);
   const tags = (w.tops || []).length
-    ? `<div style="Margin-top:8px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`
+    ? `<div style="Margin-top:10px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`
     : '';
   const noteBlock = notes.length
-    ? `<div style="Margin-top:8px;padding-top:14px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(notes.join(' '))}</div>`
+    ? `<div style="Margin-top:10px;padding-top:12px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(notes.join(' '))}</div>`
     : '';
   return card(`
-    <div style="Margin:0 0 3px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">${index === 0 ? 'Best window' : 'Worth watching'}</div>
-    <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(w.label)}</div>
-    <div style="Margin:4px 0 0;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(windowRange(w))}</div>
-    <div style="Margin-top:8px;">${scorePill(w.peak)}</div>
-    <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${metricLine}</div>
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${index === 0 ? 'Best window' : 'Worth watching'}</div>
+    <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(w.label)}</div>
+    <div style="Margin:4px 0 0;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${esc(windowRange(w))}</div>
+    <div style="Margin-top:10px;">${scorePill(w.peak)}</div>
+    <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">${metricLine}</div>
     ${tags}
     ${noteBlock}
-  `, '', index === 0 ? `border-top:4px solid ${scoreState(w.peak).fg};` : '');
+  `, '', index === 0 ? `border-top:3px solid ${scoreState(w.peak).fg};` : '');
 }
 
 function compositionCard(bullets: string[]): string {
   if (!bullets.length) return '';
   const items = bullets.map(b =>
-    `<div style="Margin-bottom:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(b)}</div>`
+    `<div style="Margin-bottom:6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(b)}</div>`
   ).join('');
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Shot ideas</div>
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Shot ideas</div>
     <div style="Margin-top:4px;">${items}</div>
-  `, '', `border-left:4px solid ${C.secondary};`);
+  `, '', `border-left:3px solid ${C.secondary};`);
 }
 
 function poorDayFallbackLine(windows: Window[] | undefined): string {
@@ -801,11 +809,11 @@ function todayWindowSection(
   if (effectiveDontBother) {
     const headline = hasLocalWindow ? 'Not worth shooting locally' : 'No clear local window';
     return card(`
-      <div style="Margin:0 0 3px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.error};">Today&apos;s call</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${headline}</div>
-      <div style="Margin-top:8px;">${scorePill(todayBestScore)}</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
-    `, '', `border-top:4px solid ${C.error};`);
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.error};">Today&apos;s call</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${headline}</div>
+      <div style="Margin-top:10px;">${scorePill(todayBestScore)}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
+    `, '', `border-top:3px solid ${C.error};`);
   }
   const renderedAi = renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations });
   const trimmedAiText = renderedAi.text || aiText;
@@ -813,18 +821,18 @@ function todayWindowSection(
   return listRows([
     ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
     card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
+      <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
       ${htmlText(trimmedAiText)}
-    `, '', `border-left:4px solid ${C.primary};`),
+    `, '', `border-left:3px solid ${C.primary};`),
     ...(compCard ? [compCard] : []),
   ]);
 }
 
 /** AuroraWatch UK level → display metadata (extracted for reuse and testability). */
 const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; border: string }> = {
-  yellow: { label: 'Minor activity',    fg: C.warning, bg: C.warningContainer, border: '#F0D58D' },
-  amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#F0A858' },
-  red:    { label: 'Storm conditions',  fg: C.success, bg: C.successContainer, border: '#B7E0CF' },
+  yellow: { label: 'Minor activity',    fg: C.warning, bg: C.warningContainer, border: '#EDD17B' },
+  amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#DBA544' },
+  red:    { label: 'Storm conditions',  fg: C.success, bg: C.successContainer, border: '#A3D9B1' },
 };
 
 const AWUK_LEVEL_DESCRIPTIONS: Record<string, string> = {
@@ -853,13 +861,13 @@ function signalCards(
 
   if (awukFresh && awukLevel && awukLevel !== 'green') {
     // AuroraWatch UK active alert (yellow/amber/red)
-    const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#F0D58D' };
+    const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
     const desc = AWUK_LEVEL_DESCRIPTIONS[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Aurora signal tonight</div>
-      <div style="Margin-top:8px;">${pill(`AuroraWatch UK — ${meta.label}`, meta.fg, meta.bg, meta.border)}</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(desc)}</div>
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">Aurora signal tonight</div>
+      <div style="Margin-top:10px;">${pill(`AuroraWatch UK — ${meta.label}`, meta.fg, meta.bg, meta.border)}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(desc)}</div>
     `));
   } else if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
     // Fall back to NOAA Kp index when AuroraWatch UK is unavailable or green
@@ -867,12 +875,12 @@ function signalCards(
     const visible = peakKpTonight >= 6;
     const fg = visible ? C.success : C.warning;
     const bg = visible ? C.successContainer : C.warningContainer;
-    const border = visible ? '#B7E0CF' : '#F0D58D';
+    const border = visible ? '#A3D9B1' : '#EDD17B';
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Aurora signal tonight</div>
-      <div style="Margin-top:8px;">${pill(`Kp ${kpDisplay}${visible ? ' — visible ~54°N' : ' — watch threshold'}`, fg, bg, border)}</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">Aurora signal tonight</div>
+      <div style="Margin-top:10px;">${pill(`Kp ${kpDisplay}${visible ? ' — visible ~54°N' : ' — watch threshold'}`, fg, bg, border)}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">
         ${visible
           ? `Kp ${kpDisplay} exceeds the visibility threshold for Leeds latitude. Best combined with a good astro window.`
           : `Kp ${kpDisplay} is approaching the visible threshold (~Kp 6 at 54°N). Worth watching overnight.`}
@@ -888,10 +896,10 @@ function signalCards(
       : arrivalDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
     const cmeLabel = upcomingCmeCount === 1 ? 'Earth-directed CME' : `${upcomingCmeCount} Earth-directed CMEs`;
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Aurora prediction</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">CME forecast: ${esc(arrivalStr)}</div>
-      <div style="Margin-top:8px;">${pill(`${cmeLabel} — NASA DONKI`, C.warning, C.warningContainer, '#F0D58D')}</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Aurora prediction</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">CME forecast: ${esc(arrivalStr)}</div>
+      <div style="Margin-top:10px;">${pill(`${cmeLabel} — NASA DONKI`, C.warning, C.warningContainer, '#EDD17B')}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">
         Elevated aurora probability around ${esc(arrivalStr)}. Monitor AuroraWatch UK as arrival approaches. Confidence is moderate — CME trajectory models carry uncertainty.
       </div>
     `));
@@ -899,22 +907,22 @@ function signalCards(
 
   if (shSunriseQ !== null || shSunsetQ !== null) {
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Twilight signal</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">SunsetHue outlook</div>
-      <div style="Margin-top:8px;">
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Twilight signal</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">SunsetHue outlook</div>
+      <div style="Margin-top:10px;">
         ${metricChip('Sunrise', `${shSunriseQ ?? '-'}%`, C.tertiary)}
         ${metricChip('Sunset', `${shSunsetQ ?? '-'}%`, C.tertiary)}
       </div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">
         ${esc(shSunsetText || 'No extra sky-texture note today.')}${sunDir !== null ? ` Sun direction ${Math.round(sunDir!)} degrees.` : ''}${crepPeak > 45 ? ` Rays ${crepPeak}/100.` : ''}
       </div>
     `));
   }
   if (metarNote) {
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Live sky check</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">Current METAR signal</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(metarNote)}</div>
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Live sky check</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">Current METAR signal</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(metarNote)}</div>
     `));
   }
   return listRows(cards);
@@ -938,7 +946,7 @@ function alternativeSection(
   noAltsMsg: string | undefined,
 ): string {
   if (!altLocations || !altLocations.length) {
-    return card(`<div style="font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(noAltsMsg || 'No nearby locations score well enough today.')}</div>`);
+    return card(`<div style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(noAltsMsg || 'No nearby locations score well enough today.')}</div>`);
   }
 
   const renderGroup = (title: string, locations: AltLocation[]): string => {
@@ -951,22 +959,22 @@ function alternativeSection(
         ? metricChip('Elev', `${loc.elevationM}m`, C.secondary)
         : '';
       const snowNote = buildSnowNote(loc.snowDepthCm ?? null, loc.snowfallCm ?? null);
-      return `<div style="${index < locations.length - 1 ? `padding:0 0 8px;border-bottom:1px solid ${C.outline};margin-bottom:8px;` : ''}">
-        <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
-        <div style="Margin-top:6px;">${scorePill(loc.bestScore)}</div>
-        <div style="Margin-top:6px;">
+      return `<div style="${index < locations.length - 1 ? `padding:0 0 10px;border-bottom:1px solid ${C.outline};margin-bottom:10px;` : ''}">
+        <div style="font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
+        <div style="Margin-top:8px;">${scorePill(loc.bestScore)}</div>
+        <div style="Margin-top:8px;">
           ${metricChip('AM', loc.amScore ?? 0, scoreState(loc.amScore ?? 0).fg)}
           ${metricChip('PM', loc.pmScore ?? 0, scoreState(loc.pmScore ?? 0).fg)}
           ${metricChip('Astro', loc.astroScore ?? 0, scoreState(loc.astroScore ?? 0).fg)}
           ${elevationChip}
         </div>
-        <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(note)}</div>
-        ${snowNote ? `<div style="Margin-top:4px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.secondary};">❄ ${esc(snowNote)}</div>` : ''}
+        <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(note)}</div>
+        ${snowNote ? `<div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};">❄ ${esc(snowNote)}</div>` : ''}
       </div>`;
     }).join('');
 
     return `
-      <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};Margin:0 0 8px;">${esc(title)}</div>
+      <div style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};Margin:0 0 10px;">${esc(title)}</div>
       ${rows}
     `;
   };
@@ -978,7 +986,7 @@ function alternativeSection(
     renderGroup('Nearby landscape options', goldenHourAlternatives),
   ].filter(Boolean);
 
-  return card(sections.join(`<div style="height:12px;"></div>`));
+  return card(sections.join(`<div style="height:14px;"></div>`));
 }
 
 function alternativeSummaryTitle(topAlternative: AltLocation | null | undefined): string {
@@ -1007,25 +1015,25 @@ function longRangeSection(
       ? `Best astro around ${longRangeTop.bestAstroHour || 'evening'}${longRangeTop.darkSky ? ' - dark sky site' : ''}`
       : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).join(', ')}`;
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">${esc(cardLabel)}</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(longRangeTop.name)}</div>
-      <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
-      <div style="Margin-top:8px;">${scorePill(longRangeTop.bestScore, longRangeTop.isAstroWin ? 'astro' : undefined)}</div>
-      <div style="Margin-top:6px;">
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(cardLabel)}</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(longRangeTop.name)}</div>
+      <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
+      <div style="Margin-top:10px;">${scorePill(longRangeTop.bestScore, longRangeTop.isAstroWin ? 'astro' : undefined)}</div>
+      <div style="Margin-top:8px;">
         ${metricChip('AM', longRangeTop.amScore ?? 0, scoreState(longRangeTop.amScore ?? 0).fg)}
         ${metricChip('PM', longRangeTop.pmScore ?? 0, scoreState(longRangeTop.pmScore ?? 0).fg)}
         ${metricChip('Astro', longRangeTop.astroScore ?? 0, scoreState(longRangeTop.astroScore ?? 0).fg)}
       </div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(timing)}</div>
-    `, '', `border-top:4px solid ${C.secondary};`));
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(timing)}</div>
+    `, '', `border-top:3px solid ${C.secondary};`));
   }
 
   if (darkSkyAlert && (!longRangeTop || darkSkyAlert.name !== longRangeTop?.name)) {
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Dark sky alert</div>
-      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.24;color:${C.ink};">${esc(darkSkyAlert.name)}</div>
-      <div style="Margin-top:8px;">${pill(`Astro ${darkSkyAlert.astroScore}/100`, C.success, C.successContainer, '#B7E0CF')}</div>
-      <div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Dark sky alert</div>
+      <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${esc(darkSkyAlert.name)}</div>
+      <div style="Margin-top:10px;">${pill(`Astro ${darkSkyAlert.astroScore}/100`, C.success, C.successContainer, '#A3D9B1')}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">
         Perfect conditions tonight from ${esc(darkSkyAlert.bestAstroHour || 'nightfall')} &middot; ${darkSkyAlert.driveMins} min drive
       </div>
     `));
@@ -1045,11 +1053,11 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
     : '';
 
   return card(`
-    <div style="Margin:0 0 6px;font-family:${FONT};font-size:13px;font-weight:700;color:${C.ink};">${esc(spur.locationName)}</div>
-    <div style="Margin:0 0 8px;font-family:${FONT};font-size:12px;color:${C.muted};">${esc(regionLabel)} &middot; ${spur.driveMins} min drive</div>
-    <div style="font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};font-style:italic;">${esc(spur.hookLine)}</div>
-    ${tagChips || darkSkyNote ? `<div style="Margin-top:8px;">${tagChips}${darkSkyNote}</div>` : ''}
-  `, '', `border-left:4px solid ${C.primary};`);
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:14px;font-weight:600;color:${C.ink};">${esc(spur.locationName)}</div>
+    <div style="Margin:0 0 10px;font-family:${FONT};font-size:13px;color:${C.muted};">${esc(regionLabel)} &middot; ${spur.driveMins} min drive</div>
+    <div style="font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink};font-style:italic;">${esc(spur.hookLine)}</div>
+    ${tagChips || darkSkyNote ? `<div style="Margin-top:10px;">${tagChips}${darkSkyNote}</div>` : ''}
+  `, '', `border-left:3px solid ${C.primary};`);
 }
 
 /* ------------------------------------------------------------------ */
@@ -1160,15 +1168,15 @@ export function nextDayHourlyOutlookSection(
       ? `<span style="color:${label.fg};font-size:14px;">&#x25CF;</span>&ensp;`
       : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
     return `<tr style="background:${rowBg};">
-      <td valign="middle" style="padding:5px 8px;font-family:${FONT};font-size:12px;font-weight:700;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
-      <td valign="middle" style="padding:5px 4px;font-family:${FONT};font-size:14px;text-align:center;white-space:nowrap;">${weatherEmojiForHour(h)}</td>
-      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(Math.round(h.tmp)))}°C</td>
-      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
-      <td valign="middle" style="padding:5px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
-      <td valign="middle" style="padding:5px 8px 5px 6px;font-family:${FONT};font-size:12px;color:${textColor};">${indicatorDot}${esc(label.text)}</td>
-      <td valign="middle" style="padding:5px 8px 5px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">
+      <td valign="middle" style="padding:6px 8px;font-family:${FONT};font-size:12px;font-weight:600;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
+      <td valign="middle" style="padding:6px 4px;font-family:${FONT};font-size:14px;text-align:center;white-space:nowrap;">${weatherEmojiForHour(h)}</td>
+      <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(Math.round(h.tmp)))}°C</td>
+      <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
+      <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
+      <td valign="middle" style="padding:6px 8px 6px 6px;font-family:${FONT};font-size:12px;color:${textColor};">${indicatorDot}${esc(label.text)}</td>
+      <td valign="middle" style="padding:6px 8px 6px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">
         <div>${score}/100</div>
-        <div style="font-size:10px;color:${C.subtle};opacity:0.9;">${esc(outdoorComfortReason(h))}</div>
+        <div style="font-size:10px;color:${C.subtle};opacity:0.8;">${esc(outdoorComfortReason(h))}</div>
       </td>
     </tr>`;
   }).join('');
@@ -1176,23 +1184,23 @@ export function nextDayHourlyOutlookSection(
   const table = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
     <thead>
       <tr>
-        <th align="left" style="padding:5px 8px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Time</th>
-        <th align="center" style="padding:5px 4px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Wx</th>
-        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Temp</th>
-        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Rain</th>
-        <th align="left" style="padding:5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Wind</th>
-        <th align="left" style="padding:5px 8px 5px 6px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
-        <th align="left" style="padding:5px 8px 5px 2px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${C.muted};"></th>
+        <th align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Time</th>
+        <th align="center" style="padding:6px 4px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wx</th>
+        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Temp</th>
+        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Rain</th>
+        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wind</th>
+        <th align="left" style="padding:6px 8px 6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
+        <th align="left" style="padding:6px 8px 6px 2px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};"></th>
       </tr>
     </thead>
     <tbody>${hourRows}</tbody>
   </table>`;
 
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Tomorrow at a glance</div>
-    <div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(summaryLine)}</div>
-    <div style="Margin-top:10px;overflow-x:auto;">${table}</div>
-    <div style="Margin-top:8px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">&#x25CF; = pleasant spell &middot; &#x25CB; = less suitable &middot; Comfort is independent of photography scoring</div>
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Tomorrow at a glance</div>
+    <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(summaryLine)}</div>
+    <div style="Margin-top:12px;overflow-x:auto;">${table}</div>
+    <div style="Margin-top:10px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">&#x25CF; = pleasant spell &middot; &#x25CB; = less suitable &middot; Comfort is independent of photography scoring</div>
   `);
 }
 
@@ -1217,16 +1225,16 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
       : '';
 
     return card(`
-    <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))} &middot; ${scoreState(displayScore).label} (${scoreStr})</div>
-    <div style="Margin-top:6px;font-family:${FONT};font-size:13px;font-weight:700;line-height:1.45;color:${C.ink};">${esc(forecastBestLine(day))}</div>
-    <div style="Margin-top:8px;">
+    <div style="font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${esc(dayHeading(day))} &middot; ${scoreState(displayScore).label} (${scoreStr})</div>
+    <div style="Margin-top:8px;font-family:${FONT};font-size:14px;font-weight:600;line-height:1.5;color:${C.ink};">${esc(forecastBestLine(day))}</div>
+    <div style="Margin-top:10px;">
       ${metricChip('AM', day.amScore ?? 0, scoreState(day.amScore ?? 0).fg)}
       ${metricChip('PM', day.pmScore ?? 0, scoreState(day.pmScore ?? 0).fg)}
       ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
-      ${confText ? `<span style="font-family:${FONT};font-size:11px;font-weight:700;margin-left:4px;">${confText}</span>` : ''}
+      ${confText ? `<span style="font-family:${FONT};font-size:11px;font-weight:600;margin-left:4px;">${confText}</span>` : ''}
     </div>
-    ${altLine ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(altLine)}</div>` : ''}
-    <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
+    ${altLine ? `<div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(altLine)}</div>` : ''}
+    <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
     `);
   }));
 }
@@ -1234,16 +1242,16 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
 function daylightUtilityTodayCard(todayCarWash: CarWash): string {
   const cw = todayCarWash;
   const state = cw.score >= 75
-    ? { fg: C.success, bg: C.successContainer, border: '#B7E0CF' }
+    ? { fg: C.success, bg: C.successContainer, border: '#A3D9B1' }
     : cw.score >= 50
-      ? { fg: C.primary, bg: C.primaryContainer, border: '#C5D6FF' }
-      : { fg: C.error, bg: C.errorContainer, border: '#E8B8B4' };
+      ? { fg: C.primary, bg: C.primaryContainer, border: '#A8D4FB' }
+      : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
   const window = cw.start !== '\u2014' ? `${cw.start}-${cw.end}` : '\u2014';
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.subtle};">Daylight utility</div>
-    <div style="Margin-top:4px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
-    <div style="Margin-top:8px;font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${UTILITY_GLYPHS} ${esc(window)}</div>
-    <div style="Margin-top:8px;">
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Daylight utility</div>
+    <div style="Margin-top:6px;">${pill(`${cw.rating} ${cw.label}`, state.fg, state.bg, state.border)}</div>
+    <div style="Margin-top:10px;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${UTILITY_GLYPHS} ${esc(window)}</div>
+    <div style="Margin-top:10px;">
       ${metricChip('Wind', `${cw.wind}km/h`, C.tertiary)}
       ${metricChip('Rain', `${cw.pp}%`, C.error)}
       ${metricChip('Temp', `${cw.tmp}C`, C.secondary)}
@@ -1363,15 +1371,18 @@ export function formatEmail(input: FormatEmailInput): string {
     : '';
 
   const hero = card(`
-  <div style="Margin:0 0 4px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.onPrimaryContainer};opacity:0.82;">Photography brief</div>
-  <div class="hero-title" style="Margin:0;font-family:${FONT};font-size:26px;font-weight:700;line-height:1.08;color:${C.onPrimaryContainer};">Leeds</div>
-  <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.onPrimaryContainer};opacity:0.9;">${esc(today)}</div>
-  <div style="Margin-top:8px;">${pill(`${todayScoreState.label} - ${heroScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
-  <div style="Margin-top:12px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
-  <div style="Margin-top:10px;border-radius:12px;background:rgba(255,255,255,0.38);border:1px solid rgba(16,42,92,0.12);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
+  <div style="display:flex;align-items:center;Margin:0 0 8px;">
+    <span style="color:#FFFFFF;opacity:0.85;margin-right:8px;">${BRAND_LOGO}</span>
+    <span style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Photography brief</span>
+  </div>
+  <div class="hero-title" style="Margin:0;font-family:${FONT};font-size:28px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;color:#FFFFFF;">Leeds</div>
+  <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:rgba(255,255,255,0.85);">${esc(today)}</div>
+  <div style="Margin-top:12px;">${pill(`${todayScoreState.label} - ${heroScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
+  <div style="Margin-top:16px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
+  <div style="Margin-top:10px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
   ${alternativeSummary ? summaryNote(alternativeSummaryTitle(topAlternative), alternativeSummary) : ''}
-`, 'hero-card', `background:${C.primaryContainer};border-color:#C5D6FF;`);
+`, 'hero-card', `background:linear-gradient(135deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.1);`);
 
   /* Signal cards */
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
@@ -1413,62 +1424,69 @@ export function formatEmail(input: FormatEmailInput): string {
         padding: 8px !important;
       }
       .card-pad {
-        padding: 10px 10px !important;
+        padding: 12px !important;
       }
       .hero-title {
-        font-size: 18px !important;
-        line-height: 1.08 !important;
+        font-size: 22px !important;
+        line-height: 1.1 !important;
       }
       .hero-card td[style*="border-left"] {
         border-left: none !important;
       }
       .section-title {
-        font-size: 18px !important;
-        line-height: 1.18 !important;
+        font-size: 15px !important;
+        line-height: 1.2 !important;
       }
       .pill,
       .chip {
-        margin-right: 6px !important;
+        margin-right: 4px !important;
+        margin-bottom: 4px !important;
+      }
+      .headline {
+        font-size: 16px !important;
       }
     }
     @media (prefers-color-scheme: dark) {
       body,
       .page-bg {
-        background: #10131A !important;
+        background: #0D1117 !important;
       }
       .card {
-        background: #181C24 !important;
-        border-color: #313845 !important;
+        background: #161B22 !important;
+        border-color: #30363D !important;
         box-shadow: none !important;
       }
       .hero-card {
-        background: #25324B !important;
-        border-color: #3C4A67 !important;
+        background: linear-gradient(135deg, #0A1628 0%, #0D2952 100%) !important;
+        border-color: #1B3A6B !important;
       }
       .hero-title,
       .section-title {
-        color: #E3E8F2 !important;
+        color: #E6EDF3 !important;
       }
-      .page-bg [style*="color:#171C24"] {
-        color: #E3E8F2 !important;
+      .headline {
+        color: #E6EDF3 !important;
       }
-      .page-bg [style*="color:#5F6877"],
-      .page-bg [style*="color:#7C8799"] {
-        color: #B5BFCD !important;
+      .page-bg [style*="color:#1F2328"] {
+        color: #E6EDF3 !important;
       }
-      .page-bg [style*="color:#102A5C"] {
-        color: #DCE6FF !important;
+      .page-bg [style*="color:#59636E"],
+      .page-bg [style*="color:#6E7781"] {
+        color: #8B949E !important;
+      }
+      .page-bg [style*="color:#0A3069"] {
+        color: #A5D6FF !important;
       }
       .chip {
-        background: #202530 !important;
-        border-color: #394150 !important;
-        color: #E3E8F2 !important;
+        background: #21262D !important;
+        border-color: #30363D !important;
+        color: #E6EDF3 !important;
       }
       .pill {
         color: inherit !important;
       }
       .tonal-note {
-        background: #202530 !important;
+        background: #21262D !important;
       }
     }
   </style>
@@ -1476,19 +1494,19 @@ export function formatEmail(input: FormatEmailInput): string {
 <body class="page-bg" style="margin:0;padding:0;background:${C.page};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="page-bg" style="width:100%;border-collapse:collapse;background:${C.page};">
     <tr>
-      <td align="center" class="outer-pad" style="padding:10px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:480px;border-collapse:collapse;">
+      <td align="center" class="outer-pad" style="padding:12px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;border-collapse:collapse;">
           <tr>
             <td>
               ${hero}
             </td>
           </tr>
-          ${spacer(6)}
+          ${spacer(8)}
           <tr>
             <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
           </tr>
-          ${signals ? spacer(6) + `<tr><td>${signals}</td></tr>` : ''}
-          ${spacer(10)}
+          ${signals ? spacer(8) + `<tr><td>${signals}</td></tr>` : ''}
+          ${spacer(16)}
           ${!effectiveDontBother ? `
           <tr>
             <td>${sectionTitle('Today\'s window')}</td>
@@ -1497,9 +1515,9 @@ export function formatEmail(input: FormatEmailInput): string {
             <td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
           </tr>
           ` : ''}
-          ${geminiInspire ? spacer(6) + `<tr><td>${creativeSpark(geminiInspire)}</td></tr>` : ''}
-          ${kitCard ? spacer(6) + `<tr><td>${kitCard}</td></tr>` : ''}
-          ${spacer(10)}
+          ${geminiInspire ? spacer(8) + `<tr><td>${creativeSpark(geminiInspire)}</td></tr>` : ''}
+          ${kitCard ? spacer(8) + `<tr><td>${kitCard}</td></tr>` : ''}
+          ${spacer(16)}
           ${(altLocations?.length || longRangeTop) ? `
           <tr>
             <td>${sectionTitle('Out of town options')}</td>
@@ -1509,27 +1527,27 @@ export function formatEmail(input: FormatEmailInput): string {
           </tr>
           ${(() => {
             const lr = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
-            return lr ? spacer(10) + `<tr><td>${lr}</td></tr>` : '';
+            return lr ? spacer(12) + `<tr><td>${lr}</td></tr>` : '';
           })()}
           ` : ''}
           ${(() => {
             const tomorrow = dailySummary.find(day => day.dayIdx === 1);
             const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
-            return outlookHtml ? spacer(10) + `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr><tr><td>${outlookHtml}</td></tr>` : '';
+            return outlookHtml ? spacer(16) + `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr><tr><td>${outlookHtml}</td></tr>` : '';
           })()}
-          ${spacer(10)}
+          ${spacer(16)}
           <tr>
             <td>${sectionTitle('Days ahead')}</td>
           </tr>
-          ${weekInsight ? `<tr><td>${card(`<div style="font-family:${FONT};font-size:13px;line-height:1.45;color:${C.muted};">${esc(weekInsight)}</div>`, '', `border-left:4px solid ${C.tertiary};`)}</td></tr>${spacer(6)}` : ''}
+          ${weekInsight ? `<tr><td>${card(`<div style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(weekInsight)}</div>`, '', `border-left:3px solid ${C.tertiary};`)}</td></tr>${spacer(8)}` : ''}
           <tr>
             <td>${photoForecastCards(dailySummary)}</td>
           </tr>
-          ${spurOfTheMoment && !spurMatchesTopAlt ? spacer(10) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
-          ${spacer(10)}
+          ${spurOfTheMoment && !spurMatchesTopAlt ? spacer(16) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
+          ${spacer(16)}
           <tr>
             <td>
-              <div style="padding:8px 4px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">
+              <div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
                 <b>Key</b> &middot;
                 <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
                 AM/PM = sunrise &amp; sunset light quality &middot;
@@ -1550,9 +1568,9 @@ export function formatEmail(input: FormatEmailInput): string {
 
 function debugCard(title: string, body: string): string {
   return card(
-    `<div style="font-family:${FONT};font-size:14px;font-weight:700;line-height:1.3;color:${C.ink};Margin:0 0 8px;">${esc(title)}</div>${body}`,
+    `<div style="font-family:${FONT};font-size:14px;font-weight:600;line-height:1.3;color:${C.ink};Margin:0 0 10px;">${esc(title)}</div>${body}`,
     '',
-    'border-left:4px solid #C5D6FF;',
+    'border-left:3px solid #A8D4FB;',
   );
 }
 
@@ -1564,11 +1582,11 @@ function debugTable(headers: string[], rows: string[][], emptyMessage = 'No data
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
     <thead>
       <tr>
-        ${headers.map(header => `<th align="left" style="padding:6px 8px;border-bottom:1px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:700;line-height:1.3;color:${C.muted};text-transform:uppercase;">${esc(header)}</th>`).join('')}
+        ${headers.map(header => `<th align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;line-height:1.3;color:${C.muted};text-transform:uppercase;">${esc(header)}</th>`).join('')}
       </tr>
     </thead>
     <tbody>
-      ${rows.map(row => `<tr>${row.map(cell => `<td valign="top" style="padding:7px 8px;border-bottom:1px solid ${C.surfaceVariant};font-family:${FONT};font-size:12px;line-height:1.45;color:${C.ink};">${cell}</td>`).join('')}</tr>`).join('')}
+      ${rows.map(row => `<tr>${row.map(cell => `<td valign="top" style="padding:7px 8px;border-bottom:1px solid ${C.surfaceVariant};font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${cell}</td>`).join('')}</tr>`).join('')}
     </tbody>
   </table>`;
 }
@@ -1576,7 +1594,7 @@ function debugTable(headers: string[], rows: string[][], emptyMessage = 'No data
 function debugKeyValueLines(items: Array<[string, string | number | null | undefined]>): string {
   return items
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
-    .map(([label, value]) => `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};"><span style="font-weight:700;color:${C.onPrimaryContainer};">${esc(label)}:</span> ${esc(value)}</div>`)
+    .map(([label, value]) => `<div style="font-family:${FONT};font-size:12px;line-height:1.6;color:${C.ink};"><span style="font-weight:600;color:${C.onPrimaryContainer};">${esc(label)}:</span> ${esc(value)}</div>`)
     .join('');
 }
 
@@ -1721,7 +1739,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             })()],
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>
-          <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGroqResponse || '(empty)')}</pre>
+          <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGroqResponse || '(empty)')}</pre>
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Normalized AI text</div>
           <div style="Margin-top:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${esc(aiTrace.normalizedAiText || '(empty)')}</div>
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Final AI text</div>
