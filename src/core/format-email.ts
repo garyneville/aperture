@@ -44,6 +44,14 @@ export interface AltLocation {
   pmScore?: number;
   dayScore?: number;
   astroScore?: number;
+  /** Elevation of the location in metres (for upland context display). */
+  elevationM?: number;
+  /** True when the location is an upland site (elevationM >= 300m). */
+  isUpland?: boolean;
+  /** Max snow depth on the ground today (cm), null when no snow or no data. */
+  snowDepthCm?: number | null;
+  /** Total snowfall today (cm), null when no snow or no data. */
+  snowfallCm?: number | null;
 }
 
 export interface CarWash {
@@ -817,6 +825,19 @@ function signalCards(
   return listRows(cards);
 }
 
+/** Build a user-facing snow note for an alt location card.
+ *  Returns an empty string when there is no snow data or no snow present. */
+function buildSnowNote(snowDepthCm: number | null, snowfallCm: number | null): string {
+  const parts: string[] = [];
+  if (snowDepthCm !== null && snowDepthCm > 0) {
+    parts.push(`${snowDepthCm}cm snow on the ground`);
+  }
+  if (snowfallCm !== null && snowfallCm > 0) {
+    parts.push(`${snowfallCm}cm snowfall expected`);
+  }
+  return parts.join(' · ');
+}
+
 function alternativeSection(
   altLocations: AltLocation[] | undefined,
   noAltsMsg: string | undefined,
@@ -831,6 +852,10 @@ function alternativeSection(
       const note = loc.isAstroWin
         ? `Astro${loc.darkSky ? ' - dark sky' : ''} - best ${loc.bestAstroHour || 'evening'} - ${loc.driveMins} min drive`
         : `${bestDaySessionLabel(loc.bestDayHour)} - best ${loc.bestDayHour || 'time TBD'} - ${loc.driveMins} min drive`;
+      const elevationChip = loc.isUpland && loc.elevationM
+        ? metricChip('Elev', `${loc.elevationM}m`, C.secondary)
+        : '';
+      const snowNote = buildSnowNote(loc.snowDepthCm ?? null, loc.snowfallCm ?? null);
       return `<div style="${index < locations.length - 1 ? `padding:0 0 8px;border-bottom:1px solid ${C.outline};margin-bottom:8px;` : ''}">
         <div style="font-family:${FONT};font-size:16px;font-weight:700;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
         <div style="Margin-top:6px;">${scorePill(loc.bestScore)}</div>
@@ -838,8 +863,10 @@ function alternativeSection(
           ${metricChip('AM', loc.amScore ?? 0, scoreState(loc.amScore ?? 0).fg)}
           ${metricChip('PM', loc.pmScore ?? 0, scoreState(loc.pmScore ?? 0).fg)}
           ${metricChip('Astro', loc.astroScore ?? 0, scoreState(loc.astroScore ?? 0).fg)}
+          ${elevationChip}
         </div>
         <div style="Margin-top:6px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.muted};">${esc(note)}</div>
+        ${snowNote ? `<div style="Margin-top:4px;font-family:${FONT};font-size:12px;line-height:1.45;color:${C.secondary};">❄ ${esc(snowNote)}</div>` : ''}
       </div>`;
     }).join('');
 

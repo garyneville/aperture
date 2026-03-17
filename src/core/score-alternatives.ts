@@ -25,6 +25,10 @@ export interface AltWeatherData {
     windspeed_10m?: number[];
     windgusts_10m?: number[];
     total_column_integrated_water_vapour?: number[];
+    /** Snowfall in cm/hr (Open-Meteo hourly, available when elevation is upland). */
+    snowfall?: number[];
+    /** Snow depth on the ground in metres (Open-Meteo hourly). */
+    snow_depth?: number[];
   };
   daily?: {
     sunrise?: string[];
@@ -48,6 +52,10 @@ export interface LocDayScore {
   pmScore: number;
   isAstroWin: boolean;
   meetsThreshold: boolean;
+  /** Maximum snow depth on the ground for the day (cm), null when no data. */
+  snowDepthCm: number | null;
+  /** Total snowfall for the day (cm), null when no data. */
+  snowfallCm: number | null;
 }
 
 /** A today-alt candidate that passed threshold + Leeds comparison. */
@@ -66,6 +74,12 @@ export interface TodayAlt {
   pmScore: number;
   isAstroWin: boolean;
   meetsThreshold: boolean;
+  elevationM: number;
+  isUpland: boolean;
+  /** Maximum snow depth on the ground for today (cm), null when no data or no snow. */
+  snowDepthCm: number | null;
+  /** Total snowfall for today (cm), null when no data or no snow. */
+  snowfallCm: number | null;
 }
 
 /** Best alt candidate attached to each day in the augmented summary. */
@@ -81,6 +95,10 @@ export interface BestAltCandidate {
   bestTags: string[];
   amScore: number;
   pmScore: number;
+  elevationM: number;
+  isUpland: boolean;
+  snowDepthCm: number | null;
+  snowfallCm: number | null;
 }
 
 /** Minimal shape for a dailySummary entry from Best Windows. */
@@ -162,6 +180,9 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
     let bestTags: string[] = [];
     let amScore = 0;
     let pmScore = 0;
+    let maxSnowDepthM = 0;
+    let totalSnowfallCm = 0;
+    let hasSnowData = false;
 
     byDate[dateKey].forEach(({ ts, i }) => {
       const t = new Date(ts);
@@ -180,6 +201,15 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
       const dew = wData.hourly!.dewpoint_2m?.[i] ?? 6;
       const tpw = wData.hourly!.total_column_integrated_water_vapour?.[i] ?? 20;
       const prev = i > 0 ? (wData.hourly!.precipitation?.[i - 1] ?? 0) : 0;
+
+      // Accumulate snow data when available from Open-Meteo
+      const snowDepthM = wData.hourly!.snow_depth?.[i];
+      const snowfallHr = wData.hourly!.snowfall?.[i];
+      if (snowDepthM !== undefined || snowfallHr !== undefined) {
+        hasSnowData = true;
+        if (snowDepthM !== undefined) maxSnowDepthM = Math.max(maxSnowDepthM, snowDepthM);
+        if (snowfallHr !== undefined) totalSnowfallCm += snowfallHr;
+      }
 
       const isGoldAm = t >= goldAmS && t <= goldAmE;
       const isGoldPm = t >= goldPmS && t <= goldPmE;
@@ -272,6 +302,12 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
     const meetsThreshold = (bestDay >= DAY_THRESHOLD)
       || (loc.siteDarkness.siteDarknessScore > HOME_SITE_DARKNESS.siteDarknessScore && bestAstro >= ASTRO_THRESHOLD);
 
+    // snow_depth is in metres (Open-Meteo spec); convert to cm.
+    // snowfall is already in cm/hr; sum gives total cm for the day.
+    // Math.round(x * 10) / 10 rounds the total to one decimal place.
+    const snowDepthCm = hasSnowData && maxSnowDepthM > 0 ? Math.round(maxSnowDepthM * 100) : null;
+    const snowfallCm = hasSnowData && totalSnowfallCm > 0 ? Math.round(totalSnowfallCm * 10) / 10 : null;
+
     days.push({
       dateKey,
       dayIdx,
@@ -285,6 +321,8 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
       pmScore,
       isAstroWin,
       meetsThreshold,
+      snowDepthCm,
+      snowfallCm,
     });
   });
   return days;
@@ -331,6 +369,10 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       pmScore: today.pmScore,
       isAstroWin: today.isAstroWin,
       meetsThreshold: today.meetsThreshold,
+      elevationM: loc.elevationM,
+      isUpland: loc.isUpland,
+      snowDepthCm: today.snowDepthCm,
+      snowfallCm: today.snowfallCm,
     }];
   }).sort((a, b) => b.bestScore - a.bestScore);
 
@@ -351,6 +393,10 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         bestTags: d.bestTags,
         amScore: d.amScore,
         pmScore: d.pmScore,
+        elevationM: loc.elevationM,
+        isUpland: loc.isUpland,
+        snowDepthCm: d.snowDepthCm,
+        snowfallCm: d.snowfallCm,
       };
     }).filter((x): x is BestAltCandidate => x !== null).sort((a, b) => b.bestScore - a.bestScore);
 
