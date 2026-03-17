@@ -392,7 +392,7 @@ describe('workflow assembly', () => {
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
     const groqConnection = data.connections['HTTP: Groq']?.main?.[0]?.[0];
-    expect(groqConnection?.node).toBe('Merge: Prompt Context');
+    expect(groqConnection?.node).toBe('Merge: Prompt + Groq');
     expect(groqConnection?.index).toBe(1);
 
     const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Format Messages');

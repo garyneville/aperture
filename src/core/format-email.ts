@@ -174,40 +174,47 @@ export interface SpurOfTheMomentSuggestion {
 /* ------------------------------------------------------------------ */
 
 const C = {
-  page: '#F6F8FA',
+  // Page & surface
+  page: '#FAF9F6',           // warm cream — like photo paper
   surface: '#FFFFFF',
-  surfaceVariant: '#F0F3F6',
-  outline: '#D1D9E0',
-  ink: '#1F2328',
-  muted: '#59636E',
-  subtle: '#6E7781',
-  primary: '#0969DA',
-  primaryContainer: '#DDF4FF',
-  onPrimaryContainer: '#0A3069',
-  secondary: '#1A7F37',
-  secondaryContainer: '#DAFBE1',
-  tertiary: '#9A6700',
-  tertiaryContainer: '#FFF8C5',
-  warning: '#9A6700',
-  warningContainer: '#FFF8C5',
-  success: '#1A7F37',
-  successContainer: '#DAFBE1',
-  error: '#CF222E',
-  errorContainer: '#FFD8D3',
-  shadow: 'rgba(31, 35, 40, 0.04)',
-  accent: '#8250DF',
-  accentContainer: '#FBEFFF',
-  heroGradientStart: '#0A3069',
-  heroGradientEnd: '#0550AE',
+  surfaceVariant: '#F4EFE8', // warm tinted surface
+  outline: '#E2D9CF',        // warm sand border
+  // Ink
+  ink: '#1A1614',            // warm near-black
+  muted: '#685E56',          // warm muted brown
+  subtle: '#9E9289',         // warm subtle
+  // Semantic score / status colours (unchanged from functional palette)
+  primary: '#2563EB',        // blue — "Good" score state
+  primaryContainer: '#DBEAFE',
+  onPrimaryContainer: '#1D4ED8',
+  secondary: '#059669',      // emerald — "Excellent" + success
+  secondaryContainer: '#D1FAE5',
+  tertiary: '#7C3AED',       // violet — astro sessions + third accent
+  tertiaryContainer: '#EDE9FE',
+  warning: '#B45309',        // amber-brown — "Marginal" + warnings
+  warningContainer: '#FEF3C7',
+  success: '#059669',
+  successContainer: '#D1FAE5',
+  error: '#DC2626',          // red — "Poor" + errors
+  errorContainer: '#FEE2E2',
+  shadow: 'rgba(26, 22, 20, 0.10)',
+  accent: '#7C3AED',         // violet — creative spark card
+  accentContainer: '#EDE9FE',
+  // Brand identity
+  brand: '#E07B2A',          // golden amber — the golden-hour signature colour
+  heroSurface: '#100E0C',    // warm near-black hero background
+  heroGradientStart: '#100E0C',
+  heroGradientEnd: '#1C1713',
 };
 
-const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif";
+/** DM Sans is a modern, humanist sans-serif with good email client support. System stack is the fallback. */
+const FONT = "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif";
 /** Monospace font stack for debug email pre/code blocks. */
 const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
 const UTILITY_GLYPHS = '<span aria-hidden="true">&#x1F697; / &#x1F6B6;</span>';
 
-/** Inline SVG brand mark — an aperture icon representing the photography lens. */
-const BRAND_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>`;
+/** Inline SVG brand mark — clean aperture ring + centre dot, renders as the brand amber in the hero. */
+const BRAND_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="11" r="3.5" fill="currentColor"/></svg>`;
 
 /* ------------------------------------------------------------------ */
 /*  HTML builder helpers                                               */
@@ -431,16 +438,21 @@ function card(inner: string, extraClass = '', extraStyle = ''): string {
 }
 
 function sectionTitle(title: string): string {
-  return `<div style="padding:0 2px 8px 2px;">
-    <div class="section-title" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;letter-spacing:-0.01em;color:${C.ink};">${esc(title)}</div>
+  return `<div style="padding:0 0 12px;">
+    <div class="section-title" style="Margin:0;font-family:${FONT};font-size:11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:uppercase;color:${C.ink};padding-left:11px;border-left:3px solid ${C.brand};">${esc(title)}</div>
   </div>`;
 }
 
 function creativeSpark(text: string): string {
-  return card(`
-    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.accent};">✦ Creative spark</div>
-    <div style="Margin:0;font-family:${FONT};font-size:14px;line-height:1.6;color:${C.ink};font-style:italic;">${esc(text)}</div>
-  `, '', `border-left:3px solid ${C.accent};`);
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:separate;background:${C.surface};border:1px solid ${C.outline};border-radius:12px;box-shadow:0 1px 3px ${C.shadow};">
+    <tr>
+      <td style="padding:20px 22px 22px;">
+        <div style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:${C.brand};margin-bottom:14px;">✦ Creative spark</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:38px;line-height:0.75;color:${C.brand};opacity:0.22;margin-bottom:6px;">&ldquo;</div>
+        <div style="font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.7;color:${C.ink};font-style:italic;padding:0 4px;">${esc(text)}</div>
+      </td>
+    </tr>
+  </table>`;
 }
 
 function dayHeading(day: DaySummary): string {
@@ -1371,19 +1383,48 @@ export function formatEmail(input: FormatEmailInput): string {
     ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${altTimingNote}${altSpurHook}`
     : '';
 
+  const heroWindowLabel = topWindow
+    ? `${esc(topWindow.label)}<br><span style="font-weight:400;color:rgba(255,255,255,0.45);font-size:12px;">${esc(windowRange(topWindow))}</span>`
+    : effectiveDontBother
+      ? `<span style="font-weight:400;color:rgba(255,255,255,0.40);">No clear window today</span>`
+      : ``;
+
   const hero = card(`
-  <div style="display:flex;align-items:center;Margin:0 0 8px;">
-    <span style="color:#FFFFFF;opacity:0.85;margin-right:8px;">${BRAND_LOGO}</span>
-    <span style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Photography brief</span>
-  </div>
-  <div class="hero-title" style="Margin:0;font-family:${FONT};font-size:28px;font-weight:700;line-height:1.1;letter-spacing:-0.02em;color:#FFFFFF;">Leeds</div>
-  <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:rgba(255,255,255,0.85);">${esc(today)}</div>
-  <div style="Margin-top:12px;">${pill(`${todayScoreState.label} - ${heroScore}/100`, todayScoreState.fg, todayScoreState.bg, todayScoreState.border)}</div>
-  <div style="Margin-top:16px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
-  <div style="Margin-top:10px;border-radius:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
+  <!-- ── Brand header ── -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td valign="middle">
+        <span style="color:${C.brand};margin-right:8px;vertical-align:middle;">${BRAND_LOGO}</span><span style="font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF;vertical-align:middle;">Aperture</span>
+      </td>
+      <td align="right" valign="middle">
+        <span style="font-family:${FONT};font-size:12px;font-weight:400;color:rgba(255,255,255,0.38);">Leeds, UK</span>
+      </td>
+    </tr>
+  </table>
+  <!-- ── Rule ── -->
+  <div style="height:1px;background:rgba(255,255,255,0.10);margin:14px 0 16px;"></div>
+  <!-- ── Score + context ── -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="38%" valign="top">
+        <div class="hero-score" style="font-family:${FONT};font-size:64px;font-weight:700;line-height:1;letter-spacing:-0.04em;color:${C.brand};">${heroScore}</div>
+        <div style="font-family:${FONT};font-size:10px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-top:4px;">/ 100</div>
+      </td>
+      <td valign="top" style="padding-left:16px;border-left:1px solid rgba(255,255,255,0.10);">
+        <div class="hero-title" style="font-family:${FONT};font-size:17px;font-weight:700;line-height:1.2;letter-spacing:0.02em;text-transform:uppercase;color:#FFFFFF;">${esc(todayScoreState.label)}</div>
+        ${heroWindowLabel ? `<div style="font-family:${FONT};font-size:13px;font-weight:600;line-height:1.5;color:rgba(255,255,255,0.70);margin-top:8px;">${heroWindowLabel}</div>` : ''}
+        <div style="font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.38);margin-top:10px;">${esc(today)}</div>
+      </td>
+    </tr>
+  </table>
+  <!-- ── Rule ── -->
+  <div style="height:1px;background:rgba(255,255,255,0.10);margin:16px 0;"></div>
+  <!-- ── Stats grids ── -->
+  <div style="border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
+  <div style="Margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary ? summaryNote('Today at a glance', localSummary) : ''}
   ${alternativeSummary ? summaryNote(alternativeSummaryTitle(topAlternative), alternativeSummary) : ''}
-`, 'hero-card', `background:linear-gradient(135deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.1);`);
+`, 'hero-card', `background:linear-gradient(160deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.08);`);
 
   /* Signal cards */
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
@@ -1407,8 +1448,12 @@ export function formatEmail(input: FormatEmailInput): string {
   <meta name="color-scheme" content="light dark">
   <meta name="supported-color-schemes" content="light dark">
   <meta name="x-apple-disable-message-reformatting">
-  <title>Leeds Photography Brief</title>
+  <title>Aperture · Leeds</title>
   <style>
+    /* DM Sans — modern humanist sans, good email client support (Apple Mail, iOS, Outlook.com, Gmail web).
+       Falls back gracefully to the system stack in clients that strip @import (legacy Outlook desktop). */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+
     :root {
       color-scheme: light dark;
       supported-color-schemes: light dark;
@@ -1425,18 +1470,17 @@ export function formatEmail(input: FormatEmailInput): string {
         padding: 8px !important;
       }
       .card-pad {
-        padding: 12px !important;
+        padding: 14px !important;
+      }
+      .hero-score {
+        font-size: 48px !important;
       }
       .hero-title {
-        font-size: 22px !important;
-        line-height: 1.1 !important;
-      }
-      .hero-card td[style*="border-left"] {
-        border-left: none !important;
-      }
-      .section-title {
         font-size: 15px !important;
         line-height: 1.2 !important;
+      }
+      .section-title {
+        font-size: 10px !important;
       }
       .pill,
       .chip {
@@ -1450,44 +1494,43 @@ export function formatEmail(input: FormatEmailInput): string {
     @media (prefers-color-scheme: dark) {
       body,
       .page-bg {
-        background: #0D1117 !important;
+        background: #0C0A08 !important;
       }
       .card {
-        background: #161B22 !important;
-        border-color: #30363D !important;
+        background: #1A1612 !important;
+        border-color: #2E2822 !important;
         box-shadow: none !important;
       }
       .hero-card {
-        background: linear-gradient(135deg, #0A1628 0%, #0D2952 100%) !important;
-        border-color: #1B3A6B !important;
+        background: #100E0C !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
       }
-      .hero-title,
       .section-title {
-        color: #E6EDF3 !important;
+        color: #F0EBE3 !important;
       }
       .headline {
-        color: #E6EDF3 !important;
+        color: #F0EBE3 !important;
       }
-      .page-bg [style*="color:#1F2328"] {
-        color: #E6EDF3 !important;
+      .page-bg [style*="color:#1A1614"] {
+        color: #F0EBE3 !important;
       }
-      .page-bg [style*="color:#59636E"],
-      .page-bg [style*="color:#6E7781"] {
-        color: #8B949E !important;
+      .page-bg [style*="color:#685E56"],
+      .page-bg [style*="color:#9E9289"] {
+        color: #A89E96 !important;
       }
-      .page-bg [style*="color:#0A3069"] {
-        color: #A5D6FF !important;
+      .page-bg [style*="color:#1D4ED8"] {
+        color: #93C5FD !important;
       }
       .chip {
-        background: #21262D !important;
-        border-color: #30363D !important;
-        color: #E6EDF3 !important;
+        background: #26211C !important;
+        border-color: #3A322A !important;
+        color: #F0EBE3 !important;
       }
       .pill {
         color: inherit !important;
       }
       .tonal-note {
-        background: #21262D !important;
+        background: #26211C !important;
       }
     }
   </style>
@@ -1495,7 +1538,7 @@ export function formatEmail(input: FormatEmailInput): string {
 <body class="page-bg" style="margin:0;padding:0;background:${C.page};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="page-bg" style="width:100%;border-collapse:collapse;background:${C.page};">
     <tr>
-      <td align="center" class="outer-pad" style="padding:12px;">
+      <td align="center" class="outer-pad" style="padding:16px 12px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;border-collapse:collapse;">
           <tr>
             <td>
