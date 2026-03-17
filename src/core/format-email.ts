@@ -333,10 +333,11 @@ function moonDescriptor(moonPct: number): string {
 }
 
 function moonAstroContext(moonPct: number): string {
-  if (moonPct <= 15) return 'Excellent for astro';
-  if (moonPct <= 35) return 'Good for astro';
-  if (moonPct <= 65) return 'Mixed for astro';
-  return 'Bright moon - weaker astro contrast';
+  if (moonPct <= 15) return '🌑 Dark skies — excellent for astrophotography';
+  if (moonPct <= 40) return '🌒 Low moon glow — good for astrophotography';
+  if (moonPct <= 70) return '🌓 Moderate moon — astrophotography compromised';
+  if (moonPct <= 90) return '🌔 Bright moon — poor for astrophotography';
+  return '🌕 Full moon — avoid astrophotography';
 }
 
 interface SummaryStat {
