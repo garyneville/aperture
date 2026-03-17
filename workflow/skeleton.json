@@ -883,7 +883,7 @@
           }
         }
       },
-      "id": "a1b2c3d4-0041-0041-0041-000000000041",
+      "id": "a1b2c3d4-0050-0050-0050-000000000050",
       "name": "HTTP: AuroraWatch UK",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -901,7 +901,7 @@
         "url": "={{ 'https://api.nasa.gov/DONKI/CME?startDate=' + $now.minus({days: 3}).toFormat('yyyy-MM-dd') + '&endDate=' + $now.plus({days: 4}).toFormat('yyyy-MM-dd') + '&api_key=__NASA_API_KEY__' }}",
         "options": {}
       },
-      "id": "a1b2c3d4-0042-0042-0042-000000000042",
+      "id": "a1b2c3d4-0051-0051-0051-000000000051",
       "name": "HTTP: NASA DONKI CME",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -920,7 +920,7 @@
         "combineBy": "combineByPosition",
         "options": {}
       },
-      "id": "a1b2c3d4-0043-0043-0043-000000000043",
+      "id": "a1b2c3d4-0052-0052-0052-000000000052",
       "name": "Merge: Aurora HTTP",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
@@ -935,7 +935,7 @@
         "language": "javaScript",
         "jsCode": "__ADAPTER_wrap-aurora__"
       },
-      "id": "a1b2c3d4-0044-0044-0044-000000000044",
+      "id": "a1b2c3d4-0053-0053-0053-000000000053",
       "name": "Code: Wrap Aurora",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -950,7 +950,7 @@
         "combineBy": "combineByPosition",
         "options": {}
       },
-      "id": "a1b2c3d4-0045-0045-0045-000000000045",
+      "id": "a1b2c3d4-0054-0054-0054-000000000054",
       "name": "Merge: Scoring + Aurora",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
