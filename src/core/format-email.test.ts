@@ -117,9 +117,10 @@ describe('formatEmail hero summary', () => {
     // at-a-glance must not include alternative score deltas — metric language banned (issue #71)
     expect(html).not.toContain('adds 25 points');
     expect(html).not.toContain('points stronger');
-    // at-a-glance shows prose-only alt recommendation when delta >= 25 (Malham Cove: 85-60=25)
-    expect(html).toContain('Or consider Malham Cove instead');
-    expect(html).toContain('for dark sky photography');
+    // Today at a glance is Leeds-only: alternative location must not appear in the summary (issue #71)
+    expect(html).not.toContain('Or consider Malham Cove instead');
+    // Malham Cove still appears in the dedicated "Best nearby alternative" card, not the at-a-glance
+    expect(html).toContain('Malham Cove');
   });
 
   it('adds a later-night distinction when both local windows are astro', () => {

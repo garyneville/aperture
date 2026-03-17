@@ -51,9 +51,9 @@ describe('format-messages adapter editorial fallback', () => {
     expect(shouldReplaceAiText(aiText, ctx)).toBe(true);
     const fallback = buildFallbackAiText(ctx);
     expect(fallback).toContain('Local peak is around 22:00');
-    expect(fallback).toContain('Consider Sutton Bank for better dark sky conditions');
+    // Editorial fallback is Leeds-only — alternative location must not appear (issue #71)
+    expect(fallback).not.toContain('Consider Sutton Bank');
     expect(fallback).not.toContain('points stronger');
-    expect(fallback).not.toContain('/100');
   });
 
   it('keeps AI copy that uses prose-only alt recommendation without metric language', () => {
@@ -90,7 +90,8 @@ describe('format-messages adapter editorial fallback', () => {
     const text = buildFallbackAiText(singleHourCtx);
     expect(text).not.toContain('07:00-07:00');
     expect(text).toContain('07:00');
-    expect(text).toContain('Consider Sutton Bank for better dark sky conditions');
+    // Editorial fallback is Leeds-only — alternative location must not appear (issue #71)
+    expect(text).not.toContain('Consider Sutton Bank');
     expect(text).not.toContain('points stronger');
   });
 
