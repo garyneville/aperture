@@ -1,5 +1,6 @@
 import type { Window, DailySummary, CarWash } from './best-windows.js';
 import { explainAstroScoreGap } from './astro-score-explanation.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
 import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
 import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
@@ -200,6 +201,8 @@ function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | 
 
 function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSignal | null): string {
   const parts: string[] = [];
+  const localLat = getPhotoWeatherLat();
+  const localThreshold = auroraVisibleKpThresholdForLat(localLat);
 
   // Near-term: AuroraWatch UK takes priority over Kp when available and active.
   // Only fall back to the NOAA Kp index when AuroraWatch UK is not available.
@@ -216,7 +219,12 @@ function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSign
     parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight at ~54°N.`);
   } else if (peakKpTonight !== null && peakKpTonight >= 5) {
     // Fall back to NOAA Kp when AuroraWatch UK is unavailable or green
-    parts.push(`Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — visible at ~54°N above Kp 6.`);
+    const localVisible = isAuroraLikelyVisibleAtLat(localLat, peakKpTonight);
+    parts.push(
+      localVisible
+        ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — this clears the local visibility threshold of Kp ${localThreshold} for ${getPhotoWeatherLocation()}.`
+        : `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — local visibility usually needs about Kp ${localThreshold} at ${getPhotoWeatherLocation()} latitude.`,
+    );
   }
 
   // Long-range: NASA DONKI CME (always shown when upcoming, independent of near-term)
@@ -279,6 +287,9 @@ function skyQualityConstraints(
   moonPct: number,
   topAlt: AltLocationResult | undefined,
   isAstroWin: boolean,
+  auroraVisibleLocally: boolean,
+  auroraThreshold: number,
+  peakKpTonight: number | null,
 ): string {
   if (!isAstroWin) return '';
 
@@ -330,6 +341,13 @@ function skyQualityConstraints(
     }
   }
 
+  if (auroraVisibleLocally) {
+    parts.push(
+      `Aurora is realistically visible from ${homeLocation} tonight (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} meets the local threshold of Kp ${auroraThreshold}). ` +
+      `Make the first bullet aurora-led: face north, leave a low horizon, and avoid generic star-trail-only bullets as the primary idea.`,
+    );
+  }
+
 
   return `Sky quality constraints for shot ideas:\n${parts.map(p => `- ${p}`).join('\n')}`;
 }
@@ -361,6 +379,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const seasonalNote = SEASONAL_CONTEXT[currentMonth] || '';
   const peakKpTonight = peakKpForNight(kpForecast, now);
   const auroraNote = buildAuroraNote(peakKpTonight, auroraSignal);
+  const auroraThreshold = auroraVisibleKpThresholdForLat(getPhotoWeatherLat());
+  const auroraVisibleLocally = isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), peakKpTonight);
   const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
@@ -458,6 +478,9 @@ Locations: ${SPUR_LOCATION_NAMES}`;
       astroGap
         ? `- ${astroGap.text}`
         : '',
+      auroraVisibleLocally && isAstroWindow(bestWin)
+        ? `- This window coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local visibility threshold Kp ${auroraThreshold}), so a clean northern horizon matters.`
+        : '',
       nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
         ? `- If you miss the first slot, ${nextWin.label.toLowerCase()} is the later, darker fallback from ${nextWin.start}\u2013${nextWin.end}.`
         : '',
@@ -468,6 +491,9 @@ Locations: ${SPUR_LOCATION_NAMES}`;
       moonPct,
       topAlt,
       isAstroWindow(bestWin),
+      auroraVisibleLocally,
+      auroraThreshold,
+      peakKpTonight,
     );
 
     const windowsText = windows.map((w, i) => {
@@ -492,7 +518,8 @@ Do not blame cloud unless the supplied peak-hour cloud cover supports it. If the
 The editorial must describe Leeds conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
 
 COMPOSITION (2 short bullet items):
-Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or technique suited to these conditions. No generic tips.
+Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
+Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing" unless the supplied constraints explicitly support them.
 ${shotConstraints ? `\n${shotConstraints}\n` : ''}
 ${weekStandoutInstructionBlock()}
 

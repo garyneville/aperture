@@ -93,7 +93,10 @@ export interface DebugWeekStandoutTrace {
 }
 
 export interface DebugAiTrace {
+  primaryProvider?: 'groq' | 'gemini';
+  selectedProvider?: 'groq' | 'gemini' | 'template';
   rawGroqResponse: string;
+  rawGeminiResponse?: string;
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;

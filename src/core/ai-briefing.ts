@@ -1,4 +1,6 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
+import { getPhotoWeatherLat } from '../config.js';
 
 export interface AiBriefingWindowHour {
   hour?: string;
@@ -33,6 +35,7 @@ export interface AiBriefingContext {
   windows?: AiBriefingWindow[];
   dailySummary?: AiBriefingDaySummary[];
   altLocations?: AiBriefingAltLocation[];
+  peakKpTonight?: number | null;
 }
 
 export interface RenderAiBriefingResult {
@@ -191,6 +194,9 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
   const nextWindow = ctx.windows?.[1];
   const today = ctx.dailySummary?.[0];
   const topAlt = ctx.altLocations?.[0];
+  const lat = getPhotoWeatherLat();
+  const auroraThreshold = auroraVisibleKpThresholdForLat(lat);
+  const auroraVisibleLocally = isAuroraLikelyVisibleAtLat(lat, ctx.peakKpTonight);
 
   if (ctx.dontBother) {
     if (topAlt && typeof topAlt.bestScore === 'number') {
@@ -218,6 +224,10 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
   const firstSentence = isSingleHour
     ? `Best conditions are around ${peakHour} in the ${labelLower}.`
     : `The ${labelLower} from ${range} is the strongest local slot today.`;
+
+  if (auroraVisibleLocally && labelLower.includes('astro')) {
+    return `${firstSentence} Aurora is possible through this slot (Kp ${ctx.peakKpTonight?.toFixed(1) ?? 'unknown'} clears the local threshold of Kp ${auroraThreshold}), so keep a clean northern horizon in play.`;
+  }
 
   const astroGap = explainAstroScoreGap({ window: topWindow, today });
   if (astroGap) {

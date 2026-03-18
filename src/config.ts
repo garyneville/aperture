@@ -4,6 +4,7 @@ export const PHOTO_WEATHER_CONFIG = {
   location: '__PHOTO_WEATHER_LOCATION__',
   timezone: '__PHOTO_WEATHER_TIMEZONE__',
   icao: '__PHOTO_WEATHER_ICAO__',
+  editorialPrimaryProvider: '__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__',
 } as const;
 
 export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
@@ -40,4 +41,9 @@ export function getPhotoWeatherTimezone(): string {
 
 export function getPhotoWeatherIcao(): string {
   return parseString(PHOTO_WEATHER_CONFIG.icao, 'EGNM');
+}
+
+export function getPhotoBriefEditorialPrimaryProvider(): 'groq' | 'gemini' {
+  const provider = parseString(PHOTO_WEATHER_CONFIG.editorialPrimaryProvider, 'gemini').toLowerCase();
+  return provider === 'groq' ? 'groq' : 'gemini';
 }

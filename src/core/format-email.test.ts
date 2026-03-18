@@ -580,6 +580,76 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Nearby darker-sky contender');
   });
 
+  it('adds an aurora note to the primary astro window when Kp clears the local threshold', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56, ch: 0, visK: 12, wind: '5', pp: 0, tpw: 18 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 58,
+        start: '10:00',
+        end: '12:00',
+        wind: 9,
+        pp: 10,
+        tmp: 8,
+      },
+      dailySummary: [{
+        dayLabel: 'Wednesday',
+        dateKey: '2026-03-18',
+        dayIdx: 0,
+        photoScore: 56,
+        headlineScore: 60,
+        photoEmoji: 'Marginal',
+        amScore: 32,
+        pmScore: 44,
+        astroScore: 68,
+        confidence: 'high',
+        confidenceStdDev: 7,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 7,
+        bestPhotoHour: '03:00',
+        bestAstroHour: '03:00',
+        bestTags: 'astrophotography',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 58,
+          start: '10:00',
+          end: '12:00',
+          wind: 9,
+          pp: 10,
+          tmp: 8,
+        },
+      }],
+      altLocations: [],
+      sunriseStr: '06:13',
+      sunsetStr: '18:15',
+      moonPct: 1,
+      metarNote: '',
+      today: 'Wednesday 18 March',
+      todayBestScore: 60,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Conditions improve through the midnight astro window. Peak local time is around 03:00, with the cleanest sky late in the slot.',
+      peakKpTonight: 6.3,
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Coincides with an active aurora signal (Kp 6.3 vs local threshold Kp 6) - favour a clean northern horizon.');
+  });
+
   it('does not leak internal fallback tags into days-ahead cards', () => {
     const input: FormatEmailInput = {
       dontBother: false,

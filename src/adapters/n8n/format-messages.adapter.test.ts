@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildFallbackAiText,
+  chooseEditorialCandidate,
   filterCompositionBullets,
   isFactuallyIncoherentEditorial,
   normalizeAiText,
@@ -159,6 +160,28 @@ describe('format-messages adapter editorial fallback', () => {
     expect(bullets.some(bullet => bullet.includes('Brimham Rocks'))).toBe(false);
     expect(bullets).toHaveLength(2);
   });
+
+  it('injects aurora-aware shot ideas when a local aurora opportunity is active', () => {
+    const bullets = filterCompositionBullets([
+      'Star trails with a silhouetted landmark foreground',
+      'Wide-field constellation framing',
+    ], {
+      peakKpTonight: 6.3,
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        tops: ['astrophotography'],
+        hours: [{ hour: '03:00', score: 56 }],
+      }],
+      dailySummary: [{ bestPhotoHour: '03:00', astroScore: 68, bestAstroHour: '03:00' }],
+      altLocations: [],
+    });
+
+    expect(bullets[0]?.toLowerCase()).toContain('north');
+    expect(bullets.join(' ').toLowerCase()).toContain('aurora');
+  });
 });
 
 describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
@@ -260,6 +283,26 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
     expect(isFactuallyIncoherentEditorial(misleadingText, moonCtx)).toBe(true);
   });
 
+  it('flags peak-time phrasing when the named time does not match the selected window peak hour', () => {
+    const wrongPeakText = 'Dark-sky conditions hold through the midnight astro window. Peak local time is around 01:00 within the midnight astro window.';
+    expect(isFactuallyIncoherentEditorial(wrongPeakText, {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 }],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '03:00',
+        astroScore: 68,
+        bestAstroHour: '03:00',
+        darkSkyStartsAt: '00:00',
+      }],
+      altLocations: [],
+    })).toBe(true);
+  });
+
   it('shouldReplaceAiText returns true for the 15 March hallucination', () => {
     const hallucinatedText = 'Leeds has the Sutton Bank window from 20:00, scoring 85. Sutton Bank is 85 points stronger mainly because of darker skies around 20:00.';
     expect(shouldReplaceAiText(hallucinatedText, marchCtx)).toBe(true);
@@ -326,6 +369,60 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
     expect(result.editorial).toBe('Fine day.');
     expect(result.compositionBullets).toEqual(['Idea A']);
     expect(result.weekInsight).toBe('Friday.');
+  });
+});
+
+describe('chooseEditorialCandidate', () => {
+  const ctx = {
+    windows: [{
+      label: 'Midnight astro window',
+      start: '00:00',
+      end: '04:00',
+      peak: 56,
+      tops: ['astrophotography'],
+      hours: [{ hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 }],
+    }],
+    dailySummary: [{
+      bestPhotoHour: '03:00',
+      astroScore: 68,
+      bestAstroHour: '03:00',
+      darkSkyStartsAt: '00:00',
+    }],
+    peakKpTonight: 6.3,
+    altLocations: [],
+  };
+
+  it('uses the preferred Gemini provider when it passes validation', () => {
+    const geminiContent = JSON.stringify({
+      editorial: 'Conditions stay clean through the midnight astro window. The 03:00 peak also lines up with an aurora signal, so a clear northern horizon matters.',
+      composition: ['Face north with a low tree line for any aurora glow', 'Keep a wide frame above a dark ridge at 03:00'],
+    });
+    const groqContent = JSON.stringify({
+      editorial: 'The midnight astro window from 00:00-04:00 scores 56/100. Peak local time is around 03:00.',
+      composition: ['Star trails with a silhouetted landmark foreground', 'Wide-field constellation framing'],
+    });
+
+    const choice = chooseEditorialCandidate('gemini', ctx, groqContent, geminiContent);
+
+    expect(choice.selectedProvider).toBe('gemini');
+    expect(choice.selectedCandidate?.compositionBullets[0]).toContain('Face north');
+  });
+
+  it('falls back to Groq when the preferred Gemini candidate fails validation', () => {
+    const geminiContent = JSON.stringify({
+      editorial: 'The midnight astro window from 00:00-04:00 scores 56/100. Peak local time is around 01:00.',
+      composition: ['Wide-field constellation framing'],
+    });
+    const groqContent = JSON.stringify({
+      editorial: 'Conditions stay clean through the midnight astro window. Peak local time is around 03:00, with the cleanest sky late in the slot.',
+      composition: ['Set a dark ridge low in the frame for the 03:00 peak', 'Keep the cleanest skyline for the darkest part of the slot'],
+    });
+
+    const choice = chooseEditorialCandidate('gemini', ctx, groqContent, geminiContent);
+
+    expect(choice.selectedProvider).toBe('groq');
+    expect(choice.primaryCandidate?.passed).toBe(false);
+    expect(choice.secondaryCandidate?.passed).toBe(true);
   });
 });
 

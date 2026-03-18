@@ -2,6 +2,7 @@ import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import { WEATHER_ICON_SVGS } from './weather-icons.js';
 import { MOON_ICON_SVGS } from './moon-icons.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import {
   renderEmailCard,
@@ -43,6 +44,7 @@ import {
   TypographyFontFamilyBase,
   TypographyFontFamilyMono,
 } from '../tokens/tokens.js';
+import { getPhotoWeatherLat } from '../config.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -927,6 +929,7 @@ function windowCard(
   index: number,
   windows: Window[],
   sectionLabel = index === 0 ? 'Best window' : 'Worth watching',
+  peakKpTonight?: number | null,
 ): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
@@ -935,6 +938,10 @@ function windowCard(
   if ((h.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${h.crepuscular}/100 (light shafts through broken cloud).`);
   if (w.darkPhaseStart && w.postMoonsetScore !== null && w.postMoonsetScore !== undefined) {
     notes.push(`Dark from ${w.darkPhaseStart} - peak after moonset ${w.postMoonsetScore}/100.`);
+  }
+  if (index === 0 && isAstroWindow(w) && isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), peakKpTonight)) {
+    const threshold = auroraVisibleKpThresholdForLat(getPhotoWeatherLat());
+    notes.push(`Coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local threshold Kp ${threshold}) - favour a clean northern horizon.`);
   }
   if (index > 0 && isAstroWindow(topWindow) && isAstroWindow(w) && topWindow?.label !== w.label) {
     notes.push('Later, darker backup if you miss the first astro slot.');
@@ -989,6 +996,7 @@ function todayWindowSection(
   dailySummary: DaySummary[],
   altLocations: AltLocation[] | undefined,
   runTime: RunTimeContext,
+  peakKpTonight: number | null | undefined,
   compositionBullets?: string[],
 ): string {
   const hasLocalWindow = (windows?.length || 0) > 0;
@@ -1007,7 +1015,7 @@ function todayWindowSection(
   const fallbackAiText = timeAwareBriefingFallback(displayPlan);
   const renderedAi = fallbackAiText
     ? { text: fallbackAiText, strippedOpener: false, usedFallback: true }
-    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations });
+    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight });
   const trimmedAiText = renderedAi.text || aiText;
   const compCard = fallbackAiText ? '' : compositionCard(compositionBullets || []);
   const displayedWindows: string[] = [];
@@ -1023,16 +1031,17 @@ function todayWindowSection(
       0,
       [displayPlan.primary, ...displayPlan.remaining.filter(window => window !== displayPlan.primary)],
       primaryLabel,
+      peakKpTonight,
     ));
     displayPlan.remaining
       .filter(window => window !== displayPlan.primary)
       .forEach((window, index) => {
-        displayedWindows.push(windowCard(window, index + 1, displayPlan.remaining, 'Later today'));
+        displayedWindows.push(windowCard(window, index + 1, displayPlan.remaining, 'Later today', peakKpTonight));
       });
   }
 
   displayPlan.past.forEach((window, index) => {
-    displayedWindows.push(windowCard(window, index + 1, displayPlan.past, 'Earlier today'));
+    displayedWindows.push(windowCard(window, index + 1, displayPlan.past, 'Earlier today', peakKpTonight));
   });
 
   return listRows([
@@ -1912,7 +1921,7 @@ export function formatEmail(input: FormatEmailInput): string {
     sections.push(
       spacer(16),
       `<tr><td>${sectionTitle('Today\'s window')}</td></tr>`,
-      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, compositionBullets)}</td></tr>`,
+      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets)}</td></tr>`,
     );
   }
 
@@ -2129,6 +2138,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         )}
         ${aiTrace ? `${spacer(8)}${debugCard('AI editorial trace', `
           ${debugKeyValueLines([
+            ['Primary provider', aiTrace.primaryProvider || null],
+            ['Selected provider', aiTrace.selectedProvider || null],
             ['Factual check', aiTrace.factualCheck.passed ? 'Passed' : `Failed (${aiTrace.factualCheck.rulesTriggered.join(', ')})`],
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
             ['Fallback used', aiTrace.fallbackUsed ? 'Yes' : 'No'],
@@ -2150,6 +2161,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>
           <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGroqResponse || '(empty)')}</pre>
+          ${aiTrace.rawGeminiResponse ? `<div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Gemini response</div>
+          <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGeminiResponse)}</pre>` : ''}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Normalized AI text</div>
           <div style="Margin-top:4px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">${esc(aiTrace.normalizedAiText || '(empty)')}</div>
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Final AI text</div>

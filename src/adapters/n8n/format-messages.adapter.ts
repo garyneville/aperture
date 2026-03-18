@@ -13,7 +13,9 @@ import {
   type WeekStandoutDecision,
   type WeekStandoutParseStatus,
 } from '../../core/debug-context.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../core/aurora-visibility.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
+import { getPhotoBriefEditorialPrimaryProvider, getPhotoWeatherLat } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 type BriefContext = {
@@ -22,6 +24,13 @@ type BriefContext = {
   debugModeSource?: string;
   debugEmailTo?: string;
   debugContext?: DebugContext;
+  peakKpTonight?: number | null;
+  auroraSignal?: {
+    nearTerm?: {
+      level?: string;
+      isStale?: boolean;
+    } | null;
+  } | null;
   windows?: WindowLike[];
   dailySummary?: Array<{
     dayLabel?: string;
@@ -192,6 +201,12 @@ export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck
     rulesTriggered.push('editorial implies moonset happens later even though dark-sky conditions already begin by the selected window start');
   }
 
+  const explicitPeakTime = aiText.match(/\b(?:peak(?: local)? time is around|best(?: local)? time is around|tops? out around)\s+(\d{2}:\d{2})/i)?.[1] || null;
+  const expectedPeakTime = peakHour?.hour || topWindow?.end || topWindow?.start || today?.bestPhotoHour || null;
+  if (explicitPeakTime && expectedPeakTime && explicitPeakTime !== expectedPeakTime) {
+    rulesTriggered.push('editorial peak time does not match the selected window peak hour');
+  }
+
   return {
     passed: rulesTriggered.length === 0,
     rulesTriggered,
@@ -234,8 +249,10 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'should',
     'may',
     'darker',
+    'darkest',
     'stronger',
     'later',
+    'late',
     'astro sub-score',
     'full weighting',
     'weighted',
@@ -243,11 +260,15 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'right at the start',
     'improving',
     'clearing',
+    'clearer',
     'thin',
     'moonset',
     'consider',
     'better',
     'dark sky',
+    'aurora',
+    'horizon',
+    'northern',
     'overall astro',
     'held back',
     'drive',
@@ -349,6 +370,87 @@ export function parseGroqResponse(rawContent: string): {
   };
 }
 
+export type EditorialProvider = 'groq' | 'gemini';
+
+type EditorialCandidate = {
+  provider: EditorialProvider;
+  rawContent: string;
+  editorial: string;
+  compositionBullets: string[];
+  weekInsight: string;
+  spurRaw: SpurRaw | null;
+  weekStandoutParseStatus: WeekStandoutParseStatus;
+  weekStandoutRawValue: string | null;
+  normalizedAiText: string;
+  factualCheck: DebugAiCheck;
+  editorialCheck: DebugAiCheck;
+  passed: boolean;
+};
+
+function buildEditorialCandidate(
+  provider: EditorialProvider,
+  rawContent: string,
+  ctx: BriefContext,
+): EditorialCandidate | null {
+  if (!rawContent.trim()) return null;
+  const parsed = parseGroqResponse(rawContent);
+  const normalizedAiText = normalizeAiText(parsed.editorial);
+  const factualCheck = getFactualCheck(normalizedAiText, ctx);
+  const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
+
+  return {
+    provider,
+    rawContent,
+    editorial: parsed.editorial,
+    compositionBullets: parsed.compositionBullets,
+    weekInsight: parsed.weekInsight,
+    spurRaw: parsed.spurRaw,
+    weekStandoutParseStatus: parsed.weekStandoutParseStatus,
+    weekStandoutRawValue: parsed.weekStandoutRawValue,
+    normalizedAiText,
+    factualCheck,
+    editorialCheck,
+    passed: factualCheck.passed && editorialCheck.passed,
+  };
+}
+
+export function chooseEditorialCandidate(
+  preferredProvider: EditorialProvider,
+  ctx: BriefContext,
+  groqRawContent: string,
+  geminiRawContent: string,
+): {
+  primaryProvider: EditorialProvider;
+  selectedProvider: EditorialProvider | 'template';
+  primaryCandidate: EditorialCandidate | null;
+  secondaryCandidate: EditorialCandidate | null;
+  selectedCandidate: EditorialCandidate | null;
+  fallbackUsed: boolean;
+} {
+  const candidates: Record<EditorialProvider, EditorialCandidate | null> = {
+    groq: buildEditorialCandidate('groq', groqRawContent, ctx),
+    gemini: buildEditorialCandidate('gemini', geminiRawContent, ctx),
+  };
+  const secondaryProvider: EditorialProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
+  const primaryCandidate = candidates[preferredProvider];
+  const secondaryCandidate = candidates[secondaryProvider];
+
+  const selectedCandidate = primaryCandidate?.passed
+    ? primaryCandidate
+    : secondaryCandidate?.passed
+      ? secondaryCandidate
+      : null;
+
+  return {
+    primaryProvider: preferredProvider,
+    selectedProvider: selectedCandidate?.provider ?? 'template',
+    primaryCandidate,
+    secondaryCandidate,
+    selectedCandidate,
+    fallbackUsed: selectedCandidate === null,
+  };
+}
+
 function normaliseCompositionBullet(text: string): string {
   return text
     .replace(/^[\s\u2022*-]+/, '')
@@ -383,6 +485,37 @@ function dedupeBullets(bullets: string[]): string[] {
   return result;
 }
 
+function isAuroraOpportunity(ctx: BriefContext): boolean {
+  const nearTerm = ctx.auroraSignal?.nearTerm;
+  if (nearTerm && !nearTerm.isStale && (nearTerm.level === 'amber' || nearTerm.level === 'red')) {
+    return true;
+  }
+  return isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), ctx.peakKpTonight);
+}
+
+function compositionSpecificityScore(bullet: string, ctx: BriefContext): number {
+  const lower = bullet.toLowerCase();
+  let score = 0;
+
+  if (/\b(?:ridge|edge|horizon|skyline|tree|tower|church|roofline|water|reflection|canal|bridge|foreground|silhouette|valley|moor|north|northern|mist|rays|cloud gap)\b/i.test(bullet)) {
+    score += 2;
+  }
+  if (/\b(?:frame|use|keep|face|watch|leave|set)\b/i.test(bullet)) {
+    score += 1;
+  }
+  if (isAuroraOpportunity(ctx) && /\b(?:aurora|north|northern|horizon|curtain|glow)\b/i.test(bullet)) {
+    score += 3;
+  }
+  if (/\b(?:silhouetted landmark foreground|wide-field constellation framing|simple local silhouette|work a simple local landscape composition)\b/i.test(lower)) {
+    score -= 3;
+  }
+  if (lower.split(/\s+/).length < 6) {
+    score -= 1;
+  }
+
+  return score;
+}
+
 function fallbackCompositionBullets(ctx: BriefContext): string[] {
   const topWindow = ctx.windows?.[0];
   if (!topWindow) return [];
@@ -398,28 +531,33 @@ function fallbackCompositionBullets(ctx: BriefContext): string[] {
 
   if (isAstroWindow(topWindow)) {
     const darkPhaseStart = ctx.dailySummary?.[0]?.darkSkyStartsAt;
-    ideas.push(`Use a simple local silhouette so the cleanest sky stays dominant around ${peakHour}.`);
+    if (isAuroraOpportunity(ctx)) {
+      ideas.push(`Face north with a low ridge, tree line, or rooftop silhouette and leave space for any aurora structure around ${peakHour}.`);
+      ideas.push(`Keep one wide frame over the cleanest northern horizon and stay ready for shorter, faster exposures if aurora glow appears.`);
+      return dedupeBullets(ideas).slice(0, 2);
+    }
+    ideas.push(`Set a dark ridge, rooftop, or lone tree low in the frame so the cleanest sky stays dominant around ${peakHour}.`);
     ideas.push(
       darkPhaseStart
-        ? `Save your darkest local sky frame for after ${darkPhaseStart} once the sky turns properly dark.`
-        : `Try a wide local skyline or tree-line frame while the ${loweredLabel} is at its cleanest.`,
+        ? `Save your cleanest skyline frame for after ${darkPhaseStart} once the sky turns fully dark.`
+        : `Work a simple skyline, tree line, or rooftop silhouette while the ${loweredLabel} is at its cleanest.`,
     );
     return dedupeBullets(ideas).slice(0, 2);
   }
 
   if (lowerTags.has('clear light path')) {
-    ideas.push('Use a clean skyline, ridge, or lone tree where the light path stays unobstructed.');
+    ideas.push('Use a lone tree, church tower, or ridge break where the light path stays clean to the horizon.');
   }
   if (lowerTags.has('crepuscular rays')) {
-    ideas.push('Watch for gaps in broken cloud and frame shafts of light across open ground.');
+    ideas.push('Watch for gaps in broken cloud and frame shafts of light across open ground, a valley gap, or a tree line.');
   }
   if (lowerTags.has('atmospheric') || lowerTags.has('misty / atmospheric') || lowerTags.has('mist')) {
-    ideas.push('Look for layered trees, bridges, or water edges where haze can add depth.');
+    ideas.push('Look for layered trees, canal edges, or distant rooftops where haze can separate the scene into soft bands.');
   }
   if (!ideas.length) {
-    ideas.push(`Work a simple local landscape composition around ${peakHour} during the ${loweredLabel}.`);
+    ideas.push(`Work a simple local skyline, bare tree, or roofline around ${peakHour} during the ${loweredLabel}.`);
   }
-  ideas.push(`Try a tighter frame on local detail while the ${loweredLabel} holds its cleanest light.`);
+  ideas.push(`Keep a tighter second frame on one clear foreground shape while the ${loweredLabel} holds its cleanest light.`);
   return dedupeBullets(ideas).slice(0, 2);
 }
 
@@ -429,13 +567,19 @@ export function filterCompositionBullets(rawBullets: string[], ctx: BriefContext
     .filter(Boolean)
     .filter(bullet => !isRemoteCompositionBullet(bullet, ctx));
 
-  const safeBullets = dedupeBullets(cleaned).slice(0, 2);
-  if (safeBullets.length >= 2 || !ctx.windows?.[0]) {
-    return safeBullets;
+  const fallback = fallbackCompositionBullets(ctx);
+  const deduped = dedupeBullets(cleaned);
+  const rankedRaw = deduped
+    .map((bullet, index) => ({ bullet, index, score: compositionSpecificityScore(bullet, ctx) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+  const strongRaw = rankedRaw.filter(entry => entry.score > 0).map(entry => entry.bullet);
+  const weakRaw = rankedRaw.filter(entry => entry.score <= 0).map(entry => entry.bullet);
+
+  if (strongRaw.length >= 2) {
+    return strongRaw.slice(0, 2);
   }
 
-  const fallback = fallbackCompositionBullets(ctx);
-  return dedupeBullets([...safeBullets, ...fallback]).slice(0, 2);
+  return dedupeBullets([...strongRaw, ...fallback, ...weakRaw]).slice(0, 2);
 }
 
 export function resolveSpurSuggestion(
@@ -645,7 +789,7 @@ export function run({ $input }: N8nRuntime) {
   })();
   const { choices, geminiResponse, geminiInspire, ...ctx } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
-  const { editorial, compositionBullets, weekInsight, spurRaw, weekStandoutParseStatus, weekStandoutRawValue } = parseGroqResponse(rawContent);
+  const geminiRawContent = typeof geminiResponse === 'string' ? geminiResponse.trim() : '';
   const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
     ? ctx.longRangeDebugCandidates
     : Array.isArray(ctx.longRangeCandidates)
@@ -655,24 +799,20 @@ export function run({ $input }: N8nRuntime) {
     ...(ctx.altLocations || []).map((a: { name?: string }) => a?.name),
     ...((ctx.debugContext?.nearbyAlternatives || []).map((a: { name?: string }) => a?.name)),
   ].filter((n: string | undefined): n is string => Boolean(n));
-  const spurOfTheMoment = resolveSpurSuggestion(spurRaw, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]);
-  const normalizedAiText = normalizeAiText(editorial);
-  const factualCheck = getFactualCheck(normalizedAiText, ctx);
-  const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
-  const groqFailed = !factualCheck.passed || !editorialCheck.passed;
-
-  // If Groq output fails validation, try Gemini fallback before using the template
-  const geminiNormalized = typeof geminiResponse === 'string' ? normalizeAiText(geminiResponse) : '';
-  const geminiFactualCheck = groqFailed && geminiNormalized ? getFactualCheck(geminiNormalized, ctx) : null;
-  const geminiEditorialCheck = groqFailed && geminiNormalized ? getEditorialCheck(geminiNormalized, ctx) : null;
-  const geminiPassed = Boolean(geminiFactualCheck?.passed && geminiEditorialCheck?.passed);
-
-  const fallbackUsed = groqFailed && !geminiPassed;
-  const aiText = groqFailed
-    ? (geminiPassed ? geminiNormalized : buildFallbackAiText(ctx))
-    : normalizedAiText;
-  const resolvedWeekStandout = validateWeekInsight(weekInsight, ctx.dailySummary);
-  const safeCompositionBullets = filterCompositionBullets(compositionBullets, ctx);
+  const editorialChoice = chooseEditorialCandidate(
+    getPhotoBriefEditorialPrimaryProvider(),
+    ctx,
+    rawContent,
+    geminiRawContent,
+  );
+  const activeCandidate = editorialChoice.selectedCandidate;
+  const traceCandidate = activeCandidate || editorialChoice.primaryCandidate || editorialChoice.secondaryCandidate;
+  const spurOfTheMoment = resolveSpurSuggestion(activeCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]);
+  const aiText = activeCandidate
+    ? activeCandidate.normalizedAiText
+    : buildFallbackAiText(ctx);
+  const resolvedWeekStandout = validateWeekInsight(activeCandidate?.weekInsight || '', ctx.dailySummary);
+  const safeCompositionBullets = filterCompositionBullets(activeCandidate?.compositionBullets || [], ctx);
 
   const debugContext = ctx.debugContext || emptyDebugContext();
   const debugMode = ctx.debugMode === true;
@@ -701,26 +841,29 @@ export function run({ $input }: N8nRuntime) {
   }
 
   debugContext.ai = {
+    primaryProvider: editorialChoice.primaryProvider,
+    selectedProvider: editorialChoice.selectedProvider,
     rawGroqResponse: rawContent,
-    normalizedAiText,
-    factualCheck: groqFailed && geminiPassed ? geminiFactualCheck! : factualCheck,
-    editorialCheck: groqFailed && geminiPassed ? geminiEditorialCheck! : editorialCheck,
+    rawGeminiResponse: geminiRawContent || undefined,
+    normalizedAiText: traceCandidate?.normalizedAiText || '',
+    factualCheck: traceCandidate?.factualCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
+    editorialCheck: traceCandidate?.editorialCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
     spurSuggestion: {
-      raw: spurRaw ? `${spurRaw.locationName} (${spurRaw.confidence})` : null,
-      confidence: spurRaw?.confidence ?? null,
+      raw: activeCandidate?.spurRaw ? `${activeCandidate.spurRaw.locationName} (${activeCandidate.spurRaw.confidence})` : null,
+      confidence: activeCandidate?.spurRaw?.confidence ?? null,
       resolved: spurOfTheMoment?.locationName || null,
-      dropped: Boolean(spurRaw) && !spurOfTheMoment,
-      dropReason: resolveSpurDropReason(spurRaw, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]),
+      dropped: Boolean(activeCandidate?.spurRaw) && !spurOfTheMoment,
+      dropReason: resolveSpurDropReason(activeCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]),
     },
     weekStandout: {
-      parseStatus: weekStandoutParseStatus,
-      rawValue: weekStandoutRawValue,
+      parseStatus: activeCandidate?.weekStandoutParseStatus || 'absent',
+      rawValue: activeCandidate?.weekStandoutRawValue || null,
       used: resolvedWeekStandout.usedRaw,
       decision: resolvedWeekStandout.decision,
       finalValue: resolvedWeekStandout.text || null,
       fallbackReason: resolvedWeekStandout.fallbackReason,
     },
-    fallbackUsed,
+    fallbackUsed: editorialChoice.fallbackUsed,
     finalAiText: aiText,
   };
 

@@ -745,4 +745,36 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('keep the composition bullets about the local session');
   });
 
+  it('prompts aurora-aware editorial and composition when Kp clears the local threshold', () => {
+    const result = buildPrompt({
+      windows: [makeAstroWindow('2026-03-18')],
+      dontBother: false,
+      todayBestScore: 60,
+      todayCarWash: { score: 65, rating: '✅', label: 'Good', start: '14:00', end: '16:00', wind: 8, pp: 5, tmp: 8 },
+      dailySummary: [makeBaseDailySummary('2026-03-18')],
+      altLocations: [{
+        name: 'Stanage Edge',
+        driveMins: 65,
+        bestScore: 85,
+        bestDayHour: '06:00',
+        bestAstroHour: '22:00',
+        isAstroWin: true,
+        darkSky: true,
+        types: ['astrophotography'],
+      }],
+      noAltsMsg: null,
+      metarNote: '',
+      sunrise: '2026-03-18T06:13:00.000Z',
+      sunset: '2026-03-18T18:15:00.000Z',
+      moonPct: 1,
+      kpForecast: [{ time: '2026-03-18T22:00:00Z', kp: 6.3 }],
+      now: new Date('2026-03-18T12:00:00Z'),
+    });
+
+    expect(result.prompt).toContain('Aurora alert: Kp 6.3 forecast tonight — this clears the local visibility threshold of Kp 6 for Leeds.');
+    expect(result.prompt).toContain('This window coincides with an active aurora signal (Kp 6.3 vs local visibility threshold Kp 6)');
+    expect(result.prompt).toContain('Make the first bullet aurora-led');
+    expect(result.prompt).toContain('Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing"');
+  });
+
 });
