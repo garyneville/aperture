@@ -709,6 +709,25 @@ describe('run — weekStandout validation', () => {
     expect(result.debugEmailHtml).toContain('weekStandout misidentified the reliable day');
   });
 
+  it('accepts weekStandout naming an equally-scored day with lower certainty (#223)', () => {
+    // Reproduces the scenario: Tomorrow and Saturday both score 63,
+    // but Saturday has much lower certainty. The AI correctly names
+    // Saturday even though sort-order would pick Tomorrow.
+    const result = makeRuntimeOutput(
+      'Today is the most reliable forecast; Saturday may score higher but with much lower certainty',
+      [
+        makeDay('Today', 0, 55, 'high', 5),
+        makeDay('Tomorrow', 1, 63, 'medium', 19),
+        makeDay('Friday', 2, 52, 'medium', 16),
+        makeDay('Saturday', 3, 63, 'low', 35),
+        makeDay('Sunday', 4, 48, 'low', 28),
+      ],
+    );
+
+    expect(result.emailHtml).toContain('Today is the most reliable forecast; Saturday may score higher but with much lower certainty');
+    expect(result.debugEmailHtml).toContain('present in raw response → used');
+  });
+
   it('drops a spur suggestion when the location was already scored in the nearby alternatives pool', () => {
     const content = JSON.stringify({
       editorial: 'Leeds is not worth it today due to poor conditions. Consider Brimham Rocks instead.',
@@ -903,5 +922,83 @@ describe('run — weekStandout validation', () => {
     expect(result.emailHtml).not.toContain('Frozen waterfalls in early spring');
     expect(result.debugEmailHtml).toContain('Aysgarth Falls (0.8) → dropped: long-range candidate rejected: does not beat Leeds by 10 points (50 vs 42)');
     expect(result.debugEmailHtml).not.toContain('Resolved spur:</span> Aysgarth Falls');
+  });
+});
+
+describe('run — model fallback reporting (#222)', () => {
+  it('reports model fallback when primary fails and secondary succeeds', () => {
+    // Gemini (primary) gives a truncated/bad response; Groq (secondary) passes
+    const groqContent = JSON.stringify({
+      editorial: 'Conditions stay clean through the midnight astro window. The 03:00 peak sits under the darkest patch of sky tonight.',
+      composition: ['Face north with a low tree line for any aurora glow'],
+    });
+    const geminiContent = '{"editorial": "The moon sets before the Midnight astro window begins at 00:';  // truncated
+
+    const result = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content: groqContent } }],
+            geminiResponse: geminiContent,
+            dontBother: false,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [{
+              label: 'Midnight astro window',
+              start: '00:00',
+              end: '04:00',
+              peak: 56,
+              tops: ['astrophotography'],
+              hours: [{ hour: '03:00', score: 56 }],
+            }],
+            dailySummary: [{
+              dayLabel: 'Today',
+              dayIdx: 0,
+              headlineScore: 56,
+              photoScore: 56,
+              confidence: 'high',
+              confidenceStdDev: 5,
+              bestPhotoHour: '03:00',
+              astroScore: 68,
+              bestAstroHour: '03:00',
+              darkSkyStartsAt: '00:00',
+            }],
+            altLocations: [],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 10,
+              pp: 10,
+              tmp: 8,
+            },
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 56,
+            peakKpTonight: 6.3,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as { debugEmailHtml: string };
+
+    expect(result.debugEmailHtml).toContain('Model fallback');
+    expect(result.debugEmailHtml).toContain('gemini failed, used groq');
+    expect(result.debugEmailHtml).toContain('Hardcoded fallback');
   });
 });

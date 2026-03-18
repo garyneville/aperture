@@ -164,21 +164,22 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Selected provider', aiTrace.selectedProvider || null],
             ['Factual check', aiTrace.factualCheck.passed ? 'Passed' : `Failed (${aiTrace.factualCheck.rulesTriggered.join(', ')})`],
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
-            ['Fallback used', aiTrace.fallbackUsed ? 'Yes' : 'No'],
+            ['Model fallback', aiTrace.modelFallbackUsed ? `Yes — ${aiTrace.primaryProvider} failed, used ${aiTrace.selectedProvider}` : 'No'],
+            ['Hardcoded fallback', aiTrace.fallbackUsed ? 'Yes — both models failed, using template text' : 'No'],
             ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` → dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'}` : ' → shown'}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
             ['weekStandout', (() => {
-              const standout = aiTrace.weekStandout;
-              if (standout.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
-              if (standout.parseStatus === 'absent' && standout.finalValue) {
-                return `absent from raw response → fallback used: "${standout.finalValue}"`;
+              const weekStandout = aiTrace.weekStandout;
+              if (weekStandout.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
+              if (weekStandout.parseStatus === 'absent' && weekStandout.finalValue) {
+                return `absent from raw response → fallback used: "${weekStandout.finalValue}"`;
               }
-              if (standout.parseStatus === 'absent') return 'absent from raw response — model did not generate';
-              if (standout.decision === 'fallback-used') {
-                return `present in raw response → replaced with fallback: "${standout.finalValue || ''}"${standout.fallbackReason ? ` (${standout.fallbackReason})` : ''}`;
+              if (weekStandout.parseStatus === 'absent') return 'absent from raw response — model did not generate';
+              if (weekStandout.decision === 'fallback-used') {
+                return `present in raw response → replaced with fallback: "${weekStandout.finalValue || ''}"${weekStandout.fallbackReason ? ` (${weekStandout.fallbackReason})` : ''}`;
               }
-              if (!standout.used) return 'present in raw response (empty string) — not used';
-              return `present in raw response → used: "${standout.rawValue}"`;
+              if (!weekStandout.used) return 'present in raw response (empty string) — not used';
+              return `present in raw response → used: "${weekStandout.rawValue}"`;
             })()],
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>

@@ -428,7 +428,7 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
     { label: 'Peak astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
-    { label: bestTimeLabel(topWindow), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
+    { label: bestTimeLabel(topWindow, displayPlan.promotedFromPast), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
   const localSummary = effectiveDontBother
@@ -485,11 +485,11 @@ export function formatEmail(input: FormatEmailInput): string {
   `, 'hero-card', `background:linear-gradient(160deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.08);`);
 
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
-  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
   const kitCard = kitAdvisoryCard(kitTips);
 
   if (debugContext) {
-    const { trace, tipsShown } = evaluateKitRules(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+    const { trace, tipsShown } = evaluateKitRules(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
     debugContext.kitAdvisory = { rules: trace, tipsShown };
   }
 

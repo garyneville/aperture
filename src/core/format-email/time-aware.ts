@@ -99,7 +99,9 @@ export function classifyWindowTiming(window: Window, nowMinutes: number): 'past'
   const endMinutes = clockToMinutes(window.end);
   if (startMinutes === null || endMinutes === null) return 'future';
   if (endMinutes < startMinutes) {
-    return nowMinutes >= startMinutes ? 'current' : 'future';
+    if (nowMinutes >= startMinutes) return 'current';
+    if (nowMinutes < endMinutes) return 'current';
+    return 'future';
   }
   if (endMinutes < nowMinutes) return 'past';
   if (startMinutes <= nowMinutes) return 'current';
@@ -171,7 +173,8 @@ export function displayTag(tag: string): string {
   return tagMap[normalized] || tag.trim();
 }
 
-export function bestTimeLabel(window: Window | null | undefined): string {
+export function bestTimeLabel(window: Window | null | undefined, promotedFromPast = false): string {
+  if (promotedFromPast) return 'Next window';
   if (isAstroWindow(window ?? undefined)) return 'Best astro';
   if (window && !window.fallback) return 'Best light';
   return 'Best time';
@@ -353,7 +356,7 @@ export function localSummaryLines(
         : todayDay.bestPhotoHour
           ? `Best local setup: ${todayDay.bestPhotoHour}.`
           : '',
-    astroGap ? astroGap.text : '',
+    astroGap && !plan.promotedFromPast ? astroGap.text : '',
     nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
       ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
       : '',

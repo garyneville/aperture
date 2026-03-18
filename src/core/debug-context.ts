@@ -109,6 +109,7 @@ export interface DebugAiTrace {
   };
   weekStandout: DebugWeekStandoutTrace;
   fallbackUsed: boolean;
+  modelFallbackUsed: boolean;
   finalAiText: string;
 }
 

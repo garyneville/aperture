@@ -1,7 +1,7 @@
 import { esc } from '../utils.js';
 import type { DebugKitAdvisoryRule } from '../debug-context.js';
 import { C, FONT, card } from './shared.js';
-import { isAstroWindow, windowRange } from './time-aware.js';
+import { clockToMinutes, isAstroWindow, windowRange } from './time-aware.js';
 import type { CarWash, Window, WindowHour } from './types.js';
 
 export interface KitTip {
@@ -85,10 +85,15 @@ function buildKitRuleParams(
   windows: Window[],
   astroScore: number,
   moonPct: number,
+  nowMinutes = 0,
 ): KitRuleParams {
-  const topWindow = windows?.[0];
+  const upcomingWindows = (windows || []).filter(window => {
+    const endMinutes = clockToMinutes(window.end);
+    return endMinutes === null || endMinutes >= nowMinutes;
+  });
+  const topWindow = upcomingWindows[0];
   const topPeakHour = peakWindowHour(topWindow);
-  const astroWindow = bestAstroWindow(windows || []);
+  const astroWindow = bestAstroWindow(upcomingWindows);
   const astroPeakHour = peakWindowHour(astroWindow);
   const resolvedAstroScore = Math.max(
     astroScore || 0,
@@ -115,8 +120,9 @@ export function buildKitTips(
   astroScore: number,
   moonPct: number,
   maxTips = 3,
+  nowMinutes = 0,
 ): KitTip[] {
-  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct, nowMinutes);
 
   return KIT_RULES
     .filter(rule => rule.predicate(params))
@@ -131,8 +137,9 @@ export function evaluateKitRules(
   astroScore: number,
   moonPct: number,
   maxTips = 3,
+  nowMinutes = 0,
 ): { trace: DebugKitAdvisoryRule[]; tipsShown: string[] } {
-  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct, nowMinutes);
 
   const thresholdLabels: Record<string, string> = {
     'high-wind': 'wind > 25 km/h',

@@ -70,6 +70,8 @@ describe('formatDebugEmail', () => {
         deltaVsWindowPeak: 25,
       }],
       ai: {
+        primaryProvider: 'gemini',
+        selectedProvider: 'gemini',
         rawGroqResponse: '{"editorial":"Good night."}',
         normalizedAiText: 'Good night.',
         factualCheck: { passed: true, rulesTriggered: [] },
@@ -90,6 +92,7 @@ describe('formatDebugEmail', () => {
           fallbackReason: 'missing weekStandout value',
         },
         fallbackUsed: true,
+        modelFallbackUsed: false,
         finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
       },
     });
@@ -112,6 +115,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('confidence below threshold');
     expect(html).toContain('weekStandout');
     expect(html).toContain('absent from raw response');
+    expect(html).toContain('Model fallback');
+    expect(html).toContain('Hardcoded fallback');
   });
 });
 

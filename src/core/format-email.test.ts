@@ -317,7 +317,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Remaining today');
     expect(html).toContain('Today from 12:00');
     expect(html).toContain('Next photo windows: Evening golden hour 18:00');
-    expect(html).toContain('Earlier daylight utility');
+    expect(html).not.toContain('Earlier daylight utility');
     expect(html).not.toContain('Tomorrow&#39;s weather');
   });
 
@@ -375,6 +375,81 @@ describe('formatEmail hero summary', () => {
       debugContext: {
         metadata: {
           generatedAt: '2026-03-18T23:30:00.000Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.57,
+          timezone: 'Europe/London',
+          workflowVersion: 'debug-trace-v1',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Live now');
+    expect(html).toContain('Overnight astro window');
+    expect(html).not.toContain('Next window');
+    expect(html).not.toContain('Earlier today');
+  });
+
+  it('treats overnight windows as live in the early-morning carry-over period', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Overnight astro window',
+        start: '23:00',
+        end: '02:00',
+        peak: 61,
+        hours: [{ hour: '01:00', score: 61, ch: 2, visK: 18, wind: '6', pp: 0, tpw: 18 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 70,
+        start: '12:00',
+        end: '15:00',
+        wind: 8,
+        pp: 0,
+        tmp: 8,
+      },
+      dailySummary: [{
+        dayLabel: 'Today',
+        dateKey: '2026-03-19',
+        dayIdx: 0,
+        photoScore: 61,
+        headlineScore: 61,
+        photoEmoji: '👍',
+        amScore: 35,
+        pmScore: 44,
+        astroScore: 68,
+        confidence: 'high',
+        confidenceStdDev: 6,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 6,
+        bestPhotoHour: '01:00',
+        bestAstroHour: '01:00',
+        bestTags: 'astrophotography',
+        carWash: { rating: 'OK', label: 'Usable', score: 70, start: '12:00', end: '15:00', wind: 8, pp: 0, tmp: 8 },
+      }],
+      altLocations: [],
+      sunriseStr: '06:11',
+      sunsetStr: '18:17',
+      moonPct: 8,
+      today: 'Thursday 19 March',
+      todayBestScore: 61,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'The overnight astro slot is still live after midnight.',
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-19T01:00:00.000Z',
           location: 'Leeds',
           latitude: 53.8,
           longitude: -1.57,

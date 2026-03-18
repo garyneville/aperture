@@ -338,14 +338,16 @@ export function photoForecastCards(dailySummary: DaySummary[]): string {
 }
 
 export function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTimeContext): string {
+  const startMinutes = clockToMinutes(todayCarWash.start);
+  const endMinutes = clockToMinutes(todayCarWash.end);
+  const isPast = startMinutes !== null && endMinutes !== null && endMinutes < runTime.nowMinutes;
+  if (isPast) return '';
+
   const state = todayCarWash.score >= 75
     ? { fg: C.success, bg: C.successContainer, border: '#A3D9B1' }
     : todayCarWash.score >= 50
       ? { fg: C.onPrimaryContainer, bg: C.primaryContainer, border: '#A8D4FB' }
       : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
-  const startMinutes = clockToMinutes(todayCarWash.start);
-  const endMinutes = clockToMinutes(todayCarWash.end);
-  const isPast = startMinutes !== null && endMinutes !== null && endMinutes < runTime.nowMinutes;
   const isOngoing = startMinutes !== null && endMinutes !== null && startMinutes <= runTime.nowMinutes && endMinutes >= runTime.nowMinutes;
   const clippedStart = isOngoing
     ? minutesToClock(runTime.nowMinutes % 60 === 0 ? runTime.nowMinutes : runTime.nowMinutes + (60 - (runTime.nowMinutes % 60)))
@@ -353,11 +355,7 @@ export function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTime
   const window = todayCarWash.start !== '\u2014'
     ? `${clippedStart}–${todayCarWash.end}`
     : '\u2014';
-  const utilityLabel = isPast
-    ? 'Earlier daylight utility'
-    : isOngoing
-      ? 'Daylight utility now'
-      : 'Daylight utility';
+  const utilityLabel = isOngoing ? 'Daylight utility now' : 'Daylight utility';
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:${C.surfaceVariant};border-radius:10px;">
     <tr>

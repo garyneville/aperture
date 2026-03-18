@@ -374,6 +374,31 @@ describe('evaluateKitRules', () => {
     expect(rule.value).toContain('later Overnight astro window 23:00-02:00');
     expect(tipsShown).toContain('astro-window');
   });
+
+  it('ignores astro windows that already ended when choosing rerun kit advice', () => {
+    const rerunWindows: Window[] = [{
+      label: 'Midnight astro window',
+      start: '00:00',
+      end: '04:00',
+      peak: 68,
+      hours: [{ hour: '03:00', score: 68, visK: 20, tpw: 18 }],
+      tops: ['astrophotography'],
+    }, {
+      label: 'Evening astro window',
+      start: '21:00',
+      end: '23:00',
+      peak: 61,
+      hours: [{ hour: '22:00', score: 61, visK: 18, tpw: 18 }],
+      tops: ['astrophotography'],
+    }];
+    const { trace, tipsShown } = evaluateKitRules(quietDay, rerunWindows, 68, 8, 3, 13 * 60);
+    const rule = trace.find(entry => entry.id === 'astro-window')!;
+
+    expect(rule.matched).toBe(true);
+    expect(rule.value).toContain('primary Evening astro window 21:00-23:00');
+    expect(rule.value).not.toContain('Midnight astro window 00:00-04:00');
+    expect(tipsShown).toContain('astro-window');
+  });
 });
 
 describe('kit advisory debug trace population', () => {
