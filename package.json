@@ -4,20 +4,21 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --loader ts-node/esm workflow/assemble.ts",
+    "build": "node --loader ts-node/esm workflow/compile-email.ts && node --loader ts-node/esm workflow/assemble.ts",
+    "build:email-templates": "node --loader ts-node/esm workflow/compile-email.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:workflow": "npm run build && git diff --exit-code -- ../../ansible/files/n8n-workflows/photography-weather-brief.json"
   },
   "devDependencies": {
+    "@types/mjml": "^4.7.4",
     "esbuild": "^0.25.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@types/mjml": "^4.7.4",
     "astronomy-engine": "^2.1.19",
     "mjml": "^4.18.0"
   }

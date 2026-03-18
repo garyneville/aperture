@@ -1,6 +1,12 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
 import { renderAiBriefingText } from './ai-briefing.js';
+import {
+  renderEmailCard,
+  renderEmailHeroCard,
+  renderEmailSectionTitle,
+  renderMainEmailDocument,
+} from './email-layout.js';
 import type { DebugContext, DebugKitAdvisoryRule, DebugOutdoorComfortHour } from './debug-context.js';
 import type { AuroraSignal } from './aurora-providers.js';
 
@@ -428,19 +434,17 @@ function spacer(size: number): string {
 }
 
 function card(inner: string, extraClass = '', extraStyle = ''): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="card ${extraClass}" style="width:100%;border-collapse:separate;background:${C.surface};border:1px solid ${C.outline};border-radius:12px;box-shadow:0 1px 3px ${C.shadow}, 0 1px 2px rgba(31,35,40,0.06);${extraStyle}">
-    <tr>
-      <td class="card-pad" style="padding:16px;">
-        ${inner}
-      </td>
-    </tr>
-  </table>`;
+  const content = extraStyle
+    ? `<div style="${extraStyle}">${inner}</div>`
+    : inner;
+  const rowWrappedContent = `<tr><td style="padding:0;">${content}</td></tr>`;
+  return extraClass.includes('hero-card')
+    ? renderEmailHeroCard(rowWrappedContent)
+    : renderEmailCard(rowWrappedContent);
 }
 
 function sectionTitle(title: string): string {
-  return `<div style="padding:0 0 12px;">
-    <div class="section-title" style="Margin:0;font-family:${FONT};font-size:11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:uppercase;color:${C.ink};padding-left:11px;border-left:3px solid ${C.brand};">${esc(title)}</div>
-  </div>`;
+  return renderEmailSectionTitle(esc(title));
 }
 
 function creativeSpark(text: string): string {
@@ -1455,175 +1459,87 @@ export function formatEmail(input: FormatEmailInput): string {
     debugContext.kitAdvisory = { rules: trace, tipsShown };
   }
 
-  /* Assemble full HTML */
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
-  <meta name="x-apple-disable-message-reformatting">
-  <title>Aperture · Leeds</title>
-  <style>
-    /* DM Sans — modern humanist sans, good email client support (Apple Mail, iOS, Outlook.com, Gmail web).
-       Falls back gracefully to the system stack in clients that strip @import (legacy Outlook desktop). */
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+  const tomorrow = dailySummary.find(day => day.dayIdx === 1);
+  const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
+  const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
+  const footerKey = `<div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
+    <b>Key</b> &middot;
+    <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
+    AM/PM = sunrise &amp; sunset light quality &middot;
+    Astro = night sky potential (clear skies + dark moon) &middot;
+    Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
+    Spread = how much forecast models disagree (lower is more reliable) &middot;
+    Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
+  </div>`;
 
-    :root {
-      color-scheme: light dark;
-      supported-color-schemes: light dark;
+  const sections: string[] = [
+    `<tr><td>${hero}</td></tr>`,
+    spacer(8),
+    `<tr><td>${daylightUtilityTodayCard(todayCarWashData)}</td></tr>`,
+  ];
+
+  if (signals) {
+    sections.push(spacer(8), `<tr><td>${signals}</td></tr>`);
+  }
+
+  if (!effectiveDontBother) {
+    sections.push(
+      spacer(16),
+      `<tr><td>${sectionTitle('Today\'s window')}</td></tr>`,
+      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td></tr>`,
+    );
+  }
+
+  if (geminiInspire) {
+    sections.push(spacer(8), `<tr><td>${creativeSpark(geminiInspire)}</td></tr>`);
+  }
+
+  if (kitCard) {
+    sections.push(spacer(8), `<tr><td>${kitCard}</td></tr>`);
+  }
+
+  if (altLocations?.length || longRangeTop) {
+    sections.push(
+      spacer(16),
+      `<tr><td>${sectionTitle('Out of town options')}</td></tr>`,
+      `<tr><td>${alternativeSection(altLocations, noAltsMsg)}</td></tr>`,
+    );
+
+    if (longRangeHtml) {
+      sections.push(spacer(12), `<tr><td>${longRangeHtml}</td></tr>`);
     }
-    body, table, td, div, p, span, a {
-      font-family: ${FONT} !important;
-    }
-    a[x-apple-data-detectors] {
-      color: inherit !important;
-      text-decoration: none !important;
-    }
-    @media screen and (max-width: 640px) {
-      .outer-pad {
-        padding: 8px !important;
-      }
-      .card-pad {
-        padding: 14px !important;
-      }
-      .hero-score {
-        font-size: 48px !important;
-      }
-      .hero-title {
-        font-size: 15px !important;
-        line-height: 1.2 !important;
-      }
-      .section-title {
-        font-size: 10px !important;
-      }
-      .pill,
-      .chip {
-        margin-right: 4px !important;
-        margin-bottom: 4px !important;
-      }
-      .headline {
-        font-size: 16px !important;
-      }
-    }
-    @media (prefers-color-scheme: dark) {
-      body,
-      .page-bg {
-        background: #0C0A08 !important;
-      }
-      .card {
-        background: #1A1612 !important;
-        border-color: #2E2822 !important;
-        box-shadow: none !important;
-      }
-      .hero-card {
-        background: #100E0C !important;
-        border-color: rgba(255, 255, 255, 0.08) !important;
-      }
-      .section-title {
-        color: #F0EBE3 !important;
-      }
-      .headline {
-        color: #F0EBE3 !important;
-      }
-      .page-bg [style*="color:#1A1614"] {
-        color: #F0EBE3 !important;
-      }
-      .page-bg [style*="color:#685E56"],
-      .page-bg [style*="color:#9E9289"] {
-        color: #A89E96 !important;
-      }
-      .page-bg [style*="color:#1D4ED8"] {
-        color: #93C5FD !important;
-      }
-      .chip {
-        background: #26211C !important;
-        border-color: #3A322A !important;
-        color: #F0EBE3 !important;
-      }
-      .pill {
-        color: inherit !important;
-      }
-      .tonal-note {
-        background: #26211C !important;
-      }
-    }
-  </style>
-</head>
-<body class="page-bg" style="margin:0;padding:0;background:${C.page};">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="page-bg" style="width:100%;border-collapse:collapse;background:${C.page};">
-    <tr>
-      <td align="center" class="outer-pad" style="padding:16px 12px;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:520px;border-collapse:collapse;">
-          <tr>
-            <td>
-              ${hero}
-            </td>
-          </tr>
-          ${spacer(8)}
-          <tr>
-            <td>${daylightUtilityTodayCard(todayCarWashData)}</td>
-          </tr>
-          ${signals ? spacer(8) + `<tr><td>${signals}</td></tr>` : ''}
-          ${spacer(16)}
-          ${!effectiveDontBother ? `
-          <tr>
-            <td>${sectionTitle('Today\'s window')}</td>
-          </tr>
-          <tr>
-            <td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td>
-          </tr>
-          ` : ''}
-          ${geminiInspire ? spacer(8) + `<tr><td>${creativeSpark(geminiInspire)}</td></tr>` : ''}
-          ${kitCard ? spacer(8) + `<tr><td>${kitCard}</td></tr>` : ''}
-          ${spacer(16)}
-          ${(altLocations?.length || longRangeTop) ? `
-          <tr>
-            <td>${sectionTitle('Out of town options')}</td>
-          </tr>
-          <tr>
-            <td>${alternativeSection(altLocations, noAltsMsg)}</td>
-          </tr>
-          ${(() => {
-            const lr = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
-            return lr ? spacer(12) + `<tr><td>${lr}</td></tr>` : '';
-          })()}
-          ` : ''}
-          ${(() => {
-            const tomorrow = dailySummary.find(day => day.dayIdx === 1);
-            const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
-            return outlookHtml ? spacer(16) + `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr><tr><td>${outlookHtml}</td></tr>` : '';
-          })()}
-          ${spacer(16)}
-          <tr>
-            <td>${sectionTitle('Days ahead')}</td>
-          </tr>
-          ${weekInsight ? `<tr><td>${card(`<div style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(weekInsight)}</div>`, '', `border-left:3px solid ${C.tertiary};`)}</td></tr>${spacer(8)}` : ''}
-          <tr>
-            <td>${photoForecastCards(dailySummary)}</td>
-          </tr>
-          ${spurOfTheMoment && !spurMatchesTopAlt ? spacer(16) + `<tr><td>${sectionTitle('Spur of the moment')}</td></tr><tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>` : ''}
-          ${spacer(16)}
-          <tr>
-            <td>
-              <div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
-                <b>Key</b> &middot;
-                <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
-                AM/PM = sunrise &amp; sunset light quality &middot;
-                Astro = night sky potential (clear skies + dark moon) &middot;
-                Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
-                Spread = how much forecast models disagree (lower is more reliable) &middot;
-                Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+  }
+
+  if (outlookHtml) {
+    sections.push(
+      spacer(16),
+      `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr>`,
+      `<tr><td>${outlookHtml}</td></tr>`,
+    );
+  }
+
+  sections.push(spacer(16), `<tr><td>${sectionTitle('Days ahead')}</td></tr>`);
+
+  if (weekInsight) {
+    sections.push(
+      `<tr><td>${card(`<div style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(weekInsight)}</div>`, '', `border-left:3px solid ${C.tertiary};`)}</td></tr>`,
+      spacer(8),
+    );
+  }
+
+  sections.push(`<tr><td>${photoForecastCards(dailySummary)}</td></tr>`);
+
+  if (spurOfTheMoment && !spurMatchesTopAlt) {
+    sections.push(
+      spacer(16),
+      `<tr><td>${sectionTitle('Spur of the moment')}</td></tr>`,
+      `<tr><td>${spurOfTheMomentCard(spurOfTheMoment)}</td></tr>`,
+    );
+  }
+
+  sections.push(spacer(16), `<tr><td>${footerKey}</td></tr>`);
+
+  return renderMainEmailDocument(sections.join(''));
 }
 
 function debugCard(title: string, body: string): string {
