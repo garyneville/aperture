@@ -188,20 +188,21 @@ const C = {
   // Ink
   ink: '#1A1614',            // warm near-black
   muted: '#685E56',          // warm muted brown
-  subtle: '#9E9289',         // warm subtle
-  // Semantic score / status colours (unchanged from functional palette)
-  primary: '#2563EB',        // blue — "Good" score state
+  subtle: '#706A63',         // warm subtle — darkened to meet WCAG AA 4.5:1 on both white and surfaceVariant
+  // Semantic score / status colours
+  primary: '#2563EB',        // blue — "Good" score state (text on white)
   primaryContainer: '#DBEAFE',
-  onPrimaryContainer: '#1D4ED8',
-  secondary: '#059669',      // emerald — "Excellent" + success
+  onPrimaryContainer: '#1D4ED8', // use for text/pill on primaryContainer (5.49:1)
+  secondary: '#047857',      // emerald — "Excellent" + success (darkened for WCAG AA)
   secondaryContainer: '#D1FAE5',
+  onSecondaryContainer: '#047857', // 4.84:1 on secondaryContainer, 5.48:1 on white
   tertiary: '#7C3AED',       // violet — astro sessions + third accent
   tertiaryContainer: '#EDE9FE',
-  warning: '#B45309',        // amber-brown — "Marginal" + warnings
+  warning: '#92400E',        // amber-brown — "Marginal" + warnings (darkened for WCAG AA)
   warningContainer: '#FEF3C7',
-  success: '#059669',
+  success: '#047857',        // emerald — darkened to 4.84:1 on successContainer
   successContainer: '#D1FAE5',
-  error: '#DC2626',          // red — "Poor" + errors
+  error: '#991B1B',          // red — "Poor" + errors (darkened for WCAG AA)
   errorContainer: '#FEE2E2',
   shadow: 'rgba(26, 22, 20, 0.10)',
   accent: '#7C3AED',         // violet — creative spark card
@@ -238,7 +239,7 @@ const SCORE_THRESHOLDS = { excellent: 75, good: 58, marginal: 42 } as const;
 
 function scoreState(score: number): { label: string; fg: string; bg: string; border: string } {
   if (score >= SCORE_THRESHOLDS.excellent) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#A3D9B1' };
-  if (score >= SCORE_THRESHOLDS.good) return { label: 'Good', fg: C.primary, bg: C.primaryContainer, border: '#A8D4FB' };
+  if (score >= SCORE_THRESHOLDS.good) return { label: 'Good', fg: C.onPrimaryContainer, bg: C.primaryContainer, border: '#A8D4FB' };
   if (score >= SCORE_THRESHOLDS.marginal) return { label: 'Marginal', fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
   return { label: 'Poor', fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
 }
@@ -385,11 +386,11 @@ function moonDescriptor(moonPct: number): string {
 }
 
 function moonAstroContext(moonPct: number): string {
-  if (moonPct <= 15) return '🌑 Dark skies — excellent for astrophotography';
-  if (moonPct <= 40) return '🌒 Low moon glow — good for astrophotography';
-  if (moonPct <= 70) return '🌓 Moderate moon — astrophotography compromised';
-  if (moonPct <= 90) return '🌔 Bright moon — poor for astrophotography';
-  return '🌕 Full moon — avoid astrophotography';
+  if (moonPct <= 15) return '<span role="img" aria-label="new moon">🌑</span> Dark skies — excellent for astrophotography';
+  if (moonPct <= 40) return '<span role="img" aria-label="crescent moon">🌒</span> Low moon glow — good for astrophotography';
+  if (moonPct <= 70) return '<span role="img" aria-label="quarter moon">🌓</span> Moderate moon — astrophotography compromised';
+  if (moonPct <= 90) return '<span role="img" aria-label="gibbous moon">🌔</span> Bright moon — poor for astrophotography';
+  return '<span role="img" aria-label="full moon">🌕</span> Full moon — avoid astrophotography';
 }
 
 interface SummaryStat {
@@ -986,7 +987,7 @@ function alternativeSection(
           ${elevationChip}
         </div>
         <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(note)}</div>
-        ${snowNote ? `<div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};">❄ ${esc(snowNote)}</div>` : ''}
+        ${snowNote ? `<div style="Margin-top:4px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};"><span role="img" aria-label="snow">❄</span> ${esc(snowNote)}</div>` : ''}
       </div>`;
     }).join('');
 
@@ -1066,7 +1067,7 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
     .map(tag => metricChip(tag, ''))
     .join('');
   const darkSkyNote = spur.darkSky
-    ? `<span style="font-family:${FONT};font-size:12px;color:${C.secondary};">&#x2605; Dark sky site</span>`
+    ? `<span style="font-family:${FONT};font-size:12px;color:${C.secondary};"><span role="img" aria-label="dark sky site">&#x2605;</span> Dark sky site</span>`
     : '';
 
   return card(`
@@ -1138,11 +1139,11 @@ function outdoorSummaryLine(
 }
 
 function weatherEmojiForHour(h: Pick<NextDayHour, 'ct' | 'pp' | 'pr'>): string {
-  if (h.pr >= 2 || h.pp >= 80) return '🌧️';
-  if (h.pr > 0 || h.pp >= 45) return '🌦️';
-  if (h.ct <= 20) return '☀️';
-  if (h.ct <= 60) return '⛅';
-  return '☁️';
+  if (h.pr >= 2 || h.pp >= 80) return '<span role="img" aria-label="heavy rain">🌧️</span>';
+  if (h.pr > 0 || h.pp >= 45) return '<span role="img" aria-label="rain showers">🌦️</span>';
+  if (h.ct <= 20) return '<span role="img" aria-label="sunny">☀️</span>';
+  if (h.ct <= 60) return '<span role="img" aria-label="partly cloudy">⛅</span>';
+  return '<span role="img" aria-label="cloudy">☁️</span>';
 }
 
 /** Renders the next-day hourly weather outlook card. */
@@ -1198,16 +1199,17 @@ export function nextDayHourlyOutlookSection(
     </tr>`;
   }).join('');
 
-  const table = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+  const table = `<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+    <caption style="font-size:0;line-height:0;visibility:hidden;caption-side:top;">Tomorrow&apos;s hourly weather outlook</caption>
     <thead>
       <tr>
-        <th align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Time</th>
-        <th align="center" style="padding:6px 4px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wx</th>
-        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Temp</th>
-        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Rain</th>
-        <th align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wind</th>
-        <th align="left" style="padding:6px 8px 6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
-        <th align="left" style="padding:6px 8px 6px 2px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};"></th>
+        <th scope="col" align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Time</th>
+        <th scope="col" align="center" style="padding:6px 4px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wx</th>
+        <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Temp</th>
+        <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Rain</th>
+        <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wind</th>
+        <th scope="col" align="left" style="padding:6px 8px 6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
+        <th scope="col" align="left" style="padding:6px 8px 6px 2px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};"></th>
       </tr>
     </thead>
     <tbody>${hourRows}</tbody>
@@ -1261,7 +1263,7 @@ function daylightUtilityTodayCard(todayCarWash: CarWash): string {
   const state = cw.score >= 75
     ? { fg: C.success, bg: C.successContainer, border: '#A3D9B1' }
     : cw.score >= 50
-      ? { fg: C.primary, bg: C.primaryContainer, border: '#A8D4FB' }
+      ? { fg: C.onPrimaryContainer, bg: C.primaryContainer, border: '#A8D4FB' }
       : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
   const window = cw.start !== '\u2014' ? `${cw.start}–${cw.end}` : '\u2014';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:${C.surfaceVariant};border-radius:10px;">
@@ -1555,10 +1557,10 @@ function debugTable(headers: string[], rows: string[][], emptyMessage = 'No data
     return `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">${esc(emptyMessage)}</div>`;
   }
 
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
     <thead>
       <tr>
-        ${headers.map(header => `<th align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;line-height:1.3;color:${C.muted};text-transform:uppercase;">${esc(header)}</th>`).join('')}
+        ${headers.map(header => `<th scope="col" align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;line-height:1.3;color:${C.muted};text-transform:uppercase;">${esc(header)}</th>`).join('')}
       </tr>
     </thead>
     <tbody>

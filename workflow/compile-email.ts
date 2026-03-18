@@ -43,7 +43,10 @@ function extractFragment(name: string, html: string): string {
 }
 
 function buildGeneratedModule() {
-  const mainDocument = compileTemplate('main-document', MAIN_EMAIL_MJML);
+  let mainDocument = compileTemplate('main-document', MAIN_EMAIL_MJML);
+  // WCAG 2.2: MJML defaults the HTML lang attribute to "und" (undetermined).
+  // Replace with "en" so screen readers announce the correct language.
+  mainDocument = mainDocument.replace(/\blang="und"/g, 'lang="en"');
   const standardCard = extractFragment('standard-card', compileTemplate('standard-card', STANDARD_CARD_MJML));
   const heroCard = extractFragment('hero-card', compileTemplate('hero-card', HERO_CARD_MJML));
   const sectionTitle = extractFragment('section-title', compileTemplate('section-title', SECTION_TITLE_MJML));
