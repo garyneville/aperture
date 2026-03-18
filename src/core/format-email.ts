@@ -2153,7 +2153,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Selected provider', aiTrace.selectedProvider || null],
             ['Factual check', aiTrace.factualCheck.passed ? 'Passed' : `Failed (${aiTrace.factualCheck.rulesTriggered.join(', ')})`],
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
-            ['Fallback used', aiTrace.fallbackUsed ? 'Yes' : 'No'],
+            ['Model fallback', aiTrace.modelFallbackUsed ? `Yes — ${aiTrace.primaryProvider} failed, used ${aiTrace.selectedProvider}` : 'No'],
+            ['Hardcoded fallback', aiTrace.fallbackUsed ? 'Yes — both models failed, using template text' : 'No'],
             ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` → dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'}` : ' → shown'}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
             ['weekStandout', (() => {

@@ -881,6 +881,9 @@ export function run({ $input }: N8nRuntime) {
       fallbackReason: resolvedWeekStandout.fallbackReason,
     },
     fallbackUsed: editorialChoice.fallbackUsed,
+    modelFallbackUsed: !editorialChoice.fallbackUsed
+      && editorialChoice.selectedProvider !== editorialChoice.primaryProvider
+      && editorialChoice.selectedProvider !== 'template',
     finalAiText: aiText,
   };
 

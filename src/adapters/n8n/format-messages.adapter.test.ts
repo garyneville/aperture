@@ -924,3 +924,81 @@ describe('run — weekStandout validation', () => {
     expect(result.debugEmailHtml).not.toContain('Resolved spur:</span> Aysgarth Falls');
   });
 });
+
+describe('run — model fallback reporting (#222)', () => {
+  it('reports model fallback when primary fails and secondary succeeds', () => {
+    // Gemini (primary) gives a truncated/bad response; Groq (secondary) passes
+    const groqContent = JSON.stringify({
+      editorial: 'Conditions stay clean through the midnight astro window. The 03:00 peak sits under the darkest patch of sky tonight.',
+      composition: ['Face north with a low tree line for any aurora glow'],
+    });
+    const geminiContent = '{"editorial": "The moon sets before the Midnight astro window begins at 00:';  // truncated
+
+    const result = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content: groqContent } }],
+            geminiResponse: geminiContent,
+            dontBother: false,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [{
+              label: 'Midnight astro window',
+              start: '00:00',
+              end: '04:00',
+              peak: 56,
+              tops: ['astrophotography'],
+              hours: [{ hour: '03:00', score: 56 }],
+            }],
+            dailySummary: [{
+              dayLabel: 'Today',
+              dayIdx: 0,
+              headlineScore: 56,
+              photoScore: 56,
+              confidence: 'high',
+              confidenceStdDev: 5,
+              bestPhotoHour: '03:00',
+              astroScore: 68,
+              bestAstroHour: '03:00',
+              darkSkyStartsAt: '00:00',
+            }],
+            altLocations: [],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 10,
+              pp: 10,
+              tmp: 8,
+            },
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 56,
+            peakKpTonight: 6.3,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as { debugEmailHtml: string };
+
+    expect(result.debugEmailHtml).toContain('Model fallback');
+    expect(result.debugEmailHtml).toContain('gemini failed, used groq');
+    expect(result.debugEmailHtml).toContain('Hardcoded fallback');
+  });
+});
