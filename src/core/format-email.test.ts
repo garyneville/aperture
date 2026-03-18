@@ -2010,10 +2010,11 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(result).toBe('');
   });
 
-  it('returns empty string when tomorrow has only night hours', () => {
+  it('renders a table when tomorrow has only night hours', () => {
     const tomorrow = makeTomorrowDay([{ hour: '01:00', isNight: true }]);
     const result = nextDayHourlyOutlookSection(tomorrow);
-    expect(result).toBe('');
+    expect(result).toContain('01:00');
+    expect(result).toContain('Tomorrow at a glance');
   });
 
   it('renders a table when daytime hours are present', () => {
@@ -2033,19 +2034,32 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(html).toContain('Outdoor');
   });
 
-  it('renders weather emoji from cloud and rain signals', () => {
+  it('renders weather SVG icons from cloud and rain signals', () => {
     const tomorrow = makeTomorrowDay([
-      { hour: '09:00', ct: 10, pp: 0, pr: 0, isNight: false },
-      { hour: '10:00', ct: 70, pp: 5, pr: 0, isNight: false },
-      { hour: '11:00', ct: 45, pp: 55, pr: 0, isNight: false },
-      { hour: '12:00', ct: 85, pp: 90, pr: 3, isNight: false },
+      { hour: '09:00', ct: 10, pp: 0, pr: 0, isNight: false },    // clear-day
+      { hour: '10:00', ct: 70, pp: 5, pr: 0, isNight: false },    // cloudy
+      { hour: '11:00', ct: 45, pp: 55, pr: 0, isNight: false },   // partly-cloudy-day-rain
+      { hour: '12:00', ct: 85, pp: 90, pr: 3, isNight: false },   // rain
     ]);
     const html = nextDayHourlyOutlookSection(tomorrow);
 
-    expect(html).toContain('☀️');
-    expect(html).toContain('☁️');
-    expect(html).toContain('🌦️');
-    expect(html).toContain('🌧️');
+    expect(html).toContain('data-condition="clear-day"');
+    expect(html).toContain('data-condition="cloudy"');
+    expect(html).toContain('data-condition="partly-cloudy-day-rain"');
+    expect(html).toContain('data-condition="rain"');
+  });
+
+  it('uses night variant SVG icons for night hours', () => {
+    const tomorrow = makeTomorrowDay([
+      { hour: '22:00', ct: 10, pp: 0, pr: 0, isNight: true },    // clear-night
+      { hour: '23:00', ct: 45, pp: 0, pr: 0, isNight: true },    // partly-cloudy-night
+      { hour: '00:00', ct: 45, pp: 55, pr: 0, isNight: true },   // partly-cloudy-night-rain
+    ]);
+    const html = nextDayHourlyOutlookSection(tomorrow);
+
+    expect(html).toContain('data-condition="clear-night"');
+    expect(html).toContain('data-condition="partly-cloudy-night"');
+    expect(html).toContain('data-condition="partly-cloudy-night-rain"');
   });
 
   it('explains outdoor comfort scores with short reason text', () => {

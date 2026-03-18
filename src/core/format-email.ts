@@ -1,5 +1,7 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { esc } from './utils.js';
+import { WEATHER_ICON_SVGS } from './weather-icons.js';
+import { MOON_ICON_SVGS } from './moon-icons.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import {
   renderEmailCard,
@@ -386,11 +388,12 @@ function moonDescriptor(moonPct: number): string {
 }
 
 function moonAstroContext(moonPct: number): string {
-  if (moonPct <= 15) return '<span role="img" aria-label="new moon">🌑</span> Dark skies — excellent for astrophotography';
-  if (moonPct <= 40) return '<span role="img" aria-label="crescent moon">🌒</span> Low moon glow — good for astrophotography';
-  if (moonPct <= 70) return '<span role="img" aria-label="quarter moon">🌓</span> Moderate moon — astrophotography compromised';
-  if (moonPct <= 90) return '<span role="img" aria-label="gibbous moon">🌔</span> Bright moon — poor for astrophotography';
-  return '<span role="img" aria-label="full moon">🌕</span> Full moon — avoid astrophotography';
+  const icon = moonIconForPct(moonPct);
+  if (moonPct <= 15) return `${icon} ${esc('Dark skies — excellent for astrophotography')}`;
+  if (moonPct <= 40) return `${icon} ${esc('Low moon glow — good for astrophotography')}`;
+  if (moonPct <= 70) return `${icon} ${esc('Moderate moon — astrophotography compromised')}`;
+  if (moonPct <= 90) return `${icon} ${esc('Bright moon — poor for astrophotography')}`;
+  return `${icon} ${esc('Full moon — avoid astrophotography')}`;
 }
 
 interface SummaryStat {
@@ -1138,12 +1141,59 @@ function outdoorSummaryLine(
   return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Limited outdoor opportunities.`;
 }
 
-function weatherEmojiForHour(h: Pick<NextDayHour, 'ct' | 'pp' | 'pr'>): string {
-  if (h.pr >= 2 || h.pp >= 80) return '<span role="img" aria-label="heavy rain">🌧️</span>';
-  if (h.pr > 0 || h.pp >= 45) return '<span role="img" aria-label="rain showers">🌦️</span>';
-  if (h.ct <= 20) return '<span role="img" aria-label="sunny">☀️</span>';
-  if (h.ct <= 60) return '<span role="img" aria-label="partly cloudy">⛅</span>';
-  return '<span role="img" aria-label="cloudy">☁️</span>';
+/** Returns an inline Meteocon SVG for the weather condition, sized at `size` pixels.
+ *
+ *  IDs within the SVG are prefixed with the condition name to avoid gradient conflicts
+ *  when multiple different weather condition SVGs appear in the same HTML document.
+ *  The Meteocon production/fill/svg-static icons use simple alphabetic IDs (e.g. "a", "b")
+ *  for gradients/symbols, and reference them via url(#id), href="#id", and xlink:href="#id" —
+ *  those are the only reference patterns covered here. */
+function weatherIconForHour(h: Pick<NextDayHour, 'ct' | 'pp' | 'pr' | 'isNight'>, size = 20): string {
+  let condition: string;
+  if (h.pr >= 2 || h.pp >= 80) {
+    condition = 'rain';
+  } else if (h.pr > 0 || h.pp >= 45) {
+    condition = h.isNight ? 'partly-cloudy-night-rain' : 'partly-cloudy-day-rain';
+  } else if (h.ct <= 20) {
+    condition = h.isNight ? 'clear-night' : 'clear-day';
+  } else if (h.ct <= 60) {
+    condition = h.isNight ? 'partly-cloudy-night' : 'partly-cloudy-day';
+  } else {
+    condition = 'cloudy';
+  }
+  const svg = WEATHER_ICON_SVGS[condition];
+  if (!svg) return '';
+  const pfx = `wx-${condition}`;
+  const scoped = svg
+    .replace(/\bid="([^"]+)"/g, `id="${pfx}-$1"`)
+    .replace(/\burl\(#([^)]+)\)/g, `url(#${pfx}-$1)`)
+    .replace(/\bhref="#([^"]+)"/g, `href="#${pfx}-$1"`)
+    .replace(/\bxlink:href="#([^"]+)"/g, `xlink:href="#${pfx}-$1"`);
+  return scoped.replace('<svg ', `<svg data-condition="${condition}" width="${size}" height="${size}" `);
+}
+
+/** Returns an inline Meteocon SVG for the moon phase, sized at `size` pixels.
+ *
+ *  Because only the illumination percentage is available (not whether the moon is waxing or
+ *  waning), the waxing-phase icons are used as a visual representative for each brightness band.
+ *  The same ID-prefixing strategy as weatherIconForHour is applied so that gradient IDs don't
+ *  clash with other SVGs in the same document. */
+function moonIconForPct(moonPct: number, size = 14): string {
+  let condition: string;
+  if (moonPct <= 15) condition = 'moon-new';
+  else if (moonPct <= 40) condition = 'moon-waxing-crescent';
+  else if (moonPct <= 70) condition = 'moon-first-quarter';
+  else if (moonPct <= 90) condition = 'moon-waxing-gibbous';
+  else condition = 'moon-full';
+  const svg = MOON_ICON_SVGS[condition];
+  if (!svg) return '';
+  const pfx = `mn-${condition}`;
+  const scoped = svg
+    .replace(/\bid="([^"]+)"/g, `id="${pfx}-$1"`)
+    .replace(/\burl\(#([^)]+)\)/g, `url(#${pfx}-$1)`)
+    .replace(/\bhref="#([^"]+)"/g, `href="#${pfx}-$1"`)
+    .replace(/\bxlink:href="#([^"]+)"/g, `xlink:href="#${pfx}-$1"`);
+  return scoped.replace('<svg ', `<svg width="${size}" height="${size}" style="vertical-align:middle;" `);
 }
 
 /** Renders the next-day hourly weather outlook card. */
@@ -1151,7 +1201,7 @@ export function nextDayHourlyOutlookSection(
   tomorrow: DaySummary | undefined,
   debugContext?: DebugContext,
 ): string {
-  const hours = (tomorrow?.hours || []).filter(h => !h.isNight);
+  const hours = tomorrow?.hours || [];
   if (!hours.length) return '';
 
   const scoredHours = hours.map(h => {
@@ -1160,12 +1210,17 @@ export function nextDayHourlyOutlookSection(
     return { h, score, label };
   });
 
-  const bestWindow = bestOutdoorWindow(hours, scoredHours.map(s => ({ score: s.score, label: s.label })));
-  const summaryLine = outdoorSummaryLine(bestWindow, tomorrow?.hours || []);
+  // All hours (day + night) are shown so that night-variant icons are visible for astro shooters.
+  // The best outdoor *window* recommendation is intentionally restricted to daytime hours only,
+  // since walking/running comfort is a daytime concern.
+  const dayHoursOnly = hours.filter(h => !h.isNight);
+  const dayScored = scoredHours.filter(s => !s.h.isNight);
+  const bestWindow = bestOutdoorWindow(dayHoursOnly, dayScored.map(s => ({ score: s.score, label: s.label })));
+  const summaryLine = outdoorSummaryLine(bestWindow, hours);
 
   // Populate debug context
   if (debugContext) {
-    const debugHours: DebugOutdoorComfortHour[] = scoredHours.map(({ h, score, label }) => ({
+    const debugHours: DebugOutdoorComfortHour[] = scoredHours.filter(({ h }) => !h.isNight).map(({ h, score, label }) => ({
       hour: h.hour,
       comfortScore: score,
       label: label.text,
@@ -1187,7 +1242,7 @@ export function nextDayHourlyOutlookSection(
       : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
     return `<tr style="background:${rowBg};">
       <td valign="middle" style="padding:6px 8px;font-family:${FONT};font-size:12px;font-weight:600;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
-      <td valign="middle" style="padding:6px 4px;font-family:${FONT};font-size:14px;text-align:center;white-space:nowrap;">${weatherEmojiForHour(h)}</td>
+      <td valign="middle" style="padding:6px 4px;text-align:center;white-space:nowrap;">${weatherIconForHour(h)}</td>
       <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(Math.round(h.tmp)))}°C</td>
       <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.pp))}%</td>
       <td valign="middle" style="padding:6px 6px;font-family:${FONT};font-size:12px;color:${C.ink};white-space:nowrap;">${esc(String(h.wind))}km/h</td>
@@ -1441,7 +1496,7 @@ export function formatEmail(input: FormatEmailInput): string {
   <div style="height:1px;background:rgba(255,255,255,0.10);margin:16px 0;"></div>
   <!-- ── Stats grids ── -->
   <div style="border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
-  <div style="Margin-top:5px;padding:0 2px;font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.36);">${esc(moonAstroContext(moonPct))}</div>
+  <div style="Margin-top:5px;padding:0 2px;font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.36);">${moonAstroContext(moonPct)}</div>
   <div style="Margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary || alternativeSummary ? `<div style="height:1px;background:rgba(255,255,255,0.10);margin:14px 0 10px;"></div>` : ''}
   ${localSummary ? `<div style="font-family:${FONT};font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(localSummary.replace(/\n/g, ' · '))}</div>` : ''}
