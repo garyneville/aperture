@@ -1180,6 +1180,7 @@ function weatherIconForHour(h: Pick<NextDayHour, 'ct' | 'pp' | 'pr' | 'isNight'>
  *  clash with other SVGs in the same document. */
 function moonIconForPct(moonPct: number, size = 14): string {
   let condition: string;
+  // Waxing-phase icons represent each brightness band (waxing/waning is indistinguishable from pct alone)
   if (moonPct <= 15) condition = 'moon-new';
   else if (moonPct <= 40) condition = 'moon-waxing-crescent';
   else if (moonPct <= 70) condition = 'moon-first-quarter';
