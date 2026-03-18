@@ -39,7 +39,7 @@ export const MAIN_EMAIL_MJML = String.raw`<mjml>
         }
 
         [style*="color:#685E56"],
-        [style*="color:#9E9289"] {
+        [style*="color:#706A63"] {
           color: #A89E96 !important;
         }
 
