@@ -1676,14 +1676,15 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
 
 function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTimeContext): string {
   const cw = todayCarWash;
+  const startMinutes = clockToMinutes(cw.start);
+  const endMinutes = clockToMinutes(cw.end);
+  const isPast = startMinutes !== null && endMinutes !== null && endMinutes < runTime.nowMinutes;
+  if (isPast) return '';
   const state = cw.score >= 75
     ? { fg: C.success, bg: C.successContainer, border: '#A3D9B1' }
     : cw.score >= 50
       ? { fg: C.onPrimaryContainer, bg: C.primaryContainer, border: '#A8D4FB' }
       : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
-  const startMinutes = clockToMinutes(cw.start);
-  const endMinutes = clockToMinutes(cw.end);
-  const isPast = startMinutes !== null && endMinutes !== null && endMinutes < runTime.nowMinutes;
   const isOngoing = startMinutes !== null && endMinutes !== null && startMinutes <= runTime.nowMinutes && endMinutes >= runTime.nowMinutes;
   const clippedStart = isOngoing
     ? minutesToClock(runTime.nowMinutes % 60 === 0 ? runTime.nowMinutes : runTime.nowMinutes + (60 - (runTime.nowMinutes % 60)))
@@ -1691,11 +1692,9 @@ function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTimeContext
   const window = cw.start !== '\u2014'
     ? `${clippedStart}–${cw.end}`
     : '\u2014';
-  const utilityLabel = isPast
-    ? 'Earlier daylight utility'
-    : isOngoing
-      ? 'Daylight utility now'
-      : 'Daylight utility';
+  const utilityLabel = isOngoing
+    ? 'Daylight utility now'
+    : 'Daylight utility';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:${C.surfaceVariant};border-radius:10px;">
     <tr>
       <td style="padding:10px 14px;">
@@ -1918,11 +1917,14 @@ export function formatEmail(input: FormatEmailInput): string {
     Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
   </div>`;
 
+  const daylightCard = daylightUtilityTodayCard(todayCarWashData, runTime);
   const sections: string[] = [
     `<tr><td>${hero}</td></tr>`,
-    spacer(8),
-    `<tr><td>${daylightUtilityTodayCard(todayCarWashData, runTime)}</td></tr>`,
   ];
+
+  if (daylightCard) {
+    sections.push(spacer(8), `<tr><td>${daylightCard}</td></tr>`);
+  }
 
   if (signals) {
     sections.push(spacer(8), `<tr><td>${signals}</td></tr>`);

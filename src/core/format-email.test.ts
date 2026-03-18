@@ -316,7 +316,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Remaining today');
     expect(html).toContain('Today from 12:00');
     expect(html).toContain('Next photo windows: Evening golden hour 18:00');
-    expect(html).toContain('Earlier daylight utility');
+    expect(html).not.toContain('Earlier daylight utility');
     expect(html).not.toContain('Tomorrow&#39;s weather');
   });
 
