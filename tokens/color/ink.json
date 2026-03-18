@@ -11,9 +11,9 @@
       "$description": "Warm muted brown secondary text"
     },
     "subtle": {
-      "$value": "#9E9289",
+      "$value": "#706A63",
       "$type": "color",
-      "$description": "Warm subtle tertiary text and decorators"
+      "$description": "Warm subtle tertiary text — darkened to meet WCAG AA 4.5:1 on both white and surfaceVariant"
     }
   }
 }

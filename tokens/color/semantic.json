@@ -16,14 +16,19 @@
       "$description": "Text/icon colour on primary container"
     },
     "secondary": {
-      "$value": "#059669",
+      "$value": "#047857",
       "$type": "color",
-      "$description": "Emerald — Excellent score state + success"
+      "$description": "Emerald — Excellent score state + success (darkened for WCAG AA)"
     },
     "secondary-container": {
       "$value": "#D1FAE5",
       "$type": "color",
       "$description": "Secondary container background"
+    },
+    "on-secondary-container": {
+      "$value": "#047857",
+      "$type": "color",
+      "$description": "Text/icon colour on secondary container (4.84:1 on secondaryContainer, 5.48:1 on white)"
     },
     "tertiary": {
       "$value": "#7C3AED",
@@ -36,9 +41,9 @@
       "$description": "Tertiary container background"
     },
     "warning": {
-      "$value": "#B45309",
+      "$value": "#92400E",
       "$type": "color",
-      "$description": "Amber-brown — Marginal score state + warnings"
+      "$description": "Amber-brown — Marginal score state + warnings (darkened for WCAG AA)"
     },
     "warning-container": {
       "$value": "#FEF3C7",
@@ -46,9 +51,9 @@
       "$description": "Warning container background"
     },
     "success": {
-      "$value": "#059669",
+      "$value": "#047857",
       "$type": "color",
-      "$description": "Success state colour (same as secondary)"
+      "$description": "Success state colour — darkened to 4.84:1 on successContainer"
     },
     "success-container": {
       "$value": "#D1FAE5",
@@ -56,9 +61,9 @@
       "$description": "Success container background"
     },
     "error": {
-      "$value": "#DC2626",
+      "$value": "#991B1B",
       "$type": "color",
-      "$description": "Red — Poor score state + errors"
+      "$description": "Red — Poor score state + errors (darkened for WCAG AA)"
     },
     "error-container": {
       "$value": "#FEE2E2",
