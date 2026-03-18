@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatEmail, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
+import { todayWindowSection } from './format-email/time-aware.js';
+import type { RunTimeContext } from './format-email/types.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {
@@ -317,6 +319,175 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Next photo windows: Evening golden hour 18:00');
     expect(html).toContain('Earlier daylight utility');
     expect(html).not.toContain('Tomorrow&#39;s weather');
+  });
+
+  it('treats overnight windows as live once the evening start time has passed', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Overnight astro window',
+        start: '23:00',
+        end: '02:00',
+        peak: 61,
+        hours: [{ hour: '23:00', score: 61, ch: 2, visK: 18, wind: '6', pp: 0, tpw: 18 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 70,
+        start: '12:00',
+        end: '15:00',
+        wind: 8,
+        pp: 0,
+        tmp: 8,
+      },
+      dailySummary: [{
+        dayLabel: 'Today',
+        dateKey: '2026-03-18',
+        dayIdx: 0,
+        photoScore: 61,
+        headlineScore: 61,
+        photoEmoji: '👍',
+        amScore: 35,
+        pmScore: 44,
+        astroScore: 68,
+        confidence: 'high',
+        confidenceStdDev: 6,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 6,
+        bestPhotoHour: '23:00',
+        bestAstroHour: '23:00',
+        bestTags: 'astrophotography',
+        carWash: { rating: 'OK', label: 'Usable', score: 70, start: '12:00', end: '15:00', wind: 8, pp: 0, tmp: 8 },
+      }],
+      altLocations: [],
+      sunriseStr: '06:13',
+      sunsetStr: '18:15',
+      moonPct: 8,
+      today: 'Wednesday 18 March',
+      todayBestScore: 61,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Tonight is the local astro slot.',
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-18T23:30:00.000Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.57,
+          timezone: 'Europe/London',
+          workflowVersion: 'debug-trace-v1',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Live now');
+    expect(html).toContain('Overnight astro window');
+    expect(html).not.toContain('Next window');
+    expect(html).not.toContain('Earlier today');
+  });
+
+  it('escapes dynamic time-aware card content', () => {
+    const html = formatEmail({
+      dontBother: false,
+      windows: [{
+        label: 'Evening <astro> & window',
+        start: '19:00',
+        end: '21:00',
+        peak: 60,
+        darkPhaseStart: '20:30',
+        postMoonsetScore: 65,
+        hours: [{ hour: '19:00', score: 60, ch: 0, visK: 16.5, wind: '8', pp: 0, tpw: 20, crepuscular: 50 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '15:00',
+        end: '17:00',
+        wind: 14,
+        pp: 24,
+        tmp: 9,
+      },
+      dailySummary: [{
+        dayLabel: 'Saturday',
+        dateKey: '2026-03-14',
+        dayIdx: 0,
+        photoScore: 75,
+        headlineScore: 75,
+        photoEmoji: 'Excellent',
+        amScore: 32,
+        pmScore: 40,
+        astroScore: 75,
+        confidence: 'high',
+        confidenceStdDev: 10,
+        bestPhotoHour: '19:00',
+        bestTags: 'astrophotography',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 60,
+          start: '15:00',
+          end: '17:00',
+          wind: 14,
+          pp: 24,
+          tmp: 9,
+        },
+      }],
+      altLocations: [],
+      sunriseStr: '06:23',
+      sunsetStr: '18:07',
+      moonPct: 23,
+      today: 'Saturday 14 March',
+      todayBestScore: 75,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Clear astro conditions expected.',
+      compositionBullets: ['Frame the <north> skyline & wait.'],
+    });
+
+    expect(html).toContain('Evening &lt;astro&gt; &amp; window');
+    expect(html).toContain('Frame the &lt;north&gt; skyline &amp; wait.');
+    expect(html).not.toContain('Evening <astro> & window');
+    expect(html).not.toContain('Frame the <north> skyline & wait.');
+  });
+
+  it('escapes the poor-day fallback line', () => {
+    const runTime: RunTimeContext = { nowMinutes: 12 * 60, nowLabel: '12:00', timezone: 'Europe/London' };
+    const windows: Window[] = [{
+      label: 'Fallback <slot> & window',
+      start: '19:00',
+      end: '21:00',
+      peak: 38,
+      hours: [{ hour: '19:00', score: 38, ch: 80, visK: 8, wind: '18', pp: 70, tpw: 24 }],
+      tops: ['landscape'],
+    }];
+    const html = todayWindowSection(
+      true,
+      38,
+      'Poor conditions.',
+      windows,
+      [],
+      [],
+      runTime,
+      null,
+      [],
+    );
+
+    expect(html).toContain('If you still go: fallback &lt;slot&gt; &amp; window around 19:00 at 38/100.');
+    expect(html).not.toContain('If you still go: fallback <slot> & window around 19:00 at 38/100.');
   });
 
   it('places daylight utility after alternatives in the email flow', () => {

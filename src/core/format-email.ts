@@ -1,5 +1,4 @@
 import { esc } from './utils.js';
-import { auroraVisibleKpThresholdForLat } from './aurora-visibility.js';
 import { renderMainEmailDocument } from './email-layout.js';
 import type { AuroraSignal } from './aurora-providers.js';
 import {

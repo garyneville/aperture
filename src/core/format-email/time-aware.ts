@@ -2,6 +2,7 @@ import { explainAstroScoreGap } from '../astro-score-explanation.js';
 import { renderAiBriefingText } from '../ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import type { DebugContext } from '../debug-context.js';
+import { esc } from '../utils.js';
 import { getPhotoWeatherLat } from '../../config.js';
 import {
   C,
@@ -97,6 +98,9 @@ export function classifyWindowTiming(window: Window, nowMinutes: number): 'past'
   const startMinutes = clockToMinutes(window.start);
   const endMinutes = clockToMinutes(window.end);
   if (startMinutes === null || endMinutes === null) return 'future';
+  if (endMinutes < startMinutes) {
+    return nowMinutes >= startMinutes ? 'current' : 'future';
+  }
   if (endMinutes < nowMinutes) return 'past';
   if (startMinutes <= nowMinutes) return 'current';
   return 'future';
@@ -232,13 +236,13 @@ function windowCard(
     ? `<div style="Margin-top:10px;">${(window.tops || []).map(tag => metricChip(displayTag(tag), '', C.primary)).join('')}</div>`
     : '';
   const noteBlock = notes.length
-    ? `<div style="Margin-top:10px;padding-top:12px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${notes.join(' ')}</div>`
+    ? `<div style="Margin-top:10px;padding-top:12px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(notes.join(' '))}</div>`
     : '';
 
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${sectionLabel}</div>
-    <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${window.label}</div>
-    <div style="Margin:4px 0 0;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${windowRange(window)}</div>
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(sectionLabel)}</div>
+    <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(window.label)}</div>
+    <div style="Margin:4px 0 0;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${esc(windowRange(window))}</div>
     <div style="Margin-top:10px;">${scorePill(window.peak)}</div>
     <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">${metricLine}</div>
     ${tags}
@@ -249,7 +253,7 @@ function windowCard(
 function compositionCard(bullets: string[]): string {
   if (!bullets.length) return '';
   const items = bullets.map(bullet =>
-    `<div style="Margin-bottom:6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">&#x2022; ${bullet}</div>`
+    `<div style="Margin-bottom:6px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.ink};">&#x2022; ${esc(bullet)}</div>`
   ).join('');
   return card(`
     <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Shot ideas</div>
@@ -285,7 +289,7 @@ export function todayWindowSection(
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.error};">Today&apos;s call</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${headline}</div>
       <div style="Margin-top:10px;">${scorePill(todayBestScore)}</div>
-      <div style="Margin-top:10px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${poorDayFallbackLine(windows)}</div>
+      <div style="Margin-top:10px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:3px solid ${C.error};`);
   }
 

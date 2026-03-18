@@ -117,7 +117,7 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(result).toBe('');
   });
 
-  it('renders a table when tomorrow has only night hours', () => {
+  it('returns empty string when tomorrow has only night hours', () => {
     const tomorrow = makeTomorrowDay([{ hour: '01:00', isNight: true }]);
     const result = nextDayHourlyOutlookSection(tomorrow);
     expect(result).toBe('');
