@@ -209,6 +209,39 @@ function sameSession(a: ScoredHour | null, b: ScoredHour | null): boolean {
   return false;
 }
 
+function expandCollapsedDaylightWindow(
+  window: Omit<Window, 'label'>,
+  hrs: ScoredHour[],
+): Omit<Window, 'label'> {
+  if (window.start !== window.end || window.hours.length !== 1) return window;
+
+  const anchor = window.hours[0];
+  if (!anchor || anchor.isNight || !(anchor.isGolden || anchor.isBlue)) return window;
+
+  const sessionHours = hrs.filter(hour => sameSession(hour, anchor));
+  if (sessionHours.length < 2) return window;
+
+  const anchorIndex = sessionHours.findIndex(hour => hour.t === anchor.t || hour.hour === anchor.hour);
+  if (anchorIndex < 0) return window;
+
+  const prefersEarlier = anchor.isGoldAm || anchor.isBlueAm;
+  const primaryNeighbor = prefersEarlier ? sessionHours[anchorIndex - 1] : sessionHours[anchorIndex + 1];
+  const fallbackNeighbor = prefersEarlier ? sessionHours[anchorIndex + 1] : sessionHours[anchorIndex - 1];
+  const neighbor = primaryNeighbor || fallbackNeighbor;
+  if (!neighbor) return window;
+
+  const hours = [anchor, neighbor].sort((a, b) => Date.parse(a.t) - Date.parse(b.t));
+  return {
+    ...window,
+    start: hours[0].hour,
+    st: hours[0].t,
+    end: hours[hours.length - 1].hour,
+    et: hours[hours.length - 1].t,
+    hours,
+    tops: uniqueTags([...(window.tops || []), ...hours.flatMap(hour => hour.tags || [])]).slice(0, 2),
+  };
+}
+
 export function buildFallbackWindow(hrs: ScoredHour[]): Omit<Window, 'label'> | null {
   const candidates = hrs.filter(h =>
     (h.isGoldAm || h.isBlueAm || h.isGoldPm || h.isBluePm) &&
@@ -302,6 +335,7 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
   const { todayHours, dailySummary, metarNote } = input;
 
   let windows = groupWindows(todayHours);
+  windows = windows.map(window => expandCollapsedDaylightWindow(window, todayHours));
   if (!windows.length) {
     const fallback = buildFallbackWindow(todayHours);
     if (fallback) windows = [fallback];

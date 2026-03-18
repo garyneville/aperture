@@ -27,7 +27,7 @@ describe('renderAiBriefingText', () => {
 
     expect(result.usedFallback).toBe(true);
     expect(result.text).toContain('Best conditions are around 04:00 in the overnight astro window.');
-    expect(result.text).toContain('The window tops out at 60/100 overall — cloud or haze weigh it down from the raw astro peak of 72/100 (04:00).');
+    expect(result.text).toContain('The window tops out at 60/100 overall despite a raw astro peak of 72/100 (04:00).');
   });
 
   it('strips a redundant opener when a useful second sentence follows', () => {

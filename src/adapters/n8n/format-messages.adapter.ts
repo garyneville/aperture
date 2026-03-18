@@ -76,8 +76,28 @@ type WindowLike = {
   end?: string;
   peak?: number;
   tops?: string[];
-  hours?: Array<{ hour?: string; score?: number }>;
+  hours?: Array<{
+    hour?: string;
+    score?: number;
+    ct?: number;
+    visK?: number;
+    aod?: number;
+  }>;
 };
+
+type WindowHourLike = NonNullable<WindowLike['hours']>[number];
+
+function clockToMinutes(value: string | null | undefined): number | null {
+  if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+function peakWindowHour(window: WindowLike | undefined): WindowHourLike | null {
+  const hours = window?.hours;
+  if (!hours?.length) return null;
+  return hours.find(hour => hour.score === window?.peak) || hours[0] || null;
+}
 
 export function normalizeAiText(text: string): string {
   const decimalFixed = text.replace(/(\d)\.\s+(\d)/g, '$1.$2');
@@ -101,6 +121,8 @@ export function normalizeAiText(text: string): string {
 export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
   const topWindow = ctx.windows?.[0];
   const topAlt = ctx.altLocations?.[0];
+  const peakHour = peakWindowHour(topWindow);
+  const today = ctx.dailySummary?.[0];
   const SCORE_TOLERANCE = 5;
   const rulesTriggered: string[] = [];
 
@@ -118,7 +140,6 @@ export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck
   const validScores: number[] = [];
   if (typeof topWindow?.peak === 'number') validScores.push(topWindow.peak);
   if (typeof topAlt?.bestScore === 'number') validScores.push(topAlt.bestScore);
-  const today = ctx.dailySummary?.[0];
   if (typeof today?.astroScore === 'number') validScores.push(today.astroScore);
   topWindow?.hours?.forEach(h => { if (typeof h.score === 'number') validScores.push(h.score); });
 
@@ -154,6 +175,23 @@ export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck
     }
   }
 
+  const lower = aiText.toLowerCase();
+  const cloudPenaltyPattern = /\b(cloud(?:\s+cover)?|clouds?|haze)\b.*\b(weigh|weighs|hold|holds|held|limit|limits|limiting|reduce|reduces|reduced|keep|keeps|kept|drag|drags|dragged)\b|\b(weigh|weighs|hold|holds|held|limit|limits|limiting|reduce|reduces|reduced|keep|keeps|kept|drag|drags|dragged)\b.*\b(cloud(?:\s+cover)?|clouds?|haze)\b/;
+  if (cloudPenaltyPattern.test(lower) && typeof peakHour?.ct === 'number' && peakHour.ct < 5) {
+    rulesTriggered.push('editorial attributes the score gap to cloud or haze despite peak-hour cloud below 5%');
+  }
+
+  const moonsetPattern = /\bonce the moon is down\b|\bafter moonset\b|\bonce moonset\b/;
+  const darkSkyStartMins = clockToMinutes(today?.darkSkyStartsAt ?? null);
+  const windowStartMins = clockToMinutes(topWindow?.start ?? null);
+  if (
+    moonsetPattern.test(lower)
+    && darkSkyStartMins !== null
+    && (darkSkyStartMins === 0 || (windowStartMins !== null && darkSkyStartMins <= windowStartMins))
+  ) {
+    rulesTriggered.push('editorial implies moonset happens later even though dark-sky conditions already begin by the selected window start');
+  }
+
   return {
     passed: rulesTriggered.length === 0,
     rulesTriggered,
@@ -167,6 +205,7 @@ export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext
 export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
   const rulesTriggered: string[] = [];
   const topWindow = ctx.windows?.[0];
+  const sentences = splitAiSentences(aiText);
 
   if (!aiText || aiText === '(No AI summary)') {
     rulesTriggered.push('missing AI summary');
@@ -219,6 +258,9 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
 
   if (isSingleSentenceCardRestatement(aiText, ctx)) {
     rulesTriggered.push('single sentence only restates the visible window card');
+  }
+  if (!ctx.dontBother && sentences.length < 2) {
+    rulesTriggered.push('editorial must contain two sentences');
   }
   if (!ctx.dontBother && !mentionsWindow) {
     rulesTriggered.push('does not reference the chosen local window');

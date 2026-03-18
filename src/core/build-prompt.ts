@@ -245,6 +245,9 @@ function weekSummaryLine(dailySummary: DailySummary[]): string {
 
 function moonTimingNote(todayDay: DailySummary | undefined): string {
   if (!todayDay?.darkSkyStartsAt || (todayDay.astroScore ?? 0) <= 0) return '';
+  if (todayDay.darkSkyStartsAt === '00:00') {
+    return '\nMoon is already down by 00:00, so dark-sky conditions are in place from the start of the usable night.';
+  }
   return `\nDark-sky conditions improve from ${todayDay.darkSkyStartsAt} once the moon is down.`;
 }
 
@@ -467,8 +470,9 @@ Locations: ${SPUR_LOCATION_NAMES}`;
 
     const windowsText = windows.map((w, i) => {
       const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
+      const aodLine = typeof h?.aod === 'number' && h.aod >= 0.12 ? ` | AOD ${h.aod.toFixed(2)}` : '';
       return `${i + 1}. ${w.label} (${windowRange(w)}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
-   Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${Math.round(h?.visK ?? 0)}km | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
+   Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${Math.round(h?.visK ?? 0)}km${aodLine} | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
    Tags: ${(w.tops || []).join(', ')}`;
     }).join('\n\n');
 
@@ -482,6 +486,7 @@ Sentence 1: explain why the best local window is worth attention using one suppl
 Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
 The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.
 Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
+Do not blame cloud unless the supplied peak-hour cloud cover supports it. If the score gap is explained by visibility or AOD, say that instead.
 The editorial must describe Leeds conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
 
 COMPOSITION (2 short bullet items):

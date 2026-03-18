@@ -3,6 +3,14 @@ export interface AstroScoreWindow {
   end?: string;
   peak?: number;
   darkPhaseStart?: string | null;
+  hours?: Array<{
+    hour?: string;
+    score?: number;
+    astro?: number;
+    ct?: number;
+    visK?: number;
+    aod?: number;
+  }>;
 }
 
 export interface AstroScoreDaySummary {
@@ -26,6 +34,58 @@ function isValidClockTime(value: string | null | undefined): value is string {
 function toMinutes(value: string): number {
   const [hours, minutes] = value.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function formatOneDecimal(value: number): string {
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
+}
+
+function joinReasons(reasons: string[]): string {
+  if (reasons.length <= 1) return reasons[0] || '';
+  if (reasons.length === 2) return `${reasons[0]} and ${reasons[1]}`;
+  return `${reasons.slice(0, -1).join(', ')}, and ${reasons[reasons.length - 1]}`;
+}
+
+function findRelevantHour(
+  window: AstroScoreWindow | null | undefined,
+  astroHour: string | null,
+): NonNullable<AstroScoreWindow['hours']>[number] | null {
+  const hours = window?.hours;
+  if (!hours?.length) return null;
+
+  if (astroHour) {
+    const exact = hours.find(hour => hour.hour === astroHour);
+    if (exact) return exact;
+  }
+
+  const byPeak = typeof window?.peak === 'number'
+    ? hours.find(hour => hour.score === window.peak)
+    : null;
+  return byPeak || hours[0] || null;
+}
+
+function astroPenaltySummary(
+  hour: NonNullable<AstroScoreWindow['hours']>[number] | null,
+): { subject: string; plural: boolean } | null {
+  if (!hour) return null;
+
+  const reasons: string[] = [];
+  if (typeof hour.ct === 'number' && hour.ct >= 5) {
+    reasons.push('cloud cover');
+  }
+  if (typeof hour.visK === 'number' && hour.visK < 15) {
+    reasons.push(`reduced visibility (${formatOneDecimal(hour.visK)}km)`);
+  }
+  if (typeof hour.aod === 'number' && hour.aod >= 0.12) {
+    const descriptor = hour.aod >= 0.18 ? 'heavy' : hour.aod >= 0.15 ? 'moderate' : 'light';
+    reasons.push(`${descriptor} aerosol loading (AOD ${hour.aod.toFixed(2)})`);
+  }
+
+  if (!reasons.length) return null;
+  return {
+    subject: joinReasons(reasons),
+    plural: reasons.length > 1,
+  };
 }
 
 function windowContainsHour(
@@ -84,11 +144,14 @@ export function explainAstroScoreGap(input: {
   }
 
   const timing = astroHour ? ` (${astroHour})` : '';
+  const penalties = astroPenaltySummary(findRelevantHour(window, astroHour));
   return {
     astroScore,
     windowScore,
     astroHour,
     reason: 'weighted-gap',
-    text: `The window tops out at ${windowScore}/100 overall — cloud or haze weigh it down from the raw astro peak of ${astroScore}/100${timing}.`,
+    text: penalties
+      ? `The window tops out at ${windowScore}/100 overall — ${penalties.subject} ${penalties.plural ? 'keep' : 'keeps'} it below the raw astro peak of ${astroScore}/100${timing}.`
+      : `The window tops out at ${windowScore}/100 overall despite a raw astro peak of ${astroScore}/100${timing}.`,
   };
 }

@@ -345,15 +345,21 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     return { loc, days };
   }).filter((x): x is { loc: AltLocation; days: LocDayScore[] } => x !== null);
 
-  // Today's Leeds headline score for comparison
-  const leedsHeadline = dailySummary[0]?.headlineScore ?? dailySummary[0]?.photoScore ?? 0;
+  // Use the same local headline score that is shown to the user in the hero.
+  const leedsHeadlineFromContext = typeof leedsContext.todayBestScore === 'number'
+    ? leedsContext.todayBestScore
+    : null;
+  const leedsHeadline = leedsHeadlineFromContext
+    ?? dailySummary[0]?.headlineScore
+    ?? dailySummary[0]?.photoScore
+    ?? 0;
 
-  // Filter today's alternatives: must meet threshold AND beat Leeds by 8+ pts
+  // Filter today's alternatives: must meet threshold AND beat Leeds by at least 8 pts
   const todayAlts: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
     const today = days[0];
     if (!today || !today.meetsThreshold) return [];
-    // Only show alts that beat Leeds by a meaningful margin (8+ pts)
-    if (today.bestScore <= leedsHeadline + 8) return [];
+    // Only show alts that beat Leeds by a meaningful margin (8+ pts).
+    if (today.bestScore < leedsHeadline + 8) return [];
     return [{
       name: loc.name,
       driveMins: loc.driveMins,
@@ -415,7 +421,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       const today = days[0];
       if (!today) return null;
 
-      const shown = today.meetsThreshold && today.bestScore > leedsHeadline + 8;
+      const shown = today.meetsThreshold && today.bestScore >= leedsHeadline + 8;
       let discardedReason: string | undefined;
 
       if (!today.meetsThreshold) {
@@ -425,7 +431,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
           discardedReason = `daylight score below threshold (${today.bestDay} < ${DAY_THRESHOLD})`;
         }
       } else if (!shown) {
-        discardedReason = `score does not beat Leeds by 8 points (${today.bestScore} vs ${leedsHeadline})`;
+        discardedReason = `score does not beat Leeds by at least 8 points (${today.bestScore} vs ${leedsHeadline})`;
       }
 
       return {

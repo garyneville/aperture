@@ -1421,7 +1421,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const hasLocalWindow = (windows?.length || 0) > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
   const topWindow = !effectiveDontBother ? windows?.[0] : null;
-  const heroScore = topWindow?.peak ?? todayBestScore;
+  const heroScore = todayDay.headlineScore ?? todayBestScore;
   const peakLocalHour = effectiveDontBother
     ? null
     : peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;

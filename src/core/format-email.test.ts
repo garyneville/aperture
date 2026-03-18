@@ -85,7 +85,9 @@ describe('formatEmail hero summary', () => {
 
     const html = formatEmail(input);
 
-    expect(html).toContain('Good - 60/100');
+    expect(html).toContain('class="hero-score"');
+    expect(html).toContain('>75</div>');
+    expect(html).toContain('>Excellent</div>');
     expect(html).toContain('AM light');
     expect(html).toContain('PM light');
     expect(html).toContain('Peak astro');
@@ -95,7 +97,7 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Low moon glow — good for astrophotography');
     expect(html).toContain('Best astro');
     expect(html).toContain('Evening astro window: 19:00-21:00 at 60/100.');
-    expect(html).toContain('The window tops out at 60/100 overall — cloud or haze weigh it down from the raw astro peak of 75/100 (19:00).');
+    expect(html).toContain('The window tops out at 60/100 overall despite a raw astro peak of 75/100 (19:00).');
     expect(html).toContain('Daylight utility');
     expect(html).toContain('&#x1F697; / &#x1F6B6;');
     expect(html).toContain('>Dew risk</span> Moderate');

@@ -109,7 +109,7 @@ describe('format-messages adapter editorial fallback', () => {
     };
 
     const text = buildFallbackAiText(morningCtx);
-    expect(text).toContain('The window tops out at 36/100 overall — cloud or haze weigh it down from the raw astro peak of 55/100 (07:00).');
+    expect(text).toContain('The window tops out at 36/100 overall despite a raw astro peak of 55/100 (07:00).');
     expect(text).not.toContain('evening');
   });
 
@@ -212,6 +212,52 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
   it('does not flag a prose-only alt mention in the second sentence', () => {
     const proseText = 'Local peak is around 20:00 in the evening astro window. Consider Sutton Bank for better dark sky conditions if you can make the drive.';
     expect(isFactuallyIncoherentEditorial(proseText, marchCtx)).toBe(false);
+  });
+
+  it('flags cloud-blame copy when peak-hour cloud is effectively zero', () => {
+    const cloudCtx = {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [
+          { hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 },
+        ],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '03:00',
+        astroScore: 68,
+        bestAstroHour: '03:00',
+        darkSkyStartsAt: '00:00',
+      }],
+      altLocations: [],
+    };
+
+    const hallucinatedText = 'The midnight astro window is worth a look. Cloud or haze weigh it down from the raw astro peak.';
+    expect(isFactuallyIncoherentEditorial(hallucinatedText, cloudCtx)).toBe(true);
+  });
+
+  it('flags moonset phrasing when dark-sky conditions already begin at the selected window start', () => {
+    const moonCtx = {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 }],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '03:00',
+        astroScore: 68,
+        bestAstroHour: '03:00',
+        darkSkyStartsAt: '00:00',
+      }],
+      altLocations: [],
+    };
+
+    const misleadingText = 'Dark-sky conditions improve from 00:00 once the moon is down. Peak local time is around 03:00 within the midnight astro window.';
+    expect(isFactuallyIncoherentEditorial(misleadingText, moonCtx)).toBe(true);
   });
 
   it('shouldReplaceAiText returns true for the 15 March hallucination', () => {

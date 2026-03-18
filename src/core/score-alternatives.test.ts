@@ -305,4 +305,28 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
       leedsContext: makeLeedsContext(10),
     })).not.toThrow();
   });
+
+  it('shows a nearby alternative that beats Leeds by exactly 8 points', () => {
+    const malhamMeta = ALT_LOCATIONS.find(l => l.name === 'Malham Cove')!;
+    const weather = makeWeatherFixture({ cloudcover: 0, visibility: 50000 });
+    const baseline = scoreAlternatives({
+      altWeatherData: [weather],
+      altLocationMeta: [malhamMeta],
+      leedsContext: makeLeedsContext(0),
+    });
+    const malhamScore = baseline.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove')?.bestScore;
+    expect(typeof malhamScore).toBe('number');
+
+    const result = scoreAlternatives({
+      altWeatherData: [weather],
+      altLocationMeta: [malhamMeta],
+      leedsContext: makeLeedsContext((malhamScore as number) - 8),
+    });
+
+    const debug = result.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove');
+    expect(debug).toBeDefined();
+    expect(debug?.bestScore).toBe(malhamScore);
+    expect(debug?.shown).toBe(true);
+    expect(result.altLocations.some(location => location.name === 'Malham Cove')).toBe(true);
+  });
 });

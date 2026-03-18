@@ -8,6 +8,13 @@ describe('explainAstroScoreGap', () => {
         start: '04:00',
         end: '04:00',
         peak: 51,
+        hours: [{
+          hour: '04:00',
+          score: 51,
+          ct: 0,
+          visK: 12,
+          aod: 0.13,
+        }],
       },
       today: {
         astroScore: 63,
@@ -16,7 +23,23 @@ describe('explainAstroScoreGap', () => {
     });
 
     expect(result?.reason).toBe('weighted-gap');
-    expect(result?.text).toBe('The window tops out at 51/100 overall — cloud or haze weigh it down from the raw astro peak of 63/100 (04:00).');
+    expect(result?.text).toBe('The window tops out at 51/100 overall — reduced visibility (12km) and light aerosol loading (AOD 0.13) keep it below the raw astro peak of 63/100 (04:00).');
+  });
+
+  it('falls back to neutral wording when no dominant penalty metrics are supplied', () => {
+    const result = explainAstroScoreGap({
+      window: {
+        start: '04:00',
+        end: '04:00',
+        peak: 51,
+      },
+      today: {
+        astroScore: 63,
+        bestAstroHour: '04:00',
+      },
+    });
+
+    expect(result?.text).toBe('The window tops out at 51/100 overall despite a raw astro peak of 63/100 (04:00).');
   });
 
   it('calls out when the strongest astro hour sits outside the named window', () => {
