@@ -304,7 +304,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ personalizations: [{ to: [{ email: '__PHOTO_WEATHER_EMAIL_TO__' }] }], from: { email: '__EMAIL_FROM__', name: 'Photo Brief' }, subject: '\ud83d\udcf7 Leeds Photo Brief \u2014 ' + $('Code: Build Prompt').first().json.today, content: [{ type: 'text/plain', value: $json.telegramMsg.replace(/<[^>]+>/g, '') }, { type: 'text/html', value: $json.emailHtml }] }) }}",
+        "body": "={{ JSON.stringify({ personalizations: [{ to: [{ email: '__PHOTO_WEATHER_EMAIL_TO__' }, ...('__PHOTO_WEATHER_EMAIL_TO_2__' ? [{ email: '__PHOTO_WEATHER_EMAIL_TO_2__' }] : [])] }], from: { email: '__EMAIL_FROM__', name: 'Photo Brief' }, subject: '\ud83d\udcf7 Leeds Photo Brief \u2014 ' + $('Code: Build Prompt').first().json.today, content: [{ type: 'text/plain', value: $json.telegramMsg.replace(/<[^>]+>/g, '') }, { type: 'text/html', value: $json.emailHtml }] }) }}",
         "options": {}
       },
       "id": "a1b2c3d4-0012-0012-0012-000000000012",
