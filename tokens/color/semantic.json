@@ -1,0 +1,79 @@
+{
+  "color": {
+    "primary": {
+      "$value": "#2563EB",
+      "$type": "color",
+      "$description": "Blue — Good score state"
+    },
+    "primary-container": {
+      "$value": "#DBEAFE",
+      "$type": "color",
+      "$description": "Primary container background"
+    },
+    "on-primary-container": {
+      "$value": "#1D4ED8",
+      "$type": "color",
+      "$description": "Text/icon colour on primary container"
+    },
+    "secondary": {
+      "$value": "#059669",
+      "$type": "color",
+      "$description": "Emerald — Excellent score state + success"
+    },
+    "secondary-container": {
+      "$value": "#D1FAE5",
+      "$type": "color",
+      "$description": "Secondary container background"
+    },
+    "tertiary": {
+      "$value": "#7C3AED",
+      "$type": "color",
+      "$description": "Violet — astro sessions + third accent"
+    },
+    "tertiary-container": {
+      "$value": "#EDE9FE",
+      "$type": "color",
+      "$description": "Tertiary container background"
+    },
+    "warning": {
+      "$value": "#B45309",
+      "$type": "color",
+      "$description": "Amber-brown — Marginal score state + warnings"
+    },
+    "warning-container": {
+      "$value": "#FEF3C7",
+      "$type": "color",
+      "$description": "Warning container background"
+    },
+    "success": {
+      "$value": "#059669",
+      "$type": "color",
+      "$description": "Success state colour (same as secondary)"
+    },
+    "success-container": {
+      "$value": "#D1FAE5",
+      "$type": "color",
+      "$description": "Success container background"
+    },
+    "error": {
+      "$value": "#DC2626",
+      "$type": "color",
+      "$description": "Red — Poor score state + errors"
+    },
+    "error-container": {
+      "$value": "#FEE2E2",
+      "$type": "color",
+      "$description": "Error container background"
+    },
+    "accent": {
+      "$value": "#7C3AED",
+      "$type": "color",
+      "$description": "Violet — creative spark card accent (same as tertiary)"
+    },
+    "accent-container": {
+      "$value": "#EDE9FE",
+      "$type": "color",
+      "$description": "Accent container background"
+    }
+  }
+}

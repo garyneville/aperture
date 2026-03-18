@@ -1,0 +1,19 @@
+{
+  "color": {
+    "ink": {
+      "$value": "#1A1614",
+      "$type": "color",
+      "$description": "Warm near-black body text"
+    },
+    "muted": {
+      "$value": "#685E56",
+      "$type": "color",
+      "$description": "Warm muted brown secondary text"
+    },
+    "subtle": {
+      "$value": "#9E9289",
+      "$type": "color",
+      "$description": "Warm subtle tertiary text and decorators"
+    }
+  }
+}

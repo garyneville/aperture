@@ -12,6 +12,6 @@
     "sourceMap": false,
     "lib": ["ES2020"]
   },
-  "include": ["src/core/**/*.ts", "src/adapters/**/*.ts", "workflow/**/*.ts"],
+  "include": ["src/core/**/*.ts", "src/adapters/**/*.ts", "src/tokens/**/*.ts", "workflow/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

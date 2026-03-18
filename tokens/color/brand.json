@@ -1,0 +1,24 @@
+{
+  "color": {
+    "brand": {
+      "$value": "#E07B2A",
+      "$type": "color",
+      "$description": "Golden amber — the golden-hour signature colour"
+    },
+    "hero-surface": {
+      "$value": "#100E0C",
+      "$type": "color",
+      "$description": "Warm near-black hero card background"
+    },
+    "hero-gradient-start": {
+      "$value": "#100E0C",
+      "$type": "color",
+      "$description": "Hero gradient start — warm near-black"
+    },
+    "hero-gradient-end": {
+      "$value": "#1C1713",
+      "$type": "color",
+      "$description": "Hero gradient end — slightly lighter warm near-black"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "source": ["tokens/**/*.json"],
+  "log": { "verbosity": "default" },
+  "platforms": {
+    "css": {
+      "transformGroup": "css",
+      "buildPath": "dist/tokens/",
+      "files": [
+        {
+          "destination": "tokens.css",
+          "format": "css/variables"
+        }
+      ]
+    },
+    "ts": {
+      "transformGroup": "js",
+      "buildPath": "src/tokens/",
+      "files": [
+        {
+          "destination": "tokens.ts",
+          "format": "javascript/es6"
+        }
+      ]
+    }
+  }
+}

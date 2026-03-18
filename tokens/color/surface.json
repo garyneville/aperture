@@ -1,0 +1,29 @@
+{
+  "color": {
+    "page": {
+      "$value": "#FAF9F6",
+      "$type": "color",
+      "$description": "Warm cream page background — like photo paper"
+    },
+    "surface": {
+      "$value": "#FFFFFF",
+      "$type": "color",
+      "$description": "Card surface white"
+    },
+    "surface-variant": {
+      "$value": "#F4EFE8",
+      "$type": "color",
+      "$description": "Warm tinted surface for chips and secondary areas"
+    },
+    "outline": {
+      "$value": "#E2D9CF",
+      "$type": "color",
+      "$description": "Warm sand border"
+    },
+    "shadow": {
+      "$value": "rgba(26, 22, 20, 0.10)",
+      "$type": "other",
+      "$description": "Warm near-black drop shadow. Kept as $type 'other' (not 'color') to preserve the rgba() string — hex8 alpha (#rrggbbaa) has poor email-client compatibility."
+    }
+  }
+}

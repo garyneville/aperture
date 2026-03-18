@@ -11,6 +11,38 @@ import {
 } from './email-layout.js';
 import type { DebugContext, DebugKitAdvisoryRule, DebugOutdoorComfortHour } from './debug-context.js';
 import type { AuroraSignal } from './aurora-providers.js';
+import {
+  ColorPage,
+  ColorSurface,
+  ColorSurfaceVariant,
+  ColorOutline,
+  ColorShadow,
+  ColorInk,
+  ColorMuted,
+  ColorSubtle,
+  ColorPrimary,
+  ColorPrimaryContainer,
+  ColorOnPrimaryContainer,
+  ColorSecondary,
+  ColorSecondaryContainer,
+  ColorOnSecondaryContainer,
+  ColorTertiary,
+  ColorTertiaryContainer,
+  ColorWarning,
+  ColorWarningContainer,
+  ColorSuccess,
+  ColorSuccessContainer,
+  ColorError,
+  ColorErrorContainer,
+  ColorAccent,
+  ColorAccentContainer,
+  ColorBrand,
+  ColorHeroSurface,
+  ColorHeroGradientStart,
+  ColorHeroGradientEnd,
+  TypographyFontFamilyBase,
+  TypographyFontFamilyMono,
+} from '../tokens/tokens.js';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -178,48 +210,48 @@ export interface SpurOfTheMomentSuggestion {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Brand colour system                                                */
+/*  Brand colour system (imported from design tokens)                  */
 /* ------------------------------------------------------------------ */
 
 const C = {
   // Page & surface
-  page: '#FAF9F6',           // warm cream — like photo paper
-  surface: '#FFFFFF',
-  surfaceVariant: '#F4EFE8', // warm tinted surface
-  outline: '#E2D9CF',        // warm sand border
+  page: ColorPage,
+  surface: ColorSurface,
+  surfaceVariant: ColorSurfaceVariant,
+  outline: ColorOutline,
   // Ink
-  ink: '#1A1614',            // warm near-black
-  muted: '#685E56',          // warm muted brown
-  subtle: '#706A63',         // warm subtle — darkened to meet WCAG AA 4.5:1 on both white and surfaceVariant
+  ink: ColorInk,
+  muted: ColorMuted,
+  subtle: ColorSubtle,
   // Semantic score / status colours
-  primary: '#2563EB',        // blue — "Good" score state (text on white)
-  primaryContainer: '#DBEAFE',
-  onPrimaryContainer: '#1D4ED8', // use for text/pill on primaryContainer (5.49:1)
-  secondary: '#047857',      // emerald — "Excellent" + success (darkened for WCAG AA)
-  secondaryContainer: '#D1FAE5',
-  onSecondaryContainer: '#047857', // 4.84:1 on secondaryContainer, 5.48:1 on white
-  tertiary: '#7C3AED',       // violet — astro sessions + third accent
-  tertiaryContainer: '#EDE9FE',
-  warning: '#92400E',        // amber-brown — "Marginal" + warnings (darkened for WCAG AA)
-  warningContainer: '#FEF3C7',
-  success: '#047857',        // emerald — darkened to 4.84:1 on successContainer
-  successContainer: '#D1FAE5',
-  error: '#991B1B',          // red — "Poor" + errors (darkened for WCAG AA)
-  errorContainer: '#FEE2E2',
-  shadow: 'rgba(26, 22, 20, 0.10)',
-  accent: '#7C3AED',         // violet — creative spark card
-  accentContainer: '#EDE9FE',
+  primary: ColorPrimary,
+  primaryContainer: ColorPrimaryContainer,
+  onPrimaryContainer: ColorOnPrimaryContainer,
+  secondary: ColorSecondary,
+  secondaryContainer: ColorSecondaryContainer,
+  onSecondaryContainer: ColorOnSecondaryContainer,
+  tertiary: ColorTertiary,
+  tertiaryContainer: ColorTertiaryContainer,
+  warning: ColorWarning,
+  warningContainer: ColorWarningContainer,
+  success: ColorSuccess,
+  successContainer: ColorSuccessContainer,
+  error: ColorError,
+  errorContainer: ColorErrorContainer,
+  shadow: ColorShadow,
+  accent: ColorAccent,
+  accentContainer: ColorAccentContainer,
   // Brand identity
-  brand: '#E07B2A',          // golden amber — the golden-hour signature colour
-  heroSurface: '#100E0C',    // warm near-black hero background
-  heroGradientStart: '#100E0C',
-  heroGradientEnd: '#1C1713',
+  brand: ColorBrand,
+  heroSurface: ColorHeroSurface,
+  heroGradientStart: ColorHeroGradientStart,
+  heroGradientEnd: ColorHeroGradientEnd,
 };
 
 /** DM Sans is a modern, humanist sans-serif with good email client support. System stack is the fallback. */
-const FONT = "'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif";
+const FONT = TypographyFontFamilyBase;
 /** Monospace font stack for debug email pre/code blocks. */
-const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
+const MONO = TypographyFontFamilyMono;
 const UTILITY_GLYPHS = '<span aria-hidden="true">&#x1F697; / &#x1F6B6;</span>';
 
 /** Inline SVG brand mark — clean aperture ring + centre dot, renders as the brand amber in the hero. */

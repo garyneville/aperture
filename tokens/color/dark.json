@@ -1,0 +1,41 @@
+{
+  "color": {
+    "dark": {
+      "page": {
+        "$value": "#0C0A08",
+        "$type": "color",
+        "$description": "Dark mode page background — warm near-black"
+      },
+      "surface": {
+        "$value": "#1A1612",
+        "$type": "color",
+        "$description": "Dark mode card surface"
+      },
+      "surface-variant": {
+        "$value": "#1A1612",
+        "$type": "color",
+        "$description": "Dark mode tinted surface"
+      },
+      "outline": {
+        "$value": "#2E2822",
+        "$type": "color",
+        "$description": "Dark mode warm border"
+      },
+      "ink": {
+        "$value": "#F0EBE3",
+        "$type": "color",
+        "$description": "Dark mode body text — warm off-white"
+      },
+      "muted": {
+        "$value": "#A89E96",
+        "$type": "color",
+        "$description": "Dark mode secondary text"
+      },
+      "on-primary-container": {
+        "$value": "#93C5FD",
+        "$type": "color",
+        "$description": "Dark mode text on primary container"
+      }
+    }
+  }
+}
