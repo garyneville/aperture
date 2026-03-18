@@ -709,6 +709,25 @@ describe('run — weekStandout validation', () => {
     expect(result.debugEmailHtml).toContain('weekStandout misidentified the reliable day');
   });
 
+  it('accepts weekStandout naming an equally-scored day with lower certainty (#223)', () => {
+    // Reproduces the scenario: Tomorrow and Saturday both score 63,
+    // but Saturday has much lower certainty. The AI correctly names
+    // Saturday even though sort-order would pick Tomorrow.
+    const result = makeRuntimeOutput(
+      'Today is the most reliable forecast; Saturday may score higher but with much lower certainty',
+      [
+        makeDay('Today', 0, 55, 'high', 5),
+        makeDay('Tomorrow', 1, 63, 'medium', 19),
+        makeDay('Friday', 2, 52, 'medium', 16),
+        makeDay('Saturday', 3, 63, 'low', 35),
+        makeDay('Sunday', 4, 48, 'low', 28),
+      ],
+    );
+
+    expect(result.emailHtml).toContain('Today is the most reliable forecast; Saturday may score higher but with much lower certainty');
+    expect(result.debugEmailHtml).toContain('present in raw response → used');
+  });
+
   it('drops a spur suggestion when the location was already scored in the nearby alternatives pool', () => {
     const content = JSON.stringify({
       editorial: 'Leeds is not worth it today due to poor conditions. Consider Brimham Rocks instead.',

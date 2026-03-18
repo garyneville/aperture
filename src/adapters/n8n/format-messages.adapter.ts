@@ -745,10 +745,27 @@ function validateWeekInsight(rawValue: string | null, days: WeekSummaryDay[] | u
   const topDay = [...forecastDays].sort((a, b) => displayScore(b) - displayScore(a))[0];
 
   if (lowerFallback.includes('today is the most reliable forecast')) {
-    const topLabel = topDay?.dayLabel?.toLowerCase() || '';
+    // Accept the AI output if it mentions "today" + "reliable" and names any
+    // forecast day that scores ≥ today with meaningfully higher spread.
+    // This avoids false rejections when multiple days tie on score but the AI
+    // picks a different (equally valid) high-certainty-gap day than the sort winner.
+    const today = forecastDays.find(d => d.dayIdx === 0) || forecastDays[0];
+    const todayScore = displayScore(today);
+    const todaySprd = spreadScore(today);
+    const eligibleLabels = forecastDays
+      .filter(d => d !== today
+        && displayScore(d) >= todayScore
+        && todaySprd !== null
+        && spreadScore(d) !== null
+        && (spreadScore(d) as number) - todaySprd >= 8)
+      .map(d => (d.dayLabel || '').toLowerCase())
+      .filter(Boolean);
+
+    const mentionsEligibleDay = eligibleLabels.length === 0
+      || eligibleLabels.some(label => lowerRaw.includes(label));
     const valid = lowerRaw.includes('today')
       && lowerRaw.includes('reliable')
-      && (!topLabel || lowerRaw.includes(topLabel));
+      && mentionsEligibleDay;
     if (!valid) {
       return {
         text: fallback,
