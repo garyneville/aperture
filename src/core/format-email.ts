@@ -93,6 +93,9 @@ export interface AltLocation {
   snowDepthCm?: number | null;
   /** Total snowfall today (cm), null when no snow or no data. */
   snowfallCm?: number | null;
+  siteDarkness?: {
+    bortle: number;
+  };
 }
 
 export interface CarWash {
@@ -116,6 +119,7 @@ export interface NextDayHour {
   pr: number;
   ct: number;
   isNight: boolean;
+  moon?: number;
 }
 
 interface RunTimeContext {
@@ -163,6 +167,7 @@ export interface FormatEmailInput {
   todayCarWash: CarWash;
   dailySummary: DaySummary[];
   altLocations: AltLocation[];
+  closeContenders?: AltLocation[];
   noAltsMsg?: string;
   sunriseStr: string;
   sunsetStr: string;
@@ -1155,9 +1160,10 @@ function buildSnowNote(snowDepthCm: number | null, snowfallCm: number | null): s
 
 function alternativeSection(
   altLocations: AltLocation[] | undefined,
+  closeContenders: AltLocation[] | undefined,
   noAltsMsg: string | undefined,
 ): string {
-  if (!altLocations || !altLocations.length) {
+  if ((!altLocations || !altLocations.length) && (!closeContenders || !closeContenders.length)) {
     return card(`<div style="font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(noAltsMsg || 'No nearby locations score well enough today.')}</div>`);
   }
 
@@ -1191,18 +1197,43 @@ function alternativeSection(
     `;
   };
 
-  const astroAlternatives = altLocations.filter(loc => loc.isAstroWin);
-  const goldenHourAlternatives = altLocations.filter(loc => !loc.isAstroWin);
+  const renderCloseContenders = (locations: AltLocation[]): string => {
+    if (!locations.length) return '';
+    const rows = locations.map((loc, index) => {
+      const bortle = typeof loc.siteDarkness?.bortle === 'number' ? ` · B${loc.siteDarkness.bortle}` : '';
+      return `<div style="${index < locations.length - 1 ? `padding:0 0 10px;border-bottom:1px solid ${C.outline};margin-bottom:10px;` : ''}">
+        <div style="font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">${esc(loc.name)}</div>
+        <div style="Margin-top:8px;">${scorePill(loc.bestScore)}</div>
+        <div style="Margin-top:8px;">
+          ${metricChip('AM', loc.amScore ?? 0, scoreState(loc.amScore ?? 0).fg)}
+          ${metricChip('PM', loc.pmScore ?? 0, scoreState(loc.pmScore ?? 0).fg)}
+          ${metricChip('Astro', loc.astroScore ?? 0, scoreState(loc.astroScore ?? 0).fg)}
+        </div>
+        <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(`Darker-sky near miss - astro best ${loc.bestAstroHour || 'evening'} - ${loc.driveMins} min drive${bortle}`)}</div>
+      </div>`;
+    }).join('');
+
+    return `
+      <div style="font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};Margin:0 0 10px;">Worth a look for darker skies</div>
+      <div style="Margin:0 0 10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">These do not clear the main trip threshold, but darker skies still make them worth a second look.</div>
+      ${rows}
+    `;
+  };
+
+  const astroAlternatives = (altLocations || []).filter(loc => loc.isAstroWin);
+  const goldenHourAlternatives = (altLocations || []).filter(loc => !loc.isAstroWin);
   const sections = [
     renderGroup('Nearby astro options', astroAlternatives),
     renderGroup('Nearby landscape options', goldenHourAlternatives),
+    renderCloseContenders(closeContenders || []),
   ].filter(Boolean);
 
   return card(sections.join(`<div style="height:14px;"></div>`));
 }
 
-function alternativeSummaryTitle(topAlternative: AltLocation | null | undefined): string {
+function alternativeSummaryTitle(topAlternative: AltLocation | null | undefined, isCloseContender = false): string {
   if (!topAlternative) return 'Best nearby alternative';
+  if (isCloseContender) return 'Nearby darker-sky contender';
   return topAlternative.isAstroWin ? 'Best nearby astro alternative' : 'Best nearby golden-hour alternative';
 }
 
@@ -1219,6 +1250,39 @@ function displayLongRangeLabel(cardLabel: string | null | undefined): string | n
   return cardLabel === 'Weekend opportunity' ? 'Long-range opportunity' : cardLabel;
 }
 
+function departByTime(targetTime: string | null | undefined, driveMins: number): string | null {
+  const targetMinutes = clockToMinutes(targetTime);
+  if (targetMinutes === null) return null;
+  const totalDayMinutes = 24 * 60;
+  const departMinutes = ((targetMinutes - driveMins) % totalDayMinutes + totalDayMinutes) % totalDayMinutes;
+  return minutesToClock(departMinutes);
+}
+
+function longRangeFeasibilityNote(longRangeTop: LongRangeCard): string {
+  const targetTime = longRangeTop.isAstroWin ? longRangeTop.bestAstroHour : longRangeTop.bestDayHour;
+  const departBy = departByTime(targetTime, longRangeTop.driveMins);
+
+  if (longRangeTop.driveMins >= 180) {
+    if (departBy && targetTime) {
+      return `Road-trip option - leave by ~${departBy} for the ${targetTime} ${longRangeTop.isAstroWin ? 'astro window' : 'light window'}. Overnight recommended.`;
+    }
+    return 'Road-trip option - best treated as a dedicated trip rather than a same-day short-notice run.';
+  }
+
+  if (longRangeTop.driveMins >= 120) {
+    if (departBy && targetTime) {
+      return `Long drive - leave by ~${departBy} for the ${targetTime} ${longRangeTop.isAstroWin ? 'astro window' : 'light window'}.`;
+    }
+    return 'Long drive - better as a planned outing than a casual detour.';
+  }
+
+  if (longRangeTop.driveMins >= 90) {
+    return 'Long drive - better as a planned outing than a casual detour.';
+  }
+
+  return '';
+}
+
 function longRangeSection(
   longRangeTop: LongRangeCard | null | undefined,
   cardLabel: string | null | undefined,
@@ -1232,6 +1296,7 @@ function longRangeSection(
     const timing = longRangeTop.isAstroWin
       ? `Best astro around ${longRangeTop.bestAstroHour || 'evening'}${longRangeTop.darkSky ? ' - dark sky site' : ''}`
       : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).map(tag => displayTag(tag)).join(', ')}`;
+    const feasibility = longRangeFeasibilityNote(longRangeTop);
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(displayLabel)}</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(longRangeTop.name)}</div>
@@ -1243,6 +1308,7 @@ function longRangeSection(
         ${metricChip('Astro', longRangeTop.astroScore ?? 0, scoreState(longRangeTop.astroScore ?? 0).fg)}
       </div>
       <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(timing)}</div>
+      ${feasibility ? `<div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};">${esc(feasibility)}</div>` : ''}
     `, '', `border-top:3px solid ${C.secondary};`));
   }
 
@@ -1536,6 +1602,18 @@ function remainingTodayHourlyOutlookSection(
   });
 }
 
+function forecastMoonPct(day: DaySummary): number | null {
+  const hours = day.hours || [];
+  const bestAstroHour = day.bestAstroHour
+    ? hours.find(hour => hour.hour === day.bestAstroHour && typeof hour.moon === 'number')
+    : null;
+  const representativeHour = bestAstroHour
+    || hours.find(hour => hour.isNight && typeof hour.moon === 'number')
+    || hours.find(hour => typeof hour.moon === 'number')
+    || null;
+  return typeof representativeHour?.moon === 'number' ? Math.round(representativeHour.moon) : null;
+}
+
 function photoForecastCards(dailySummary: DaySummary[]): string {
   const forecastDays = dailySummary.filter(day => day.dayIdx >= 1).slice(0, 4);
   return listRows(forecastDays.map(day => {
@@ -1547,13 +1625,17 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
       : day.bestAlt?.bestDayHour;
     const scoreStr = typeof displayScore === 'number' ? `${displayScore}/100` : '-';
     const confState = confidenceDetail(effConf);
+    const moonPct = forecastMoonPct(day);
+    const moonLine = moonPct !== null
+      ? `${moonIconForPct(moonPct, 12)} <span style="vertical-align:middle;">Moon ${moonPct}% lit</span>`
+      : '';
     const spreadNote = dayIsAstroLed 
       ? (day.astroConfidenceStdDev !== null && day.astroConfidenceStdDev !== undefined ? ` · spread ${day.astroConfidenceStdDev}` : '')
       : (day.confidenceStdDev !== null && day.confidenceStdDev !== undefined ? ` · spread ${day.confidenceStdDev}` : '');
     const confText = confState ? `<span style="color:${confState.fg};">${confState.label}${spreadNote}</span>` : '';
 
     const altLine = day.bestAlt
-      ? `Backup: ${day.bestAlt.name} · ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}`
+      ? `Backup: ${day.bestAlt.name} · ${day.bestAlt.bestScore}/100${bestAltHour ? ` at ${bestAltHour}` : ''}${day.bestAlt.isAstroWin ? ' (astro)' : ''}${typeof day.bestAlt.driveMins === 'number' ? ` · ${day.bestAlt.driveMins} min drive` : ''}`
       : '';
 
     return card(`
@@ -1565,6 +1647,7 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
       ${metricChip('Astro', day.astroScore ?? 0, scoreState(day.astroScore ?? 0).fg)}
       ${confText ? `<span style="font-family:${FONT};font-size:11px;font-weight:600;margin-left:4px;">${confText}</span>` : ''}
     </div>
+    ${moonLine ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.secondary};">${moonLine}</div>` : ''}
     ${altLine ? `<div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(altLine)}</div>` : ''}
     <div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${daylightUtilityLine(day.carWash)}</div>
     `);
@@ -1630,6 +1713,7 @@ export function formatEmail(input: FormatEmailInput): string {
     todayCarWash: todayCarWashData,
     dailySummary,
     altLocations,
+    closeContenders,
     noAltsMsg,
     sunriseStr,
     sunsetStr,
@@ -1670,7 +1754,10 @@ export function formatEmail(input: FormatEmailInput): string {
   const topWindowIsAstro = isAstroWindow(topWindow || undefined);
   const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
   const todayConfidence = confidenceDetail(todayEffConf);
-  const topAlternative = altLocations?.[0] || todayDay.bestAlt || null;
+  const topPrimaryAlternative = altLocations?.[0] || null;
+  const topCloseContender = closeContenders?.[0] || null;
+  const topAlternative = topPrimaryAlternative || topCloseContender || todayDay.bestAlt || null;
+  const topAlternativeIsCloseContender = !topPrimaryAlternative && !!topCloseContender && topAlternative?.name === topCloseContender.name;
   const topAltDelta = topAlternative && topWindow
     ? topAlternative.bestScore - topWindow.peak
     : 0;
@@ -1776,7 +1863,7 @@ export function formatEmail(input: FormatEmailInput): string {
   <div style="Margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${localSummary || alternativeSummary ? `<div style="height:1px;background:rgba(255,255,255,0.10);margin:14px 0 10px;"></div>` : ''}
   ${localSummary ? `<div style="font-family:${FONT};font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(localSummary.replace(/\n/g, ' · '))}</div>` : ''}
-  ${alternativeSummary ? `<div style="font-family:${FONT};font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">${esc(alternativeSummaryTitle(topAlternative))}: ${esc(alternativeSummary)}</div>` : ''}
+  ${alternativeSummary ? `<div style="font-family:${FONT};font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">${esc(alternativeSummaryTitle(topAlternative, topAlternativeIsCloseContender))}: ${esc(alternativeSummary)}</div>` : ''}
 `, 'hero-card', `background:linear-gradient(160deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.08);`);
 
   /* Signal cards */
@@ -1807,6 +1894,7 @@ export function formatEmail(input: FormatEmailInput): string {
     Outdoor comfort = walk/run practicality, independent of photography scoring &middot;
     Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
     Spread = how much forecast models disagree (lower is more reliable) &middot;
+    Certainty bands = High &lt; 12 pts &middot; Fair 12&ndash;24 pts &middot; Low &ge; 25 pts &middot;
     Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
   </div>`;
 
@@ -1836,11 +1924,11 @@ export function formatEmail(input: FormatEmailInput): string {
     sections.push(spacer(8), `<tr><td>${kitCard}</td></tr>`);
   }
 
-  if (altLocations?.length || longRangeTop) {
+  if (altLocations?.length || closeContenders?.length || longRangeTop) {
     sections.push(
       spacer(16),
       `<tr><td>${sectionTitle('Out of town options')}</td></tr>`,
-      `<tr><td>${alternativeSection(altLocations, noAltsMsg)}</td></tr>`,
+      `<tr><td>${alternativeSection(altLocations, closeContenders, noAltsMsg)}</td></tr>`,
     );
 
     if (longRangeHtml) {

@@ -64,7 +64,9 @@ export function isWithinDriveLimit(loc: LongRangeLocation): boolean {
   return estimatedDriveMins(loc) <= MAX_DRIVE_HOURS * 60;
 }
 
-function defineLongRangeLocation(raw: Omit<LongRangeLocation, 'siteDarkness' | 'darkSky'> & { bortle: number }): LongRangeLocation {
+function defineLongRangeLocation(
+  raw: Omit<LongRangeLocation, 'siteDarkness' | 'darkSky'> & { bortle: number; darkSkyOverride?: boolean },
+): LongRangeLocation {
   const siteDarkness = siteDarknessFromBortle(raw.bortle);
   return {
     name: raw.name,
@@ -74,7 +76,7 @@ function defineLongRangeLocation(raw: Omit<LongRangeLocation, 'siteDarkness' | '
     elevation: raw.elevation,
     tags: raw.tags,
     siteDarkness,
-    darkSky: isDarkSkySite(siteDarkness),
+    darkSky: raw.darkSkyOverride ?? isDarkSkySite(siteDarkness),
   };
 }
 
@@ -123,7 +125,7 @@ export const LONG_RANGE_LOCATIONS: LongRangeLocation[] = [
   defineLongRangeLocation({ name: 'Holy Island', lat: 55.681, lon: -1.799, region: 'northumberland', elevation: 5, tags: ['coastal', 'ruin'], bortle: 4 }),
 
   // ── Snowdonia (6) ────────────────────────────────────────────────────
-  defineLongRangeLocation({ name: 'Snowdon (Yr Wyddfa)', lat: 53.069, lon: -4.076, region: 'snowdonia', elevation: 1085, tags: ['upland'], bortle: 4 }),
+  defineLongRangeLocation({ name: 'Snowdon (Yr Wyddfa)', lat: 53.069, lon: -4.076, region: 'snowdonia', elevation: 1085, tags: ['upland'], bortle: 4, darkSkyOverride: true }),
   defineLongRangeLocation({ name: 'Tryfan', lat: 53.120, lon: -4.002, region: 'snowdonia', elevation: 918, tags: ['upland', 'cliff'], bortle: 4 }),
   defineLongRangeLocation({ name: 'Llyn Ogwen', lat: 53.123, lon: -3.969, region: 'snowdonia', elevation: 310, tags: ['lake', 'upland'], bortle: 4 }),
   defineLongRangeLocation({ name: 'Nant Gwynant', lat: 53.044, lon: -4.010, region: 'snowdonia', elevation: 80, tags: ['lake', 'valley'], bortle: 4 }),

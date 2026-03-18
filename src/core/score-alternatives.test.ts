@@ -4,6 +4,7 @@ import {
   UPLAND_ELEVATION_THRESHOLD_M,
   prepareAltLocations,
 } from './prepare-alt-locations.js';
+import { emptyDebugContext } from './debug-context.js';
 import { scoreAlternatives } from './score-alternatives.js';
 import type { AltWeatherData } from './score-alternatives.js';
 
@@ -328,5 +329,44 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     expect(debug?.bestScore).toBe(malhamScore);
     expect(debug?.shown).toBe(true);
     expect(result.altLocations.some(location => location.name === 'Malham Cove')).toBe(true);
+  });
+
+  it('surfaces darker astro near-misses as close contenders', () => {
+    const malhamMeta = ALT_LOCATIONS.find(l => l.name === 'Malham Cove')!;
+    const boltonAbbeyMeta = ALT_LOCATIONS.find(l => l.name === 'Bolton Abbey')!;
+    const weather = makeWeatherFixture({ cloudcover: 0, visibility: 50000 });
+    const baseline = scoreAlternatives({
+      altWeatherData: [weather],
+      altLocationMeta: [malhamMeta],
+      leedsContext: makeLeedsContext(0),
+    });
+    const malhamScore = baseline.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove')?.bestScore;
+    expect(typeof malhamScore).toBe('number');
+
+    const debugContext = emptyDebugContext();
+    debugContext.windows = [{
+      label: 'Midnight astro window',
+      start: '00:00',
+      end: '04:00',
+      peak: (malhamScore as number) - 8,
+      rank: 1,
+      selected: true,
+      fallback: false,
+      selectionReason: 'selected as the highest-scoring local window',
+    }];
+
+    const result = scoreAlternatives({
+      altWeatherData: [weather, weather],
+      altLocationMeta: [malhamMeta, boltonAbbeyMeta],
+      leedsContext: {
+        ...makeLeedsContext(malhamScore as number),
+        debugContext,
+      },
+    });
+
+    expect(result.altLocations).toHaveLength(0);
+    expect(result.closeContenders.map(location => location.name)).toContain('Malham Cove');
+    expect(result.closeContenders.map(location => location.name)).not.toContain('Bolton Abbey');
+    expect(result.noAltsMsg).toBeNull();
   });
 });

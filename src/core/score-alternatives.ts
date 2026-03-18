@@ -132,6 +132,7 @@ export interface ScoreAlternativesInput {
 /** Output from scoreAlternatives. */
 export interface ScoreAlternativesOutput {
   altLocations: TodayAlt[];
+  closeContenders: TodayAlt[];
   noAltsMsg: string | null;
   augmentedSummary: (DaySummary & { bestAlt: BestAltCandidate | null })[];
   debugContext: DebugContext;
@@ -328,6 +329,43 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
   return days;
 }
 
+function toTodayAlt(loc: AltLocation, today: LocDayScore): TodayAlt {
+  return {
+    name: loc.name,
+    driveMins: loc.driveMins,
+    types: today.bestTags?.length ? today.bestTags : loc.types,
+    siteDarkness: loc.siteDarkness,
+    darkSky: loc.darkSky,
+    dayScore: today.bestDay,
+    astroScore: today.bestAstro,
+    bestScore: today.bestScore,
+    bestDayHour: today.bestDayHour,
+    bestAstroHour: today.bestAstroHour,
+    amScore: today.amScore,
+    pmScore: today.pmScore,
+    isAstroWin: today.isAstroWin,
+    meetsThreshold: today.meetsThreshold,
+    elevationM: loc.elevationM,
+    isUpland: loc.isUpland,
+    snowDepthCm: today.snowDepthCm,
+    snowfallCm: today.snowfallCm,
+  };
+}
+
+function qualifiesAsCloseContender(
+  today: LocDayScore,
+  loc: AltLocation,
+  leedsHeadline: number,
+  selectedWindowPeak: number | null,
+): boolean {
+  if (!today.meetsThreshold || !today.isAstroWin) return false;
+  if (loc.siteDarkness.bortle > 4) return false;
+  if (today.bestScore < leedsHeadline) return false;
+  if (today.bestScore >= leedsHeadline + 8) return false;
+  if (selectedWindowPeak !== null && today.bestScore <= selectedWindowPeak) return false;
+  return true;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Main export                                                       */
 /* ------------------------------------------------------------------ */
@@ -354,32 +392,22 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     ?? dailySummary[0]?.photoScore
     ?? 0;
 
+  // The selected window peak — same baseline used in AI/fallback editorial text.
+  const selectedWindowPeak = debugContext.windows.find(w => w.selected)?.peak ?? null;
+
   // Filter today's alternatives: must meet threshold AND beat Leeds by at least 8 pts
   const todayAlts: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
     const today = days[0];
     if (!today || !today.meetsThreshold) return [];
     // Only show alts that beat Leeds by a meaningful margin (8+ pts).
     if (today.bestScore < leedsHeadline + 8) return [];
-    return [{
-      name: loc.name,
-      driveMins: loc.driveMins,
-      types: today.bestTags?.length ? today.bestTags : loc.types,
-      siteDarkness: loc.siteDarkness,
-      darkSky: loc.darkSky,
-      dayScore: today.bestDay,
-      astroScore: today.bestAstro,
-      bestScore: today.bestScore,
-      bestDayHour: today.bestDayHour,
-      bestAstroHour: today.bestAstroHour,
-      amScore: today.amScore,
-      pmScore: today.pmScore,
-      isAstroWin: today.isAstroWin,
-      meetsThreshold: today.meetsThreshold,
-      elevationM: loc.elevationM,
-      isUpland: loc.isUpland,
-      snowDepthCm: today.snowDepthCm,
-      snowfallCm: today.snowfallCm,
-    }];
+    return [toTodayAlt(loc, today)];
+  }).sort((a, b) => b.bestScore - a.bestScore);
+
+  const closeContenders: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
+    const today = days[0];
+    if (!today || !qualifiesAsCloseContender(today, loc, leedsHeadline, selectedWindowPeak)) return [];
+    return [toTodayAlt(loc, today)];
   }).sort((a, b) => b.bestScore - a.bestScore);
 
   // Augment each day in the summary with its best alternative location
@@ -409,12 +437,9 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     return { ...day, bestAlt: altCandidates[0] || null };
   });
 
-  const noAltsMsg = todayAlts.length === 0
+  const noAltsMsg = todayAlts.length === 0 && closeContenders.length === 0
     ? 'No nearby locations score well enough today to recommend a trip.'
     : null;
-
-  // The selected window peak — same baseline used in AI/fallback editorial text.
-  const selectedWindowPeak = debugContext.windows.find(w => w.selected)?.peak ?? null;
 
   debugContext.nearbyAlternatives = allLocScores
     .map(({ loc, days }) => {
@@ -422,6 +447,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       if (!today) return null;
 
       const shown = today.meetsThreshold && today.bestScore >= leedsHeadline + 8;
+      const closeContender = qualifiesAsCloseContender(today, loc, leedsHeadline, selectedWindowPeak);
       let discardedReason: string | undefined;
 
       if (!today.meetsThreshold) {
@@ -430,6 +456,8 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         } else {
           discardedReason = `daylight score below threshold (${today.bestDay} < ${DAY_THRESHOLD})`;
         }
+      } else if (closeContender) {
+        discardedReason = 'close contender: darker-sky near miss below the main 8-point cutoff';
       } else if (!shown) {
         discardedReason = `score does not beat Leeds by at least 8 points (${today.bestScore} vs ${leedsHeadline})`;
       }
@@ -454,5 +482,5 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     .sort((a, b) => b.bestScore - a.bestScore)
     .map((candidate, index) => ({ ...candidate, rank: index + 1 }));
 
-  return { altLocations: todayAlts, noAltsMsg, augmentedSummary, debugContext };
+  return { altLocations: todayAlts, closeContenders, noAltsMsg, augmentedSummary, debugContext };
 }

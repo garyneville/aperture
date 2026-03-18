@@ -11,6 +11,7 @@ export function run({ $input }: N8nRuntime) {
     todayCarWash: input.todayCarWash,
     dailySummary: input.dailySummary,
     altLocations: input.altLocations,
+    closeContenders: input.closeContenders,
     noAltsMsg: input.noAltsMsg,
     metarNote: input.metarNote,
     sunrise: input.sunrise,

@@ -22,6 +22,7 @@ export function run({ $input }: N8nRuntime) {
 
   return [{ json: {
     altLocations: result.altLocations,
+    closeContenders: result.closeContenders,
     noAltsMsg: result.noAltsMsg,
     windows: leedsContext.windows,
     dontBother: leedsContext.dontBother,

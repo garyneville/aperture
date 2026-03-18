@@ -36,6 +36,7 @@ export interface BuildPromptInput {
   todayCarWash: CarWash;
   dailySummary: DailySummary[];
   altLocations?: AltLocationResult[];
+  closeContenders?: AltLocationResult[];
   noAltsMsg?: string | null;
   metarNote: string;
   sunrise?: string;
@@ -70,6 +71,7 @@ export interface BuildPromptOutput {
   todayCarWash: CarWash;
   dailySummary: DailySummary[];
   altLocations?: AltLocationResult[];
+  closeContenders?: AltLocationResult[];
   noAltsMsg?: string | null;
   sunriseStr: string;
   sunsetStr: string;
@@ -335,7 +337,7 @@ function skyQualityConstraints(
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     windows, dontBother, todayBestScore, todayCarWash,
-    dailySummary, altLocations, noAltsMsg, metarNote,
+    dailySummary, altLocations, closeContenders, noAltsMsg, metarNote,
     sunrise, sunset, moonPct, kpForecast, auroraSignal,
     longRangeTop, longRangeCardLabel, darkSkyAlert,
     longRangeCandidates, longRangeDebugCandidates,
@@ -514,6 +516,7 @@ ${windowsText}${altText}
     todayCarWash,
     dailySummary,
     altLocations,
+    closeContenders,
     noAltsMsg,
     sunriseStr,
     sunsetStr,

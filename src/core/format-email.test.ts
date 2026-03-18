@@ -494,6 +494,92 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Morning golden hour - best 06:45 - 35 min drive');
   });
 
+  it('renders close contenders as a weaker darker-sky bucket', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Evening astro window',
+        start: '21:00',
+        end: '23:00',
+        peak: 56,
+        hours: [{ hour: '22:00', score: 56, ch: 0, visK: 9.5, wind: '7', pp: 0, tpw: 18 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 58,
+        start: '10:00',
+        end: '12:00',
+        wind: 9,
+        pp: 10,
+        tmp: 8,
+      },
+      dailySummary: [{
+        dayLabel: 'Monday',
+        dateKey: '2026-03-16',
+        dayIdx: 0,
+        photoScore: 56,
+        headlineScore: 60,
+        photoEmoji: 'Marginal',
+        amScore: 32,
+        pmScore: 44,
+        astroScore: 68,
+        confidence: 'high',
+        confidenceStdDev: 7,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 7,
+        bestPhotoHour: '22:00',
+        bestAstroHour: '22:00',
+        bestTags: 'astrophotography',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 58,
+          start: '10:00',
+          end: '12:00',
+          wind: 9,
+          pp: 10,
+          tmp: 8,
+        },
+      }],
+      altLocations: [],
+      closeContenders: [{
+        name: 'Malham Cove',
+        driveMins: 55,
+        bestScore: 68,
+        bestAstroHour: '00:00',
+        isAstroWin: true,
+        darkSky: true,
+        amScore: 24,
+        pmScore: 30,
+        astroScore: 68,
+        siteDarkness: { bortle: 3 },
+      }],
+      noAltsMsg: undefined,
+      sunriseStr: '06:18',
+      sunsetStr: '18:11',
+      moonPct: 8,
+      metarNote: '',
+      today: 'Monday 16 March',
+      todayBestScore: 60,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Leeds is usable after dark, but darker sites are still worth considering.',
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Worth a look for darker skies');
+    expect(html).toContain('These do not clear the main trip threshold');
+    expect(html).toContain('Malham Cove');
+    expect(html).toContain('Darker-sky near miss - astro best 00:00 - 55 min drive · B3');
+    expect(html).toContain('Nearby darker-sky contender');
+  });
+
   it('does not leak internal fallback tags into days-ahead cards', () => {
     const input: FormatEmailInput = {
       dontBother: false,
@@ -1806,6 +1892,203 @@ describe('formatEmail long-range section', () => {
     expect(html).toContain('88/100 astro');
     expect(html).toContain('Best astro around 02:00 - dark sky site');
     expect(html).not.toContain('Dark sky alert</div>');
+  });
+
+  it('adds road-trip framing for very long long-range recommendations', () => {
+    const html = formatEmail({
+      dontBother: true,
+      windows: [],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Great',
+        score: 60,
+        start: '06:00',
+        end: '08:00',
+        wind: 12,
+        pp: 22,
+        tmp: 5,
+      },
+      dailySummary: [{
+        dayLabel: 'Monday',
+        dateKey: '2026-03-16',
+        dayIdx: 0,
+        photoScore: 32,
+        headlineScore: 42,
+        photoEmoji: 'Marginal',
+        amScore: 32,
+        pmScore: 19,
+        astroScore: 52,
+        confidence: 'high',
+        confidenceStdDev: 5,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 11,
+        amConfidence: 'high',
+        pmConfidence: 'high',
+        bestPhotoHour: '07:00',
+        bestTags: 'landscape',
+        bestAstroHour: '04:00',
+        darkSkyStartsAt: '00:00',
+        carWash: {
+          rating: 'OK',
+          label: 'Great',
+          score: 60,
+          start: '06:00',
+          end: '08:00',
+          wind: 12,
+          pp: 22,
+          tmp: 5,
+        },
+      }],
+      altLocations: [],
+      sunriseStr: '06:18',
+      sunsetStr: '18:11',
+      moonPct: 8,
+      metarNote: '',
+      today: 'Monday 16 March',
+      todayBestScore: 42,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Leeds is not worth it today.',
+      longRangeTop: {
+        name: 'Snowdon (Yr Wyddfa)',
+        region: 'snowdonia',
+        driveMins: 215,
+        tags: ['upland'],
+        darkSky: true,
+        elevation: 1085,
+        bestScore: 86,
+        bestDayHour: '07:00',
+        bestAstroHour: '23:00',
+        isAstroWin: true,
+      },
+      longRangeCardLabel: 'Long-range opportunity',
+    });
+
+    expect(html).toContain('Road-trip option - leave by ~19:25 for the 23:00 astro window. Overnight recommended.');
+  });
+
+  it('adds moon phase, backup drive time, and certainty thresholds to days-ahead cards', () => {
+    const html = formatEmail({
+      dontBother: false,
+      windows: [{
+        label: 'Evening golden hour',
+        start: '18:00',
+        end: '18:00',
+        peak: 60,
+        hours: [{ hour: '18:00', score: 60, ch: 10, visK: 18, wind: '6', pp: 0, tpw: 16 }],
+        tops: ['landscape'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Great',
+        score: 80,
+        start: '06:00',
+        end: '08:00',
+        wind: 7,
+        pp: 0,
+        tmp: 7,
+      },
+      dailySummary: [{
+        dayLabel: 'Today',
+        dateKey: '2026-03-18',
+        dayIdx: 0,
+        photoScore: 60,
+        headlineScore: 60,
+        photoEmoji: 'Good',
+        amScore: 40,
+        pmScore: 60,
+        astroScore: 61,
+        confidence: 'high',
+        confidenceStdDev: 7,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 7,
+        amConfidence: 'high',
+        pmConfidence: 'high',
+        bestPhotoHour: '18:00',
+        bestTags: 'landscape',
+        carWash: {
+          rating: 'OK',
+          label: 'Great',
+          score: 80,
+          start: '06:00',
+          end: '08:00',
+          wind: 7,
+          pp: 0,
+          tmp: 7,
+        },
+      }, {
+        dayLabel: 'Tomorrow',
+        dateKey: '2026-03-19',
+        dayIdx: 1,
+        photoScore: 58,
+        headlineScore: 63,
+        photoEmoji: 'Good',
+        amScore: 29,
+        pmScore: 60,
+        astroScore: 61,
+        bestAstroHour: '01:00',
+        confidence: 'medium',
+        confidenceStdDev: 19,
+        astroConfidence: 'medium',
+        astroConfidenceStdDev: 19,
+        amConfidence: 'medium',
+        pmConfidence: 'medium',
+        bestPhotoHour: '18:00',
+        bestTags: 'landscape',
+        bestAlt: {
+          name: 'Stanage Edge',
+          driveMins: 65,
+          bestScore: 85,
+          bestAstroHour: '01:00',
+          isAstroWin: true,
+          darkSky: true,
+        },
+        carWash: {
+          rating: 'OK',
+          label: 'Great',
+          score: 80,
+          start: '06:00',
+          end: '08:00',
+          wind: 7,
+          pp: 0,
+          tmp: 7,
+        },
+        hours: [{
+          hour: '01:00',
+          tmp: 8,
+          pp: 0,
+          wind: 7,
+          gusts: 10,
+          visK: 12,
+          pr: 0,
+          ct: 10,
+          isNight: true,
+          moon: 18,
+        }],
+      }],
+      altLocations: [],
+      sunriseStr: '06:13',
+      sunsetStr: '18:15',
+      moonPct: 1,
+      metarNote: '',
+      today: 'Wednesday 18 March',
+      todayBestScore: 60,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Conditions improve into the evening.',
+    });
+
+    expect(html).toContain('Backup: Stanage Edge · 85/100 at 01:00 (astro) · 65 min drive');
+    expect(html).toContain('Moon 18% lit');
+    expect(html).toContain('Certainty bands = High &lt; 12 pts');
+    expect(html).toContain('Fair 12&ndash;24 pts');
+    expect(html).toContain('Low &ge; 25 pts');
   });
 });
 

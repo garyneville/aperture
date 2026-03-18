@@ -237,6 +237,7 @@ describe('workflow assembly', () => {
     expect(result).toEqual([{
       json: {
         altLocations: [],
+        closeContenders: [],
         noAltsMsg: 'No nearby locations score well enough today to recommend a trip.',
         windows: [],
         dontBother: true,

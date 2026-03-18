@@ -388,4 +388,11 @@ describe('LONG_RANGE_LOCATIONS', () => {
     expect(regions.has('brecon-beacons')).toBe(true);
     expect(regions.has('scottish-borders')).toBe(true);
   });
+
+  it('marks Snowdon (Yr Wyddfa) as a dark-sky destination', () => {
+    const snowdon = LONG_RANGE_LOCATIONS.find(loc => loc.name === 'Snowdon (Yr Wyddfa)');
+    expect(snowdon).toBeDefined();
+    expect(snowdon?.darkSky).toBe(true);
+    expect(snowdon?.siteDarkness.bortle).toBe(4);
+  });
 });
