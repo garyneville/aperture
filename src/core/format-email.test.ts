@@ -206,6 +206,120 @@ describe('formatEmail hero summary', () => {
     expect(html).toContain('Later, darker backup if you miss the first astro slot.');
   });
 
+  it('promotes the next future window and switches the outlook to remaining today on midday reruns', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56, ch: 0, visK: 12, wind: '5', pp: 0, tpw: 20 }],
+        tops: ['astrophotography'],
+      }, {
+        label: 'Evening golden hour',
+        start: '18:00',
+        end: '18:00',
+        peak: 53,
+        hours: [{ hour: '18:00', score: 53, ch: 0, visK: 12.6, wind: '4', pp: 0, tpw: 20 }],
+        tops: ['landscape', 'clear light path'],
+      }, {
+        label: 'Evening astro window',
+        start: '21:00',
+        end: '23:00',
+        peak: 51,
+        hours: [{ hour: '22:00', score: 51, ch: 1, visK: 8.1, wind: '9', pp: 0, tpw: 20 }],
+        tops: ['astrophotography'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '06:00',
+        end: '08:00',
+        wind: 10,
+        pp: 0,
+        tmp: 7,
+      },
+      dailySummary: [{
+        dayLabel: 'Today',
+        dateKey: '2026-03-18',
+        dayIdx: 0,
+        photoScore: 60,
+        headlineScore: 60,
+        photoEmoji: '👍',
+        amScore: 50,
+        pmScore: 57,
+        astroScore: 68,
+        bestAstroHour: '03:00',
+        confidence: 'high',
+        confidenceStdDev: 8,
+        astroConfidence: 'high',
+        astroConfidenceStdDev: 7,
+        bestPhotoHour: '03:00',
+        bestTags: 'astrophotography',
+        carWash: { rating: 'OK', label: 'Usable', score: 60, start: '06:00', end: '08:00', wind: 10, pp: 0, tmp: 7 },
+        hours: [
+          { hour: '12:00', tmp: 13, pp: 0, wind: 7, gusts: 9, visK: 15.8, pr: 0, ct: 0, isNight: false },
+          { hour: '13:00', tmp: 14, pp: 1, wind: 8, gusts: 10, visK: 16.4, pr: 0, ct: 1, isNight: false },
+          { hour: '18:00', tmp: 12, pp: 2, wind: 6, gusts: 8, visK: 15.5, pr: 0, ct: 2, isNight: false },
+          { hour: '21:00', tmp: 9, pp: 0, wind: 7, gusts: 9, visK: 9.2, pr: 0, ct: 0, isNight: true },
+        ],
+      }, {
+        dayLabel: 'Tomorrow',
+        dateKey: '2026-03-19',
+        dayIdx: 1,
+        photoScore: 63,
+        headlineScore: 63,
+        photoEmoji: '👍',
+        amScore: 29,
+        pmScore: 60,
+        astroScore: 61,
+        carWash: { rating: 'Great', label: 'Great', score: 80, start: '06:00', end: '18:00', wind: 7, pp: 0, tmp: 11 },
+        hours: [
+          { hour: '09:00', tmp: 11, pp: 0, wind: 8, gusts: 10, visK: 12, pr: 0, ct: 20, isNight: false },
+        ],
+      }],
+      altLocations: [],
+      sunriseStr: '06:13',
+      sunsetStr: '18:15',
+      moonPct: 1,
+      today: 'Wednesday 18 March',
+      todayBestScore: 60,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Dark-sky conditions improve from 00:00 once the moon is down. Peak local time is around 03:00, within the midnight astro window.',
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-18T11:30:00.000Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.57,
+          timezone: 'Europe/London',
+          workflowVersion: 'debug-trace-v1',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Next window');
+    expect(html).toContain('Earlier today');
+    expect(html).toContain('Evening golden hour');
+    expect(html).toContain('Midnight astro window');
+    expect(html).toContain('Remaining today');
+    expect(html).toContain('Today from 12:00');
+    expect(html).toContain('Next photo windows: Evening golden hour 18:00');
+    expect(html).toContain('Earlier daylight utility');
+    expect(html).not.toContain('Tomorrow&#39;s weather');
+  });
+
   it('places daylight utility after alternatives in the email flow', () => {
     const input: FormatEmailInput = {
       dontBother: false,
@@ -1687,7 +1801,7 @@ describe('formatEmail long-range section', () => {
     });
 
     expect(html).toContain('Out of town options');
-    expect(html).toContain('Weekend opportunity');
+    expect(html).toContain('Long-range opportunity');
     expect(html).toContain('Goathland');
     expect(html).toContain('88/100 astro');
     expect(html).toContain('Best astro around 02:00 - dark sky site');
@@ -2015,8 +2129,7 @@ describe('nextDayHourlyOutlookSection', () => {
   it('renders a table when tomorrow has only night hours', () => {
     const tomorrow = makeTomorrowDay([{ hour: '01:00', isNight: true }]);
     const result = nextDayHourlyOutlookSection(tomorrow);
-    expect(result).toContain('01:00');
-    expect(result).toContain('Tomorrow at a glance');
+    expect(result).toBe('');
   });
 
   it('renders a table when daytime hours are present', () => {
@@ -2029,7 +2142,7 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(html).toContain('09:00');
     expect(html).toContain('10:00');
     expect(html).toContain('Time');
-    expect(html).toContain('Wx');
+    expect(html).toContain('Sky');
     expect(html).toContain('Temp');
     expect(html).toContain('Rain');
     expect(html).toContain('Wind');
@@ -2060,8 +2173,8 @@ describe('nextDayHourlyOutlookSection', () => {
     const html = nextDayHourlyOutlookSection(tomorrow);
 
     expect(html).toContain('data-condition="clear-night"');
-    expect(html).toContain('data-condition="partly-cloudy-night"');
-    expect(html).toContain('data-condition="partly-cloudy-night-rain"');
+    expect(html).not.toContain('data-condition="partly-cloudy-night"');
+    expect(html).not.toContain('data-condition="partly-cloudy-night-rain"');
   });
 
   it('explains outdoor comfort scores with short reason text', () => {
@@ -2071,7 +2184,7 @@ describe('nextDayHourlyOutlookSection', () => {
     ]);
     const html = nextDayHourlyOutlookSection(tomorrow);
 
-    expect(html).toContain('comfortable baseline');
+    expect(html).not.toContain('comfortable baseline');
     expect(html).toContain('rain-heavy, strong wind');
   });
 

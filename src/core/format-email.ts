@@ -118,6 +118,20 @@ export interface NextDayHour {
   isNight: boolean;
 }
 
+interface RunTimeContext {
+  nowMinutes: number;
+  nowLabel: string;
+  timezone: string;
+}
+
+interface WindowDisplayPlan {
+  primary: Window | null;
+  remaining: Window[];
+  past: Window[];
+  promotedFromPast: boolean;
+  allPast: boolean;
+}
+
 export interface DaySummary {
   dayLabel: string;
   dateKey: string;
@@ -407,7 +421,7 @@ function outdoorComfortReason(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK
 
   if (h.visK < 2) reasons.push('low visibility');
 
-  if (!reasons.length) return 'comfortable baseline';
+  if (!reasons.length) return '';
   return reasons.slice(0, 2).join(', ');
 }
 
@@ -541,6 +555,115 @@ function windowRange(w: { start: string; end: string }): string {
   return w.start === w.end ? w.start : `${w.start}-${w.end}`;
 }
 
+function clockToMinutes(value: string | null | undefined): number | null {
+  if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return null;
+  const [hours, minutes] = value.split(':').map(Number);
+  return (hours * 60) + minutes;
+}
+
+function minutesToClock(totalMinutes: number): string {
+  const normalized = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const hours = Math.floor(normalized / 60);
+  const minutes = normalized % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+function getRunTimeContext(debugContext?: DebugContext): RunTimeContext {
+  const metadata = debugContext?.metadata;
+  const timezone = metadata?.timezone || 'Europe/London';
+  const now = metadata?.generatedAt ? new Date(metadata.generatedAt) : null;
+  if (!now) {
+    return { nowMinutes: 0, nowLabel: '00:00', timezone };
+  }
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now);
+  const hour = Number(parts.find(part => part.type === 'hour')?.value || '0');
+  const minute = Number(parts.find(part => part.type === 'minute')?.value || '0');
+  return {
+    nowMinutes: (hour * 60) + minute,
+    nowLabel: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+    timezone,
+  };
+}
+
+function classifyWindowTiming(window: Window, nowMinutes: number): 'past' | 'current' | 'future' {
+  const startMinutes = clockToMinutes(window.start);
+  const endMinutes = clockToMinutes(window.end);
+  if (startMinutes === null || endMinutes === null) return 'future';
+  if (endMinutes < nowMinutes) return 'past';
+  if (startMinutes <= nowMinutes) return 'current';
+  return 'future';
+}
+
+function buildWindowDisplayPlan(windows: Window[] | undefined, nowMinutes: number): WindowDisplayPlan {
+  const allWindows = windows || [];
+  if (!allWindows.length) {
+    return { primary: null, remaining: [], past: [], promotedFromPast: false, allPast: false };
+  }
+
+  const remaining = allWindows
+    .filter(window => classifyWindowTiming(window, nowMinutes) !== 'past')
+    .sort((a, b) => (clockToMinutes(a.start) ?? 0) - (clockToMinutes(b.start) ?? 0));
+  const past = allWindows
+    .filter(window => classifyWindowTiming(window, nowMinutes) === 'past')
+    .sort((a, b) => (clockToMinutes(a.start) ?? 0) - (clockToMinutes(b.start) ?? 0));
+  const primary = remaining[0] || allWindows[0] || null;
+  const originalPrimary = allWindows[0] || null;
+
+  return {
+    primary,
+    remaining,
+    past,
+    promotedFromPast: Boolean(primary && originalPrimary && primary !== originalPrimary),
+    allPast: remaining.length === 0,
+  };
+}
+
+function timeAwareBriefingFallback(plan: WindowDisplayPlan): string | null {
+  const earlier = plan.past[0] || null;
+  if (plan.promotedFromPast && earlier && plan.primary) {
+    return `${earlier.label} ${windowRange(earlier)} was earlier today. ${plan.primary.label} ${windowRange(plan.primary)} is the best remaining local option.`;
+  }
+  if (plan.allPast && earlier) {
+    return `${earlier.label} ${windowRange(earlier)} was the strongest local window earlier today. No local photo window remains today.`;
+  }
+  return null;
+}
+
+function timeAwareLocalSummary(
+  plan: WindowDisplayPlan,
+  primary: Window | null,
+  lines: string[],
+): string {
+  if (plan.promotedFromPast && primary && plan.past[0]) {
+    const earlier = plan.past[0];
+    return [
+      `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 earlier today.`,
+      `${primary.label}: ${windowRange(primary)} at ${primary.peak}/100 is the best remaining local option.`,
+      ...lines,
+    ].filter(Boolean).join('\n');
+  }
+  if (plan.allPast && plan.past[0]) {
+    const earlier = plan.past[0];
+    return `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 was the strongest local window earlier today. No local photo window remains today.`;
+  }
+  return lines.filter(Boolean).join('\n');
+}
+
+function displayTag(tag: string): string {
+  const normalized = tag.trim().toLowerCase();
+  const tagMap: Record<string, string> = {
+    astrophotography: 'astro',
+    'clear light path': 'clear horizon',
+    'misty / atmospheric': 'atmospheric',
+  };
+  return tagMap[normalized] || tag.trim();
+}
+
 function bestTimeLabel(window: Window | null | undefined): string {
   if (isAstroWindow(window ?? undefined)) return 'Best astro';
   if (window && !window.fallback) return 'Best light';
@@ -561,6 +684,7 @@ function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditi
   const visibleTags = bestTags
     .split(',')
     .map(tag => tag.trim())
+    .map(tag => displayTag(tag))
     .filter(tag => tag && tag !== 'general' && tag !== 'poor');
   return visibleTags.join(', ') || fallback;
 }
@@ -793,7 +917,12 @@ function kitAdvisoryCard(tips: KitTip[]): string {
   `, '', `border-left:3px solid ${C.tertiary};`);
 }
 
-function windowCard(w: Window, index: number, windows: Window[]): string {
+function windowCard(
+  w: Window,
+  index: number,
+  windows: Window[],
+  sectionLabel = index === 0 ? 'Best window' : 'Worth watching',
+): string {
   const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
   const topWindow = windows[0];
@@ -813,13 +942,13 @@ function windowCard(w: Window, index: number, windows: Window[]): string {
     ...(dewRiskEntry(h.tpw, h.tmp)),
   ]);
   const tags = (w.tops || []).length
-    ? `<div style="Margin-top:10px;">${(w.tops || []).map(tag => metricChip(tag, '', C.primary)).join('')}</div>`
+    ? `<div style="Margin-top:10px;">${(w.tops || []).map(tag => metricChip(displayTag(tag), '', C.primary)).join('')}</div>`
     : '';
   const noteBlock = notes.length
     ? `<div style="Margin-top:10px;padding-top:12px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(notes.join(' '))}</div>`
     : '';
   return card(`
-    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${index === 0 ? 'Best window' : 'Worth watching'}</div>
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${sectionLabel}</div>
     <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(w.label)}</div>
     <div style="Margin:4px 0 0;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${esc(windowRange(w))}</div>
     <div style="Margin-top:10px;">${scorePill(w.peak)}</div>
@@ -854,10 +983,12 @@ function todayWindowSection(
   windows: Window[] | undefined,
   dailySummary: DaySummary[],
   altLocations: AltLocation[] | undefined,
+  runTime: RunTimeContext,
   compositionBullets?: string[],
 ): string {
   const hasLocalWindow = (windows?.length || 0) > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
+  const displayPlan = buildWindowDisplayPlan(windows, runTime.nowMinutes);
 
   if (effectiveDontBother) {
     const headline = hasLocalWindow ? 'Not worth shooting locally' : 'No clear local window';
@@ -868,11 +999,39 @@ function todayWindowSection(
       <div style="Margin-top:10px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(poorDayFallbackLine(windows))}</div>
     `, '', `border-top:3px solid ${C.error};`);
   }
-  const renderedAi = renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations });
+  const fallbackAiText = timeAwareBriefingFallback(displayPlan);
+  const renderedAi = fallbackAiText
+    ? { text: fallbackAiText, strippedOpener: false, usedFallback: true }
+    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations });
   const trimmedAiText = renderedAi.text || aiText;
-  const compCard = compositionCard(compositionBullets || []);
+  const compCard = fallbackAiText ? '' : compositionCard(compositionBullets || []);
+  const displayedWindows: string[] = [];
+
+  if (!displayPlan.allPast && displayPlan.primary) {
+    const primaryLabel = displayPlan.promotedFromPast
+      ? 'Next window'
+      : classifyWindowTiming(displayPlan.primary, runTime.nowMinutes) === 'current'
+        ? 'Live now'
+        : 'Best window';
+    displayedWindows.push(windowCard(
+      displayPlan.primary,
+      0,
+      [displayPlan.primary, ...displayPlan.remaining.filter(window => window !== displayPlan.primary)],
+      primaryLabel,
+    ));
+    displayPlan.remaining
+      .filter(window => window !== displayPlan.primary)
+      .forEach((window, index) => {
+        displayedWindows.push(windowCard(window, index + 1, displayPlan.remaining, 'Later today'));
+      });
+  }
+
+  displayPlan.past.forEach((window, index) => {
+    displayedWindows.push(windowCard(window, index + 1, displayPlan.past, 'Earlier today'));
+  });
+
   return listRows([
-    ...(windows || []).map((w, index) => windowCard(w, index, windows || [])),
+    ...displayedWindows,
     card(`
       <div style="Margin:0 0 8px;font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${C.subtle};">AI briefing</div>
       ${htmlText(trimmedAiText)}
@@ -1055,6 +1214,11 @@ function alternativeTimingSummary(topAlternative: AltLocation | null | undefined
   return ` · ${bestDaySessionLabel(topAlternative.bestDayHour).toLowerCase()} around ${topAlternative.bestDayHour || 'time TBD'}`;
 }
 
+function displayLongRangeLabel(cardLabel: string | null | undefined): string | null {
+  if (!cardLabel) return null;
+  return cardLabel === 'Weekend opportunity' ? 'Long-range opportunity' : cardLabel;
+}
+
 function longRangeSection(
   longRangeTop: LongRangeCard | null | undefined,
   cardLabel: string | null | undefined,
@@ -1063,12 +1227,13 @@ function longRangeSection(
   const cards: string[] = [];
 
   if (longRangeTop && cardLabel) {
+    const displayLabel = displayLongRangeLabel(cardLabel) || cardLabel;
     const regionLabel = longRangeTop.region.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
     const timing = longRangeTop.isAstroWin
       ? `Best astro around ${longRangeTop.bestAstroHour || 'evening'}${longRangeTop.darkSky ? ' - dark sky site' : ''}`
-      : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).join(', ')}`;
+      : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).map(tag => displayTag(tag)).join(', ')}`;
     cards.push(card(`
-      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(cardLabel)}</div>
+      <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(displayLabel)}</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(longRangeTop.name)}</div>
       <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.4;color:${C.muted};">${esc(regionLabel)} &middot; ${longRangeTop.elevation}m &middot; ${longRangeTop.driveMins} min drive</div>
       <div style="Margin-top:10px;">${scorePill(longRangeTop.bestScore, longRangeTop.isAstroWin ? 'astro' : undefined)}</div>
@@ -1099,7 +1264,7 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
   const regionLabel = spur.region.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const tagChips = spur.tags
     .slice(0, 3)
-    .map(tag => metricChip(tag, ''))
+    .map(tag => metricChip(displayTag(tag), ''))
     .join('');
   const darkSkyNote = spur.darkSky
     ? `<span style="font-family:${FONT};font-size:12px;color:${C.secondary};"><span role="img" aria-label="dark sky site">&#x2605;</span> Dark sky site</span>`
@@ -1150,14 +1315,28 @@ function bestOutdoorWindow(
   return { start: startHour, end: endHour, label: topLabel };
 }
 
-/** Plain-language summary line for tomorrow's outdoor outlook. */
+interface HourlyOutlookOptions {
+  title: string;
+  caption: string;
+  summaryContext: 'today' | 'tomorrow';
+  startAtMinutes?: number | null;
+  showOvernight?: boolean;
+  photoWindows?: Window[];
+}
+
+/** Plain-language summary line for the outdoor outlook. */
 function outdoorSummaryLine(
   bestWindow: { start: string; end: string; label: string } | null,
   hours: NextDayHour[],
+  summaryContext: 'today' | 'tomorrow',
 ): string {
-  if (!hours.length) return 'No forecast data available for tomorrow.';
+  if (!hours.length) return summaryContext === 'today'
+    ? 'No useful outdoor hours remain today.'
+    : 'No forecast data available for tomorrow.';
   const dayHours = hours.filter(h => !h.isNight);
-  if (!dayHours.length) return 'No daytime hours in tomorrow\'s forecast.';
+  if (!dayHours.length) return summaryContext === 'today'
+    ? 'No daytime outdoor hours remain today.'
+    : 'No daytime hours in tomorrow\'s forecast.';
 
   const avgTmp = Math.round(dayHours.reduce((s, h) => s + h.tmp, 0) / dayHours.length);
   const maxPp = Math.max(...dayHours.map(h => h.pp));
@@ -1168,9 +1347,23 @@ function outdoorSummaryLine(
   const capitalizedRain = rainNote.charAt(0).toUpperCase() + rainNote.slice(1);
 
   if (bestWindow) {
-    return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Best outdoor window: ${bestWindow.start}–${bestWindow.end}.`;
+    return summaryContext === 'today'
+      ? `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Best remaining outdoor window: ${bestWindow.start}–${bestWindow.end}.`
+      : `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Best outdoor window: ${bestWindow.start}–${bestWindow.end}.`;
   }
   return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Limited outdoor opportunities.`;
+}
+
+function shouldDisplayOutdoorHour(hour: NextDayHour, showOvernight: boolean): boolean {
+  if (showOvernight) return true;
+  const minutes = clockToMinutes(hour.hour) ?? 0;
+  return !hour.isNight || (minutes >= 18 * 60 && minutes < 23 * 60);
+}
+
+function formatPhotoWindowList(windows: Window[]): string {
+  return windows
+    .map(window => `${window.label} ${windowRange(window)}`)
+    .join(' · ');
 }
 
 /** Returns an inline Meteocon SVG for the weather condition, sized at `size` pixels.
@@ -1233,8 +1426,20 @@ function moonIconForPct(moonPct: number, size = 14): string {
 export function nextDayHourlyOutlookSection(
   tomorrow: DaySummary | undefined,
   debugContext?: DebugContext,
+  options: Partial<HourlyOutlookOptions> = {},
 ): string {
-  const hours = tomorrow?.hours || [];
+  const config: HourlyOutlookOptions = {
+    title: 'Tomorrow at a glance',
+    caption: 'Tomorrow&apos;s hourly weather outlook',
+    summaryContext: 'tomorrow',
+    startAtMinutes: null,
+    showOvernight: false,
+    photoWindows: [],
+    ...options,
+  };
+  const hours = (tomorrow?.hours || [])
+    .filter(hour => config.startAtMinutes === null || config.startAtMinutes === undefined || (clockToMinutes(hour.hour) ?? -1) >= config.startAtMinutes)
+    .filter(hour => shouldDisplayOutdoorHour(hour, Boolean(config.showOvernight)));
   if (!hours.length) return '';
 
   const scoredHours = hours.map(h => {
@@ -1243,13 +1448,10 @@ export function nextDayHourlyOutlookSection(
     return { h, score, label };
   });
 
-  // All hours (day + night) are shown so that night-variant icons are visible for astro shooters.
-  // The best outdoor *window* recommendation is intentionally restricted to daytime hours only,
-  // since walking/running comfort is a daytime concern.
   const dayHoursOnly = hours.filter(h => !h.isNight);
   const dayScored = scoredHours.filter(s => !s.h.isNight);
   const bestWindow = bestOutdoorWindow(dayHoursOnly, dayScored.map(s => ({ score: s.score, label: s.label })));
-  const summaryLine = outdoorSummaryLine(bestWindow, hours);
+  const summaryLine = outdoorSummaryLine(bestWindow, hours, config.summaryContext);
 
   // Populate debug context
   if (debugContext) {
@@ -1273,6 +1475,7 @@ export function nextDayHourlyOutlookSection(
     const indicatorDot = label.highlight
       ? `<span style="color:${label.fg};font-size:14px;">&#x25CF;</span>&ensp;`
       : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
+    const reason = outdoorComfortReason(h);
     return `<tr style="background:${rowBg};">
       <td valign="middle" style="padding:6px 8px;font-family:${FONT};font-size:12px;font-weight:600;color:${C.ink};white-space:nowrap;">${esc(h.hour)}</td>
       <td valign="middle" style="padding:6px 4px;text-align:center;white-space:nowrap;">${weatherIconForHour(h)}</td>
@@ -1282,33 +1485,55 @@ export function nextDayHourlyOutlookSection(
       <td valign="middle" style="padding:6px 8px 6px 6px;font-family:${FONT};font-size:12px;color:${textColor};">${indicatorDot}${esc(label.text)}</td>
       <td valign="middle" style="padding:6px 8px 6px 2px;font-family:${FONT};font-size:11px;color:${C.subtle};white-space:nowrap;">
         <div>${score}/100</div>
-        <div style="font-size:10px;color:${C.subtle};opacity:0.8;">${esc(outdoorComfortReason(h))}</div>
+        ${reason ? `<div style="font-size:10px;color:${C.subtle};opacity:0.8;">${esc(reason)}</div>` : ''}
       </td>
     </tr>`;
   }).join('');
 
   const table = `<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;">
-    <caption style="font-size:0;line-height:0;visibility:hidden;caption-side:top;">Tomorrow&apos;s hourly weather outlook</caption>
+    <caption style="font-size:0;line-height:0;visibility:hidden;caption-side:top;">${config.caption}</caption>
     <thead>
       <tr>
         <th scope="col" align="left" style="padding:6px 8px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Time</th>
-        <th scope="col" align="center" style="padding:6px 4px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wx</th>
+        <th scope="col" align="center" style="padding:6px 4px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Sky</th>
         <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Temp</th>
         <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Rain</th>
         <th scope="col" align="left" style="padding:6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Wind</th>
         <th scope="col" align="left" style="padding:6px 8px 6px 6px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Outdoor</th>
-        <th scope="col" align="left" style="padding:6px 8px 6px 2px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};"></th>
+        <th scope="col" align="left" style="padding:6px 8px 6px 2px;border-bottom:2px solid ${C.outline};font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${C.muted};">Why</th>
       </tr>
     </thead>
     <tbody>${hourRows}</tbody>
   </table>`;
+  const photoWindowsLine = config.photoWindows?.length
+    ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};">Next photo windows: ${esc(formatPhotoWindowList(config.photoWindows))}</div>`
+    : '';
 
   return card(`
-    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Tomorrow at a glance</div>
+    <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${config.title}</div>
     <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(summaryLine)}</div>
+    ${photoWindowsLine}
     <div style="Margin-top:12px;overflow-x:auto;">${table}</div>
-    <div style="Margin-top:10px;font-family:${FONT};font-size:10px;line-height:1.5;color:${C.subtle};">&#x25CF; = pleasant spell &middot; &#x25CB; = less suitable &middot; Comfort is independent of photography scoring</div>
   `);
+}
+
+function remainingTodayHourlyOutlookSection(
+  today: DaySummary | undefined,
+  runTime: RunTimeContext,
+  photoWindows: Window[],
+  debugContext?: DebugContext,
+): string {
+  const startAtMinutes = runTime.nowMinutes % 60 === 0
+    ? runTime.nowMinutes
+    : runTime.nowMinutes + (60 - (runTime.nowMinutes % 60));
+  return nextDayHourlyOutlookSection(today, debugContext, {
+    title: `Today from ${minutesToClock(startAtMinutes)}`,
+    caption: 'Today&apos;s remaining-hours outlook',
+    summaryContext: 'today',
+    startAtMinutes,
+    showOvernight: false,
+    photoWindows,
+  });
 }
 
 function photoForecastCards(dailySummary: DaySummary[]): string {
@@ -1346,21 +1571,35 @@ function photoForecastCards(dailySummary: DaySummary[]): string {
   }));
 }
 
-function daylightUtilityTodayCard(todayCarWash: CarWash): string {
+function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTimeContext): string {
   const cw = todayCarWash;
   const state = cw.score >= 75
     ? { fg: C.success, bg: C.successContainer, border: '#A3D9B1' }
     : cw.score >= 50
       ? { fg: C.onPrimaryContainer, bg: C.primaryContainer, border: '#A8D4FB' }
       : { fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
-  const window = cw.start !== '\u2014' ? `${cw.start}–${cw.end}` : '\u2014';
+  const startMinutes = clockToMinutes(cw.start);
+  const endMinutes = clockToMinutes(cw.end);
+  const isPast = startMinutes !== null && endMinutes !== null && endMinutes < runTime.nowMinutes;
+  const isOngoing = startMinutes !== null && endMinutes !== null && startMinutes <= runTime.nowMinutes && endMinutes >= runTime.nowMinutes;
+  const clippedStart = isOngoing
+    ? minutesToClock(runTime.nowMinutes % 60 === 0 ? runTime.nowMinutes : runTime.nowMinutes + (60 - (runTime.nowMinutes % 60)))
+    : cw.start;
+  const window = cw.start !== '\u2014'
+    ? `${clippedStart}–${cw.end}`
+    : '\u2014';
+  const utilityLabel = isPast
+    ? 'Earlier daylight utility'
+    : isOngoing
+      ? 'Daylight utility now'
+      : 'Daylight utility';
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:${C.surfaceVariant};border-radius:10px;">
     <tr>
       <td style="padding:10px 14px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td valign="middle">
-              <span style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:${C.subtle};">Daylight utility</span>
+              <span style="font-family:${FONT};font-size:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:${C.subtle};">${utilityLabel}</span>
               <span style="font-family:${FONT};font-size:13px;font-weight:600;color:${C.ink};margin-left:10px;">${UTILITY_GLYPHS} ${esc(window)}</span>
             </td>
             <td align="right" valign="middle">
@@ -1418,9 +1657,11 @@ export function formatEmail(input: FormatEmailInput): string {
 
   /* Hero card */
   const todayDay = dailySummary[0] || ({} as DaySummary);
+  const runTime = getRunTimeContext(debugContext);
   const hasLocalWindow = (windows?.length || 0) > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
-  const topWindow = !effectiveDontBother ? windows?.[0] : null;
+  const displayPlan = buildWindowDisplayPlan(windows, runTime.nowMinutes);
+  const topWindow = !effectiveDontBother ? displayPlan.primary : null;
   const heroScore = todayDay.headlineScore ?? todayBestScore;
   const peakLocalHour = effectiveDontBother
     ? null
@@ -1436,7 +1677,9 @@ export function formatEmail(input: FormatEmailInput): string {
   const astroGap = topWindow
     ? explainAstroScoreGap({ window: topWindow, today: todayDay })
     : null;
-  const nextWindow = !effectiveDontBother ? windows?.[1] : null;
+  const nextWindow = !effectiveDontBother
+    ? displayPlan.remaining.find(window => window !== topWindow) || null
+    : null;
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
     { label: 'Sunset', value: sunsetStr, tone: C.primary },
@@ -1464,7 +1707,7 @@ export function formatEmail(input: FormatEmailInput): string {
     ? (hasLocalWindow
         ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
         : 'No local window cleared the threshold today — treat Leeds as a pass unless you just want a walk.')
-    : [
+    : timeAwareLocalSummary(displayPlan, topWindow, [
       topWindow
         ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
         : todayDay.bestTags
@@ -1478,7 +1721,7 @@ export function formatEmail(input: FormatEmailInput): string {
       nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
         ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
         : '',
-    ].filter(Boolean).join('\n');
+    ]);
 
   const spurMatchesTopAlt =
     !!spurOfTheMoment && !!topAlternative && spurOfTheMoment.locationName === topAlternative.name;
@@ -1492,7 +1735,7 @@ export function formatEmail(input: FormatEmailInput): string {
     : '';
 
   const heroWindowLabel = topWindow
-    ? `${esc(topWindow.label)}<br><span style="font-weight:400;color:rgba(255,255,255,0.45);font-size:12px;">${esc(windowRange(topWindow))}</span>`
+    ? `${displayPlan.allPast ? '<span style="font-weight:400;color:rgba(255,255,255,0.40);">Earlier today:</span><br>' : ''}${esc(topWindow.label)}<br><span style="font-weight:400;color:rgba(255,255,255,0.45);font-size:12px;">${esc(windowRange(topWindow))}</span>`
     : effectiveDontBother
       ? `<span style="font-weight:400;color:rgba(255,255,255,0.40);">No clear window today</span>`
       : ``;
@@ -1550,13 +1793,18 @@ export function formatEmail(input: FormatEmailInput): string {
   }
 
   const tomorrow = dailySummary.find(day => day.dayIdx === 1);
-  const outlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
+  const remainingPhotoWindows = displayPlan.remaining.filter(window => window !== topWindow);
+  const todayOutlookHtml = remainingTodayHourlyOutlookSection(todayDay, runTime, [topWindow, ...remainingPhotoWindows].filter((window): window is Window => Boolean(window)), debugContext);
+  const tomorrowOutlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
+  const outlookHtml = todayOutlookHtml || tomorrowOutlookHtml;
+  const outlookSectionTitle = todayOutlookHtml ? 'Remaining today' : 'Tomorrow\'s weather';
   const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
   const footerKey = `<div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
     <b>Key</b> &middot;
     <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
     AM/PM = sunrise &amp; sunset light quality &middot;
     Astro = night sky potential (clear skies + dark moon) &middot;
+    Outdoor comfort = walk/run practicality, independent of photography scoring &middot;
     Crepuscular rays = shafts of light through broken cloud near the horizon &middot;
     Spread = how much forecast models disagree (lower is more reliable) &middot;
     Daylight spread = based on golden-hour ensemble &middot; Astro spread = based on night-hour ensemble
@@ -1565,7 +1813,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const sections: string[] = [
     `<tr><td>${hero}</td></tr>`,
     spacer(8),
-    `<tr><td>${daylightUtilityTodayCard(todayCarWashData)}</td></tr>`,
+    `<tr><td>${daylightUtilityTodayCard(todayCarWashData, runTime)}</td></tr>`,
   ];
 
   if (signals) {
@@ -1576,7 +1824,7 @@ export function formatEmail(input: FormatEmailInput): string {
     sections.push(
       spacer(16),
       `<tr><td>${sectionTitle('Today\'s window')}</td></tr>`,
-      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, compositionBullets)}</td></tr>`,
+      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, compositionBullets)}</td></tr>`,
     );
   }
 
@@ -1603,7 +1851,7 @@ export function formatEmail(input: FormatEmailInput): string {
   if (outlookHtml) {
     sections.push(
       spacer(16),
-      `<tr><td>${sectionTitle('Tomorrow\'s weather')}</td></tr>`,
+      `<tr><td>${sectionTitle(outlookSectionTitle)}</td></tr>`,
       `<tr><td>${outlookHtml}</td></tr>`,
     );
   }
@@ -1679,15 +1927,21 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(String(hour.aodPenalty)),
     esc(`${hour.astroScore}`),
   ]));
-  const windowRows = debugContext.windows.map(window => ([
-    esc(`#${window.rank}`),
-    esc(window.label),
-    esc(`${window.start}-${window.end}`),
-    esc(String(window.peak)),
-    esc(window.selected ? 'Yes' : 'No'),
-    esc(window.selectionReason),
-    esc(window.darkPhaseStart ? `Dark after ${window.darkPhaseStart}${window.postMoonsetScore !== null && window.postMoonsetScore !== undefined ? ` (${window.postMoonsetScore}/100)` : ''}` : '—'),
-  ]));
+  const showDarkPhaseColumn = debugContext.windows.some(window => Boolean(window.darkPhaseStart));
+  const windowRows = debugContext.windows.map(window => {
+    const row = [
+      esc(`#${window.rank}`),
+      esc(window.label),
+      esc(`${window.start}-${window.end}`),
+      esc(String(window.peak)),
+      esc(window.selected ? 'Yes' : 'No'),
+      esc(window.selectionReason),
+    ];
+    if (showDarkPhaseColumn) {
+      row.push(esc(window.darkPhaseStart ? `Dark after ${window.darkPhaseStart}${window.postMoonsetScore !== null && window.postMoonsetScore !== undefined ? ` (${window.postMoonsetScore}/100)` : ''}` : '—'));
+    }
+    return row;
+  });
   const altRows = debugContext.nearbyAlternatives.map(alt => ([
     esc(`#${alt.rank}`),
     esc(alt.name),
@@ -1761,7 +2015,9 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ]))}
         ${spacer(8)}
         ${debugCard('Window selection trace', debugTable(
-          ['Rank', 'Window', 'Range', 'Peak', 'Selected', 'Reason', 'Dark phase'],
+          showDarkPhaseColumn
+            ? ['Rank', 'Window', 'Range', 'Peak', 'Selected', 'Reason', 'Dark phase']
+            : ['Rank', 'Window', 'Range', 'Peak', 'Selected', 'Reason'],
           windowRows,
           'No local window cleared threshold for this run.',
         ))}
