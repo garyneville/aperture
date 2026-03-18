@@ -455,9 +455,27 @@ ${weekStandoutInstructionBlock()}
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}`;
   } else {
-    const bestHour = windows[0]?.hours?.find(h => h.score === windows[0].peak) || windows[0]?.hours?.[0];
-    const bestWin = windows[0];
-    const nextWin = windows[1];
+    const nowTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+    const nowMinutes = (() => {
+      const [h, m] = nowTimeStr.split(':').map(Number);
+      return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
+    })();
+    const clockToMinsLocal = (t: string | undefined): number | null => {
+      if (!t) return null;
+      const [h, m] = t.split(':').map(Number);
+      return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+    };
+    const upcomingWindows = windows.filter(w => {
+      const end = clockToMinsLocal(w.end);
+      return end === null || end >= nowMinutes;
+    });
+    const primaryWindowIsPast = upcomingWindows.length < windows.length && upcomingWindows[0] !== windows[0];
+    const bestWin = upcomingWindows[0] ?? windows[0];
+    const bestHour = bestWin?.hours?.find(h => h.score === bestWin.peak) || bestWin?.hours?.[0];
+    const nextWin = upcomingWindows[1] ?? null;
+    const temporalContext = primaryWindowIsPast
+      ? `TEMPORAL CONTEXT: It is now ${nowTimeStr}. The original primary window (${windows[0].label} ${windowRange(windows[0])}) has already passed. ${bestWin && bestWin !== windows[0] ? `Your editorial must focus on the next upcoming window: ${bestWin.label} (${windowRange(bestWin)}). Do not advise preparing for the past window.` : 'No further local windows remain today. Note this in your editorial.'}\n`
+      : '';
     const topAlt = altLocations?.[0];
     const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
     const astroGap = todayDay && bestWin
@@ -526,8 +544,8 @@ ${weekStandoutInstructionBlock()}
 SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}
 
-Date: ${today} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
+Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
+${temporalContext}${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 

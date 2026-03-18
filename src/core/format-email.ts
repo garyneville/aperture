@@ -648,10 +648,12 @@ function timeAwareLocalSummary(
 ): string {
   if (plan.promotedFromPast && primary && plan.past[0]) {
     const earlier = plan.past[0];
+    // lines[0] restates the primary window which is already covered by the
+    // "best remaining local option" sentence below — skip it to avoid duplication.
     return [
       `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 earlier today.`,
       `${primary.label}: ${windowRange(primary)} at ${primary.peak}/100 is the best remaining local option.`,
-      ...lines,
+      ...lines.slice(1),
     ].filter(Boolean).join('\n');
   }
   if (plan.allPast && plan.past[0]) {
@@ -820,10 +822,17 @@ function buildKitRuleParams(
   windows: Window[],
   astroScore: number,
   moonPct: number,
+  nowMinutes = 0,
 ): KitRuleParams {
-  const topWindow = windows?.[0];
+  // Only consider windows that haven't ended yet so the kit advisory
+  // reflects upcoming sessions, not sessions the reader has already missed.
+  const upcomingWindows = (windows || []).filter(w => {
+    const end = clockToMinutes(w.end);
+    return end === null || end >= nowMinutes;
+  });
+  const topWindow = upcomingWindows[0];
   const topPeakHour = peakWindowHour(topWindow);
-  const astroWindow = bestAstroWindow(windows || []);
+  const astroWindow = bestAstroWindow(upcomingWindows);
   const astroPeakHour = peakWindowHour(astroWindow);
   const resolvedAstroScore = Math.max(
     astroScore || 0,
@@ -850,8 +859,9 @@ export function buildKitTips(
   astroScore: number,
   moonPct: number,
   maxTips = 3,
+  nowMinutes = 0,
 ): KitTip[] {
-  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct, nowMinutes);
 
   return KIT_RULES
     .filter(rule => rule.predicate(params))
@@ -867,8 +877,9 @@ export function evaluateKitRules(
   astroScore: number,
   moonPct: number,
   maxTips = 3,
+  nowMinutes = 0,
 ): { trace: DebugKitAdvisoryRule[]; tipsShown: string[] } {
-  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct);
+  const params = buildKitRuleParams(todayCarWash, windows, astroScore, moonPct, nowMinutes);
 
   const thresholdLabels: Record<string, string> = {
     'high-wind': 'wind > 25 km/h',
@@ -1811,7 +1822,7 @@ export function formatEmail(input: FormatEmailInput): string {
           : todayDay.bestPhotoHour
             ? `Best local setup: ${todayDay.bestPhotoHour}.`
             : '',
-      astroGap
+      astroGap && !displayPlan.promotedFromPast
         ? astroGap.text
         : '',
       nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
@@ -1879,12 +1890,12 @@ export function formatEmail(input: FormatEmailInput): string {
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
 
   /* Kit advisory */
-  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
   const kitCard = kitAdvisoryCard(kitTips);
 
   /* Populate kit advisory trace in debug context */
   if (debugContext) {
-    const { trace, tipsShown } = evaluateKitRules(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct);
+    const { trace, tipsShown } = evaluateKitRules(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
     debugContext.kitAdvisory = { rules: trace, tipsShown };
   }
 
