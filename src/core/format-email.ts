@@ -673,7 +673,8 @@ function displayTag(tag: string): string {
   return tagMap[normalized] || tag.trim();
 }
 
-function bestTimeLabel(window: Window | null | undefined): string {
+function bestTimeLabel(window: Window | null | undefined, promotedFromPast = false): string {
+  if (promotedFromPast) return 'Next window';
   if (isAstroWindow(window ?? undefined)) return 'Best astro';
   if (window && !window.fallback) return 'Best light';
   return 'Best time';
@@ -1806,7 +1807,7 @@ export function formatEmail(input: FormatEmailInput): string {
     { label: 'AM light', value: `${todayDay.amScore ?? 0}/100`, tone: scoreState(todayDay.amScore ?? 0).fg },
     { label: 'PM light', value: `${todayDay.pmScore ?? 0}/100`, tone: scoreState(todayDay.pmScore ?? 0).fg },
     { label: 'Peak astro', value: `${todayDay.astroScore ?? 0}/100`, tone: scoreState(todayDay.astroScore ?? 0).fg },
-    { label: bestTimeLabel(topWindow), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
+    { label: bestTimeLabel(topWindow, displayPlan.promotedFromPast), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
   const localSummary = effectiveDontBother
