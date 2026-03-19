@@ -66,12 +66,13 @@ export async function run({ $input }: N8nRuntime) {
   const path = archivePath();
   const commitMsg = `chore: publish photo brief ${path.slice(8, 18)}`;
 
+  // Sequential writes: fetch SHA immediately before each PUT to avoid 409 conflicts.
+  // Archive SHA is also fetched — handles same-day re-runs gracefully.
   const indexSha = await getFileSha('index.html');
+  await putFile('index.html', siteHtml, indexSha, commitMsg);
 
-  await Promise.all([
-    putFile('index.html', siteHtml, indexSha, commitMsg),
-    putFile(path, siteHtml, undefined, commitMsg),
-  ]);
+  const archiveSha = await getFileSha(path);
+  await putFile(path, siteHtml, archiveSha, commitMsg);
 
   return [{ json: { published: true, archivePath: path } }];
 }
