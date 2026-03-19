@@ -1,0 +1,1155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="generator" content="Aperture photo-brief">
+  <title>Aperture — Thursday 19 March</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────── */
+    :root {
+      /* Structural/adaptive — override in dark mode */
+      --c-page:             #faf9f6;
+      --c-surface:          #ffffff;
+      --c-surface-variant:  #f4efe8;
+      --c-outline:          #e2d9cf;
+      --c-outline-muted:    rgba(226,217,207,0.6);
+      --c-shadow:           rgba(26,22,20,0.10);
+      --c-shadow-lg:        rgba(26,22,20,0.16);
+      --c-ink:              #1a1614;
+      --c-muted:            #685e56;
+      --c-subtle:           #706a63;
+
+      /* Brand & semantic — same in both modes */
+      --c-brand:            #e07b2a;
+      --c-primary:          #2563eb;
+      --c-primary-container:    #dbeafe;
+      --c-on-primary-container: #1d4ed8;
+      --c-secondary:        #047857;
+      --c-secondary-container:  #d1fae5;
+      --c-on-secondary-container: #047857;
+      --c-tertiary:         #7c3aed;
+      --c-tertiary-container:   #ede9fe;
+      --c-warning:          #92400e;
+      --c-warning-container:    #fef3c7;
+      --c-success:          #047857;
+      --c-success-container:    #d1fae5;
+      --c-error:            #991b1b;
+      --c-error-container:  #fee2e2;
+      --c-accent:           #7c3aed;
+      --c-accent-container: #ede9fe;
+
+      /* Hero card — always dark */
+      --c-hero-start:       #100e0c;
+      --c-hero-end:         #1c1713;
+
+      /* Spacing (Carbon-ish 4px base) */
+      --sp-1: 4px;
+      --sp-2: 8px;
+      --sp-3: 12px;
+      --sp-4: 16px;
+      --sp-5: 20px;
+      --sp-6: 24px;
+
+      /* Layout */
+      --content-width: 720px;
+      --card-radius:   10px;
+      --card-padding:  16px 18px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --c-page:            #0c0a08;
+        --c-surface:         #1a1612;
+        --c-surface-variant: #231e18;
+        --c-outline:         #2e2822;
+        --c-outline-muted:   rgba(46,40,34,0.6);
+        --c-shadow:          rgba(0,0,0,0.30);
+        --c-shadow-lg:       rgba(0,0,0,0.45);
+        --c-ink:             #f0ebe3;
+        --c-muted:           #a89e96;
+        --c-subtle:          #706a63;
+
+        /* Semantic containers adapt for legibility on dark surfaces */
+        --c-primary-container:    #1e3a8a;
+        --c-on-primary-container: #93c5fd;
+        --c-secondary-container:  #064e3b;
+        --c-on-secondary-container: #6ee7b7;
+        --c-tertiary-container:   #4c1d95;
+        --c-warning-container:    #451a03;
+        --c-warning:              #fbbf24;
+        --c-success-container:    #064e3b;
+        --c-success:              #34d399;
+        --c-error-container:      #7f1d1d;
+        --c-error:                #f87171;
+        --c-primary:              #60a5fa;
+        --c-on-primary-container: #93c5fd;
+        --c-tertiary:             #a78bfa;
+        --c-accent:               #a78bfa;
+        --c-accent-container:     #4c1d95;
+      }
+    }
+
+    /* ── Reset & base ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--c-page);
+      color: var(--c-ink);
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                   'Noto Sans', Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────── */
+    .page-wrap {
+      min-height: 100vh;
+      padding: 20px 16px 56px;
+    }
+
+    .content {
+      max-width: var(--content-width);
+      margin: 0 auto;
+    }
+
+    .section-stack {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+
+    .section-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-3);
+    }
+
+    .section-group + .section-group,
+    .section-group + .section-stack {
+      margin-top: var(--sp-6);
+    }
+
+    .section-stack + .section-group,
+    .section-stack + .section-stack {
+      margin-top: var(--sp-6);
+    }
+
+    /* ── Section heading (GitHub Primer UnderlineNav style) ──────────── */
+    .section-heading {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      padding-bottom: var(--sp-2);
+      border-bottom: 2px solid var(--c-outline);
+      margin-bottom: var(--sp-1);
+    }
+
+    /* ── Card ────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-outline);
+      border-radius: var(--card-radius);
+      padding: var(--card-padding);
+      box-shadow: 0 1px 2px var(--c-shadow);
+    }
+
+    .card + .card { margin-top: 0; } /* gaps handled by flex parent */
+
+    .card--top {
+      border-top-width: 3px;
+    }
+
+    .card--left {
+      border-left-width: 3px;
+    }
+
+    .card--hero {
+      background: linear-gradient(160deg, var(--c-hero-start) 0%, var(--c-hero-end) 100%);
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    .card--surface-variant {
+      background: var(--c-surface-variant);
+      border-color: var(--c-outline-muted);
+      box-shadow: none;
+    }
+
+    /* ── Card internals ──────────────────────────────────────────────── */
+    .card-overline {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--c-subtle);
+      margin-bottom: 4px;
+    }
+
+    .card-headline {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.24;
+      letter-spacing: -0.01em;
+      color: var(--c-ink);
+    }
+
+    .card-headline--lg {
+      font-size: 22px;
+      letter-spacing: -0.02em;
+    }
+
+    .card-body {
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--c-muted);
+    }
+
+    .card-divider {
+      border: none;
+      border-top: 1px solid var(--c-outline);
+      margin: 14px 0;
+    }
+
+    /* ── Hero card internals ─────────────────────────────────────────── */
+    .hero-brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .hero-brand-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hero-brand-name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .hero-location {
+      font-size: 12px;
+      color: rgba(255,255,255,0.38);
+    }
+
+    .hero-divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.10);
+      margin: 14px 0;
+    }
+
+    .hero-score-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .hero-score-block {
+      min-width: 80px;
+    }
+
+    .hero-score-number {
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--c-brand);
+    }
+
+    .hero-score-denom {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-top: 4px;
+    }
+
+    .hero-detail {
+      border-left: 1px solid rgba(255,255,255,0.10);
+      padding-left: 16px;
+    }
+
+    .hero-grade {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #ffffff;
+    }
+
+    .hero-window-label {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.70);
+      margin-top: 8px;
+    }
+
+    .hero-window-range {
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .hero-date {
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      margin-top: 10px;
+    }
+
+    /* ── Stat grid (Carbon-inspired 2-col grid) ──────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .stat-grid--light {
+      background: var(--c-surface-variant);
+      border-color: var(--c-outline);
+    }
+
+    .stat-cell {
+      padding: 10px 12px;
+    }
+
+    .stat-cell + .stat-cell {
+      border-left: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stat-grid--light .stat-cell + .stat-cell {
+      border-left-color: var(--c-outline);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .stat-grid--light .stat-label {
+      color: var(--c-subtle);
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: #ffffff;
+      margin-top: 4px;
+    }
+
+    .stat-grid--light .stat-value {
+      color: var(--c-ink);
+    }
+
+    /* ── Pill ─────────────────────────────────────────────────────────── */
+    .pill {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      border-width: 1px;
+      border-style: solid;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+
+    /* ── Chip ─────────────────────────────────────────────────────────── */
+    .chip {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--c-surface-variant);
+      border: 1px solid var(--c-outline);
+      font-size: 11px;
+      line-height: 1.4;
+      color: var(--c-ink);
+      white-space: nowrap;
+    }
+
+    .chip-label {
+      font-weight: 600;
+    }
+
+    /* ── Score pill variants (Primer semantic colours) ───────────────── */
+    .score-excellent { color: #047857; background: #d1fae5; border-color: #A3D9B1; }
+    .score-good      { color: #1d4ed8; background: #dbeafe; border-color: #A8D4FB; }
+    .score-marginal  { color: #92400e; background: #fef3c7; border-color: #EDD17B; }
+    .score-poor      { color: #991b1b; background: #fee2e2; border-color: #ECACA5; }
+
+    @media (prefers-color-scheme: dark) {
+      .score-excellent { color: #34d399; background: #064e3b; border-color: #065f46; }
+      .score-good      { color: #93c5fd; background: #1e3a8a; border-color: #1e40af; }
+      .score-marginal  { color: #fbbf24; background: #451a03; border-color: #78350f; }
+      .score-poor      { color: #f87171; background: #7f1d1d; border-color: #991b1b; }
+    }
+
+    /* ── Chip group ──────────────────────────────────────────────────── */
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    /* ── Inline text metrics (Carbon dot-separated) ──────────────────── */
+    .metric-run {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--c-ink);
+    }
+
+    .metric-run-sep {
+      color: var(--c-subtle);
+      padding: 0 3px;
+    }
+
+    /* ── Hourly table (kept as proper table for tabular data) ────────── */
+    .hourly-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .hourly-table caption {
+      font-size: 0;
+      line-height: 0;
+      visibility: hidden;
+      caption-side: top;
+    }
+
+    .hourly-table th {
+      padding: 6px 8px;
+      border-bottom: 2px solid var(--c-outline);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .hourly-table td {
+      padding: 6px 8px;
+      color: var(--c-ink);
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .hourly-table tr + tr td {
+      border-top: 1px solid var(--c-outline-muted);
+    }
+
+    .hourly-table .col-sky { text-align: center; }
+
+    .hourly-table .col-comfort { color: var(--c-muted); }
+
+    .hourly-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 12px;
+    }
+
+    /* ── AI briefing ─────────────────────────────────────────────────── */
+    .ai-overline {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--c-subtle);
+      margin-bottom: 8px;
+    }
+
+    .ai-body p {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--c-ink);
+      margin: 0 0 10px;
+    }
+
+    .ai-body p:last-child { margin-bottom: 0; }
+
+    /* ── Creative spark (Georgia serif quote) ────────────────────────── */
+    .spark-overline {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--c-brand);
+      margin-bottom: 12px;
+    }
+
+    .spark-quote-mark {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 38px;
+      line-height: 0.75;
+      color: var(--c-brand);
+      opacity: 0.22;
+      margin-bottom: 4px;
+    }
+
+    .spark-text {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--c-ink);
+      font-style: italic;
+    }
+
+    /* ── Daylight utility bar ────────────────────────────────────────── */
+    .utility-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--sp-2);
+    }
+
+    .utility-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .utility-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--c-subtle);
+    }
+
+    .utility-window {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--c-ink);
+    }
+
+    /* ── Composition bullets ─────────────────────────────────────────── */
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .bullet-list li {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--c-ink);
+      padding-left: 14px;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .bullet-list li:last-child { margin-bottom: 0; }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--c-muted);
+    }
+
+    /* ── Kit advisory ────────────────────────────────────────────────── */
+    .kit-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .kit-list li {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--c-ink);
+      padding-left: 16px;
+      position: relative;
+    }
+
+    .kit-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--c-tertiary);
+    }
+
+    /* ── Location list (alternatives, long range) ────────────────────── */
+    .location-item {
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      border-bottom: 1px solid var(--c-outline);
+    }
+
+    .location-item:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .location-name {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--c-ink);
+      margin-bottom: 8px;
+    }
+
+    .location-meta {
+      font-size: 14px;
+      line-height: 1.4;
+      color: var(--c-muted);
+      margin-top: 4px;
+    }
+
+    .location-note {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--c-muted);
+      margin-top: 8px;
+    }
+
+    /* ── Days ahead forecast grid ────────────────────────────────────── */
+    .forecast-day-heading {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--c-ink);
+      margin-bottom: 8px;
+    }
+
+    .forecast-best-line {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.5;
+      color: var(--c-ink);
+      margin-bottom: 10px;
+    }
+
+    /* ── Moon context ────────────────────────────────────────────────── */
+    .moon-context {
+      font-size: 11px;
+      color: rgba(255,255,255,0.36);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────────── */
+    .page-footer {
+      margin-top: 48px;
+      padding-top: 20px;
+      border-top: 1px solid var(--c-outline);
+    }
+
+    .footer-inner {
+      max-width: var(--content-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-brand {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--c-brand);
+    }
+
+    .footer-ts {
+      font-size: 12px;
+      color: var(--c-subtle);
+    }
+
+    .footer-sep {
+      color: var(--c-outline);
+    }
+
+    /* ── Footer score key ────────────────────────────────────────────── */
+    .footer-key {
+      font-size: 11px;
+      line-height: 1.7;
+      color: var(--c-subtle);
+      margin-top: 10px;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 480px) {
+      .page-wrap { padding: 12px 12px 48px; }
+      .hero-score-number { font-size: 52px; }
+      .hero-score-row { gap: 10px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+    <div class="content">
+      <main>
+<div class="card card--hero">
+    <div class="hero-brand">
+      <div class="hero-brand-left">
+        <span style="color:#e07b2a;"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="11" r="3.5" fill="currentColor"/></svg></span>
+        <span class="hero-brand-name">Aperture</span>
+      </div>
+      <span class="hero-location">Leeds, UK</span>
+    </div>
+    <hr class="hero-divider">
+    <div class="hero-score-row">
+      <div class="hero-score-block">
+        <div class="hero-score-number">51</div>
+        <div class="hero-score-denom">/ 100</div>
+      </div>
+      <div class="hero-detail">
+        <div class="hero-grade">Marginal</div>
+        <div class="hero-window-label">Evening astro window<br><span class="hero-window-range">22:00-23:00</span></div>
+        <div class="hero-date">Thursday 19 March</div>
+      </div>
+    </div>
+    <hr class="hero-divider">
+    <div class="stat-grid"><div class="stat-cell">
+      <div class="stat-label">Sunrise</div>
+      <div class="stat-value" style="color:#2563eb;">06:10</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">Sunset</div>
+      <div class="stat-value" style="color:#2563eb;">18:17</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">Moon</div>
+      <div class="stat-value" style="color:#7c3aed;">New-ish · 0% lit</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">Certainty</div>
+      <div class="stat-value" style="color:#991b1b;">Low certainty · spread 27 pts</div>
+    </div></div>
+    <div class="moon-context"><svg width="14" height="14" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="#e5e7eb" stroke-dasharray="16.9 56.2" stroke-linecap="round" stroke-linejoin="round" stroke-width="17.4" d="M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 00128-128Z"/></svg> Dark skies — excellent for astrophotography</div>
+    <div class="stat-grid"><div class="stat-cell">
+      <div class="stat-label">AM light</div>
+      <div class="stat-value" style="color:#92400e;">42/100</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">PM light</div>
+      <div class="stat-value" style="color:#92400e;">46/100</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">Peak astro</div>
+      <div class="stat-value" style="color:#1d4ed8;">63/100</div>
+    </div><div class="stat-cell">
+      <div class="stat-label">Next window</div>
+      <div class="stat-value" style="color:#1d4ed8;">23:00</div>
+    </div></div>
+    <hr class="hero-divider" style="margin:12px 0 8px;">
+    <div style="font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">Midnight astro window: 00:00-03:00 at 51/100 earlier today. · Evening astro window: 22:00-23:00 at 49/100 is the best remaining local option. · Evening astro window: 22:00-23:00 at 49/100.</div>
+    <div style="font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">Best nearby astro alternative: Stanage Edge · 85/100 · 65 min drive · astro from 01:00</div>
+  </div>
+<div class="card card--surface-variant">
+    <div class="utility-bar">
+      <div class="utility-bar-left">
+        <span class="utility-label">Daylight utility</span>
+        <span class="utility-window"><span aria-hidden="true">🚗 / 🚶</span> 11:00–13:00</span>
+      </div>
+      <div><span class="pill" style="color:#047857;background:#d1fae5;border-color:#A3D9B1;">✅ Great</span></div>
+    </div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#7c3aed;">Wind</span> 10km/h</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">Rain</span> 0%</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Temp</span> 13°C</span>
+    </div>
+  </div>
+<div class="section-stack"><div class="card">
+      <div class="card-overline">Space weather</div>
+      <div class="card-headline">Aurora signal tonight</div>
+      <div style="margin-top:10px;"><span class="pill" style="color:#047857;background:#d1fae5;border-color:#A3D9B1;">Kp 6.3 — visible ~54°N</span></div>
+      <p class="card-body" style="margin-top:10px;">Kp 6.3 exceeds the visibility threshold for Leeds latitude. Best combined with a good astro window.</p>
+    </div></div>
+<div class="section-group">
+      <h2 class="section-heading">Today&#39;s window</h2>
+      <div class="section-stack"><div class="card card--top" style="border-top-color:#92400e;">
+    <div class="card-overline">Next window</div>
+    <div class="card-headline">Evening astro window</div>
+    <div class="card-body" style="margin-top:4px;">22:00-23:00</div>
+    <div style="margin-top:10px;"><span class="pill score-marginal">Marginal — 49/100</span></div>
+    <div class="metric-run" style="margin-top:10px;"><span><span style="font-weight:600;color:#2563eb;">Cloud high</span> 0%</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#047857;">Visibility</span> 15.8km</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#7c3aed;">Wind</span> 4km/h</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#991b1b;">Rain</span> 0%</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#047857;">Dew risk</span> Moderate</span></div>
+    <div class="chip-row" style="margin-top:10px;"><span class="chip"><span class="chip-label" style="color:#2563eb;">astro</span></span></div>
+    <div class="card-body" style="margin-top:10px;padding-top:12px;border-top:1px solid var(--c-outline);">Coincides with an active aurora signal (Kp 6.3 vs local threshold Kp 6) — favour a clean northern horizon.</div>
+  </div><div class="card">
+    <div class="card-overline">Earlier today</div>
+    <div class="card-headline">Midnight astro window</div>
+    <div class="card-body" style="margin-top:4px;">00:00-03:00</div>
+    <div style="margin-top:10px;"><span class="pill score-marginal">Marginal — 51/100</span></div>
+    <div class="metric-run" style="margin-top:10px;"><span><span style="font-weight:600;color:#2563eb;">Cloud high</span> 0%</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#047857;">Visibility</span> 9.7km</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#7c3aed;">Wind</span> 12km/h</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#991b1b;">Rain</span> 0%</span><span class="metric-run-sep">&middot;</span><span><span style="font-weight:600;color:#047857;">Dew risk</span> Moderate</span></div>
+    <div class="chip-row" style="margin-top:10px;"><span class="chip"><span class="chip-label" style="color:#2563eb;">astro</span></span></div>
+    
+  </div><div class="card">
+    <div class="ai-overline">AI briefing</div>
+    <div class="ai-body"><p>Midnight astro window 00:00-03:00 was earlier today. Evening astro window 22:00-23:00 is the best remaining local option.</p></div>
+  </div></div>
+    </div>
+<div class="card">
+    <div class="spark-overline">&#x2736; Creative spark</div>
+    <div class="spark-quote-mark">&ldquo;</div>
+    <div class="spark-text">Ascend the gritstone spine of Stanage Edge, where the earth tilts into the velvet unknown.</div>
+  </div>
+<div class="card card--left" style="border-left-color:#7c3aed;">
+    <div class="card-overline">Kit advisory</div>
+    <ul class="kit-list" style="margin-top:4px;">
+      <li>Astro window 22:00-23:00: fastest wide-aperture lens; intervalometer for star trails; red torch to preserve night vision.</li>
+    </ul>
+  </div>
+<div class="section-group">
+      <h2 class="section-heading">Out of town options</h2>
+      <div class="card"><div>
+      <div class="card-overline" style="margin-bottom:10px;">Nearby astro options</div>
+      <div class="location-item">
+    <div class="location-name">Stanage Edge</div>
+    <div style="margin-top:6px;"><span class="pill score-excellent">Excellent — 85/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 23</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 27</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Astro</span> 85</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Elev</span> 457m</span>
+    </div>
+    <p class="location-note">Astro — best 01:00 — 65 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Ladybower Reservoir</div>
+    <div style="margin-top:6px;"><span class="pill score-excellent">Excellent — 85/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 23</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 27</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Astro</span> 85</span>
+      
+    </div>
+    <p class="location-note">Astro — best 02:00 — 65 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Mam Tor</div>
+    <div style="margin-top:6px;"><span class="pill score-excellent">Excellent — 82/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 27</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 30</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Astro</span> 82</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Elev</span> 517m</span>
+    </div>
+    <p class="location-note">Astro — best 03:00 — 60 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Malham Cove</div>
+    <div style="margin-top:6px;"><span class="pill score-good">Good — 68/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 26</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 25</span>
+      <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 68</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Elev</span> 386m</span>
+    </div>
+    <p class="location-note">Astro — dark sky — best 00:00 — 55 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Sutton Bank</div>
+    <div style="margin-top:6px;"><span class="pill score-good">Good — 68/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 30</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 14</span>
+      <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 68</span>
+      
+    </div>
+    <p class="location-note">Astro — dark sky — best 00:00 — 75 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Brimham Rocks</div>
+    <div style="margin-top:6px;"><span class="pill score-good">Good — 66/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 22</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 25</span>
+      <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 66</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Elev</span> 320m</span>
+    </div>
+    <p class="location-note">Astro — best 00:00 — 40 min drive</p>
+    
+  </div><div class="location-item">
+    <div class="location-name">Ribblehead Viaduct</div>
+    <div style="margin-top:6px;"><span class="pill score-good">Good — 66/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 28</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 30</span>
+      <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 66</span>
+      <span class="chip"><span class="chip-label" style="color:#047857;">Elev</span> 355m</span>
+    </div>
+    <p class="location-note">Astro — best 00:00 — 55 min drive</p>
+    
+  </div><div class="">
+    <div class="location-name">Bolton Abbey</div>
+    <div style="margin-top:6px;"><span class="pill score-good">Good — 65/100</span></div>
+    <div class="chip-row" style="margin-top:8px;">
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 24</span>
+      <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 25</span>
+      <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 65</span>
+      
+    </div>
+    <p class="location-note">Astro — best 00:00 — 35 min drive</p>
+    
+  </div>
+    </div></div>
+      <div class="section-stack"><div class="card card--top" style="border-top-color:#047857;">
+      <div class="card-overline">Long-range opportunity</div>
+      <div class="card-headline card-headline--lg">Snowdon (Yr Wyddfa)</div>
+      <p class="card-body" style="margin-top:4px;">Snowdonia &middot; 1026m &middot; 215 min drive</p>
+      <div style="margin-top:10px;"><span class="pill score-excellent">Excellent — 86/100 astro</span></div>
+      <div class="chip-row" style="margin-top:8px;">
+        <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 27</span>
+        <span class="chip"><span class="chip-label" style="color:#991b1b;">PM</span> 30</span>
+        <span class="chip"><span class="chip-label" style="color:#047857;">Astro</span> 86</span>
+      </div>
+      <p class="card-body" style="margin-top:10px;">Best astro around 00:00 — dark sky site</p>
+      <p class="card-body" style="margin-top:8px;color:#047857;">Road-trip option — leave by ~20:25 for the 00:00 astro window. Overnight recommended.</p>
+    </div></div>
+    </div>
+<div class="section-group">
+      <h2 class="section-heading">Remaining today</h2>
+      <div class="card">
+    <div class="card-overline">Today from 07:00</div>
+    <p class="card-body" style="margin-top:4px;">Mostly dry. Around 12°C.</p>
+    <div class="hourly-scroll">
+      <table class="hourly-table">
+        <caption>Today&#39;s remaining-hours outdoor outlook</caption>
+        <thead>
+          <tr>
+            <th>Time</th><th class="col-sky">Sky</th><th>Temp</th>
+            <th>Rain</th><th>Wind</th><th>Outdoor</th><th>Score</th>
+          </tr>
+        </thead>
+        <tbody><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">07:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>7°C</td>
+      <td>0%</td>
+      <td>9km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">90/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">08:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>8°C</td>
+      <td>0%</td>
+      <td>14km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">95/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">09:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>10°C</td>
+      <td>0%</td>
+      <td>14km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">95/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">10:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>11°C</td>
+      <td>0%</td>
+      <td>12km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">11:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>12°C</td>
+      <td>0%</td>
+      <td>10km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">12:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>13°C</td>
+      <td>0%</td>
+      <td>10km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">13:00</td>
+      <td class="col-sky"><svg data-condition="partly-cloudy-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><symbol id="wx-partly-cloudy-day-d" viewBox="0 0 196 196"><circle cx="98" cy="98" r="40" fill="url(#wx-partly-cloudy-day-b)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="4"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="12" d="M98 31.4V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 51 33 33m130.1 130.1-18-18M6 98h25.4M190 98h-25.4"/></symbol><symbol id="wx-partly-cloudy-day-e" viewBox="0 0 350 222"><path fill="url(#wx-partly-cloudy-day-a)" stroke="#e6effc" stroke-miterlimit="10" stroke-width="6" d="m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol><symbol id="wx-partly-cloudy-day-c" viewBox="0 0 363 258"><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-d" width="196" height="196"/><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-e" width="350" height="222" transform="translate(13 36)"/></symbol><linearGradient id="wx-partly-cloudy-day-a" x1="99.5" x2="232.6" y1="30.7" y2="261.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f3f7fe"/><stop offset=".5" stop-color="#f3f7fe"/><stop offset="1" stop-color="#deeafb"/></linearGradient><linearGradient id="wx-partly-cloudy-day-b" x1="78" x2="118" y1="63.4" y2="132.7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-c" width="363" height="258" transform="translate(68 109)"/></svg></td>
+      <td>14°C</td>
+      <td>0%</td>
+      <td>10km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">14:00</td>
+      <td class="col-sky"><svg data-condition="cloudy" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-cloudy-a" x1="99.5" x2="232.6" y1="30.7" y2="261.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f3f7fe"/><stop offset=".5" stop-color="#f3f7fe"/><stop offset="1" stop-color="#deeafb"/></linearGradient><symbol id="wx-cloudy-b" viewBox="0 0 350 222"><path fill="url(#wx-cloudy-a)" stroke="#e6effc" stroke-miterlimit="10" stroke-width="6" d="m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xlink:href="#wx-cloudy-wx-cloudy-b" width="350" height="222" transform="translate(81 145)"/></svg></td>
+      <td>14°C</td>
+      <td>0%</td>
+      <td>10km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">15:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>15°C</td>
+      <td>0%</td>
+      <td>9km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">16:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>15°C</td>
+      <td>0%</td>
+      <td>9km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">17:00</td>
+      <td class="col-sky"><svg data-condition="partly-cloudy-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><symbol id="wx-partly-cloudy-day-d" viewBox="0 0 196 196"><circle cx="98" cy="98" r="40" fill="url(#wx-partly-cloudy-day-b)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="4"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="12" d="M98 31.4V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 51 33 33m130.1 130.1-18-18M6 98h25.4M190 98h-25.4"/></symbol><symbol id="wx-partly-cloudy-day-e" viewBox="0 0 350 222"><path fill="url(#wx-partly-cloudy-day-a)" stroke="#e6effc" stroke-miterlimit="10" stroke-width="6" d="m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol><symbol id="wx-partly-cloudy-day-c" viewBox="0 0 363 258"><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-d" width="196" height="196"/><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-e" width="350" height="222" transform="translate(13 36)"/></symbol><linearGradient id="wx-partly-cloudy-day-a" x1="99.5" x2="232.6" y1="30.7" y2="261.4" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#f3f7fe"/><stop offset=".5" stop-color="#f3f7fe"/><stop offset="1" stop-color="#deeafb"/></linearGradient><linearGradient id="wx-partly-cloudy-day-b" x1="78" x2="118" y1="63.4" y2="132.7" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs><use xlink:href="#wx-partly-cloudy-day-wx-partly-cloudy-day-c" width="363" height="258" transform="translate(68 109)"/></svg></td>
+      <td>14°C</td>
+      <td>0%</td>
+      <td>8km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">18:00</td>
+      <td class="col-sky"><svg data-condition="clear-day" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-day-a" x1="150" x2="234" y1="119.2" y2="264.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fbbf24"/><stop offset=".5" stop-color="#fbbf24"/><stop offset="1" stop-color="#f59e0b"/></linearGradient><symbol id="wx-clear-day-b" viewBox="0 0 384 384"><circle cx="192" cy="192" r="84" fill="url(#wx-clear-day-a)" stroke="#f8af18" stroke-miterlimit="10" stroke-width="6"/><path fill="none" stroke="#fbbf24" stroke-linecap="round" stroke-miterlimit="10" stroke-width="24" d="M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-184.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs><use xlink:href="#wx-clear-day-wx-clear-day-b" width="384" height="384" transform="translate(64 64)"/></svg></td>
+      <td>12°C</td>
+      <td>0%</td>
+      <td>12km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">19:00</td>
+      <td class="col-sky"><svg data-condition="clear-night" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-night-a" x1="54.3" x2="187.2" y1="29" y2="259.1" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient><symbol id="wx-clear-night-b" viewBox="0 0 270 270"><path fill="url(#wx-clear-night-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M252.3 168.6A133.4 133.4 0 01118 36.2 130.5 130.5 0 01122.5 3 133 133 0 003 134.6C3 207.7 63 267 137.2 267c62.5 0 114.8-42.2 129.8-99.2a135.6 135.6 0 01-14.8.8Z"/></symbol></defs><use xlink:href="#wx-clear-night-wx-clear-night-b" width="270" height="270" transform="translate(121 121)"/></svg></td>
+      <td>11°C</td>
+      <td>0%</td>
+      <td>8km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">20:00</td>
+      <td class="col-sky"><svg data-condition="clear-night" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-night-a" x1="54.3" x2="187.2" y1="29" y2="259.1" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient><symbol id="wx-clear-night-b" viewBox="0 0 270 270"><path fill="url(#wx-clear-night-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M252.3 168.6A133.4 133.4 0 01118 36.2 130.5 130.5 0 01122.5 3 133 133 0 003 134.6C3 207.7 63 267 137.2 267c62.5 0 114.8-42.2 129.8-99.2a135.6 135.6 0 01-14.8.8Z"/></symbol></defs><use xlink:href="#wx-clear-night-wx-clear-night-b" width="270" height="270" transform="translate(121 121)"/></svg></td>
+      <td>10°C</td>
+      <td>0%</td>
+      <td>4km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">21:00</td>
+      <td class="col-sky"><svg data-condition="clear-night" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-night-a" x1="54.3" x2="187.2" y1="29" y2="259.1" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient><symbol id="wx-clear-night-b" viewBox="0 0 270 270"><path fill="url(#wx-clear-night-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M252.3 168.6A133.4 133.4 0 01118 36.2 130.5 130.5 0 01122.5 3 133 133 0 003 134.6C3 207.7 63 267 137.2 267c62.5 0 114.8-42.2 129.8-99.2a135.6 135.6 0 01-14.8.8Z"/></symbol></defs><use xlink:href="#wx-clear-night-wx-clear-night-b" width="270" height="270" transform="translate(121 121)"/></svg></td>
+      <td>9°C</td>
+      <td>0%</td>
+      <td>5km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr><tr style="background:#d1fae533;">
+      <td style="font-size:12px;font-weight:600;">22:00</td>
+      <td class="col-sky"><svg data-condition="clear-night" width="18" height="18" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 512"><defs><linearGradient id="wx-clear-night-a" x1="54.3" x2="187.2" y1="29" y2="259.1" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient><symbol id="wx-clear-night-b" viewBox="0 0 270 270"><path fill="url(#wx-clear-night-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M252.3 168.6A133.4 133.4 0 01118 36.2 130.5 130.5 0 01122.5 3 133 133 0 003 134.6C3 207.7 63 267 137.2 267c62.5 0 114.8-42.2 129.8-99.2a135.6 135.6 0 01-14.8.8Z"/></symbol></defs><use xlink:href="#wx-clear-night-wx-clear-night-b" width="270" height="270" transform="translate(121 121)"/></svg></td>
+      <td>8°C</td>
+      <td>0%</td>
+      <td>5km/h</td>
+      <td class="col-comfort"><span style="color:#047857;">&#x25CF;</span>&ensp;Best for a run</td>
+      <td style="color:var(--c-subtle);">100/100</td>
+    </tr></tbody>
+      </table>
+    </div>
+  </div>
+    </div>
+<div class="section-group">
+    <h2 class="section-heading">Days ahead</h2>
+    <div class="card card--left" style="border-left-color:#7c3aed;"><p class="card-body">Tomorrow is the best bet this week.</p></div>
+    <div class="section-stack"><div class="card">
+      <div class="forecast-day-heading">Tomorrow - 20 Mar &middot; Good (58/100)</div>
+      <div class="forecast-best-line">Best local astro around 00:00</div>
+      <div class="chip-row">
+        <span class="chip"><span class="chip-label" style="color:#991b1b;">AM</span> 36</span>
+        <span class="chip"><span class="chip-label" style="color:#92400e;">PM</span> 55</span>
+        <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 60</span>
+        <span style="font-size:11px;font-weight:600;color:#92400e;">Fair certainty · spread 18</span>
+      </div>
+      <p class="card-body" style="margin-top:8px;color:#047857;"><svg width="12" height="12" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="#e5e7eb" stroke-dasharray="16.9 56.2" stroke-linecap="round" stroke-linejoin="round" stroke-width="17.4" d="M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 00128-128Z"/></svg> <span style="vertical-align:middle;">Moon 2% lit</span></p>
+      <p class="card-body" style="margin-top:8px;">Backup: Stanage Edge · 85/100 at 01:00 (astro) · 65 min drive</p>
+    </div><div class="card">
+      <div class="forecast-day-heading">Saturday 21 Mar &middot; Marginal (57/100)</div>
+      <div class="forecast-best-line">Best local astro around 21:00</div>
+      <div class="chip-row">
+        <span class="chip"><span class="chip-label" style="color:#92400e;">AM</span> 43</span>
+        <span class="chip"><span class="chip-label" style="color:#92400e;">PM</span> 54</span>
+        <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 69</span>
+        <span style="font-size:11px;font-weight:600;color:#991b1b;">Low certainty · spread 29</span>
+      </div>
+      <p class="card-body" style="margin-top:8px;color:#047857;"><svg width="12" height="12" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="none" stroke="#e5e7eb" stroke-dasharray="16.9 56.2" stroke-linecap="round" stroke-linejoin="round" stroke-width="17.4" d="M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 00128-128Z"/></svg> <span style="vertical-align:middle;">Moon 11% lit</span></p>
+      <p class="card-body" style="margin-top:8px;">Backup: Sutton Bank · 88/100 at 19:00 (astro) · 75 min drive</p>
+    </div><div class="card">
+      <div class="forecast-day-heading">Sunday 22 Mar &middot; Marginal (50/100)</div>
+      <div class="forecast-best-line">Best local astro around 21:00</div>
+      <div class="chip-row">
+        <span class="chip"><span class="chip-label" style="color:#92400e;">AM</span> 42</span>
+        <span class="chip"><span class="chip-label" style="color:#92400e;">PM</span> 47</span>
+        <span class="chip"><span class="chip-label" style="color:#1d4ed8;">Astro</span> 63</span>
+        <span style="font-size:11px;font-weight:600;color:#991b1b;">Low certainty · spread 36</span>
+      </div>
+      <p class="card-body" style="margin-top:8px;color:#047857;"><svg width="12" height="12" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="mn-moon-waxing-crescent-a" x1="211.4" x2="330.3" y1="166.7" y2="372.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient></defs><path fill="none" stroke="#e5e7eb" stroke-dasharray="16.9 56.2" stroke-linecap="round" stroke-linejoin="round" stroke-width="17.4" d="M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 00128-128Z"/><path fill="url(#mn-moon-waxing-crescent-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M310.3 127.5a142.3 142.3 0 00-19-7l.7.6h0c92.2 96.7 21 256.7-112.6 252.8l-.8-.1a141.4 141.4 0 0017.8 9.5 140 140 0 10114-255.8Z"/></svg> <span style="vertical-align:middle;">Moon 19% lit</span></p>
+      <p class="card-body" style="margin-top:8px;">Backup: Brimham Rocks · 86/100 at 19:00 (astro) · 40 min drive</p>
+    </div><div class="card">
+      <div class="forecast-day-heading">Monday 23 Mar &middot; Marginal (50/100)</div>
+      <div class="forecast-best-line">Best at 18:00 - golden hour, crepuscular rays</div>
+      <div class="chip-row">
+        <span class="chip"><span class="chip-label" style="color:#92400e;">AM</span> 44</span>
+        <span class="chip"><span class="chip-label" style="color:#92400e;">PM</span> 47</span>
+        <span class="chip"><span class="chip-label" style="color:#991b1b;">Astro</span> 1</span>
+        <span style="font-size:11px;font-weight:600;color:#991b1b;">Low certainty · spread 31</span>
+      </div>
+      <p class="card-body" style="margin-top:8px;color:#047857;"><svg width="12" height="12" style="vertical-align:middle;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="mn-moon-waxing-crescent-a" x1="211.4" x2="330.3" y1="166.7" y2="372.6" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#86c3db"/><stop offset=".5" stop-color="#86c3db"/><stop offset="1" stop-color="#5eafcf"/></linearGradient></defs><path fill="none" stroke="#e5e7eb" stroke-dasharray="16.9 56.2" stroke-linecap="round" stroke-linejoin="round" stroke-width="17.4" d="M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 256a128 128 0 00128-128Z"/><path fill="url(#mn-moon-waxing-crescent-a)" stroke="#72b9d5" stroke-linecap="round" stroke-linejoin="round" stroke-width="6" d="M310.3 127.5a142.3 142.3 0 00-19-7l.7.6h0c92.2 96.7 21 256.7-112.6 252.8l-.8-.1a141.4 141.4 0 0017.8 9.5 140 140 0 10114-255.8Z"/></svg> <span style="vertical-align:middle;">Moon 21% lit</span></p>
+      
+    </div></div>
+  </div>
+</main>
+<div class="footer-key">
+    <strong>Key</strong> &middot;
+    <strong>Score bands:</strong>
+    Excellent &ge; 75 &middot;
+    Good 58&ndash;74 &middot;
+    Marginal 42&ndash;57 &middot;
+    Poor &lt; 42 &middot;
+    AM/PM = sunrise &amp; sunset light quality &middot;
+    Astro = night sky potential (clear skies + dark moon) &middot;
+    Outdoor comfort = walk/run practicality, independent of photography scoring &middot;
+    Certainty: High &lt; 12 pts &middot; Fair 12&ndash;24 pts &middot; Low &ge; 25 pts
+  </div>
+    </div>
+    <footer class="page-footer">
+      <div class="footer-inner">
+        <span class="footer-brand">Aperture</span>
+        <span class="footer-sep">&middot;</span>
+        <span class="footer-ts">Generated Thursday 19 March</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
