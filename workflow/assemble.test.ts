@@ -448,6 +448,7 @@ describe('workflow assembly', () => {
       json: {
         telegramMsg: expect.stringContaining('Stay home today.'),
         emailHtml: expect.any(String),
+        siteHtml: expect.any(String),
         debugMode: false,
         debugEmailTo: '',
         debugEmailHtml: '',

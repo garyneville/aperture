@@ -60,6 +60,7 @@ export interface RenderedOutputs {
   emailHtml: string;
   debugEmailHtml?: string;
   debugEmailSubject?: string;
+  siteHtml?: string;
 }
 
 export type RunnerStage =

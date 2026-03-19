@@ -1,3 +1,4 @@
+import { formatSite } from '../../core/format-site.js';
 import { formatTelegram } from '../../core/format-telegram.js';
 import {
   buildFallbackAiText as buildSharedFallbackAiText,
@@ -893,6 +894,7 @@ export function run({ $input }: N8nRuntime) {
 
   const telegramMsg = formatTelegram({ ...ctx, aiText });
   const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, geminiInspire: safeGeminiInspire, debugContext });
+  const siteHtml = formatSite({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, geminiInspire: safeGeminiInspire });
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`
@@ -901,6 +903,7 @@ export function run({ $input }: N8nRuntime) {
   return [{ json: {
     telegramMsg,
     emailHtml,
+    siteHtml,
     debugMode,
     debugEmailTo,
     debugEmailHtml,

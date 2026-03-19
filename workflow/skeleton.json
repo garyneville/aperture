@@ -324,6 +324,22 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
+        "jsCode": "__ADAPTER_publish-site__"
+      },
+      "id": "a1b2c3d4-0045-0045-0045-000000000045",
+      "name": "Code: Publish Site",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        800
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
         "jsCode": "__ADAPTER_prepare-debug-email__"
       },
       "id": "a1b2c3d4-0043-0043-0043-000000000043",
@@ -1332,6 +1348,11 @@
           },
           {
             "node": "Code: Prepare Debug Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code: Publish Site",
             "type": "main",
             "index": 0
           }

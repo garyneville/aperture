@@ -37,6 +37,7 @@ export const ADAPTERS: Record<string, string> = {
   'wrap-aurora': 'src/adapters/n8n/wrap-aurora.adapter.ts',
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',
   'prepare-debug-email': 'src/adapters/n8n/prepare-debug-email.adapter.ts',
+  'publish-site': 'src/adapters/n8n/publish-site.adapter.ts',
 };
 
 export async function bundleAdapter(name: string, entryPoint: string): Promise<string> {
