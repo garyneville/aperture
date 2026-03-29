@@ -2,9 +2,10 @@ import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
-import { evaluateBuiltInSessions, selectBestSessionAcrossHours } from './session-scoring.js';
+import { evaluateBuiltInSessions, summarizeSessionRecommendations } from './session-scoring.js';
 import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
+import type { SessionRecommendationSummary } from '../types/session-score.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
 
@@ -188,6 +189,7 @@ export interface ScoreHoursOutput {
   todayHours: ScoredHour[];
   dailySummary: DaySummary[];
   metarNote: string;
+  sessionRecommendation: SessionRecommendationSummary;
   debugContext: DebugContext;
 }
 
@@ -755,7 +757,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       };
     });
 
-  const bestSession = selectBestSessionAcrossHours(todayFeatures);
+  const sessionRecommendation = summarizeSessionRecommendations(todayFeatures);
+  const bestSession = sessionRecommendation.primary;
   if (debugContext.scores && bestSession) {
     debugContext.scores.bestSession = {
       session: bestSession.session,
@@ -766,5 +769,5 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
-  return { todayHours, dailySummary, metarNote, debugContext };
+  return { todayHours, dailySummary, metarNote, sessionRecommendation, debugContext };
 }

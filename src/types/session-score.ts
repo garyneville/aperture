@@ -72,6 +72,15 @@ export interface SessionHourSelection extends SessionScore {
   hourLabel: string;
 }
 
+export interface SessionRecommendation extends SessionHourSelection {}
+
+export interface SessionRecommendationSummary {
+  primary: SessionRecommendation | null;
+  runnerUps: SessionRecommendation[];
+  bySession: SessionRecommendation[];
+  hoursAnalyzed: number;
+}
+
 export interface SessionEvaluator {
   session: SessionId;
   requiredCapabilities: ScoringCapability[];
