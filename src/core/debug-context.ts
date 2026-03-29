@@ -1,3 +1,5 @@
+import type { SessionConfidence, SessionId } from '../types/session-score.js';
+
 export interface DebugRunMetadata {
   generatedAt: string;
   location: string;
@@ -41,7 +43,17 @@ export interface DebugHourlyScore {
     azimuthDeg: number | null;
     isUp: boolean;
   };
+  sessionScores?: DebugHourlySessionScore[];
   tags: string[];
+}
+
+export interface DebugHourlySessionScore {
+  session: SessionId;
+  score: number;
+  hardPass: boolean;
+  confidence: SessionConfidence;
+  reasons: string[];
+  warnings: string[];
 }
 
 export interface DebugWindowTrace {

@@ -1,0 +1,17 @@
+export type ScoringCapability =
+  | 'sun-geometry'
+  | 'moon-geometry'
+  | 'cloud-stratification'
+  | 'horizon-gap'
+  | 'visibility'
+  | 'aerosols'
+  | 'humidity'
+  | 'precipitation'
+  | 'wind'
+  | 'ensemble-confidence'
+  | 'light-pollution'
+  | 'marine'
+  | 'hydrology'
+  | 'upper-air'
+  | 'nowcast'
+  | 'surface-wetness';

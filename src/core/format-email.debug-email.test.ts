@@ -41,6 +41,10 @@ describe('formatDebugEmail', () => {
         clarity: 0,
         mist: 0,
         moon: { altitudeDeg: -2, illuminationPct: 8, azimuthDeg: null, isUp: false },
+        sessionScores: [
+          { session: 'astro', score: 72, hardPass: true, confidence: 'high', reasons: ['Cloud cover is low enough for a plausible dark-sky run.'], warnings: [] },
+          { session: 'mist', score: 12, hardPass: false, confidence: 'low', reasons: [], warnings: ['Air looks quite clear for a dedicated mist session.'] },
+        ],
         tags: ['astrophotography'],
       }],
       windows: [{
@@ -114,7 +118,7 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Fair');
     expect(html).not.toContain('>medium<');
     expect(html).toContain('Window selection trace');
-    expect(html).toContain('Hourly astro scoring');
+    expect(html).toContain('Hourly scoring trace');
     expect(html).toContain('Nearby alternatives');
     expect(html).toContain('Δ vs Home');
     expect(html).toContain('Δ vs window');
@@ -131,6 +135,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('MAX_TOKENS');
     expect(html).toContain('Gemini response bytes');
     expect(html).toContain('Gemini truncation signal');
+    expect(html).toContain('Astro 72/100 (high)');
+    expect(html).toContain('Mist 12/100 gated (low)');
   });
 });
 

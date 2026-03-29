@@ -40,6 +40,24 @@ function displayDebugConfidence(confidence: string | null | undefined): string |
   return confidence;
 }
 
+function displaySessionName(value: string): string {
+  return value
+    .split('-')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function sessionScoreSummary(hour: DebugContext['hourlyScoring'][number]): string {
+  if (!hour.sessionScores?.length) return '—';
+  return hour.sessionScores
+    .map(score => {
+      const confidence = displayDebugConfidence(score.confidence) || score.confidence;
+      const gating = score.hardPass ? '' : ' gated';
+      return `${esc(displaySessionName(score.session))} ${esc(String(score.score))}/100${esc(gating)} (${esc(confidence)})`;
+    })
+    .join('<br>');
+}
+
 export function formatDebugEmail(debugContext: DebugContext): string {
   const metadata = debugContext.metadata;
   const scores = debugContext.scores;
@@ -54,6 +72,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(String(hour.moonAdjustment)),
     esc(String(hour.aodPenalty)),
     esc(`${hour.astroScore}`),
+    sessionScoreSummary(hour),
   ]));
   const showDarkPhaseColumn = debugContext.windows.some(window => Boolean(window.darkPhaseStart));
   const windowRows = debugContext.windows.map(window => {
@@ -147,8 +166,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           'No local window cleared threshold for this run.',
         ))}
         ${spacer(8)}
-        ${debugCard('Hourly astro scoring', debugTable(
-          ['Hour', 'Final', 'Cloud', 'Vis', 'AOD', 'Moon', 'Moon state', 'Moon score', 'AOD pen', 'Astro'],
+        ${debugCard('Hourly scoring trace', debugTable(
+          ['Hour', 'Final', 'Cloud', 'Vis', 'AOD', 'Moon', 'Moon state', 'Moon score', 'AOD pen', 'Astro', 'Sessions'],
           hourlyRows,
         ))}
         ${spacer(8)}
