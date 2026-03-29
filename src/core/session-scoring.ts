@@ -210,12 +210,12 @@ const astroEvaluator: SessionEvaluator = {
       && features.transparencyScore >= 15;
 
     // NON-LINEAR CLOUD PENALTY – quadratic ramp starting at 10 %
-    const cloudFrac = clamp(features.cloudTotalPct - 10, 0, 50) / 50;   // 0‑1 above 10 %
-    const cloudPenalty = Math.round(cloudFrac * cloudFrac * 30);         // 0‑30
+    const cloudFrac = clamp(features.cloudTotalPct - 10, 0, 50) / 50;   // 0-1 above 10 %
+    const cloudPenalty = Math.round(cloudFrac * cloudFrac * 30);         // 0-30
 
     // NON-LINEAR MOON WASHOUT PENALTY – cubic ramp past 25 %
     const moonFrac = clamp(features.moonIlluminationPct - 25, 0, 75) / 75;
-    const moonPenalty = Math.round(moonFrac * moonFrac * moonFrac * 35); // 0‑35
+    const moonPenalty = Math.round(moonFrac * moonFrac * moonFrac * 35); // 0-35
 
     // NON-LINEAR TRANSPARENCY BONUS – sweet-spot curve (best between 65-95)
     const transparencySweetSpot = sweetSpotScore(features.transparencyScore, 65, 95, 20, 100);
