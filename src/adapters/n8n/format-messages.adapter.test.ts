@@ -1097,7 +1097,7 @@ describe('run — weekStandout validation', () => {
               driveMins: 80,
               darkSky: true,
               rank: 1,
-              deltaVsLeeds: 46,
+              deltaVsHome: 46,
               shown: true,
             }, {
               name: 'Aysgarth Falls',
@@ -1109,7 +1109,7 @@ describe('run — weekStandout validation', () => {
               driveMins: 51,
               darkSky: false,
               rank: 14,
-              deltaVsLeeds: 8,
+              deltaVsHome: 8,
               shown: false,
               discardedReason: 'does not beat Leeds by 10 points (50 vs 42)',
             }],

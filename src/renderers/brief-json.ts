@@ -1,4 +1,5 @@
-import type { EditorialDecision, ScoredForecastContext } from '../core/standalone/contracts.js';
+import type { EditorialDecision } from '../core/standalone/contracts.js';
+import type { ScoredForecastContext } from '../types/scored-forecast.js';
 import {
   BRIEF_JSON_SCHEMA_VERSION,
   type BriefJson,

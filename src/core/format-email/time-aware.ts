@@ -3,7 +3,7 @@ import { renderAiBriefingText } from '../ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import type { DebugContext } from '../debug-context.js';
 import { esc } from '../utils.js';
-import { resolveHomeLatitude } from '../../types/home-location.js';
+import { DEFAULT_HOME_LOCATION, resolveHomeLatitude } from '../../types/home-location.js';
 import {
   C,
   FONT,
@@ -73,7 +73,7 @@ export function minutesToClock(totalMinutes: number): string {
 
 export function getRunTimeContext(debugContext?: DebugContext): RunTimeContext {
   const metadata = debugContext?.metadata;
-  const timezone = metadata?.timezone || 'Europe/London';
+  const timezone = metadata?.timezone || DEFAULT_HOME_LOCATION.timezone;
   const now = metadata?.generatedAt ? new Date(metadata.generatedAt) : null;
   if (!now) {
     return { nowMinutes: 0, nowLabel: '00:00', timezone };

@@ -404,7 +404,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
   // The selected window peak — same baseline used in AI/fallback editorial text.
   const selectedWindowPeak = debugContext.windows.find(w => w.selected)?.peak ?? null;
 
-  // Filter today's alternatives: must meet threshold AND beat Leeds by at least 8 pts
+  // Filter today's alternatives: must meet threshold AND beat the home baseline by at least 8 pts.
   const todayAlts: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
     const today = days[0];
     if (!today || !today.meetsThreshold) return [];
