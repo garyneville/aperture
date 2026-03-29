@@ -1,0 +1,194 @@
+# Builds the workflow from TypeScript source, substitutes secrets,
+# and deploys to n8n via the REST API.
+#
+# Triggers:
+#   - Push to main (i.e. after PR merge)
+#   - Manual dispatch (for ad-hoc redeploys)
+#
+# Required GitHub Actions secrets — see README or deployment_log.md:
+#   N8N_API_KEY, N8N_BASE_URL,
+#   GROQ_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
+#   SENDGRID_API_KEY, EMAIL_FROM,
+#   PHOTO_WEATHER_EMAIL_TO, PHOTO_WEATHER_EMAIL_TO_2,
+#   PHOTO_WEATHER_DEBUG_EMAIL_TO,
+#   PHOTO_WEATHER_LAT, PHOTO_WEATHER_LON, PHOTO_WEATHER_LOCATION,
+#   PHOTO_WEATHER_TIMEZONE, PHOTO_WEATHER_ICAO,
+#   PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER,
+#   SUNSETHUE_API_KEY, NASA_API_KEY, GEMINI_API_KEY,
+#   APERTURE_GITHUB_PAT
+
+name: Deploy workflow to n8n
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-n8n
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - name: Build workflow artifact
+        run: npm run build
+
+      - name: Verify workflow artifact is up to date
+        run: git diff --exit-code -- workflow/photography-weather-brief.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workflow-json
+          path: workflow/photography-weather-brief.json
+          retention-days: 5
+
+  deploy:
+    name: Deploy to n8n
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: workflow-json
+
+      - name: Substitute secrets into workflow JSON
+        run: |
+          sed -i \
+            -e 's|__GROQ_API_KEY__|${{ secrets.GROQ_API_KEY }}|g' \
+            -e 's|__TELEGRAM_BOT_TOKEN__|${{ secrets.TELEGRAM_BOT_TOKEN }}|g' \
+            -e 's|__TELEGRAM_CHAT_ID__|${{ secrets.TELEGRAM_CHAT_ID }}|g' \
+            -e 's|__SENDGRID_API_KEY__|${{ secrets.SENDGRID_API_KEY }}|g' \
+            -e 's|__EMAIL_FROM__|${{ secrets.EMAIL_FROM }}|g' \
+            -e 's|__PHOTO_WEATHER_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_EMAIL_TO }}|g' \
+            -e 's|__PHOTO_WEATHER_EMAIL_TO_2__|${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}|g' \
+            -e 's|__PHOTO_WEATHER_DEBUG_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}|g' \
+            -e 's|__PHOTO_WEATHER_LAT__|${{ secrets.PHOTO_WEATHER_LAT }}|g' \
+            -e 's|__PHOTO_WEATHER_LON__|${{ secrets.PHOTO_WEATHER_LON }}|g' \
+            -e 's|__PHOTO_WEATHER_LOCATION__|${{ secrets.PHOTO_WEATHER_LOCATION }}|g' \
+            -e 's|__PHOTO_WEATHER_TIMEZONE__|${{ secrets.PHOTO_WEATHER_TIMEZONE }}|g' \
+            -e 's|__PHOTO_WEATHER_ICAO__|${{ secrets.PHOTO_WEATHER_ICAO }}|g' \
+            -e 's|__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__|${{ secrets.PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER }}|g' \
+            -e 's|__SUNSETHUE_API_KEY__|${{ secrets.SUNSETHUE_API_KEY }}|g' \
+            -e 's|__NASA_API_KEY__|${{ secrets.NASA_API_KEY }}|g' \
+            -e 's|__GEMINI_API_KEY__|${{ secrets.GEMINI_API_KEY }}|g' \
+            -e 's|__APERTURE_GITHUB_PAT__|${{ secrets.APERTURE_GITHUB_PAT }}|g' \
+            photography-weather-brief.json
+
+      - name: Verify no unsubstituted placeholders remain
+        run: |
+          if grep -qE '__[A-Z_]+__' photography-weather-brief.json; then
+            echo "::error::Unsubstituted placeholders found:"
+            grep -oE '__[A-Z_]+__' photography-weather-brief.json | sort -u
+            exit 1
+          fi
+
+      - name: Parse workflow JSON for n8n API
+        id: parse
+        run: |
+          # Extract only the fields n8n accepts on create/update
+          python3 -c "
+          import json, sys
+          wf = json.load(open('photography-weather-brief.json'))
+          body = {
+              'name': wf['name'],
+              'nodes': wf['nodes'],
+              'connections': wf['connections'],
+              'settings': wf.get('settings', {})
+          }
+          json.dump(body, open('workflow-body.json', 'w'))
+          print(wf['name'])
+          " > workflow_name.txt
+
+      - name: Look up existing workflow by name
+        id: lookup
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          WORKFLOW_NAME=$(cat workflow_name.txt)
+          RESPONSE=$(curl -sf \
+            -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+            -H "Accept: application/json" \
+            "${N8N_BASE_URL}/api/v1/workflows?limit=100")
+
+          # Find workflow ID by name
+          WORKFLOW_ID=$(echo "$RESPONSE" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          name = '${WORKFLOW_NAME}'
+          matches = [w['id'] for w in data['data'] if w['name'] == name]
+          print(matches[0] if matches else '')
+          ")
+
+          echo "workflow_id=${WORKFLOW_ID}" >> "$GITHUB_OUTPUT"
+          if [ -n "$WORKFLOW_ID" ]; then
+            echo "Found existing workflow: ${WORKFLOW_ID}"
+          else
+            echo "No existing workflow found — will create"
+          fi
+
+      - name: Create or update workflow
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          WORKFLOW_ID: ${{ steps.lookup.outputs.workflow_id }}
+        run: |
+          if [ -n "$WORKFLOW_ID" ]; then
+            echo "Updating workflow ${WORKFLOW_ID}..."
+            HTTP_CODE=$(curl -sf -o response.json -w '%{http_code}' \
+              -X PUT \
+              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d @workflow-body.json \
+              "${N8N_BASE_URL}/api/v1/workflows/${WORKFLOW_ID}")
+          else
+            echo "Creating new workflow..."
+            HTTP_CODE=$(curl -sf -o response.json -w '%{http_code}' \
+              -X POST \
+              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d @workflow-body.json \
+              "${N8N_BASE_URL}/api/v1/workflows")
+          fi
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::n8n API returned HTTP ${HTTP_CODE}"
+            cat response.json
+            exit 1
+          fi
+
+          # Capture the ID (for activate step)
+          UPSERTED_ID=$(python3 -c "import json; print(json.load(open('response.json'))['id'])")
+          echo "workflow_id=${UPSERTED_ID}" >> "$GITHUB_ENV"
+          echo "Workflow upserted: ${UPSERTED_ID}"
+
+      - name: Activate workflow
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          curl -sf \
+            -X POST \
+            -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+            -H "Accept: application/json" \
+            "${N8N_BASE_URL}/api/v1/workflows/${workflow_id}/activate"
+          echo "Workflow ${workflow_id} activated"
