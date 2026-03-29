@@ -2,7 +2,7 @@ import type { N8nRuntime } from './types.js';
 
 const GITHUB_PAT = '__APERTURE_GITHUB_PAT__';
 const GITHUB_REPO = 'garyneville/aperture';
-const GH_PAGES_BRANCH = 'main';
+const GH_PAGES_BRANCH = 'gh-pages';
 
 async function getFileSha(filePath: string): Promise<string | undefined> {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${filePath}?ref=${GH_PAGES_BRANCH}`;

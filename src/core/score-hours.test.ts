@@ -273,7 +273,7 @@ describe('scoreAllDays astro confidence', () => {
     // Daylight confidence should be 'unknown' (no golden-hour timestamps)
     expect(today.confidence).toBe('unknown');
     // Debug context should carry both
-    expect(result.debugContext.scores?.astroConfidence).toBe('high');
+    expect(result.debugContext.scores?.astroConfidence).toBe('High');
     expect(result.debugContext.scores?.certainty).toBe('unknown');
   });
 

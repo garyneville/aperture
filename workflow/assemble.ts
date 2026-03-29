@@ -12,7 +12,7 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 export const ROOT = resolve(__dirname, '..');
 export const SKELETON_PATH = resolve(ROOT, 'workflow', 'skeleton.json');
-export const OUTPUT_PATH = resolve(ROOT, '..', '..', 'ansible', 'files', 'n8n-workflows', 'photography-weather-brief.json');
+export const OUTPUT_PATH = resolve(ROOT, 'workflow', 'photography-weather-brief.json');
 
 export const ADAPTERS: Record<string, string> = {
   'debug-config': 'src/adapters/n8n/debug-config.adapter.ts',

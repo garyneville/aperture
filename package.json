@@ -1,5 +1,5 @@
 {
-  "name": "@home/photo-brief",
+  "name": "aperture",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:workflow": "npm run build && git diff --exit-code -- ../../ansible/files/n8n-workflows/photography-weather-brief.json"
+    "verify:workflow": "npm run build && git diff --exit-code -- workflow/photography-weather-brief.json"
   },
   "devDependencies": {
     "@types/mjml": "^4.7.4",
