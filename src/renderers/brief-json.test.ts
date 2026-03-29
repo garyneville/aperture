@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { renderBriefAsJson } from './brief-json.js';
 import { BRIEF_JSON_SCHEMA_VERSION } from '../types/brief.js';
-import type { EditorialDecision, ScoredForecastContext } from '../core/standalone/contracts.js';
+import type { EditorialDecision } from '../core/standalone/contracts.js';
+import type { ScoredForecastContext } from '../types/scored-forecast.js';
 
 function makeScoredContext(): ScoredForecastContext {
   return {
@@ -87,7 +88,7 @@ describe('renderBriefAsJson', () => {
       debugEmailTo: 'debug@example.com',
     } as ScoredForecastContext & { debugMode: boolean; debugEmailTo: string };
 
-    const result = renderBriefAsJson(rawContext, makeEditorialDecision()) as Record<string, unknown>;
+    const result = renderBriefAsJson(rawContext, makeEditorialDecision()) as unknown as Record<string, unknown>;
 
     expect(result.debugMode).toBeUndefined();
     expect(result.debugEmailTo).toBeUndefined();

@@ -2,6 +2,7 @@ import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ function debugConfidenceLabel(confidence: string | null | undefined): string | n
 export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutput {
   const { lat: LAT, lon: LON, weather: w, airQuality: aq, precipProb: ppData, ensemble: ensData, azimuthByPhase: azimuthByPhaseRaw } = input;
   const azimuthByPhase = azimuthByPhaseRaw || {};
-  const timezone = input.timezone || 'Europe/London';
+  const timezone = input.timezone || DEFAULT_HOME_LOCATION.timezone;
 
   // SunsetHue lookup
   const shByDay: Record<string, SunsetHueEntry> = {};

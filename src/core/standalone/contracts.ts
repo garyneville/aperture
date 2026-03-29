@@ -1,5 +1,6 @@
-import type { BuildPromptOutput } from '../build-prompt.js';
 import type { BriefJson } from '../../types/brief.js';
+export type { ScoredForecastContext } from '../../types/scored-forecast.js';
+import type { ScoredForecastContext } from '../../types/scored-forecast.js';
 
 export type EditorialProvider = 'groq' | 'gemini';
 
@@ -26,8 +27,6 @@ export interface ForecastBundle {
     precipProbability?: unknown;
   };
 }
-
-export type ScoredForecastContext = Omit<BuildPromptOutput, 'prompt'>;
 
 export interface EditorialRequest {
   prompt: string;

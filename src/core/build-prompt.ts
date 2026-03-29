@@ -11,6 +11,7 @@ import {
   DEFAULT_HOME_LOCATION,
   type HomeLocation,
 } from '../types/home-location.js';
+import type { ScoredForecastContext } from '../types/scored-forecast.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -71,34 +72,8 @@ export interface AltLocationResult {
   types: string[];
 }
 
-export interface BuildPromptOutput {
+export interface BuildPromptOutput extends ScoredForecastContext {
   prompt: string;
-  dontBother: boolean;
-  windows: Window[];
-  todayCarWash: CarWash;
-  dailySummary: DailySummary[];
-  altLocations?: AltLocationResult[];
-  closeContenders?: AltLocationResult[];
-  noAltsMsg?: string | null;
-  sunriseStr: string;
-  sunsetStr: string;
-  moonPct: number;
-  metarNote: string;
-  today: string;
-  todayBestScore: number;
-  shSunsetQ: number | null;
-  shSunriseQ: number | null;
-  shSunsetText: string | null;
-  sunDir: number | null;
-  crepPeak: number;
-  peakKpTonight: number | null;
-  auroraSignal?: AuroraSignal | null;
-  debugContext: DebugContext;
-  longRangeTop?: LongRangeCandidate | null;
-  longRangeCardLabel?: string | null;
-  darkSkyAlert?: DarkSkyAlert | null;
-  longRangeCandidates?: LongRangeCandidate[];
-  longRangeDebugCandidates?: LongRangeDebugCandidate[];
 }
 
 

@@ -1,6 +1,6 @@
 import { formatSite } from '../../core/format-site.js';
 import { formatTelegram } from '../../core/format-telegram.js';
-import type { ScoredForecastContext } from '../../core/standalone/contracts.js';
+import type { ScoredForecastContext } from '../../types/scored-forecast.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import {
   emptyDebugContext,
@@ -28,11 +28,7 @@ function normaliseLongRangeCandidate(candidate: Record<string, unknown>, rank: n
     driveMins: typeof candidate.driveMins === 'number' ? candidate.driveMins : 0,
     darkSky: candidate.darkSky === true,
     rank,
-    deltaVsHome: typeof candidate.deltaVsHome === 'number'
-      ? candidate.deltaVsHome
-      : typeof candidate.deltaVsLeeds === 'number'
-        ? candidate.deltaVsLeeds
-        : 0,
+    deltaVsHome: typeof candidate.deltaVsHome === 'number' ? candidate.deltaVsHome : 0,
     shown: candidate.shown === true,
     discardedReason: typeof candidate.discardedReason === 'string' ? candidate.discardedReason : undefined,
   };

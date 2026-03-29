@@ -107,8 +107,8 @@ function signalCards(
   metarNote: string | undefined,
   peakKpTonight?: number | null,
   auroraSignal?: AuroraSignal | null,
-  locationName = 'Leeds',
-  homeLatitude = 53.82703,
+  locationName = resolveHomeLocationName(),
+  homeLatitude = resolveHomeLatitude(),
 ): string {
   const cards: string[] = [];
   const awukLevel = auroraSignal?.nearTerm?.level;
