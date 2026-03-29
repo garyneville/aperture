@@ -31,6 +31,7 @@ export function renderBriefAsJson(
     sunsetStr: scoredContext.sunsetStr,
     moonPct: scoredContext.moonPct,
     metarNote: scoredContext.metarNote,
+    sessionRecommendation: scoredContext.sessionRecommendation,
     today: scoredContext.today,
     todayBestScore: scoredContext.todayBestScore,
     shSunsetQ: scoredContext.shSunsetQ,

@@ -1,5 +1,6 @@
 import type { DebugContext } from '../core/debug-context.js';
 import type { AuroraSignal } from '../core/aurora-providers.js';
+import type { SessionRecommendationSummary } from './session-score.js';
 
 export const BRIEF_JSON_SCHEMA_VERSION = 'aperture-brief/v1' as const;
 
@@ -177,6 +178,7 @@ export interface BriefRenderInput {
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
   geminiInspire?: string;
   location?: BriefJsonLocation;
+  sessionRecommendation?: SessionRecommendationSummary;
   debugContext?: DebugContext;
 }
 

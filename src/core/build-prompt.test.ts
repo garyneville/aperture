@@ -124,6 +124,22 @@ describe('buildPrompt', () => {
       }],
       noAltsMsg: null,
       metarNote: '✅ METAR: clear skies confirmed',
+      sessionRecommendation: {
+        primary: {
+          session: 'astro',
+          hourLabel: '19:00',
+          score: 75,
+          hardPass: true,
+          confidence: 'high',
+          volatility: 6,
+          reasons: ['Cloud cover is low enough for a plausible dark-sky run.'],
+          warnings: [],
+          requiredCapabilities: ['moon-geometry', 'cloud-stratification', 'visibility', 'aerosols', 'humidity', 'light-pollution', 'ensemble-confidence'],
+        },
+        runnerUps: [],
+        bySession: [],
+        hoursAnalyzed: 3,
+      },
       sunrise: '2026-03-14T06:23:00.000Z',
       sunset: '2026-03-14T18:07:00.000Z',
       moonPct: 23,
@@ -154,6 +170,7 @@ describe('buildPrompt', () => {
     // cannot echo back "18. 3km" with a spurious decimal space (#108).
     expect(result.prompt).toContain('Vis 18km');
     expect(result.prompt).not.toMatch(/Vis \d+\.\d+km/);
+    expect(result.sessionRecommendation?.primary?.session).toBe('astro');
   });
 
   it('includes spurOfTheMoment schema key and location list in the good-day prompt', () => {

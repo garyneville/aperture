@@ -25,6 +25,22 @@ function makeScoredContext(): ScoredForecastContext {
     sunsetStr: '18:11',
     moonPct: 8,
     metarNote: '',
+    sessionRecommendation: {
+      primary: {
+        session: 'storm',
+        hourLabel: '19:00',
+        score: 84,
+        hardPass: true,
+        confidence: 'high',
+        volatility: 18,
+        reasons: ['Cloud structure and illumination already look storm-friendly.'],
+        warnings: [],
+        requiredCapabilities: ['cloud-stratification', 'precipitation', 'wind', 'aerosols', 'sun-geometry', 'upper-air'],
+      },
+      runnerUps: [],
+      bySession: [],
+      hoursAnalyzed: 8,
+    },
     today: 'Wednesday 18 March',
     todayBestScore: 60,
     shSunsetQ: null,
@@ -79,6 +95,8 @@ describe('renderBriefAsJson', () => {
     expect(result.compositionBullets).toEqual(['Face north.']);
     expect(result.weekInsight).toBe('Today is the most reliable forecast.');
     expect(result.geminiInspire).toBe('Look for reflected light on wet stone.');
+    expect(result.sessionRecommendation?.primary?.session).toBe('storm');
+    expect(result.sessionRecommendation?.hoursAnalyzed).toBe(8);
   });
 
   it('does not leak non-contract runtime fields into the JSON payload', () => {

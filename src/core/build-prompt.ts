@@ -12,6 +12,7 @@ import {
   type HomeLocation,
 } from '../types/home-location.js';
 import type { ScoredForecastContext } from '../types/scored-forecast.js';
+import type { SessionRecommendationSummary } from '../types/session-score.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -47,6 +48,7 @@ export interface BuildPromptInput {
   closeContenders?: AltLocationResult[];
   noAltsMsg?: string | null;
   metarNote: string;
+  sessionRecommendation?: SessionRecommendationSummary;
   sunrise?: string;
   sunset?: string;
   moonPct: number;
@@ -342,6 +344,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     workflowVersion = DEFAULT_BRIEF_WORKFLOW_VERSION,
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, closeContenders, noAltsMsg, metarNote,
+    sessionRecommendation,
     sunrise, sunset, moonPct, kpForecast, auroraSignal,
     longRangeTop, longRangeCardLabel, darkSkyAlert,
     longRangeCandidates, longRangeDebugCandidates,
@@ -554,6 +557,7 @@ ${windowsText}${altText}
     sunsetStr,
     moonPct,
     metarNote,
+    sessionRecommendation,
     today,
     todayBestScore,
     shSunsetQ: todayDay?.shSunsetQuality ?? null,

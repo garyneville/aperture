@@ -1,5 +1,6 @@
 import type { DebugContext, DebugLongRangeCandidate } from '../core/debug-context.js';
 import type { AltLocation, BriefRenderInput, LongRangeCard } from './brief.js';
+import type { SessionRecommendationSummary } from './session-score.js';
 
 type SharedBriefFields = Omit<
   BriefRenderInput,
@@ -21,6 +22,7 @@ export interface ScoredForecastContext extends SharedBriefFields {
   noAltsMsg?: string | null;
   metarNote: string;
   shSunsetText: string | null;
+  sessionRecommendation?: SessionRecommendationSummary;
   debugContext: DebugContext;
   longRangeCandidates?: LongRangeCard[];
   longRangeDebugCandidates?: DebugLongRangeCandidate[];
