@@ -1,49 +1,36 @@
 import { describe, expect, it } from 'vitest';
+import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import {
-  deriveHourFeatures,
   evaluateBuiltInSessions,
-  evaluateSessionHour,
+  evaluateSessionFeatures,
   getBuiltInSessionEvaluators,
 } from './session-scoring.js';
-import type { ScoredHour } from './best-windows.js';
 
-function makeHour(overrides: Partial<ScoredHour> = {}): ScoredHour {
+function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHourFeatureInput {
   return {
-    ts: '2026-03-29T19:00:00Z',
-    t: '2026-03-29T19:00:00Z',
-    hour: '19:00',
-    score: 72,
-    drama: 78,
-    clarity: 68,
-    mist: 20,
-    astro: 14,
-    crepuscular: 61,
-    shQ: 0.62,
-    cl: 20,
-    cm: 30,
-    ch: 18,
-    ct: 52,
-    visK: 24,
-    aod: 0.12,
-    tpw: 11,
-    wind: 11,
-    gusts: 18,
-    tmp: 9,
-    hum: 66,
-    dew: 4,
-    pp: 8,
-    pr: 0,
-    vpd: 0.8,
-    azimuthRisk: null,
+    hourLabel: '19:00',
+    overallScore: 72,
+    dramaScore: 78,
+    clarityScore: 68,
+    mistScore: 20,
+    astroScore: 14,
+    crepuscularScore: 61,
+    cloudLowPct: 20,
+    cloudMidPct: 30,
+    cloudHighPct: 18,
+    cloudTotalPct: 52,
+    visibilityKm: 24,
+    aerosolOpticalDepth: 0.12,
+    precipProbabilityPct: 8,
+    humidityPct: 66,
+    temperatureC: 9,
+    dewPointC: 4,
+    windKph: 11,
+    gustKph: 18,
+    moonIlluminationPct: 12,
     isGolden: true,
-    isGoldAm: false,
-    isGoldPm: true,
     isBlue: false,
-    isBlueAm: false,
-    isBluePm: false,
     isNight: false,
-    moon: 12,
-    uv: 0,
     tags: ['dramatic sky', 'golden hour'],
     ...overrides,
   };
@@ -54,7 +41,7 @@ describe('session scoring foundation', () => {
     expect(getBuiltInSessionEvaluators().map(evaluator => evaluator.session)).toEqual(['golden-hour', 'astro', 'mist']);
   });
 
-  it('derives reusable features from the current scored-hour shape', () => {
+  it('works from the shared derived-feature seam', () => {
     const features = deriveHourFeatures(makeHour());
 
     expect(features.hourLabel).toBe('19:00');
@@ -64,7 +51,7 @@ describe('session scoring foundation', () => {
   });
 
   it('scores a golden-hour session with a hard pass during low-angle light', () => {
-    const result = evaluateSessionHour('golden-hour', makeHour());
+    const result = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour()));
 
     expect(result.hardPass).toBe(true);
     expect(result.score).toBeGreaterThan(60);
@@ -73,7 +60,7 @@ describe('session scoring foundation', () => {
   });
 
   it('fails astro hard gates during daylight hours', () => {
-    const result = evaluateSessionHour('astro', makeHour({ isNight: false, astro: 55, ct: 5 }));
+    const result = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({ isNight: false, astroScore: 55, cloudTotalPct: 5 })));
 
     expect(result.hardPass).toBe(false);
     expect(result.score).toBe(0);
@@ -81,21 +68,20 @@ describe('session scoring foundation', () => {
   });
 
   it('ranks astro first for a dark, clear hour', () => {
-    const sessions = evaluateBuiltInSessions(makeHour({
+    const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
       isGolden: false,
-      isGoldPm: false,
       isNight: true,
-      astro: 86,
-      ct: 9,
-      cl: 4,
-      cm: 5,
-      ch: 6,
-      visK: 30,
-      hum: 58,
-      aod: 0.06,
-      moon: 8,
+      astroScore: 86,
+      cloudTotalPct: 9,
+      cloudLowPct: 4,
+      cloudMidPct: 5,
+      cloudHighPct: 6,
+      visibilityKm: 30,
+      humidityPct: 58,
+      aerosolOpticalDepth: 0.06,
+      moonIlluminationPct: 8,
       tags: ['astrophotography'],
-    }));
+    })));
 
     expect(sessions[0]?.session).toBe('astro');
     expect(sessions[0]?.hardPass).toBe(true);
@@ -103,28 +89,27 @@ describe('session scoring foundation', () => {
   });
 
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
-    const sessions = evaluateBuiltInSessions(makeHour({
-      score: 48,
-      drama: 25,
-      clarity: 18,
-      mist: 86,
-      astro: 0,
-      crepuscular: 12,
-      ct: 92,
-      visK: 4.5,
-      aod: 0.08,
-      wind: 4,
-      gusts: 7,
-      tmp: 6,
-      hum: 95,
-      dew: 5,
-      pp: 18,
+    const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
+      overallScore: 48,
+      dramaScore: 25,
+      clarityScore: 18,
+      mistScore: 86,
+      astroScore: 0,
+      crepuscularScore: 12,
+      cloudTotalPct: 92,
+      visibilityKm: 4.5,
+      aerosolOpticalDepth: 0.08,
+      windKph: 4,
+      gustKph: 7,
+      temperatureC: 6,
+      humidityPct: 95,
+      dewPointC: 5,
+      precipProbabilityPct: 18,
       isGolden: false,
-      isGoldPm: false,
       isBlue: false,
       isNight: false,
       tags: ['mist', 'atmospheric'],
-    }));
+    })));
 
     expect(sessions[0]?.session).toBe('mist');
     expect(sessions[0]?.hardPass).toBe(true);

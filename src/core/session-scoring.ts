@@ -1,5 +1,4 @@
 import { clamp } from './utils.js';
-import type { ScoredHour } from './best-windows.js';
 import type { ScoringCapability } from '../types/capabilities.js';
 import type {
   DerivedHourFeatures,
@@ -22,45 +21,6 @@ function sweetSpotScore(
     return clamp(Math.round(((value - hardMin) / (idealMin - hardMin)) * 100));
   }
   return clamp(Math.round(((hardMax - value) / (hardMax - idealMax)) * 100));
-}
-
-function estimateTransparencyScore(hour: ScoredHour): number {
-  const visibilityScore = clamp(Math.round((hour.visK / 30) * 100));
-  const humidityPenalty = clamp(Math.round((hour.hum - 70) * 0.9), 0, 22);
-  const aerosolPenalty = clamp(Math.round((hour.aod - 0.08) * 180), 0, 25);
-  const cloudPenalty = clamp(Math.round(hour.ct * 0.2), 0, 20);
-  return clamp(visibilityScore - humidityPenalty - aerosolPenalty - cloudPenalty);
-}
-
-export function deriveHourFeatures(hour: ScoredHour): DerivedHourFeatures {
-  return {
-    hourLabel: hour.hour,
-    overallScore: hour.score,
-    dramaScore: hour.drama,
-    clarityScore: hour.clarity,
-    mistScore: hour.mist,
-    astroScore: hour.astro,
-    crepuscularScore: hour.crepuscular,
-    transparencyScore: estimateTransparencyScore(hour),
-    cloudLowPct: hour.cl,
-    cloudMidPct: hour.cm,
-    cloudHighPct: hour.ch,
-    cloudTotalPct: hour.ct,
-    visibilityKm: hour.visK,
-    aerosolOpticalDepth: hour.aod,
-    precipProbabilityPct: hour.pp,
-    humidityPct: hour.hum,
-    temperatureC: hour.tmp,
-    dewPointC: hour.dew,
-    dewPointSpreadC: Math.max(0, hour.tmp - hour.dew),
-    windKph: hour.wind,
-    gustKph: hour.gusts,
-    moonIlluminationPct: hour.moon,
-    isNight: hour.isNight,
-    isGolden: hour.isGolden,
-    isBlue: hour.isBlue,
-    tags: hour.tags,
-  };
 }
 
 function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
@@ -263,16 +223,15 @@ export function getSessionEvaluator(session: SessionId): SessionEvaluator | unde
   return BUILT_IN_SESSION_EVALUATORS.find(evaluator => evaluator.session === session);
 }
 
-export function evaluateSessionHour(session: SessionId, hour: ScoredHour): SessionScore {
+export function evaluateSessionFeatures(session: SessionId, features: DerivedHourFeatures): SessionScore {
   const evaluator = getSessionEvaluator(session);
   if (!evaluator) {
     throw new Error(`Unknown session evaluator: ${session}`);
   }
-  return evaluator.evaluateHour(deriveHourFeatures(hour));
+  return evaluator.evaluateHour(features);
 }
 
-export function evaluateBuiltInSessions(hour: ScoredHour): SessionScore[] {
-  const features = deriveHourFeatures(hour);
+export function evaluateBuiltInSessions(features: DerivedHourFeatures): SessionScore[] {
   return BUILT_IN_SESSION_EVALUATORS
     .map(evaluator => evaluator.evaluateHour(features))
     .sort((a, b) => b.score - a.score);
