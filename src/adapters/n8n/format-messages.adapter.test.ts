@@ -789,6 +789,15 @@ describe('run — weekStandout validation', () => {
             sunsetStr: '18:11',
             moonPct: 8,
             metarNote: '',
+            debugContext: {
+              metadata: {
+                generatedAt: '2026-03-16T12:00:00.000Z',
+                timezone: 'Europe/London',
+              },
+              hourlyScoring: [],
+              windows: [],
+              nearbyAlternatives: [],
+            },
             today: 'Monday 16 March',
             todayBestScore: 60,
             shSunsetQ: null,
@@ -920,6 +929,15 @@ describe('run — weekStandout validation', () => {
               tmp: 8,
             },
             altLocations: [],
+            debugContext: {
+              metadata: {
+                generatedAt: '2026-03-16T12:00:00.000Z',
+                timezone: 'Europe/London',
+              },
+              hourlyScoring: [],
+              windows: [],
+              nearbyAlternatives: [],
+            },
             sunriseStr: '06:18',
             sunsetStr: '18:11',
             moonPct: 8,
