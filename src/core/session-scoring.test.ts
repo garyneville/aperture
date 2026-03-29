@@ -149,6 +149,100 @@ describe('session scoring foundation', () => {
     expect(volatile.score).toBeLessThan(stable.score);
   });
 
+  it('hard-gates astro when cloud cover exceeds the tightened 60 % cap', () => {
+    const result = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      astroScore: 80,
+      cloudTotalPct: 65,
+      cloudLowPct: 30,
+      cloudMidPct: 20,
+      cloudHighPct: 15,
+      visibilityKm: 25,
+      humidityPct: 55,
+      aerosolOpticalDepth: 0.06,
+      moonIlluminationPct: 10,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('hard-gates astro when transparency is too poor for imaging', () => {
+    const result = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      astroScore: 75,
+      cloudTotalPct: 10,
+      cloudLowPct: 3,
+      cloudMidPct: 4,
+      cloudHighPct: 5,
+      visibilityKm: 3,
+      humidityPct: 97,
+      aerosolOpticalDepth: 0.32,
+      moonIlluminationPct: 5,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+    expect(result.warnings).toContain('Poor transparency will limit deep-sky contrast.');
+  });
+
+  it('applies a steeper non-linear cloud penalty as cloud cover rises', () => {
+    const low = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 15, cloudLowPct: 5, cloudMidPct: 5, cloudHighPct: 5,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+    })));
+    const moderate = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 35, cloudLowPct: 12, cloudMidPct: 12, cloudHighPct: 11,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+    })));
+    const high = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 55, cloudLowPct: 20, cloudMidPct: 20, cloudHighPct: 15,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+    })));
+
+    // penalty gap from moderate→high should be larger than low→moderate (non-linear)
+    const dropLowToMod = low.score - moderate.score;
+    const dropModToHigh = moderate.score - high.score;
+    expect(dropModToHigh).toBeGreaterThan(dropLowToMod);
+    expect(low.score).toBeGreaterThan(moderate.score);
+    expect(moderate.score).toBeGreaterThan(high.score);
+  });
+
+  it('penalises bright moonlight more aggressively via the cubic washout curve', () => {
+    const dark = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+    })));
+    const quarter = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 50,
+    })));
+    const full = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 95,
+    })));
+
+    // cubic curve means nearly-full moon gets hit much harder than quarter moon
+    const dropDarkToQuarter = dark.score - quarter.score;
+    const dropQuarterToFull = quarter.score - full.score;
+    expect(dropQuarterToFull).toBeGreaterThan(dropDarkToQuarter);
+    expect(full.warnings).toContain('Bright moonlight will wash out all but the brightest targets.');
+  });
+
+  it('rewards high transparency through the sweet-spot curve', () => {
+    const goodTransparency = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 30, humidityPct: 50, aerosolOpticalDepth: 0.05, moonIlluminationPct: 10,
+    })));
+    const poorTransparency = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 12, humidityPct: 82, aerosolOpticalDepth: 0.20, moonIlluminationPct: 10,
+    })));
+
+    expect(goodTransparency.score).toBeGreaterThan(poorTransparency.score);
+    expect(goodTransparency.reasons).toContain('Transparency looks strong for clean deep-sky contrast.');
+  });
+
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
     const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
       overallScore: 48,
