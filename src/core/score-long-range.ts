@@ -3,6 +3,7 @@ import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './sit
 import { clamp } from './utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from './long-range-locations.js';
+import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces                                                        */
@@ -40,7 +41,7 @@ export interface LongRangeCandidate {
 
 export interface LongRangeDebugCandidate extends LongRangeCandidate {
   rank: number;
-  deltaVsLeeds: number;
+  deltaVsHome: number;
   shown: boolean;
   discardedReason?: string;
 }
@@ -48,7 +49,9 @@ export interface LongRangeDebugCandidate extends LongRangeCandidate {
 export interface ScoreLongRangeInput {
   longRangeWeatherData: AltWeatherData[];
   longRangeMeta: LongRangeMeta[];
-  leedsHeadlineScore: number;
+  homeHeadlineScore: number;
+  homeLocationName?: string;
+  timezone?: string;
   isWeekday: boolean;
 }
 
@@ -84,7 +87,7 @@ const ASTRO_DARK_ELEVATION = -18;
 /** Minimum score to consider a long-range trip worthwhile.
  *  The alt-location scoring algorithm (which excludes AOD/azimuth/crepuscular/SunsetHue)
  *  tops out around 55-65 in ideal conditions. 50 filters out poor/marginal days.
- *  The delta threshold ensures the location is genuinely better than Leeds. */
+ *  The delta threshold ensures the location is genuinely better than the home baseline. */
 const LONG_RANGE_SCORE_THRESHOLD = 50;
 const LONG_RANGE_DELTA_THRESHOLD = 10;
 const ASTRO_DARK_SKY_THRESHOLD = 70;
@@ -93,10 +96,14 @@ const ASTRO_DARK_SKY_THRESHOLD = 70;
 /*  Per-location scoring (today only)                                  */
 /* ------------------------------------------------------------------ */
 
-function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCandidate | null {
+function scoreLocToday(
+  wData: AltWeatherData,
+  meta: LongRangeMeta,
+  timezone: string,
+): LongRangeCandidate | null {
   if (!wData?.hourly?.time?.length) return null;
 
-  const dateKey = new Date(wData.hourly.time[0]).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  const dateKey = new Date(wData.hourly.time[0]).toLocaleDateString('en-CA', { timeZone: timezone });
   const sunriseD = new Date(wData.daily?.sunrise?.[0] || dateKey + 'T06:30:00Z');
   const sunsetD = new Date(wData.daily?.sunset?.[0] || dateKey + 'T18:30:00Z');
   const goldAmS = new Date(+sunriseD - 10 * 60000);
@@ -184,7 +191,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
       if (score > bestDay) {
         bestDay = score;
         bestDayHour = t.toLocaleTimeString('en-GB', {
-          hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London',
+          hour: '2-digit', minute: '2-digit', timeZone: timezone,
         });
       }
     }
@@ -201,7 +208,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
       if (astro > bestAstro) {
         bestAstro = astro;
         bestAstroHour = t.toLocaleTimeString('en-GB', {
-          hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London',
+          hour: '2-digit', minute: '2-digit', timeZone: timezone,
         });
       }
     }
@@ -234,28 +241,35 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
 /* ------------------------------------------------------------------ */
 
 export function scoreLongRange(input: ScoreLongRangeInput): ScoreLongRangeOutput {
-  const { longRangeWeatherData, longRangeMeta, leedsHeadlineScore, isWeekday } = input;
+  const {
+    longRangeWeatherData,
+    longRangeMeta,
+    homeHeadlineScore,
+    homeLocationName = DEFAULT_HOME_LOCATION.name,
+    timezone = DEFAULT_HOME_LOCATION.timezone,
+    isWeekday,
+  } = input;
 
   const rawCandidates = longRangeWeatherData
-    .map((wData, idx) => scoreLocToday(wData, longRangeMeta[idx]))
+    .map((wData, idx) => scoreLocToday(wData, longRangeMeta[idx], timezone))
     .filter((c): c is LongRangeCandidate => c !== null);
 
   const rankedCandidates = [...rawCandidates].sort((a, b) => b.bestScore - a.bestScore);
   const candidates = rankedCandidates.filter(c => c.bestScore >= LONG_RANGE_SCORE_THRESHOLD);
 
   const top = candidates[0] || null;
-  const delta = top ? top.bestScore - leedsHeadlineScore : 0;
+  const delta = top ? top.bestScore - homeHeadlineScore : 0;
   const meetsThreshold = top !== null && delta >= LONG_RANGE_DELTA_THRESHOLD;
 
   const longRangeDebugCandidates = rankedCandidates.map((candidate, index) => {
-    const candidateDelta = candidate.bestScore - leedsHeadlineScore;
+    const candidateDelta = candidate.bestScore - homeHeadlineScore;
     let shown = false;
     let discardedReason: string | undefined;
 
     if (candidate.bestScore < LONG_RANGE_SCORE_THRESHOLD) {
       discardedReason = `score below threshold (${candidate.bestScore} < ${LONG_RANGE_SCORE_THRESHOLD})`;
     } else if (candidateDelta < LONG_RANGE_DELTA_THRESHOLD) {
-      discardedReason = `does not beat Leeds by ${LONG_RANGE_DELTA_THRESHOLD} points (${candidate.bestScore} vs ${leedsHeadlineScore})`;
+      discardedReason = `does not beat ${homeLocationName} by ${LONG_RANGE_DELTA_THRESHOLD} points (${candidate.bestScore} vs ${homeHeadlineScore})`;
     } else if (top && candidate.name === top.name && meetsThreshold) {
       shown = true;
     } else {
@@ -265,7 +279,7 @@ export function scoreLongRange(input: ScoreLongRangeInput): ScoreLongRangeOutput
     return {
       ...candidate,
       rank: index + 1,
-      deltaVsLeeds: candidateDelta,
+      deltaVsHome: candidateDelta,
       shown,
       discardedReason,
     };

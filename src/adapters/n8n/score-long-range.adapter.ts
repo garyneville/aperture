@@ -10,10 +10,12 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
 
-  const longRangeWeatherData = mergedItems.map(({ name: _n, lat: _la, lon: _lo, region: _r, elevation: _e, tags: _t, siteDarkness: _sd, darkSky: _d, driveMins: _dm, url: _u, leedsContext: _lc, ...weather }) => weather);
+  const longRangeWeatherData = mergedItems.map(({ name: _n, lat: _la, lon: _lo, region: _r, elevation: _e, tags: _t, siteDarkness: _sd, darkSky: _d, driveMins: _dm, url: _u, homeContext: _hc, ...weather }) => weather);
   const longRangeMeta = mergedItems.map(({ name, lat, lon, region, elevation, tags, siteDarkness, darkSky, driveMins }) => ({ name, lat, lon, region, elevation, tags, siteDarkness, darkSky, driveMins }));
-  const leedsContext = mergedItems[0]?.leedsContext ?? {};
-  const leedsHeadlineScore = leedsContext.dailySummary?.[0]?.headlineScore ?? leedsContext.dailySummary?.[0]?.photoScore ?? 0;
+  const homeContext = mergedItems[0]?.homeContext ?? {};
+  const homeHeadlineScore = homeContext.dailySummary?.[0]?.headlineScore ?? homeContext.dailySummary?.[0]?.photoScore ?? 0;
+  const homeLocationName = homeContext.debugContext?.metadata?.location;
+  const timezone = homeContext.debugContext?.metadata?.timezone;
 
   const now = new Date();
   const dayOfWeek = now.getDay();
@@ -22,7 +24,9 @@ export function run({ $input }: N8nRuntime) {
   const result = scoreLongRange({
     longRangeWeatherData,
     longRangeMeta,
-    leedsHeadlineScore,
+    homeHeadlineScore,
+    homeLocationName,
+    timezone,
     isWeekday,
   });
 

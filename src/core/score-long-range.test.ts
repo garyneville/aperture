@@ -73,7 +73,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [makeWeatherData({ cloudcover: 95, visibility: 1000, precipitation_probability: 80 })],
       longRangeMeta: [baseMeta],
-      leedsHeadlineScore: 60,
+      homeHeadlineScore: 60,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -119,7 +119,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [excellentWeather],
       longRangeMeta: [baseMeta],
-      leedsHeadlineScore: 40,
+      homeHeadlineScore: 40,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -145,7 +145,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [excellentWeather],
       longRangeMeta: [baseMeta],
-      leedsHeadlineScore: 40,
+      homeHeadlineScore: 40,
       isWeekday: true,
     };
     const result = scoreLongRange(input);
@@ -186,7 +186,7 @@ describe('scoreLongRange', () => {
     const result = scoreLongRange({
       longRangeWeatherData: [midsummerWeather],
       longRangeMeta: [baseMeta],
-      leedsHeadlineScore: 30,
+      homeHeadlineScore: 30,
       isWeekday: false,
     });
 
@@ -207,7 +207,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [excellentWeather],
       longRangeMeta: [baseMeta],
-      leedsHeadlineScore: 75,
+      homeHeadlineScore: 75,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -241,7 +241,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [decentWeather, goodWeather],
       longRangeMeta: [meta1, meta2],
-      leedsHeadlineScore: 30,
+      homeHeadlineScore: 30,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -276,7 +276,7 @@ describe('scoreLongRange', () => {
     const result = scoreLongRange({
       longRangeWeatherData: [identicalWeather, identicalWeather],
       longRangeMeta: [brighterMeta, darkerMeta],
-      leedsHeadlineScore: 10,
+      homeHeadlineScore: 10,
       isWeekday: false,
     });
 
@@ -298,7 +298,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [clearNightWeather],
       longRangeMeta: [darkSkyMeta],
-      leedsHeadlineScore: 60,
+      homeHeadlineScore: 60,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -312,7 +312,7 @@ describe('scoreLongRange', () => {
     const input: ScoreLongRangeInput = {
       longRangeWeatherData: [],
       longRangeMeta: [],
-      leedsHeadlineScore: 50,
+      homeHeadlineScore: 50,
       isWeekday: false,
     };
     const result = scoreLongRange(input);
@@ -344,7 +344,7 @@ describe('scoreLongRange', () => {
     const result = scoreLongRange({
       longRangeWeatherData: [strongButNotEnoughDelta, weakWeather],
       longRangeMeta: [{ ...baseMeta, name: 'Strong Site' }, { ...baseMeta, name: 'Weak Site' }],
-      leedsHeadlineScore: 75,
+      homeHeadlineScore: 75,
       isWeekday: false,
     });
 

@@ -53,7 +53,7 @@ export const MAIN_EMAIL_MJML = String.raw`<mjml>
       <meta name="supported-color-schemes" content="light dark" />
       <meta name="x-apple-disable-message-reformatting" />
     </mj-raw>
-    <mj-title>Aperture · Leeds</mj-title>
+    <mj-title>Aperture</mj-title>
   </mj-head>
   <mj-body width="520px" background-color="#FAF9F6">
     <mj-section padding="16px 12px">

@@ -3,6 +3,7 @@ import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './sit
 import { clamp } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces                                                        */
@@ -58,7 +59,7 @@ export interface LocDayScore {
   snowfallCm: number | null;
 }
 
-/** A today-alt candidate that passed threshold + Leeds comparison. */
+/** A today-alt candidate that passed threshold + home comparison. */
 export interface TodayAlt {
   name: string;
   driveMins: number;
@@ -108,8 +109,8 @@ export interface DaySummary {
   [key: string]: unknown;
 }
 
-/** Leeds context produced by the Best Windows stage. */
-export interface LeedsContext {
+/** Home-location context produced by the Best Windows stage. */
+export interface HomeContext {
   windows: unknown;
   dontBother: unknown;
   todayBestScore: unknown;
@@ -126,7 +127,8 @@ export interface LeedsContext {
 export interface ScoreAlternativesInput {
   altWeatherData: AltWeatherData[];
   altLocationMeta: AltLocation[];
-  leedsContext: LeedsContext;
+  homeContext: HomeContext;
+  timezone?: string;
 }
 
 /** Output from scoreAlternatives. */
@@ -150,10 +152,14 @@ const ASTRO_DARK_ELEVATION = -18;
 /*  Per-location scoring                                              */
 /* ------------------------------------------------------------------ */
 
-function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
+function scoreLoc(
+  wData: AltWeatherData,
+  loc: AltLocation,
+  timezone: string,
+): LocDayScore[] {
   const byDate: Record<string, { ts: string; i: number }[]> = {};
   (wData.hourly?.time || []).forEach((ts, i) => {
-    const d = new Date(ts).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const d = new Date(ts).toLocaleDateString('en-CA', { timeZone: timezone });
     if (!byDate[d]) byDate[d] = [];
     byDate[d].push({ ts, i });
   });
@@ -273,7 +279,7 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
         if (score > bestDay) {
           bestDay = score;
           bestDayHour = t.toLocaleTimeString('en-GB', {
-            hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London',
+            hour: '2-digit', minute: '2-digit', timeZone: timezone,
           });
           bestTags = tags;
         }
@@ -293,7 +299,7 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
         if (astro > bestAstro) {
           bestAstro = astro;
           bestAstroHour = t.toLocaleTimeString('en-GB', {
-            hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London',
+            hour: '2-digit', minute: '2-digit', timeZone: timezone,
           });
         }
       }
@@ -356,13 +362,13 @@ function toTodayAlt(loc: AltLocation, today: LocDayScore): TodayAlt {
 function qualifiesAsCloseContender(
   today: LocDayScore,
   loc: AltLocation,
-  leedsHeadline: number,
+  homeHeadline: number,
   selectedWindowPeak: number | null,
 ): boolean {
   if (!today.meetsThreshold || !today.isAstroWin) return false;
   if (loc.siteDarkness.bortle > 4) return false;
-  if (today.bestScore < leedsHeadline) return false;
-  if (today.bestScore >= leedsHeadline + 8) return false;
+  if (today.bestScore < homeHeadline) return false;
+  if (today.bestScore >= homeHeadline + 8) return false;
   if (selectedWindowPeak !== null && today.bestScore <= selectedWindowPeak) return false;
   return true;
 }
@@ -372,23 +378,25 @@ function qualifiesAsCloseContender(
 /* ------------------------------------------------------------------ */
 
 export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternativesOutput {
-  const { altWeatherData, altLocationMeta, leedsContext } = input;
-  const { dailySummary } = leedsContext;
-  const debugContext = leedsContext.debugContext || emptyDebugContext();
+  const { altWeatherData, altLocationMeta, homeContext } = input;
+  const { dailySummary } = homeContext;
+  const debugContext = homeContext.debugContext || emptyDebugContext();
+  const homeLocationName = debugContext.metadata?.location || DEFAULT_HOME_LOCATION.name;
+  const timezone = input.timezone || debugContext.metadata?.timezone || DEFAULT_HOME_LOCATION.timezone;
 
   // Score every location across all forecast days
   const allLocScores = altWeatherData.map((wData, idx) => {
     const loc = altLocationMeta[idx];
     if (!loc || !wData?.hourly) return null;
-    const days = scoreLoc(wData, loc);
+    const days = scoreLoc(wData, loc, timezone);
     return { loc, days };
   }).filter((x): x is { loc: AltLocation; days: LocDayScore[] } => x !== null);
 
   // Use the same local headline score that is shown to the user in the hero.
-  const leedsHeadlineFromContext = typeof leedsContext.todayBestScore === 'number'
-    ? leedsContext.todayBestScore
+  const homeHeadlineFromContext = typeof homeContext.todayBestScore === 'number'
+    ? homeContext.todayBestScore
     : null;
-  const leedsHeadline = leedsHeadlineFromContext
+  const homeHeadline = homeHeadlineFromContext
     ?? dailySummary[0]?.headlineScore
     ?? dailySummary[0]?.photoScore
     ?? 0;
@@ -400,14 +408,14 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
   const todayAlts: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
     const today = days[0];
     if (!today || !today.meetsThreshold) return [];
-    // Only show alts that beat Leeds by a meaningful margin (8+ pts).
-    if (today.bestScore < leedsHeadline + 8) return [];
+    // Only show alts that beat the home baseline by a meaningful margin (8+ pts).
+    if (today.bestScore < homeHeadline + 8) return [];
     return [toTodayAlt(loc, today)];
   }).sort((a, b) => b.bestScore - a.bestScore);
 
   const closeContenders: TodayAlt[] = allLocScores.flatMap(({ loc, days }) => {
     const today = days[0];
-    if (!today || !qualifiesAsCloseContender(today, loc, leedsHeadline, selectedWindowPeak)) return [];
+    if (!today || !qualifiesAsCloseContender(today, loc, homeHeadline, selectedWindowPeak)) return [];
     return [toTodayAlt(loc, today)];
   }).sort((a, b) => b.bestScore - a.bestScore);
 
@@ -447,8 +455,8 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       const today = days[0];
       if (!today) return null;
 
-      const shown = today.meetsThreshold && today.bestScore >= leedsHeadline + 8;
-      const closeContender = qualifiesAsCloseContender(today, loc, leedsHeadline, selectedWindowPeak);
+      const shown = today.meetsThreshold && today.bestScore >= homeHeadline + 8;
+      const closeContender = qualifiesAsCloseContender(today, loc, homeHeadline, selectedWindowPeak);
       let discardedReason: string | undefined;
 
       if (!today.meetsThreshold) {
@@ -460,7 +468,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
       } else if (closeContender) {
         discardedReason = 'close contender: darker-sky near miss below the main 8-point cutoff';
       } else if (!shown) {
-        discardedReason = `score does not beat Leeds by at least 8 points (${today.bestScore} vs ${leedsHeadline})`;
+        discardedReason = `score does not beat ${homeLocationName} by at least 8 points (${today.bestScore} vs ${homeHeadline})`;
       }
 
       return {
@@ -474,7 +482,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
         bortle: loc.siteDarkness.bortle,
         darknessScore: loc.siteDarkness.siteDarknessScore,
         darknessDelta: loc.siteDarkness.siteDarknessScore - HOME_SITE_DARKNESS.siteDarknessScore,
-        weatherDelta: today.bestScore - leedsHeadline,
+        weatherDelta: today.bestScore - homeHeadline,
         deltaVsWindowPeak: selectedWindowPeak !== null ? today.bestScore - selectedWindowPeak : null,
         discardedReason,
       };

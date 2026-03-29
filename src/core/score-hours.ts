@@ -78,6 +78,7 @@ export interface AzimuthByPhase {
 export interface ScoreHoursInput {
   lat: number;
   lon: number;
+  timezone?: string;
   weather: WeatherData;
   airQuality: AirQualityData;
   precipProb: PrecipProbData;
@@ -213,6 +214,7 @@ function debugConfidenceLabel(confidence: string | null | undefined): string | n
 export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutput {
   const { lat: LAT, lon: LON, weather: w, airQuality: aq, precipProb: ppData, ensemble: ensData, azimuthByPhase: azimuthByPhaseRaw } = input;
   const azimuthByPhase = azimuthByPhaseRaw || {};
+  const timezone = input.timezone || 'Europe/London';
 
   // SunsetHue lookup
   const shByDay: Record<string, SunsetHueEntry> = {};
@@ -245,11 +247,11 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
   });
 
   const tod = now ?? new Date();
-  const todayKey = tod.toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+  const todayKey = tod.toLocaleDateString('en-CA', { timeZone: timezone });
 
   const byDate: Record<string, DateEntry[]> = {};
   (w.hourly?.time || []).forEach((ts, i) => {
-    const k = new Date(ts).toLocaleDateString('en-CA', { timeZone: 'Europe/London' });
+    const k = new Date(ts).toLocaleDateString('en-CA', { timeZone: timezone });
     if (!byDate[k]) byDate[k] = [];
     byDate[k].push({ ts, i });
   });
@@ -329,7 +331,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       });
     const darkSkyStartTs = findDarkSkyStart(nightTimestamps, LAT, LON);
     const darkSkyStartsAt = darkSkyStartTs
-      ? new Date(darkSkyStartTs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+      ? new Date(darkSkyStartTs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
       : null;
     (byDate[dateKey] || []).forEach(({ ts, i }) => {
       const t = new Date(ts);
@@ -499,7 +501,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
       hours.push({
         ts, t: t.toISOString(),
-        hour: t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }),
+        hour: t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone }),
         score, drama, clarity, mist, astro, crepuscular, shQ,
         cl, cm, ch, ct,
         visK: Math.round(visK * 10) / 10,
@@ -545,7 +547,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     const labels    = ['Today', 'Tomorrow'];
     const labelDate = new Date(dateKey + 'T12:00:00Z');
     const dayLabel  = dayIdx < 2 ? labels[dayIdx]
-      : labelDate.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
+      : labelDate.toLocaleDateString('en-GB', { weekday: 'long', timeZone: timezone });
 
     let photoEmoji: string, photoRating: string;
     if (headlineScore >= 75)      { photoEmoji = '\uD83D\uDD25'; photoRating = 'Excellent'; }

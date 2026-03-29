@@ -78,7 +78,7 @@ export type BriefContext = {
     astroScore?: number;
     driveMins?: number;
     darkSky?: boolean;
-    deltaVsLeeds?: number;
+    deltaVsHome?: number;
     shown?: boolean;
     discardedReason?: string;
   }>;
@@ -91,7 +91,7 @@ export type BriefContext = {
     astroScore?: number;
     driveMins?: number;
     darkSky?: boolean;
-    deltaVsLeeds?: number;
+    deltaVsHome?: number;
     shown?: boolean;
     discardedReason?: string;
   }>;

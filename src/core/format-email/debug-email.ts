@@ -90,7 +90,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
     esc(String(candidate.bestScore)),
     esc(String(candidate.dayScore)),
     esc(String(candidate.astroScore)),
-    esc(candidate.deltaVsLeeds >= 0 ? `+${candidate.deltaVsLeeds}` : `${candidate.deltaVsLeeds}`),
+    esc(candidate.deltaVsHome >= 0 ? `+${candidate.deltaVsHome}` : `${candidate.deltaVsHome}`),
     esc(candidate.darkSky ? 'Yes' : 'No'),
     esc(candidate.shown ? 'Shown' : candidate.discardedReason || 'Eligible pool candidate'),
   ]));
@@ -153,13 +153,13 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ))}
         ${spacer(8)}
         ${debugCard('Nearby alternatives', debugTable(
-          ['Rank', 'Location', 'Score', 'Drive', 'Bortle', 'Dark Δ', 'Δ vs Leeds', 'Δ vs window', 'Outcome'],
+          ['Rank', 'Location', 'Score', 'Drive', 'Bortle', 'Dark Δ', 'Δ vs Home', 'Δ vs window', 'Outcome'],
           altRows,
         ))}
         ${spacer(8)}
         ${debugCard('Long-range pool', longRangeRows.length
           ? debugTable(
-              ['Rank', 'Location', 'Region', 'Best', 'Day', 'Astro', 'Δ vs Leeds', 'Dark sky', 'Outcome'],
+              ['Rank', 'Location', 'Region', 'Best', 'Day', 'Astro', 'Δ vs Home', 'Dark sky', 'Outcome'],
               longRangeRows,
             )
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No long-range candidates met the threshold this run.</div>`
