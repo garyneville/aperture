@@ -1,9 +1,8 @@
-import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
-import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
-import { clamp } from './utils.js';
+import { type SiteDarkness } from './site-darkness.js';
 import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from './long-range-locations.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
+import { evaluateDay } from './shared-scoring.js';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces                                                        */
@@ -78,8 +77,6 @@ export interface ScoreLongRangeOutput {
   darkSkyAlert: DarkSkyAlert | null;
 }
 
-const ASTRO_DARK_ELEVATION = -18;
-
 /* ------------------------------------------------------------------ */
 /*  Thresholds                                                        */
 /* ------------------------------------------------------------------ */
@@ -106,116 +103,11 @@ function scoreLocToday(
   const dateKey = new Date(wData.hourly.time[0]).toLocaleDateString('en-CA', { timeZone: timezone });
   const sunriseD = new Date(wData.daily?.sunrise?.[0] || dateKey + 'T06:30:00Z');
   const sunsetD = new Date(wData.daily?.sunset?.[0] || dateKey + 'T18:30:00Z');
-  const goldAmS = new Date(+sunriseD - 10 * 60000);
-  const goldAmE = new Date(+sunriseD + 65 * 60000);
-  const goldPmS = new Date(+sunsetD - 65 * 60000);
-  const goldPmE = new Date(+sunsetD + 5 * 60000);
-  const blueAmS = new Date(+sunriseD - 30 * 60000);
-  const bluePmE = new Date(+sunsetD + 30 * 60000);
 
-  let bestDay = 0;
-  let bestAstro = 0;
-  let bestAm = 0;
-  let bestPm = 0;
-  let bestDayHour: string | null = null;
-  let bestAstroHour: string | null = null;
+  const hourIndices = wData.hourly.time.map((ts, i) => ({ ts, i }));
 
-  wData.hourly.time.forEach((ts, i) => {
-    const t = new Date(ts);
-    const cl = wData.hourly!.cloudcover_low?.[i] ?? 50;
-    const cm = wData.hourly!.cloudcover_mid?.[i] ?? 50;
-    const ch = wData.hourly!.cloudcover_high?.[i] ?? 50;
-    const ct = wData.hourly!.cloudcover?.[i] ?? 50;
-    const visM = wData.hourly!.visibility?.[i] ?? 10000;
-    const visK = visM / 1000;
-    const pp = wData.hourly!.precipitation_probability?.[i] ?? 0;
-    const pr = wData.hourly!.precipitation?.[i] ?? 0;
-    const spd = wData.hourly!.windspeed_10m?.[i] ?? 0;
-    const gst = wData.hourly!.windgusts_10m?.[i] ?? 0;
-    const hum = wData.hourly!.relativehumidity_2m?.[i] ?? 70;
-    const tmp = wData.hourly!.temperature_2m?.[i] ?? 10;
-    const dew = wData.hourly!.dewpoint_2m?.[i] ?? 6;
-    const tpw = wData.hourly!.total_column_integrated_water_vapour?.[i] ?? 20;
-    const prev = i > 0 ? (wData.hourly!.precipitation?.[i - 1] ?? 0) : 0;
-
-    const isGoldAm = t >= goldAmS && t <= goldAmE;
-    const isGoldPm = t >= goldPmS && t <= goldPmE;
-    const isBlue = (t >= blueAmS && t < goldAmS) || (t > goldPmE && t <= bluePmE);
-    const isGolden = isGoldAm || isGoldPm;
-    const isNight = t < blueAmS || t > bluePmE;
-    const isPostSunset = isGoldPm && t >= sunsetD;
-
-    if (isGolden || isBlue) {
-      let drama = isGolden ? 30 : 18;
-      if (isPostSunset) {
-        if (ch >= 15 && ch <= 80) drama += 24; else if (ch > 80) drama += 10;
-      } else {
-        if (ch >= 20 && ch <= 70) drama += 20; else if (ch > 70) drama += 8;
-      }
-      if (cm >= 10 && cm <= 50) drama += 10; else if (cm > 80) drama -= 5;
-      if (isPostSunset) {
-        if (cl > 85) drama -= 5;
-      } else {
-        if (cl < 20) drama += 10; else if (cl > 70) drama -= 16;
-      }
-      if (prev > 0.5 && pr < 0.1) drama += 10;
-      if (pr > 0.5) drama -= 20;
-      drama = clamp(drama);
-
-      let clarity = 0;
-      if (visK > 30) clarity += 22; else if (visK > 15) clarity += 14; else if (visK < 3) clarity -= 15;
-      if (hum < 65) clarity += 4; else if (hum > 85) clarity -= 5;
-      if (tpw < 15) clarity += 5; else if (tpw > 30) clarity -= Math.round((tpw - 30) / 4);
-      if (pp < 10) clarity += 6; else if (pp > 45) clarity -= 10;
-      if (gst > 40) clarity -= 5;
-      clarity = clamp(clarity);
-
-      let mist = 0;
-      if (visM >= 200 && visM <= 1500) mist += 30;
-      else if (visM > 1500 && visM <= 4000) mist += 10;
-      if ((tmp - dew) < 2) mist += 20; else if ((tmp - dew) < 4) mist += 10;
-      if (spd < 6) mist += 12; else if (spd < 12) mist += 5;
-      if (prev > 0.5 && pr < 0.1) mist += 10;
-      mist = clamp(mist);
-
-      const isAmSession = isGoldAm || (t >= blueAmS && t < goldAmS);
-      let score: number;
-      if (isAmSession) {
-        score = clamp(Math.round(drama * 0.30 + clarity * 0.40 + mist * 0.30));
-        bestAm = Math.max(bestAm, score);
-      } else {
-        score = clamp(Math.round(drama * 0.55 + clarity * 0.30 + mist * 0.15));
-        bestPm = Math.max(bestPm, score);
-      }
-
-      if (score > bestDay) {
-        bestDay = score;
-        bestDayHour = t.toLocaleTimeString('en-GB', {
-          hour: '2-digit', minute: '2-digit', timeZone: timezone,
-        });
-      }
-    }
-
-    if (isNight && getSolarAltitude(+t, meta.lat, meta.lon) < ASTRO_DARK_ELEVATION) {
-      const moonMetrics = getMoonMetrics(+t, meta.lat, meta.lon);
-      let astro = 0;
-      astro += moonScoreAdjustment(moonMetrics);
-      if (ct < 10) astro += 30; else if (ct < 30) astro += 10; else if (ct > 60) astro -= 25;
-      if (visK > 20) astro += 15;
-      if (hum < 80) astro += 5;
-      astro += astroDarknessBonus(meta.siteDarkness);
-      astro = clamp(astro);
-      if (astro > bestAstro) {
-        bestAstro = astro;
-        bestAstroHour = t.toLocaleTimeString('en-GB', {
-          hour: '2-digit', minute: '2-digit', timeZone: timezone,
-        });
-      }
-    }
-  });
-
-  const isAstroWin = bestAstro > bestDay && meta.siteDarkness.siteDarknessScore > HOME_SITE_DARKNESS.siteDarknessScore;
-  const bestScore = Math.max(bestDay, isAstroWin ? bestAstro : 0);
+  // Use shared evaluation pipeline for the core scoring
+  const eval_ = evaluateDay(wData, meta, hourIndices, sunriseD, sunsetD, timezone);
 
   return {
     name: meta.name,
@@ -225,14 +117,14 @@ function scoreLocToday(
     siteDarkness: meta.siteDarkness,
     darkSky: meta.darkSky,
     elevation: meta.elevation,
-    dayScore: bestDay,
-    amScore: bestAm,
-    pmScore: bestPm,
-    astroScore: bestAstro,
-    bestScore,
-    bestDayHour,
-    bestAstroHour,
-    isAstroWin,
+    dayScore: eval_.bestDay,
+    amScore: eval_.amScore,
+    pmScore: eval_.pmScore,
+    astroScore: eval_.bestAstro,
+    bestScore: eval_.bestScore,
+    bestDayHour: eval_.bestDayHour,
+    bestAstroHour: eval_.bestAstroHour,
+    isAstroWin: eval_.isAstroWin,
   };
 }
 
