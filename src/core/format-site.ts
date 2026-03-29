@@ -13,7 +13,7 @@ import {
   moonIconForPct,
   scoreState,
   weatherIconForHour,
-} from './format-email/shared.js';
+} from '../renderers/shared/brief-primitives.js';
 import {
   bestDaySessionLabel,
   bestTimeLabel,
@@ -43,15 +43,15 @@ import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './au
 import { getPhotoWeatherLat } from '../config.js';
 import type {
   AltLocation,
+  BriefRenderInput as FormatEmailInput,
   DarkSkyAlertCard,
   DaySummary,
-  FormatEmailInput,
   LongRangeCard,
   RunTimeContext,
   SpurOfTheMomentSuggestion,
   Window,
   WindowHour,
-} from './format-email/types.js';
+} from '../types/brief.js';
 
 // ── Score state using CSS classes rather than inline hex ──────────────────────
 
