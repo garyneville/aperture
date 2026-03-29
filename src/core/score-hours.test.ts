@@ -567,4 +567,59 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(result.debugContext.hourlyScoring[1]?.sessionScores?.some(score => score.session === 'mist')).toBe(true);
     expect(result.debugContext.scores?.bestSession).toBeDefined();
   });
+
+  it('propagates live CAPE into derived session features for storm selection', () => {
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z', '2026-07-10T20:00:00Z'],
+          cloudcover: [78, 72],
+          cloudcover_low: [34, 28],
+          cloudcover_mid: [22, 24],
+          cloudcover_high: [22, 20],
+          visibility: [18000, 16000],
+          temperature_2m: [22, 20],
+          relativehumidity_2m: [78, 82],
+          dewpoint_2m: [18, 17],
+          precipitation: [0, 0.2],
+          windspeed_10m: [18, 20],
+          windgusts_10m: [26, 30],
+          cape: [2200, 2500],
+          vapour_pressure_deficit: [0.6, 0.5],
+          total_column_integrated_water_vapour: [24, 26],
+        },
+        daily: {
+          sunrise: ['2026-07-10T04:46:00Z'],
+          sunset: ['2026-07-10T19:35:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z', '2026-07-10T20:00:00Z'],
+          aerosol_optical_depth: [0.12, 0.14],
+          dust: [0, 0],
+          european_aqi: [18, 20],
+          uv_index: [1, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z', '2026-07-10T20:00:00Z'],
+          precipitation_probability: [55, 62],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-07-10T12:00:00Z'));
+    const hasStormLeader = result.debugContext.hourlyScoring.some(hour => hour.sessionScores?.[0]?.session === 'storm');
+
+    expect(hasStormLeader).toBe(true);
+    expect(result.debugContext.scores?.bestSession?.session).toBe('storm');
+  });
 });
