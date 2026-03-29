@@ -477,5 +477,6 @@ describe('session scoring foundation', () => {
     const result = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour()));
     expect(result.requiredCapabilities).toContain('surface-wetness');
     expect(result.requiredCapabilities).toContain('precipitation');
+    expect(result.requiredCapabilities).toContain('aerosols');
   });
 });

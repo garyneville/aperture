@@ -169,6 +169,7 @@ const URBAN_CAPABILITIES: ScoringCapability[] = [
   'visibility',
   'humidity',
   'wind',
+  'aerosols',
   'surface-wetness',
 ];
 
