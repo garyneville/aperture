@@ -1,6 +1,6 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
-import { getPhotoWeatherLat } from '../config.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../types/home-location.js';
 
 export interface AiBriefingWindowHour {
   hour?: string;
@@ -36,6 +36,8 @@ export interface AiBriefingContext {
   dailySummary?: AiBriefingDaySummary[];
   altLocations?: AiBriefingAltLocation[];
   peakKpTonight?: number | null;
+  homeLatitude?: number | null;
+  homeLocationName?: string | null;
 }
 
 export interface RenderAiBriefingResult {
@@ -194,27 +196,28 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
   const nextWindow = ctx.windows?.[1];
   const today = ctx.dailySummary?.[0];
   const topAlt = ctx.altLocations?.[0];
-  const lat = getPhotoWeatherLat();
+  const lat = resolveHomeLatitude(ctx);
+  const homeLocationName = resolveHomeLocationName({ location: { name: ctx.homeLocationName } });
   const auroraThreshold = auroraVisibleKpThresholdForLat(lat);
   const auroraVisibleLocally = isAuroraLikelyVisibleAtLat(lat, ctx.peakKpTonight);
 
   if (ctx.dontBother) {
     if (topAlt && typeof topAlt.bestScore === 'number') {
-      return `Leeds looks poor for photography today.${topAlt.driveMins ? ` ${topAlt.name} is the strongest nearby option at ${topAlt.bestScore}/100 - ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
+      return `${homeLocationName} looks poor for photography today.${topAlt.driveMins ? ` ${topAlt.name} is the strongest nearby option at ${topAlt.bestScore}/100 - ${topAlt.driveMins}-minute drive.` : ` ${topAlt.name} scores ${topAlt.bestScore}/100.`}`;
     }
-    return 'Leeds looks poor for photography today.';
+    return `${homeLocationName} looks poor for photography today.`;
   }
 
   if (!topWindow) {
     if (topAlt?.name) {
       const altDrive = topAlt.driveMins ? ` — ${topAlt.driveMins}-minute drive` : '';
       const altConditions = topAlt.darkSky ? ' for better dark sky conditions' : ' for better overall conditions';
-      return `No strong local photo window in Leeds today. Consider ${topAlt.name}${altConditions}${altDrive}.`;
+      return `No strong local photo window in ${homeLocationName} today. Consider ${topAlt.name}${altConditions}${altDrive}.`;
     }
     if (today?.darkSkyStartsAt) {
-      return `No strong local photo window in Leeds today. Skies get darker from ${today.darkSkyStartsAt}, but local conditions still stay marginal.`;
+      return `No strong local photo window in ${homeLocationName} today. Skies get darker from ${today.darkSkyStartsAt}, but local conditions still stay marginal.`;
     }
-    return 'No strong local photo window in Leeds today.';
+    return `No strong local photo window in ${homeLocationName} today.`;
   }
 
   const isSingleHour = topWindow.start === topWindow.end;

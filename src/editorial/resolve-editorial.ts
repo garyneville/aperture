@@ -23,9 +23,11 @@ import type {
   EditorialProvider,
   SpurSuggestion,
 } from '../core/standalone/contracts.js';
-import { getPhotoWeatherLat } from '../config.js';
+import { resolveHomeLatitude } from '../types/home-location.js';
 
 export type BriefContext = {
+  homeLatitude?: number | null;
+  homeLocationName?: string | null;
   dontBother?: boolean;
   debugMode?: boolean;
   debugModeSource?: string;
@@ -584,7 +586,7 @@ function isAuroraOpportunity(ctx: BriefContext): boolean {
   if (nearTerm && !nearTerm.isStale && (nearTerm.level === 'amber' || nearTerm.level === 'red')) {
     return true;
   }
-  return isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), ctx.peakKpTonight);
+  return isAuroraLikelyVisibleAtLat(resolveHomeLatitude(ctx), ctx.peakKpTonight);
 }
 
 function compositionSpecificityScore(bullet: string, ctx: BriefContext): number {

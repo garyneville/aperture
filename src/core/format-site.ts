@@ -40,7 +40,7 @@ import {
 } from './format-email/next-day.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
-import { getPhotoWeatherLat } from '../config.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../types/home-location.js';
 import type {
   AltLocation,
   BriefRenderInput as FormatEmailInput,
@@ -131,11 +131,18 @@ const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; b
   red:    { label: 'Storm conditions',  fg: C.success, bg: C.successContainer, border: '#A3D9B1' },
 };
 
-const AWUK_LEVEL_DESCRIPTIONS: Record<string, string> = {
-  yellow: 'Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from northern Scotland; conditions at 54°N (Leeds) are marginal.',
-  amber:  'Moderate geomagnetic activity. Aurora possible across northern England on clear nights. Worth watching if skies are clear.',
-  red:    'Storm-level geomagnetic activity. Aurora likely visible across much of the UK, including Yorkshire, on clear nights.',
-};
+function awukLevelDescription(level: string, locationName: string, homeLatitude: number): string {
+  if (level === 'yellow') {
+    return `Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from farther north; conditions at ${homeLatitude.toFixed(1)}°N (${locationName}) are marginal.`;
+  }
+  if (level === 'amber') {
+    return `Moderate geomagnetic activity. Aurora may be visible from ${locationName} if skies stay clear.`;
+  }
+  if (level === 'red') {
+    return `Storm-level geomagnetic activity. Aurora is plausible across much of the UK, including ${locationName}, on clear nights.`;
+  }
+  return `AuroraWatch UK status: ${level}.`;
+}
 
 function sSignalCards(
   shSunriseQ: number | null,
@@ -146,6 +153,8 @@ function sSignalCards(
   metarNote: string | undefined,
   peakKpTonight?: number | null,
   auroraSignal?: AuroraSignal | null,
+  locationName = 'Leeds',
+  homeLatitude = 53.82703,
 ): string {
   const cards: string[] = [];
   const awukLevel = auroraSignal?.nearTerm?.level;
@@ -155,7 +164,7 @@ function sSignalCards(
 
   if (awukFresh && awukLevel && awukLevel !== 'green') {
     const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
-    const desc = AWUK_LEVEL_DESCRIPTIONS[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
+    const desc = awukLevelDescription(awukLevel, locationName, homeLatitude);
     cards.push(sCard(`
       <div class="card-overline">Space weather</div>
       <div class="card-headline">Aurora signal tonight</div>
@@ -164,17 +173,18 @@ function sSignalCards(
     `));
   } else if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
     const kpDisplay = peakKpTonight.toFixed(1);
-    const visible = peakKpTonight >= 6;
+    const threshold = auroraVisibleKpThresholdForLat(homeLatitude);
+    const visible = peakKpTonight >= threshold;
     const fg = visible ? C.success : C.warning;
     const bg = visible ? C.successContainer : C.warningContainer;
     const border = visible ? '#A3D9B1' : '#EDD17B';
     cards.push(sCard(`
       <div class="card-overline">Space weather</div>
       <div class="card-headline">Aurora signal tonight</div>
-      <div style="margin-top:10px;">${sPill(`Kp ${kpDisplay}${visible ? ' — visible ~54°N' : ' — watch threshold'}`, fg, bg, border)}</div>
+      <div style="margin-top:10px;">${sPill(`Kp ${kpDisplay}${visible ? ' — clears local threshold' : ' — watch threshold'}`, fg, bg, border)}</div>
       <p class="card-body" style="margin-top:10px;">${visible
-        ? `Kp ${kpDisplay} exceeds the visibility threshold for Leeds latitude. Best combined with a good astro window.`
-        : `Kp ${kpDisplay} is approaching the visible threshold (~Kp 6 at 54°N). Worth watching overnight.`
+        ? `Kp ${kpDisplay} exceeds the visibility threshold for ${locationName}. Best combined with a good astro window.`
+        : `Kp ${kpDisplay} is approaching the local visibility threshold (~Kp ${threshold} at ${homeLatitude.toFixed(1)}°N). Worth watching overnight.`
       }</p>
     `));
   }
@@ -271,17 +281,19 @@ function sWindowCard(
   allWindows: Window[],
   sectionLabel: string,
   peakKpTonight?: number | null,
+  homeLatitude?: number | null,
 ): string {
   const hour: WindowHour = window.hours?.find(e => e.score === window.peak) || window.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
+  const resolvedHomeLatitude = resolveHomeLatitude({ homeLatitude });
 
   if (window.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
   if ((hour.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${hour.crepuscular}/100 (light shafts through broken cloud).`);
   if (window.darkPhaseStart && window.postMoonsetScore !== null && window.postMoonsetScore !== undefined) {
     notes.push(`Dark from ${window.darkPhaseStart} — peak after moonset ${window.postMoonsetScore}/100.`);
   }
-  if (index === 0 && isAstroWindow(window) && isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), peakKpTonight)) {
-    const threshold = auroraVisibleKpThresholdForLat(getPhotoWeatherLat());
+  if (index === 0 && isAstroWindow(window) && isAuroraLikelyVisibleAtLat(resolvedHomeLatitude, peakKpTonight)) {
+    const threshold = auroraVisibleKpThresholdForLat(resolvedHomeLatitude);
     notes.push(`Coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local threshold Kp ${threshold}) — favour a clean northern horizon.`);
   }
   if (index > 0 && isAstroWindow(allWindows[0]) && isAstroWindow(window) && allWindows[0]?.label !== window.label) {
@@ -325,6 +337,8 @@ function sWindowSection(
   runTime: RunTimeContext,
   peakKpTonight: number | null | undefined,
   compositionBullets?: string[],
+  homeLatitude?: number | null,
+  homeLocationName?: string | null,
 ): string {
   const hasLocalWindow = (windows?.length || 0) > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
@@ -350,7 +364,7 @@ function sWindowSection(
   const fallbackAiText = timeAwareBriefingFallback(displayPlan);
   const renderedAi = fallbackAiText
     ? { text: fallbackAiText }
-    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight });
+    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight, homeLatitude, homeLocationName });
   const trimmedAiText = renderedAi.text || aiText;
 
   const windowCards: string[] = [];
@@ -361,12 +375,12 @@ function sWindowSection(
         ? 'Live now'
         : 'Best window';
     const allDisplayWindows = [displayPlan.primary, ...displayPlan.remaining.filter(w => w !== displayPlan.primary)];
-    windowCards.push(sWindowCard(displayPlan.primary, 0, allDisplayWindows, primaryLabel, peakKpTonight));
+    windowCards.push(sWindowCard(displayPlan.primary, 0, allDisplayWindows, primaryLabel, peakKpTonight, homeLatitude));
     displayPlan.remaining
       .filter(w => w !== displayPlan.primary)
-      .forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.remaining, 'Later today', peakKpTonight)));
+      .forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.remaining, 'Later today', peakKpTonight, homeLatitude)));
   }
-  displayPlan.past.forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.past, 'Earlier today', peakKpTonight)));
+  displayPlan.past.forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.past, 'Earlier today', peakKpTonight, homeLatitude)));
 
   const aiCard = sCard(`
     <div class="ai-overline">AI briefing</div>
@@ -738,6 +752,7 @@ function sSpurCard(spur: SpurOfTheMomentSuggestion): string {
 function sHeroCard(
   heroScore: number,
   gradeLabel: string,
+  locationName: string,
   topWindow: Window | null,
   allPast: boolean,
   today: string,
@@ -764,7 +779,7 @@ function sHeroCard(
         <span style="color:${C.brand};">${BRAND_LOGO}</span>
         <span class="hero-brand-name">Aperture</span>
       </div>
-      <span class="hero-location">Leeds, UK</span>
+      <span class="hero-location">${esc(locationName)}</span>
     </div>
     <hr class="hero-divider">
     <div class="hero-score-row">
@@ -839,6 +854,8 @@ export function formatSite(input: FormatEmailInput): string {
     geminiInspire,
     debugContext,
   } = input;
+  const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
+  const locationName = resolveHomeLocationName({ location: input.location, debugContext });
 
   const todayDay = dailySummary[0] || ({} as DaySummary);
   const runTime = getRunTimeContext(debugContext);
@@ -883,7 +900,7 @@ export function formatSite(input: FormatEmailInput): string {
   const localSummary = effectiveDontBother
     ? (hasLocalWindow
         ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
-        : 'No local window cleared the threshold today — treat Leeds as a pass unless you just want a walk.')
+        : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
     : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
 
   const spurMatchesTopAlt = !!spurOfTheMoment && !!topAlternative
@@ -940,6 +957,7 @@ export function formatSite(input: FormatEmailInput): string {
   sections.push(sHeroCard(
     heroScore,
     todayScoreState.label,
+    locationName,
     topWindow,
     displayPlan.allPast,
     today,
@@ -954,13 +972,13 @@ export function formatSite(input: FormatEmailInput): string {
   const utilityBar = sDaylightUtilityBar(todayCarWashData, runTime);
   if (utilityBar) sections.push(utilityBar);
 
-  const signals = sSignalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
+  const signals = sSignalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);
   if (signals) sections.push(signals);
 
   if (!effectiveDontBother) {
     sections.push(`<div class="section-group">
       ${sSection("Today's window")}
-      ${sWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets)}
+      ${sWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets, homeLatitude, locationName)}
     </div>`);
   }
 

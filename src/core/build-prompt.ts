@@ -2,11 +2,15 @@ import type { Window, DailySummary, CarWash } from './best-windows.js';
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
 import { LONG_RANGE_LOCATIONS } from './long-range-locations.js';
-import { PHOTO_BRIEF_WORKFLOW_VERSION, getPhotoWeatherLat, getPhotoWeatherLocation, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../config.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
 import { HOME_SITE_DARKNESS } from './site-darkness.js';
 import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from './score-long-range.js';
 import type { AuroraSignal } from './aurora-providers.js';
+import {
+  DEFAULT_BRIEF_WORKFLOW_VERSION,
+  DEFAULT_HOME_LOCATION,
+  type HomeLocation,
+} from '../types/home-location.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -31,6 +35,8 @@ export interface KpEntry {
 }
 
 export interface BuildPromptInput {
+  homeLocation?: HomeLocation;
+  workflowVersion?: string;
   windows: Window[];
   dontBother: boolean;
   todayBestScore: number;
@@ -199,9 +205,13 @@ function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | 
   return peak;
 }
 
-function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSignal | null): string {
+function buildAuroraNote(
+  peakKpTonight: number | null,
+  homeLocation: HomeLocation,
+  auroraSignal?: AuroraSignal | null,
+): string {
   const parts: string[] = [];
-  const localLat = getPhotoWeatherLat();
+  const localLat = homeLocation.lat;
   const localThreshold = auroraVisibleKpThresholdForLat(localLat);
 
   // Near-term: AuroraWatch UK takes priority over Kp when available and active.
@@ -222,8 +232,8 @@ function buildAuroraNote(peakKpTonight: number | null, auroraSignal?: AuroraSign
     const localVisible = isAuroraLikelyVisibleAtLat(localLat, peakKpTonight);
     parts.push(
       localVisible
-        ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — this clears the local visibility threshold of Kp ${localThreshold} for ${getPhotoWeatherLocation()}.`
-        : `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — local visibility usually needs about Kp ${localThreshold} at ${getPhotoWeatherLocation()} latitude.`,
+        ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — this clears the local visibility threshold of Kp ${localThreshold} for ${homeLocation.name}.`
+        : `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — local visibility usually needs about Kp ${localThreshold} at ${homeLocation.name} latitude.`,
     );
   }
 
@@ -268,10 +278,9 @@ function isMilkyWaySeason(month: number): boolean {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-/** Returns the Europe/London calendar month as a 1-based month number (1-12). */
-function getLondonMonthOneIndexed(date: Date): number {
+function getMonthOneIndexed(date: Date, timezone: string): number {
   return Number.parseInt(
-    new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: 'Europe/London' }).format(date),
+    new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: timezone }).format(date),
     10,
   );
 }
@@ -283,6 +292,7 @@ function getLondonMonthOneIndexed(date: Date): number {
  * from the named local window.
  */
 function skyQualityConstraints(
+  homeLocationName: string,
   month: number,
   moonPct: number,
   topAlt: AltLocationResult | undefined,
@@ -295,13 +305,12 @@ function skyQualityConstraints(
 
   const milkyWaySeason = isMilkyWaySeason(month);
   const homeBortle = HOME_SITE_DARKNESS.bortle;
-  const homeLocation = getPhotoWeatherLocation();
   const parts: string[] = [
     'Composition bullets must stay focused on the named local window and local conditions. Do not turn them into travel or remote-location shot plans.',
   ];
 
   parts.push(
-    `Home location (${homeLocation}) is Bortle ${homeBortle} — significant light pollution. ` +
+    `Home location (${homeLocationName}) is Bortle ${homeBortle} — significant light pollution. ` +
     `Do NOT suggest Milky Way core shots for the home session; bias toward: star trails with a ` +
     `silhouetted landmark foreground, wide-field constellation framing, moonlit architecture, or light-painting.`,
   );
@@ -343,7 +352,7 @@ function skyQualityConstraints(
 
   if (auroraVisibleLocally) {
     parts.push(
-      `Aurora is realistically visible from ${homeLocation} tonight (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} meets the local threshold of Kp ${auroraThreshold}). ` +
+      `Aurora is realistically visible from ${homeLocationName} tonight (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} meets the local threshold of Kp ${auroraThreshold}). ` +
       `Make the first bullet aurora-led: face north, leave a low horizon, and avoid generic star-trail-only bullets as the primary idea.`,
     );
   }
@@ -354,6 +363,8 @@ function skyQualityConstraints(
 
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
+    homeLocation = DEFAULT_HOME_LOCATION,
+    workflowVersion = DEFAULT_BRIEF_WORKFLOW_VERSION,
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, closeContenders, noAltsMsg, metarNote,
     sunrise, sunset, moonPct, kpForecast, auroraSignal,
@@ -363,24 +374,24 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
 
   const now = input.now || new Date();
   const debugContext = input.debugContext || emptyDebugContext();
-  const homeLocation = getPhotoWeatherLocation();
+  const homeLocationName = homeLocation.name;
 
   const sunriseStr = sunrise
-    ? new Date(sunrise).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+    ? new Date(sunrise).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone })
     : '--:--';
   const sunsetStr = sunset
-    ? new Date(sunset).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' })
+    ? new Date(sunset).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone })
     : '--:--';
   const today = now.toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London',
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: homeLocation.timezone,
   });
 
-  const currentMonth = getLondonMonthOneIndexed(now);
+  const currentMonth = getMonthOneIndexed(now, homeLocation.timezone);
   const seasonalNote = SEASONAL_CONTEXT[currentMonth] || '';
   const peakKpTonight = peakKpForNight(kpForecast, now);
-  const auroraNote = buildAuroraNote(peakKpTonight, auroraSignal);
-  const auroraThreshold = auroraVisibleKpThresholdForLat(getPhotoWeatherLat());
-  const auroraVisibleLocally = isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), peakKpTonight);
+  const auroraNote = buildAuroraNote(peakKpTonight, homeLocation, auroraSignal);
+  const auroraThreshold = auroraVisibleKpThresholdForLat(homeLocation.lat);
+  const auroraVisibleLocally = isAuroraLikelyVisibleAtLat(homeLocation.lat, peakKpTonight);
   const weekLine = weekSummaryLine(dailySummary);
 
   const todayDay = dailySummary[0];
@@ -389,11 +400,11 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
 
   debugContext.metadata = {
     generatedAt: now.toISOString(),
-    location: getPhotoWeatherLocation(),
-    latitude: getPhotoWeatherLat(),
-    longitude: getPhotoWeatherLon(),
-    timezone: getPhotoWeatherTimezone(),
-    workflowVersion: PHOTO_BRIEF_WORKFLOW_VERSION,
+    location: homeLocation.name,
+    latitude: homeLocation.lat,
+    longitude: homeLocation.lon,
+    timezone: homeLocation.timezone,
+    workflowVersion,
     debugModeEnabled: false,
     debugModeSource: null,
     debugRecipient: null,
@@ -440,11 +451,11 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       ? ` The nearest meaningful alternative is ${topAlt}.`
       : '';
     const noWindowNote = !hasLocalWindow && (todayDay?.astroScore ?? 0) > 0
-      ? ` Leeds may show some theoretical astro potential (${todayDay?.astroScore}/100 raw), but no local window cleared the full weighted threshold.`
+      ? ` ${homeLocationName} may show some theoretical astro potential (${todayDay?.astroScore}/100 raw), but no local window cleared the full weighted threshold.`
       : '';
-    prompt = `Photography assistant for Leeds, Yorkshire. Today is poor (score: ${todayBestScore}/100).
+    prompt = `Photography assistant for ${homeLocationName}. Today is poor (score: ${todayBestScore}/100).
 Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why Leeds is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
+{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why ${homeLocationName} is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
 Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
 ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}${noWindowNote}
@@ -452,10 +463,10 @@ ${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${au
 
 ${weekStandoutInstructionBlock()}
 
-SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
+SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "${homeLocationName}". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}`;
   } else {
-    const nowTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+    const nowTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone });
     const nowMinutes = (() => {
       const [h, m] = nowTimeStr.split(':').map(Number);
       return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
@@ -505,6 +516,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
     ].filter(Boolean).join('\n');
 
     const shotConstraints = skyQualityConstraints(
+      homeLocationName,
       currentMonth,
       moonPct,
       topAlt,
@@ -522,7 +534,7 @@ Locations: ${SPUR_LOCATION_NAMES}`;
    Tags: ${(w.tops || []).join(', ')}`;
     }).join('\n\n');
 
-    prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for ${homeLocation}.
+    prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for ${homeLocationName}.
 Respond with ONLY a raw JSON object — no markdown, no code fences:
 {"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
 
@@ -533,7 +545,7 @@ Sentence 2: use one editorial insight line below with light paraphrase. Do not i
 The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.
 Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
 Do not blame cloud unless the supplied peak-hour cloud cover supports it. If the score gap is explained by visibility or AOD, say that instead.
-The editorial must describe Leeds conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
+The editorial must describe ${homeLocationName} conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
 
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
@@ -541,7 +553,7 @@ Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field
 ${shotConstraints ? `\n${shotConstraints}\n` : ''}
 ${weekStandoutInstructionBlock()}
 
-SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "Leeds". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
+SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "${homeLocationName}". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
 Locations: ${SPUR_LOCATION_NAMES}
 
 Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
@@ -549,7 +561,7 @@ ${temporalContext}${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 
-${homeLocation} shooting windows:
+${homeLocationName} shooting windows:
 ${windowsText}${altText}
 5-day outlook: ${weekLine}`;
   }
