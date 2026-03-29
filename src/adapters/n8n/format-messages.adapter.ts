@@ -6,7 +6,13 @@ import {
   emptyDebugContext,
   type DebugContext,
 } from '../../core/debug-context.js';
-import { getPhotoBriefEditorialPrimaryProvider } from '../../config.js';
+import {
+  getPhotoBriefEditorialPrimaryProvider,
+  getPhotoWeatherLat,
+  getPhotoWeatherLocation,
+  getPhotoWeatherLon,
+  getPhotoWeatherTimezone,
+} from '../../config.js';
 import { resolveEditorial } from '../../editorial/resolve-editorial.js';
 import { renderBriefAsJson } from '../../renderers/brief-json.js';
 import type { N8nRuntime } from './types.js';
@@ -84,7 +90,12 @@ export function run({ $input }: N8nRuntime) {
 
   const { editorial, debugAiTrace } = resolveEditorial({
     preferredProvider: getPhotoBriefEditorialPrimaryProvider(),
-    ctx: { ...ctx, debugContext },
+    ctx: {
+      ...ctx,
+      debugContext,
+      homeLatitude: getPhotoWeatherLat(),
+      homeLocationName: getPhotoWeatherLocation(),
+    },
     groqRawContent: rawContent,
     geminiRawContent,
     geminiInspire: typeof geminiInspire === 'string' ? geminiInspire : undefined,
@@ -96,10 +107,10 @@ export function run({ $input }: N8nRuntime) {
   debugContext.metadata = {
     ...(debugContext.metadata || {}),
     generatedAt: debugContext.metadata?.generatedAt || new Date().toISOString(),
-    location: debugContext.metadata?.location || 'Leeds',
-    latitude: debugContext.metadata?.latitude ?? 0,
-    longitude: debugContext.metadata?.longitude ?? 0,
-    timezone: debugContext.metadata?.timezone || 'Europe/London',
+    location: debugContext.metadata?.location || getPhotoWeatherLocation(),
+    latitude: debugContext.metadata?.latitude ?? getPhotoWeatherLat(),
+    longitude: debugContext.metadata?.longitude ?? getPhotoWeatherLon(),
+    timezone: debugContext.metadata?.timezone || getPhotoWeatherTimezone(),
     workflowVersion: debugContext.metadata?.workflowVersion || null,
     debugModeEnabled: debugMode,
     debugModeSource,

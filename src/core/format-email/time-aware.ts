@@ -3,7 +3,7 @@ import { renderAiBriefingText } from '../ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import type { DebugContext } from '../debug-context.js';
 import { esc } from '../utils.js';
-import { getPhotoWeatherLat } from '../../config.js';
+import { resolveHomeLatitude } from '../../types/home-location.js';
 import {
   C,
   FONT,
@@ -223,17 +223,19 @@ function windowCard(
   windows: Window[],
   sectionLabel = index === 0 ? 'Best window' : 'Worth watching',
   peakKpTonight?: number | null,
+  homeLatitude?: number | null,
 ): string {
   const hour = window.hours?.find(entry => entry.score === window.peak) || window.hours?.[0] || {} as WindowHour;
   const notes: string[] = [];
   const topWindow = windows[0];
+  const resolvedHomeLatitude = resolveHomeLatitude({ homeLatitude });
   if (window.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
   if ((hour.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${hour.crepuscular}/100 (light shafts through broken cloud).`);
   if (window.darkPhaseStart && window.postMoonsetScore !== null && window.postMoonsetScore !== undefined) {
     notes.push(`Dark from ${window.darkPhaseStart} - peak after moonset ${window.postMoonsetScore}/100.`);
   }
-  if (index === 0 && isAstroWindow(window) && isAuroraLikelyVisibleAtLat(getPhotoWeatherLat(), peakKpTonight)) {
-    const threshold = auroraVisibleKpThresholdForLat(getPhotoWeatherLat());
+  if (index === 0 && isAstroWindow(window) && isAuroraLikelyVisibleAtLat(resolvedHomeLatitude, peakKpTonight)) {
+    const threshold = auroraVisibleKpThresholdForLat(resolvedHomeLatitude);
     notes.push(`Coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local threshold Kp ${threshold}) - favour a clean northern horizon.`);
   }
   if (index > 0 && isAstroWindow(topWindow) && isAstroWindow(window) && topWindow?.label !== window.label) {
@@ -293,6 +295,8 @@ export function todayWindowSection(
   runTime: RunTimeContext,
   peakKpTonight: number | null | undefined,
   compositionBullets?: string[],
+  homeLatitude?: number | null,
+  homeLocationName?: string | null,
 ): string {
   const hasLocalWindow = (windows?.length || 0) > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
@@ -311,7 +315,7 @@ export function todayWindowSection(
   const fallbackAiText = timeAwareBriefingFallback(displayPlan);
   const renderedAi = fallbackAiText
     ? { text: fallbackAiText, strippedOpener: false, usedFallback: true }
-    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight });
+    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight, homeLatitude, homeLocationName });
   const trimmedAiText = renderedAi.text || aiText;
   const compCard = fallbackAiText ? '' : compositionCard(compositionBullets || []);
   const displayedWindows: string[] = [];
@@ -328,16 +332,17 @@ export function todayWindowSection(
       [displayPlan.primary, ...displayPlan.remaining.filter(window => window !== displayPlan.primary)],
       primaryLabel,
       peakKpTonight,
+      homeLatitude,
     ));
     displayPlan.remaining
       .filter(window => window !== displayPlan.primary)
       .forEach((window, index) => {
-        displayedWindows.push(windowCard(window, index + 1, displayPlan.remaining, 'Later today', peakKpTonight));
+        displayedWindows.push(windowCard(window, index + 1, displayPlan.remaining, 'Later today', peakKpTonight, homeLatitude));
       });
   }
 
   displayPlan.past.forEach((window, index) => {
-    displayedWindows.push(windowCard(window, index + 1, displayPlan.past, 'Earlier today', peakKpTonight));
+    displayedWindows.push(windowCard(window, index + 1, displayPlan.past, 'Earlier today', peakKpTonight, homeLatitude));
   });
 
   return listRows([

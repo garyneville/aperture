@@ -1,10 +1,26 @@
 import { buildPrompt } from '../../core/build-prompt.js';
+import {
+  PHOTO_BRIEF_WORKFLOW_VERSION,
+  getPhotoWeatherIcao,
+  getPhotoWeatherLat,
+  getPhotoWeatherLocation,
+  getPhotoWeatherLon,
+  getPhotoWeatherTimezone,
+} from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {
   const input = $input.first().json;
 
   const result = buildPrompt({
+    homeLocation: {
+      name: getPhotoWeatherLocation(),
+      lat: getPhotoWeatherLat(),
+      lon: getPhotoWeatherLon(),
+      timezone: getPhotoWeatherTimezone(),
+      icao: getPhotoWeatherIcao(),
+    },
+    workflowVersion: PHOTO_BRIEF_WORKFLOW_VERSION,
     windows: input.windows,
     dontBother: input.dontBother,
     todayBestScore: input.todayBestScore,

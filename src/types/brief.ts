@@ -176,6 +176,7 @@ export interface BriefRenderInput {
   darkSkyAlert?: DarkSkyAlertCard | null;
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
   geminiInspire?: string;
+  location?: BriefJsonLocation;
   debugContext?: DebugContext;
 }
 

@@ -35,6 +35,8 @@ import {
   todayWindowSection,
   windowRange,
 } from './format-email/time-aware.js';
+import { auroraVisibleKpThresholdForLat } from './aurora-visibility.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../types/home-location.js';
 import {
   buildKitTips,
   evaluateKitRules,
@@ -83,11 +85,18 @@ const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; b
   red: { label: 'Storm conditions', fg: C.success, bg: C.successContainer, border: '#A3D9B1' },
 };
 
-const AWUK_LEVEL_DESCRIPTIONS: Record<string, string> = {
-  yellow: 'Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from northern Scotland; conditions at 54°N (Leeds) are marginal.',
-  amber: 'Moderate geomagnetic activity. Aurora possible across northern England on clear nights. Worth watching if skies are clear.',
-  red: 'Storm-level geomagnetic activity. Aurora likely visible across much of the UK, including Yorkshire, on clear nights.',
-};
+function awukLevelDescription(level: string, locationName: string, homeLatitude: number): string {
+  if (level === 'yellow') {
+    return `Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from farther north; conditions at ${homeLatitude.toFixed(1)}°N (${locationName}) are marginal.`;
+  }
+  if (level === 'amber') {
+    return `Moderate geomagnetic activity. Aurora may be visible from ${locationName} if skies stay clear.`;
+  }
+  if (level === 'red') {
+    return `Storm-level geomagnetic activity. Aurora is plausible across much of the UK, including ${locationName}, on clear nights.`;
+  }
+  return `AuroraWatch UK status: ${level}.`;
+}
 
 function signalCards(
   shSunriseQ: number | null,
@@ -98,6 +107,8 @@ function signalCards(
   metarNote: string | undefined,
   peakKpTonight?: number | null,
   auroraSignal?: AuroraSignal | null,
+  locationName = 'Leeds',
+  homeLatitude = 53.82703,
 ): string {
   const cards: string[] = [];
   const awukLevel = auroraSignal?.nearTerm?.level;
@@ -107,7 +118,7 @@ function signalCards(
 
   if (awukFresh && awukLevel && awukLevel !== 'green') {
     const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
-    const desc = AWUK_LEVEL_DESCRIPTIONS[awukLevel] ?? `AuroraWatch UK status: ${awukLevel}.`;
+    const desc = awukLevelDescription(awukLevel, locationName, homeLatitude);
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">Aurora signal tonight</div>
@@ -116,18 +127,19 @@ function signalCards(
     `));
   } else if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
     const kpDisplay = peakKpTonight.toFixed(1);
-    const visible = peakKpTonight >= 6;
+    const threshold = auroraVisibleKpThresholdForLat(homeLatitude);
+    const visible = peakKpTonight >= threshold;
     const fg = visible ? C.success : C.warning;
     const bg = visible ? C.successContainer : C.warningContainer;
     const border = visible ? '#A3D9B1' : '#EDD17B';
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Space weather</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:16px;font-weight:600;line-height:1.3;color:${C.ink};">Aurora signal tonight</div>
-      <div style="Margin-top:10px;">${pill(`Kp ${kpDisplay}${visible ? ' — visible ~54°N' : ' — watch threshold'}`, fg, bg, border)}</div>
+      <div style="Margin-top:10px;">${pill(`Kp ${kpDisplay}${visible ? ' — clears local threshold' : ' — watch threshold'}`, fg, bg, border)}</div>
       <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">
         ${visible
-          ? `Kp ${kpDisplay} exceeds the visibility threshold for Leeds latitude. Best combined with a good astro window.`
-          : `Kp ${kpDisplay} is approaching the visible threshold (~Kp 6 at 54°N). Worth watching overnight.`}
+          ? `Kp ${kpDisplay} exceeds the visibility threshold for ${locationName}. Best combined with a good astro window.`
+          : `Kp ${kpDisplay} is approaching the local visibility threshold (~Kp ${threshold} at ${homeLatitude.toFixed(1)}°N). Worth watching overnight.`}
       </div>
     `));
   }
@@ -429,6 +441,8 @@ export function formatEmail(input: FormatEmailInput): string {
     geminiInspire,
     debugContext,
   } = input;
+  const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
+  const locationName = resolveHomeLocationName({ location: input.location, debugContext });
 
   const todayDay = dailySummary[0] || ({} as DaySummary);
   const runTime = getRunTimeContext(debugContext);
@@ -477,7 +491,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const localSummary = effectiveDontBother
     ? (hasLocalWindow
         ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
-        : 'No local window cleared the threshold today — treat Leeds as a pass unless you just want a walk.')
+        : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
     : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
 
   const spurMatchesTopAlt = !!spurOfTheMoment && !!topAlternative && spurOfTheMoment.locationName === topAlternative.name;
@@ -500,7 +514,7 @@ export function formatEmail(input: FormatEmailInput): string {
         <span style="color:${C.brand};margin-right:8px;vertical-align:middle;">${BRAND_LOGO}</span><span style="font-family:${FONT};font-size:12px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#FFFFFF;vertical-align:middle;">Aperture</span>
       </td>
       <td align="right" valign="middle">
-        <span style="font-family:${FONT};font-size:12px;font-weight:400;color:rgba(255,255,255,0.38);">Leeds, UK</span>
+        <span style="font-family:${FONT};font-size:12px;font-weight:400;color:rgba(255,255,255,0.38);">${esc(locationName)}</span>
       </td>
     </tr>
   </table>
@@ -527,7 +541,7 @@ export function formatEmail(input: FormatEmailInput): string {
   ${alternativeSummary ? `<div style="font-family:${FONT};font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">${esc(alternativeSummaryTitle(topAlternative, topAlternativeIsCloseContender))}: ${esc(alternativeSummary)}</div>` : ''}
   `, 'hero-card', `background:linear-gradient(160deg, ${C.heroGradientStart} 0%, ${C.heroGradientEnd} 100%);border-color:rgba(255,255,255,0.08);`);
 
-  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal);
+  const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);
   const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
   const kitCard = kitAdvisoryCard(kitTips);
 
@@ -574,7 +588,7 @@ export function formatEmail(input: FormatEmailInput): string {
     sections.push(
       spacer(16),
       `<tr><td>${sectionTitle('Today\'s window')}</td></tr>`,
-      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets)}</td></tr>`,
+      `<tr><td>${todayWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets, homeLatitude, locationName)}</td></tr>`,
     );
   }
 

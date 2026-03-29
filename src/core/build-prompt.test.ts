@@ -777,4 +777,34 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing"');
   });
 
+  it('uses injected home location metadata when provided', () => {
+    const result = buildPrompt({
+      homeLocation: {
+        name: 'York',
+        lat: 53.96,
+        lon: -1.08,
+        timezone: 'Europe/London',
+      },
+      workflowVersion: 'test-workflow-v2',
+      windows: [],
+      dontBother: true,
+      todayBestScore: 24,
+      todayCarWash: { score: 40, rating: 'OK', label: 'Fine', start: '10:00', end: '12:00', wind: 12, pp: 35, tmp: 8 },
+      dailySummary: [{
+        ...makeBaseDailySummary('2026-03-14'),
+        headlineScore: 24,
+        photoScore: 24,
+        astroScore: 30,
+      }],
+      metarNote: '',
+      moonPct: 18,
+      now: new Date('2026-03-14T12:00:00Z'),
+    });
+
+    expect(result.prompt).toContain('Photography assistant for York.');
+    expect(result.debugContext.metadata?.location).toBe('York');
+    expect(result.debugContext.metadata?.latitude).toBe(53.96);
+    expect(result.debugContext.metadata?.workflowVersion).toBe('test-workflow-v2');
+  });
+
 });

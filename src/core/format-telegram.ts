@@ -1,4 +1,5 @@
 import { bar, pad, rpad } from './utils.js';
+import { auroraVisibleKpThresholdForLat } from './aurora-visibility.js';
 import type {
   AltLocation,
   BriefRenderInput,
@@ -7,6 +8,7 @@ import type {
   LongRangeCard,
   Window,
 } from '../types/brief.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../types/home-location.js';
 
 export type {
   AltLocation,
@@ -124,9 +126,12 @@ export function formatTelegram(input: FormatTelegramInput): string {
     longRangeCardLabel,
     darkSkyAlert,
   } = input;
+  const locationName = resolveHomeLocationName({ location: input.location, debugContext: input.debugContext });
+  const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext: input.debugContext });
+  const auroraThreshold = auroraVisibleKpThresholdForLat(homeLatitude);
 
   const auroraLine = peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5
-    ? `\uD83C\uDF0C Aurora Kp ${peakKpTonight.toFixed(1)} forecast tonight${peakKpTonight >= 6 ? ' \u2014 visible ~54\u00b0N' : ' \u2014 approaching threshold'}\n`
+    ? `\uD83C\uDF0C Aurora Kp ${peakKpTonight.toFixed(1)} forecast tonight${peakKpTonight >= auroraThreshold ? ' \u2014 clears local threshold' : ` \u2014 watch threshold ~Kp ${auroraThreshold}`}\n`
     : '';
 
   const shLine = (shSunriseQ !== null || shSunsetQ !== null)
@@ -139,8 +144,8 @@ export function formatTelegram(input: FormatTelegramInput): string {
   const lrSection = lrLine ? `\n${DIV}${lrLine}\n` : '';
 
   if (dontBother) {
-    return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${auroraLine}${metarNote ? metarNote + '\n' : ''}${DIV}\u274c <b>Not worth it today</b>  [${todayBestScore}/100]\n${aiText}\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}${lrSection}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
+    return `\ud83d\udcf7 <b>${locationName} Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${auroraLine}${metarNote ? metarNote + '\n' : ''}${DIV}\u274c <b>Not worth it today</b>  [${todayBestScore}/100]\n${aiText}\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}${lrSection}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
   }
 
-  return `\ud83d\udcf7 <b>Leeds Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${auroraLine}${metarNote ? metarNote + '\n' : ''}${DIV}${windowsTelegram(windows)}\n\n\ud83d\udcac <i>${aiText}</i>\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}${lrSection}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
+  return `\ud83d\udcf7 <b>${locationName} Photo Brief</b> \u2014 ${today}\n\ud83c\udf05 ${sunriseStr}  \ud83c\udf07 ${sunsetStr}  \ud83c\udf19 ${moonPct}% moon\n${shLine}${auroraLine}${metarNote ? metarNote + '\n' : ''}${DIV}${windowsTelegram(windows)}\n\n\ud83d\udcac <i>${aiText}</i>\n\n\ud83d\udccd <b>Other places to consider today:</b>${altsTelegram(altLocations)}${lrSection}\n${DIV}<b>\ud83d\udcc5 Days Ahead</b>\n${photoFiveDayTelegram(dailySummary)}\n\n<b>\ud83d\ude97 Car Wash Forecast</b>\n${cwFiveDayTelegram(dailySummary)}`;
 }
