@@ -148,11 +148,14 @@ jobs:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
+          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
+          HOSTNAME=$(python3 -c "import os; from urllib.parse import urlparse; print(urlparse(os.environ['N8N_BASE_URL'].strip()).hostname or '(invalid)')")
+          echo "Using n8n host: ${HOSTNAME}"
           WORKFLOW_NAME=$(cat workflow_name.txt)
-          RESPONSE=$(curl -sf \
+          RESPONSE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${N8N_BASE_URL}/api/v1/workflows?limit=100")
+            "${BASE_URL}/api/v1/workflows?limit=100")
 
           # Find workflow ID by name
           WORKFLOW_ID=$(echo "$RESPONSE" | python3 -c "
@@ -176,24 +179,25 @@ jobs:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
           WORKFLOW_ID: ${{ steps.lookup.outputs.workflow_id }}
         run: |
+          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
           if [ -n "$WORKFLOW_ID" ]; then
             echo "Updating workflow ${WORKFLOW_ID}..."
-            HTTP_CODE=$(curl -sf -o response.json -w '%{http_code}' \
+            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf -o response.json -w '%{http_code}' \
               -X PUT \
               -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -d @workflow-body.json \
-              "${N8N_BASE_URL}/api/v1/workflows/${WORKFLOW_ID}")
+              "${BASE_URL}/api/v1/workflows/${WORKFLOW_ID}")
           else
             echo "Creating new workflow..."
-            HTTP_CODE=$(curl -sf -o response.json -w '%{http_code}' \
+            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf -o response.json -w '%{http_code}' \
               -X POST \
               -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -d @workflow-body.json \
-              "${N8N_BASE_URL}/api/v1/workflows")
+              "${BASE_URL}/api/v1/workflows")
           fi
 
           if [ "$HTTP_CODE" != "200" ]; then
@@ -212,9 +216,10 @@ jobs:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
-          curl -sf \
+          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
+          curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf \
             -X POST \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${N8N_BASE_URL}/api/v1/workflows/${workflow_id}/activate"
+            "${BASE_URL}/api/v1/workflows/${workflow_id}/activate"
           echo "Workflow ${workflow_id} activated"
