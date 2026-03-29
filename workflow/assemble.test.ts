@@ -446,6 +446,10 @@ describe('workflow assembly', () => {
 
     expect(result).toEqual([{
       json: {
+        briefJson: expect.objectContaining({
+          schemaVersion: 'aperture-brief/v1',
+          aiText: 'Stay home today.',
+        }),
         telegramMsg: expect.stringContaining('Stay home today.'),
         emailHtml: expect.any(String),
         siteHtml: expect.any(String),

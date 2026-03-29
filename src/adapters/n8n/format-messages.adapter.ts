@@ -1,5 +1,6 @@
 import { formatSite } from '../../core/format-site.js';
 import { formatTelegram } from '../../core/format-telegram.js';
+import type { EditorialDecision, ScoredForecastContext } from '../../core/standalone/contracts.js';
 import {
   buildFallbackAiText as buildSharedFallbackAiText,
   isSingleSentenceCardRestatement,
@@ -7,6 +8,7 @@ import {
 } from '../../core/ai-briefing.js';
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
+import { renderBriefAsJson } from '../../renderers/brief-json.js';
 import {
   buildWindowDisplayPlan,
   getRunTimeContext,
@@ -982,15 +984,30 @@ export function run({ $input }: N8nRuntime) {
     ? geminiInspire.trim()
     : undefined;
 
-  const telegramMsg = formatTelegram({ ...ctx, aiText });
-  const emailHtml = formatEmail({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, geminiInspire: safeGeminiInspire, debugContext });
-  const siteHtml = formatSite({ ...ctx, aiText, compositionBullets: safeCompositionBullets, weekInsight: resolvedWeekStandout.text, spurOfTheMoment, geminiInspire: safeGeminiInspire });
+  const editorial: EditorialDecision = {
+    primaryProvider: editorialChoice.primaryProvider,
+    selectedProvider: editorialChoice.selectedProvider,
+    fallbackUsed: editorialChoice.fallbackUsed,
+    aiText,
+    compositionBullets: safeCompositionBullets,
+    weekInsight: resolvedWeekStandout.text,
+    spurOfTheMoment,
+    geminiInspire: safeGeminiInspire,
+    rawGroqResponse: rawContent || undefined,
+    rawGeminiResponse: geminiRawContent || undefined,
+  };
+
+  const briefJson = renderBriefAsJson({ ...(ctx as ScoredForecastContext), debugContext }, editorial);
+  const telegramMsg = formatTelegram(briefJson);
+  const emailHtml = formatEmail(briefJson);
+  const siteHtml = formatSite(briefJson);
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${ctx.today || 'today'}`
     : `Photo Brief Debug - ${ctx.today || 'today'}`;
 
   return [{ json: {
+    briefJson,
     telegramMsg,
     emailHtml,
     siteHtml,

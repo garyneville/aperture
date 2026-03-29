@@ -1,4 +1,5 @@
 import type { BuildPromptOutput } from '../build-prompt.js';
+import type { BriefJson } from '../../types/brief.js';
 
 export type EditorialProvider = 'groq' | 'gemini';
 
@@ -51,11 +52,13 @@ export interface EditorialDecision {
   compositionBullets: string[];
   weekInsight: string;
   spurOfTheMoment?: SpurSuggestion | null;
+  geminiInspire?: string;
   rawGroqResponse?: string;
   rawGeminiResponse?: string;
 }
 
 export interface RenderedOutputs {
+  briefJson: BriefJson;
   telegramMsg: string;
   emailHtml: string;
   debugEmailHtml?: string;
