@@ -155,6 +155,10 @@ const goldenHourEvaluator: SessionEvaluator = {
     const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.08, 0.18, 0.02, 0.35);
     const windPenalty = features.windKph > 30 ? 12 : features.windKph > 20 ? 6 : 0;
     const visibilityPenalty = features.visibilityKm < 8 ? 18 : features.visibilityKm < 15 ? 8 : 0;
+    const azimuthPenalty = features.azimuthOcclusionRiskPct != null
+      ? features.azimuthOcclusionRiskPct > 75 ? 16 : features.azimuthOcclusionRiskPct > 55 ? 8 : 0
+      : 0;
+    const clearPathBoost = features.clearPathBonusPts != null ? features.clearPathBonusPts * 2 : 0;
     const spread = spreadVolatility(features);
     const uncertaintyPenalty = goldenHourUncertaintyPenalty(spread);
     const score =
@@ -163,8 +167,10 @@ const goldenHourEvaluator: SessionEvaluator = {
       + (features.crepuscularScore * 0.15)
       + (cloudCanvas * 0.15)
       + (hazeSweetSpot * 0.1)
+      + clearPathBoost
       - windPenalty
       - visibilityPenalty
+      - azimuthPenalty
       - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
@@ -172,9 +178,11 @@ const goldenHourEvaluator: SessionEvaluator = {
     if (cloudCanvas >= 70) reasons.push('Broken cloud cover can catch low-angle light well.');
     if (features.crepuscularScore >= 40) reasons.push('Crepuscular-ray potential is already elevated.');
     if (features.visibilityKm >= 18) reasons.push('Visibility should preserve depth and distant contrast.');
+    if ((features.azimuthOcclusionRiskPct ?? 100) < 25) reasons.push('Low-angle light path looks relatively clear.');
     if (features.cloudTotalPct >= 90) warnings.push('Featureless overcast may flatten the light.');
     if (features.visibilityKm < 10) warnings.push('Heavy haze could mute contrast despite good color.');
     if (features.windKph > 25) warnings.push('Wind may make long-lens or tripod work fussier.');
+    if ((features.azimuthOcclusionRiskPct ?? 0) > 60) warnings.push('Low-angle light may be blocked near the horizon.');
     if (!hardPass) warnings.push('This hour is outside the low-angle light window.');
 
     return completeScore(
@@ -288,6 +296,12 @@ const stormEvaluator: SessionEvaluator = {
     const lightningBoost = features.lightningRisk != null ? clamp(features.lightningRisk) : 0;
     const lowAngleBoost = features.isGolden || features.isBlue ? 16 : 0;
     const windPenalty = features.windKph > 45 ? 18 : features.windKph > 30 ? 8 : 0;
+    const azimuthEdgeLightBoost = (features.isGolden || features.isBlue) && features.clearPathBonusPts != null
+      ? features.clearPathBonusPts * 2
+      : 0;
+    const azimuthPenalty = (features.isGolden || features.isBlue) && features.azimuthOcclusionRiskPct != null
+      ? features.azimuthOcclusionRiskPct > 70 ? 10 : features.azimuthOcclusionRiskPct > 55 ? 5 : 0
+      : 0;
     const spread = spreadVolatility(features);
     const volatilityBonus = stormVolatilityBonus(spread);
     const score =
@@ -298,17 +312,21 @@ const stormEvaluator: SessionEvaluator = {
       + (capeBoost * 0.1)
       + (lightningBoost * 0.05)
       + lowAngleBoost
+      + azimuthEdgeLightBoost
       + volatilityBonus
-      - windPenalty;
+      - windPenalty
+      - azimuthPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
     if (features.dramaScore >= 60) reasons.push('Cloud structure and illumination already look storm-friendly.');
     if (showerBand >= 60) reasons.push('Showery conditions could support rain shafts or fast-changing breaks.');
     if (features.isGolden || features.isBlue) reasons.push('Low-angle light improves the odds of rays and edge lighting.');
+    if ((features.azimuthOcclusionRiskPct ?? 100) < 30 && (features.isGolden || features.isBlue)) reasons.push('The sun-side gap looks open enough for edge-lit breaks.');
     if ((features.capeJkg ?? 0) >= 1500) reasons.push('Convective energy is elevated enough for more dramatic development.');
     if (features.cloudTotalPct < 30) warnings.push('There may not be enough storm structure yet.');
     if (features.cloudTotalPct > 90) warnings.push('Dense overcast could flatten the scene before breaks appear.');
+    if ((features.azimuthOcclusionRiskPct ?? 0) > 65 && (features.isGolden || features.isBlue)) warnings.push('Blocked sun-side cloud may limit edge-lighting and ray potential.');
     if (features.windKph > 35) warnings.push('Strong winds may make shooting awkward and reduce stability.');
     if ((features.lightningRisk ?? 0) >= 50) warnings.push('Elevated lightning risk warrants a safety-first setup.');
 

@@ -61,6 +61,21 @@ describe('session scoring foundation', () => {
     expect(result.requiredCapabilities).toContain('sun-geometry');
   });
 
+  it('uses azimuth light-path risk to refine golden-hour scoring', () => {
+    const clearPath = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      azimuthOcclusionRiskPct: 18,
+      clearPathBonusPts: 8,
+    })));
+    const blockedPath = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      azimuthOcclusionRiskPct: 78,
+      clearPathBonusPts: -10,
+    })));
+
+    expect(clearPath.score).toBeGreaterThan(blockedPath.score);
+    expect(clearPath.reasons).toContain('Low-angle light path looks relatively clear.');
+    expect(blockedPath.warnings).toContain('Low-angle light may be blocked near the horizon.');
+  });
+
   it('fails astro hard gates during daylight hours', () => {
     const result = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({ isNight: false, astroScore: 55, cloudTotalPct: 5 })));
 
@@ -172,6 +187,8 @@ describe('session scoring foundation', () => {
       isGolden: true,
       isBlue: false,
       isNight: false,
+      azimuthOcclusionRiskPct: 20,
+      clearPathBonusPts: 8,
       capeJkg: 1800,
       lightningRisk: 28,
       tags: ['dramatic sky', 'crepuscular rays'],
@@ -180,6 +197,7 @@ describe('session scoring foundation', () => {
     expect(result?.session).toBe('storm');
     expect(result?.hardPass).toBe(true);
     expect(result?.reasons).toContain('Cloud structure and illumination already look storm-friendly.');
+    expect(result?.reasons).toContain('The sun-side gap looks open enough for edge-lit breaks.');
   });
 
   it('treats storm spread as volatility instead of a flat negative', () => {
