@@ -3,7 +3,7 @@ import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
 import { evaluateBuiltInSessions, selectBestSessionAcrossHours } from './session-scoring.js';
-import { deriveHourFeatures } from './features/derive-hour-features.js';
+import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
@@ -197,6 +197,35 @@ interface DateEntry { ts: string; i: number }
 
 interface EnsEntry { mean: number; stdDev: number }
 
+function toFeatureInputFromScoredHour(hour: ScoredHour): DerivedHourFeatureInput {
+  return {
+    hourLabel: hour.hour,
+    overallScore: hour.score,
+    dramaScore: hour.drama,
+    clarityScore: hour.clarity,
+    mistScore: hour.mist,
+    astroScore: hour.astro,
+    crepuscularScore: hour.crepuscular,
+    cloudLowPct: hour.cl,
+    cloudMidPct: hour.cm,
+    cloudHighPct: hour.ch,
+    cloudTotalPct: hour.ct,
+    visibilityKm: hour.visK,
+    aerosolOpticalDepth: hour.aod,
+    precipProbabilityPct: hour.pp,
+    humidityPct: hour.hum,
+    temperatureC: hour.tmp,
+    dewPointC: hour.dew,
+    windKph: hour.wind,
+    gustKph: hour.gusts,
+    moonIlluminationPct: hour.moon,
+    isNight: hour.isNight,
+    isGolden: hour.isGolden,
+    isBlue: hour.isBlue,
+    tags: hour.tags,
+  };
+}
+
 // Degrees below horizon at which astronomical twilight ends (sky is truly dark)
 const ASTRO_DARK_ELEVATION = -18;
 
@@ -251,6 +280,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
   const tod = now ?? new Date();
   const todayKey = tod.toLocaleDateString('en-CA', { timeZone: timezone });
+  const featureInputsByTs: Record<string, DerivedHourFeatureInput> = {};
 
   const byDate: Record<string, DateEntry[]> = {};
   (w.hourly?.time || []).forEach((ts, i) => {
@@ -502,6 +532,34 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       if ((azimuthRisk ?? 100) < 25 && (isGolden || isBlue)) tags.push('clear light path');
       if (!tags.length)              tags.push(score > 40 ? 'general' : 'poor');
 
+      featureInputsByTs[ts] = {
+        hourLabel: t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone }),
+        overallScore: score,
+        dramaScore: drama,
+        clarityScore: clarity,
+        mistScore: mist,
+        astroScore: astro,
+        crepuscularScore: crepuscular,
+        cloudLowPct: cl,
+        cloudMidPct: cm,
+        cloudHighPct: ch,
+        cloudTotalPct: ct,
+        visibilityKm: Math.round(visK * 10) / 10,
+        aerosolOpticalDepth: Math.round(aod * 100) / 100,
+        precipProbabilityPct: pp,
+        humidityPct: hum,
+        temperatureC: Math.round(tmp * 10) / 10,
+        dewPointC: Math.round(dew * 10) / 10,
+        windKph: Math.round(spd),
+        gustKph: Math.round(gst),
+        moonIlluminationPct: Math.round(moon * 100),
+        isNight,
+        isGolden,
+        isBlue,
+        tags,
+        capeJkg: Math.round(cap),
+      };
+
       hours.push({
         ts, t: t.toISOString(),
         hour: t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone }),
@@ -644,32 +702,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
-  const todayFeatures = todayHours.map(hour => deriveHourFeatures({
-    hourLabel: hour.hour,
-    overallScore: hour.score,
-    dramaScore: hour.drama,
-    clarityScore: hour.clarity,
-    mistScore: hour.mist,
-    astroScore: hour.astro,
-    crepuscularScore: hour.crepuscular,
-    cloudLowPct: hour.cl,
-    cloudMidPct: hour.cm,
-    cloudHighPct: hour.ch,
-    cloudTotalPct: hour.ct,
-    visibilityKm: hour.visK,
-    aerosolOpticalDepth: hour.aod,
-    precipProbabilityPct: hour.pp,
-    humidityPct: hour.hum,
-    temperatureC: hour.tmp,
-    dewPointC: hour.dew,
-    windKph: hour.wind,
-    gustKph: hour.gusts,
-    moonIlluminationPct: hour.moon,
-    isNight: hour.isNight,
-    isGolden: hour.isGolden,
-    isBlue: hour.isBlue,
-    tags: hour.tags,
-  }));
+  const todayFeatures = todayHours.map(hour => deriveHourFeatures(featureInputsByTs[hour.ts] || toFeatureInputFromScoredHour(hour)));
 
   debugContext.hourlyScoring = todayHours.map((hour, index) => {
       const moonMetrics = getMoonMetrics(Date.parse(hour.ts), LAT, LON);
