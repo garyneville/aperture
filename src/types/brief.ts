@@ -1,12 +1,14 @@
 import type { DebugContext } from '../core/debug-context.js';
 import type { AuroraSignal } from '../core/aurora-providers.js';
 
+export const BRIEF_JSON_SCHEMA_VERSION = 'aperture-brief/v1' as const;
+
 export interface WindowHour {
   hour?: string;
   score: number;
   ch?: number;
   visK?: number;
-  wind?: string;
+  wind?: string | number;
   pp?: number;
   crepuscular?: number;
   tpw?: number;
@@ -175,4 +177,17 @@ export interface BriefRenderInput {
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
   geminiInspire?: string;
   debugContext?: DebugContext;
+}
+
+export interface BriefJsonLocation {
+  name: string | null;
+  timezone: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}
+
+export interface BriefJson extends BriefRenderInput {
+  schemaVersion: typeof BRIEF_JSON_SCHEMA_VERSION;
+  generatedAt: string | null;
+  location: BriefJsonLocation;
 }

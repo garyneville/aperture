@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BRIEF_JSON_SCHEMA_VERSION } from '../../types/brief.js';
 import {
   buildFallbackAiText,
   chooseEditorialCandidate,
@@ -802,6 +803,12 @@ describe('run — weekStandout validation', () => {
         all: () => [],
       }),
     })[0].json as {
+      briefJson: {
+        schemaVersion: string;
+        location: { name: string | null };
+        aiText: string;
+        weekInsight?: string;
+      };
       emailHtml: string;
       debugEmailHtml: string;
     };
@@ -818,6 +825,21 @@ describe('run — weekStandout validation', () => {
 
     expect(result.emailHtml).toContain('Wednesday is the standout day.');
     expect(result.debugEmailHtml).toContain('present in raw response → used: &quot;Wednesday is the standout day.&quot;');
+  });
+
+  it('returns the canonical briefJson payload for downstream consumers', () => {
+    const result = makeRuntimeOutput('Wednesday is the standout day.', [
+      makeDay('Today', 0, 60, 'high', 12),
+      makeDay('Tomorrow', 1, 55, 'medium', 15),
+      makeDay('Wednesday', 2, 70, 'medium', 16),
+      makeDay('Thursday', 3, 45, 'medium', 12),
+      makeDay('Friday', 4, 50, 'medium', 18),
+    ]);
+
+    expect(result.briefJson.schemaVersion).toBe(BRIEF_JSON_SCHEMA_VERSION);
+    expect(result.briefJson.location.name).toBe('Leeds');
+    expect(result.briefJson.aiText).toContain('Conditions improve through the evening astro window');
+    expect(result.briefJson.weekInsight).toBe('Wednesday is the standout day.');
   });
 
   it('replaces a semantically wrong weekStandout with the reliability fallback', () => {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runPhotoBrief } from './run-photo-brief.js';
+import { renderBriefAsJson } from '../../renderers/brief-json.js';
+import { BRIEF_JSON_SCHEMA_VERSION } from '../../types/brief.js';
 import type {
   EditorialDecision,
   EditorialRequest,
@@ -87,6 +89,7 @@ function makeEditorialDecision(): EditorialDecision {
 
 function makeOutputs(): RenderedOutputs {
   return {
+    briefJson: renderBriefAsJson(makeScoredContext(), makeEditorialDecision()),
     telegramMsg: 'telegram',
     emailHtml: '<p>email</p>',
     debugEmailHtml: '<p>debug</p>',
@@ -150,6 +153,7 @@ describe('runPhotoBrief', () => {
     expect(result.forecast.location.name).toBe('Leeds');
     expect(result.editorial.selectedProvider).toBe('gemini');
     expect(result.outputs.emailHtml).toBe('<p>email</p>');
+    expect(result.outputs.briefJson.schemaVersion).toBe(BRIEF_JSON_SCHEMA_VERSION);
     expect(result.stageTimingsMs.acquire).toBeTypeOf('number');
     expect(result.stageTimingsMs.deliver).toBeTypeOf('number');
     expect(persistedRuns).toHaveLength(1);
