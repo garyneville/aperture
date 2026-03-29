@@ -5,6 +5,7 @@ export type SessionId =
   | 'astro'
   | 'mist'
   | 'storm'
+  | 'long-exposure'
   | 'street'
   | 'wildlife'
   | 'waterfall'
