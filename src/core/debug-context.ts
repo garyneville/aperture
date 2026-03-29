@@ -21,6 +21,12 @@ export interface DebugScores {
   certaintySpread: number | null;
   astroConfidence: string | null;
   astroConfidenceStdDev: number | null;
+  bestSession?: {
+    session: SessionId;
+    hour: string;
+    score: number;
+    confidence: SessionConfidence;
+  };
 }
 
 export interface DebugHourlyScore {

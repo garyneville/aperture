@@ -563,7 +563,8 @@ describe('scoreAllDays session scoring foundation', () => {
     const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
 
     expect(result.debugContext.hourlyScoring).toHaveLength(2);
-    expect(result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session)).toEqual(['astro', 'mist', 'golden-hour']);
+    expect(result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session)).toEqual(['astro', 'mist', 'golden-hour', 'storm']);
     expect(result.debugContext.hourlyScoring[1]?.sessionScores?.some(score => score.session === 'mist')).toBe(true);
+    expect(result.debugContext.scores?.bestSession).toBeDefined();
   });
 });

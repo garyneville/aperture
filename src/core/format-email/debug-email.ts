@@ -152,6 +152,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['PM', scores ? `${scores.pm}/100` : null],
           ['Astro', scores ? `${scores.astro}/100` : null],
           ['Overall', scores ? `${scores.overall}/100` : null],
+          ['Best session today', scores?.bestSession ? `${displaySessionName(scores.bestSession.session)} (${scores.bestSession.score}/100 at ${scores.bestSession.hour})` : null],
+          ['Best session confidence', scores?.bestSession ? displayDebugConfidence(scores.bestSession.confidence) : null],
           ['Certainty (daylight)', displayDebugConfidence(scores?.certainty)],
           ['Spread (daylight)', scores?.certaintySpread !== null && scores?.certaintySpread !== undefined ? `${scores.certaintySpread} pts` : null],
           ['Certainty (astro)', scores?.astroConfidence && scores.astroConfidence !== 'unknown' ? displayDebugConfidence(scores.astroConfidence) : null],

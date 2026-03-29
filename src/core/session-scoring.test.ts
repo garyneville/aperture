@@ -4,6 +4,8 @@ import {
   evaluateBuiltInSessions,
   evaluateSessionFeatures,
   getBuiltInSessionEvaluators,
+  selectBestBuiltInSession,
+  selectBestSessionAcrossHours,
 } from './session-scoring.js';
 
 function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHourFeatureInput {
@@ -38,7 +40,7 @@ function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHour
 
 describe('session scoring foundation', () => {
   it('exposes built-in evaluators for the first two session types', () => {
-    expect(getBuiltInSessionEvaluators().map(evaluator => evaluator.session)).toEqual(['golden-hour', 'astro', 'mist']);
+    expect(getBuiltInSessionEvaluators().map(evaluator => evaluator.session)).toEqual(['golden-hour', 'astro', 'mist', 'storm']);
   });
 
   it('works from the shared derived-feature seam', () => {
@@ -114,5 +116,76 @@ describe('session scoring foundation', () => {
     expect(sessions[0]?.session).toBe('mist');
     expect(sessions[0]?.hardPass).toBe(true);
     expect(sessions[0]?.reasons).toContain('Visibility is in a useful misty-landscape range.');
+  });
+
+  it('can surface storm as the best-fit session for a dramatic showery setup', () => {
+    const result = selectBestBuiltInSession(deriveHourFeatures(makeHour({
+      overallScore: 64,
+      dramaScore: 88,
+      clarityScore: 36,
+      mistScore: 10,
+      astroScore: 0,
+      crepuscularScore: 58,
+      cloudTotalPct: 74,
+      visibilityKm: 16,
+      aerosolOpticalDepth: 0.14,
+      precipProbabilityPct: 52,
+      humidityPct: 82,
+      windKph: 22,
+      gustKph: 34,
+      isGolden: true,
+      isBlue: false,
+      isNight: false,
+      capeJkg: 1800,
+      lightningRisk: 28,
+      tags: ['dramatic sky', 'crepuscular rays'],
+    })));
+
+    expect(result?.session).toBe('storm');
+    expect(result?.hardPass).toBe(true);
+    expect(result?.reasons).toContain('Cloud structure and illumination already look storm-friendly.');
+  });
+
+  it('can select the strongest session across multiple candidate hours', () => {
+    const result = selectBestSessionAcrossHours([
+      deriveHourFeatures(makeHour({
+        hourLabel: '06:00',
+        overallScore: 42,
+        dramaScore: 28,
+        clarityScore: 18,
+        mistScore: 80,
+        visibilityKm: 4,
+        humidityPct: 95,
+        temperatureC: 5,
+        dewPointC: 4,
+        windKph: 3,
+        isGolden: false,
+      })),
+      deriveHourFeatures(makeHour({
+        hourLabel: '19:00',
+        overallScore: 64,
+        dramaScore: 88,
+        clarityScore: 36,
+        mistScore: 10,
+        astroScore: 0,
+        crepuscularScore: 58,
+        cloudTotalPct: 74,
+        visibilityKm: 16,
+        aerosolOpticalDepth: 0.14,
+        precipProbabilityPct: 52,
+        humidityPct: 82,
+        windKph: 22,
+        gustKph: 34,
+        isGolden: true,
+        isBlue: false,
+        isNight: false,
+        capeJkg: 1800,
+        lightningRisk: 28,
+        tags: ['dramatic sky', 'crepuscular rays'],
+      })),
+    ]);
+
+    expect(result?.session).toBe('storm');
+    expect(result?.hourLabel).toBe('19:00');
   });
 });

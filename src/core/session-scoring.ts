@@ -4,6 +4,7 @@ import type {
   DerivedHourFeatures,
   SessionConfidence,
   SessionEvaluator,
+  SessionHourSelection,
   SessionId,
   SessionScore,
 } from '../types/session-score.js';
@@ -92,6 +93,15 @@ const MIST_CAPABILITIES: ScoringCapability[] = [
   'humidity',
   'wind',
   'precipitation',
+];
+
+const STORM_CAPABILITIES: ScoringCapability[] = [
+  'cloud-stratification',
+  'precipitation',
+  'wind',
+  'aerosols',
+  'sun-geometry',
+  'upper-air',
 ];
 
 const goldenHourEvaluator: SessionEvaluator = {
@@ -213,7 +223,51 @@ const mistEvaluator: SessionEvaluator = {
   },
 };
 
-const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [goldenHourEvaluator, astroEvaluator, mistEvaluator];
+const stormEvaluator: SessionEvaluator = {
+  session: 'storm',
+  requiredCapabilities: STORM_CAPABILITIES,
+  evaluateHour(features) {
+    const hardPass = features.cloudTotalPct >= 20 && features.cloudTotalPct <= 95;
+    const showerBand = sweetSpotScore(features.precipProbabilityPct, 20, 70, 0, 100);
+    const cloudStructure = sweetSpotScore(features.cloudTotalPct, 45, 85, 10, 100);
+    const capeBoost = features.capeJkg != null ? sweetSpotScore(features.capeJkg, 1200, 3500, 100, 5000) : 0;
+    const lightningBoost = features.lightningRisk != null ? clamp(features.lightningRisk) : 0;
+    const lowAngleBoost = features.isGolden || features.isBlue ? 16 : 0;
+    const windPenalty = features.windKph > 45 ? 18 : features.windKph > 30 ? 8 : 0;
+    const score =
+      (features.dramaScore * 0.45)
+      + (features.crepuscularScore * 0.15)
+      + (showerBand * 0.15)
+      + (cloudStructure * 0.1)
+      + (capeBoost * 0.1)
+      + (lightningBoost * 0.05)
+      + lowAngleBoost
+      - windPenalty;
+    const reasons: string[] = [];
+    const warnings: string[] = [];
+
+    if (features.dramaScore >= 60) reasons.push('Cloud structure and illumination already look storm-friendly.');
+    if (showerBand >= 60) reasons.push('Showery conditions could support rain shafts or fast-changing breaks.');
+    if (features.isGolden || features.isBlue) reasons.push('Low-angle light improves the odds of rays and edge lighting.');
+    if ((features.capeJkg ?? 0) >= 1500) reasons.push('Convective energy is elevated enough for more dramatic development.');
+    if (features.cloudTotalPct < 30) warnings.push('There may not be enough storm structure yet.');
+    if (features.cloudTotalPct > 90) warnings.push('Dense overcast could flatten the scene before breaks appear.');
+    if (features.windKph > 35) warnings.push('Strong winds may make shooting awkward and reduce stability.');
+    if ((features.lightningRisk ?? 0) >= 50) warnings.push('Elevated lightning risk warrants a safety-first setup.');
+
+    return completeScore(
+      'storm',
+      STORM_CAPABILITIES,
+      hardPass,
+      score,
+      hardPass ? (features.dramaScore >= 70 || (features.capeJkg ?? 0) >= 1800 ? 'high' : 'medium') : 'low',
+      reasons,
+      warnings,
+    );
+  },
+};
+
+const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [goldenHourEvaluator, astroEvaluator, mistEvaluator, stormEvaluator];
 
 export function getBuiltInSessionEvaluators(): SessionEvaluator[] {
   return [...BUILT_IN_SESSION_EVALUATORS];
@@ -235,4 +289,25 @@ export function evaluateBuiltInSessions(features: DerivedHourFeatures): SessionS
   return BUILT_IN_SESSION_EVALUATORS
     .map(evaluator => evaluator.evaluateHour(features))
     .sort((a, b) => b.score - a.score);
+}
+
+export function selectBestSessionScore(scores: SessionScore[]): SessionScore | null {
+  return scores.reduce<SessionScore | null>((best, score) => {
+    if (!best) return score;
+    return score.score > best.score ? score : best;
+  }, null);
+}
+
+export function selectBestBuiltInSession(features: DerivedHourFeatures): SessionScore | null {
+  return selectBestSessionScore(evaluateBuiltInSessions(features));
+}
+
+export function selectBestSessionAcrossHours(hours: DerivedHourFeatures[]): SessionHourSelection | null {
+  return hours.reduce<SessionHourSelection | null>((best, hour) => {
+    const sessionScore = selectBestBuiltInSession(hour);
+    if (!sessionScore) return best;
+    const candidate: SessionHourSelection = { ...sessionScore, hourLabel: hour.hourLabel };
+    if (!best) return candidate;
+    return candidate.score > best.score ? candidate : best;
+  }, null);
 }

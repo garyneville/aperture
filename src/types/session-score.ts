@@ -63,6 +63,10 @@ export interface SessionScore {
   requiredCapabilities: ScoringCapability[];
 }
 
+export interface SessionHourSelection extends SessionScore {
+  hourLabel: string;
+}
+
 export interface SessionEvaluator {
   session: SessionId;
   requiredCapabilities: ScoringCapability[];
