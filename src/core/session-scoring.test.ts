@@ -41,7 +41,14 @@ function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHour
 
 describe('session scoring foundation', () => {
   it('exposes built-in evaluators for the first two session types', () => {
-    expect(getBuiltInSessionEvaluators().map(evaluator => evaluator.session)).toEqual(['golden-hour', 'astro', 'mist', 'storm']);
+    expect(getBuiltInSessionEvaluators().map(evaluator => evaluator.session)).toEqual([
+      'golden-hour',
+      'astro',
+      'mist',
+      'storm',
+      'long-exposure',
+      'urban',
+    ]);
   });
 
   it('works from the shared derived-feature seam', () => {
@@ -434,7 +441,245 @@ describe('session scoring foundation', () => {
     expect(summary.primary?.session).toBe('storm');
     expect(summary.primary?.hourLabel).toBe('19:00');
     expect(summary.hoursAnalyzed).toBe(2);
-    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'mist', 'golden-hour', 'astro']);
-    expect(summary.runnerUps[0]?.session).toBe('mist');
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'astro']);
+    expect(summary.runnerUps[0]?.session).toBe('long-exposure');
+  });
+
+  it('scores long-exposure highly in calm atmospheric conditions', () => {
+    const result = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      overallScore: 50,
+      dramaScore: 30,
+      mistScore: 60,
+      cloudTotalPct: 55,
+      visibilityKm: 8,
+      aerosolOpticalDepth: 0.1,
+      windKph: 4,
+      gustKph: 8,
+      humidityPct: 88,
+      precipProbabilityPct: 10,
+      isGolden: false,
+      isBlue: true,
+      tags: ['atmospheric'],
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.score).toBeGreaterThan(65);
+    expect(result.reasons).toContain('Calm winds are ideal for tripod stability and smooth exposures.');
+    expect(result.reasons).toContain('Low-angle light can produce dramatic long-exposure colour.');
+    expect(result.requiredCapabilities).toContain('wind');
+  });
+
+  it('hard-gates long-exposure when wind is too high', () => {
+    const result = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      windKph: 35,
+      gustKph: 50,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+    expect(result.warnings).toContain('Wind or gust levels are too high for reliable long-exposure work.');
+  });
+
+  it('penalizes long-exposure for moderate wind and gusts', () => {
+    const calm = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      windKph: 5,
+      gustKph: 10,
+      cloudTotalPct: 55,
+      humidityPct: 80,
+    })));
+    const windy = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      windKph: 22,
+      gustKph: 32,
+      cloudTotalPct: 55,
+      humidityPct: 80,
+    })));
+
+    expect(calm.score).toBeGreaterThan(windy.score);
+    expect(windy.warnings).toContain('Wind may cause camera shake or tripod vibration on longer exposures.');
+    expect(windy.warnings).toContain('Gusts could introduce intermittent vibration during exposures.');
+  });
+
+  it('treats long-exposure cloud spread as an uncertainty penalty', () => {
+    const stable = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      windKph: 5,
+      gustKph: 10,
+      cloudTotalPct: 55,
+      humidityPct: 80,
+      ensembleCloudStdDevPct: 5,
+    })));
+    const volatile = evaluateSessionFeatures('long-exposure', deriveHourFeatures(makeHour({
+      windKph: 5,
+      gustKph: 10,
+      cloudTotalPct: 55,
+      humidityPct: 80,
+      ensembleCloudStdDevPct: 22,
+    })));
+
+    expect(stable.confidence).toBe('high');
+    expect(volatile.confidence).toBe('low');
+    expect(volatile.score).toBeLessThan(stable.score);
+  });
+
+  it('can surface long-exposure as best session for a calm, misty blue-hour setup', () => {
+    const result = selectBestBuiltInSession(deriveHourFeatures(makeHour({
+      overallScore: 45,
+      dramaScore: 20,
+      clarityScore: 22,
+      mistScore: 55,
+      astroScore: 0,
+      crepuscularScore: 18,
+      cloudTotalPct: 60,
+      visibilityKm: 6,
+      aerosolOpticalDepth: 0.12,
+      precipProbabilityPct: 5,
+      humidityPct: 90,
+      temperatureC: 7,
+      dewPointC: 6,
+      windKph: 3,
+      gustKph: 6,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+      tags: ['atmospheric', 'blue hour'],
+    })));
+
+    expect(result?.session).toBe('long-exposure');
+    expect(result?.hardPass).toBe(true);
+  });
+
+  it('can surface urban as the best-fit session for a wet blue-hour city scene', () => {
+    const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
+      overallScore: 40,
+      dramaScore: 35,
+      clarityScore: 28,
+      mistScore: 12,
+      astroScore: 0,
+      crepuscularScore: 14,
+      cloudTotalPct: 75,
+      cloudLowPct: 30,
+      cloudMidPct: 28,
+      cloudHighPct: 17,
+      visibilityKm: 7,
+      aerosolOpticalDepth: 0.1,
+      precipProbabilityPct: 55,
+      humidityPct: 88,
+      temperatureC: 11,
+      dewPointC: 8,
+      windKph: 24,
+      gustKph: 32,
+      moonIlluminationPct: 15,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+      tags: ['urban', 'wet streets'],
+    })));
+
+    expect(sessions[0]?.session).toBe('urban');
+    expect(sessions[0]?.hardPass).toBe(true);
+    expect(sessions[0]?.reasons).toContain('Recent or active rain should leave wet streets for reflections.');
+    expect(sessions[0]?.reasons).toContain('Blue-hour or night light suits moody urban photography.');
+  });
+
+  it('scores urban higher when wet surfaces and city light align', () => {
+    const wetBlue = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 60,
+      humidityPct: 90,
+      visibilityKm: 6,
+      windKph: 5,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+      cloudTotalPct: 72,
+    })));
+    const dryClear = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 5,
+      humidityPct: 45,
+      visibilityKm: 28,
+      windKph: 5,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+      cloudTotalPct: 15,
+    })));
+
+    expect(wetBlue.score).toBeGreaterThan(dryClear.score);
+    expect(wetBlue.reasons).toContain('Recent or active rain should leave wet streets for reflections.');
+    expect(dryClear.warnings).toContain('Dry conditions reduce the reflective atmosphere urban shooting benefits from.');
+  });
+
+  it('applies urban wind penalty for breezy conditions', () => {
+    const calm = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 50,
+      humidityPct: 85,
+      visibilityKm: 8,
+      windKph: 8,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+    })));
+    const windy = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 50,
+      humidityPct: 85,
+      visibilityKm: 8,
+      windKph: 32,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+    })));
+
+    expect(calm.score).toBeGreaterThan(windy.score);
+    expect(windy.warnings).toContain('Strong wind may make tripod setups or umbrella handling difficult.');
+  });
+
+  it('fails urban hard pass when wind is extreme', () => {
+    const result = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 55,
+      humidityPct: 90,
+      windKph: 38,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('warns about heavy continuous rain for urban sessions', () => {
+    const result = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 90,
+      humidityPct: 95,
+      visibilityKm: 5,
+      windKph: 8,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.warnings).toContain('Heavy continuous rain may obscure scenes more than help reflections.');
+  });
+
+  it('gives urban high confidence when wet streets and city light align with low spread', () => {
+    const result = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour({
+      precipProbabilityPct: 55,
+      humidityPct: 85,
+      visibilityKm: 8,
+      windKph: 6,
+      isGolden: false,
+      isBlue: true,
+      isNight: false,
+      ensembleCloudStdDevPct: 5,
+    })));
+
+    expect(result.confidence).toBe('high');
+    expect(result.volatility).toBe(5);
+  });
+
+  it('exposes surface-wetness as a required capability for urban', () => {
+    const result = evaluateSessionFeatures('urban', deriveHourFeatures(makeHour()));
+    expect(result.requiredCapabilities).toContain('surface-wetness');
+    expect(result.requiredCapabilities).toContain('precipitation');
+    expect(result.requiredCapabilities).toContain('aerosols');
   });
 });

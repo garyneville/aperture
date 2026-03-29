@@ -64,6 +64,16 @@ function stormVolatilityBonus(spread: number | null): number {
   return Math.round(sweetSpotScore(spread, 8, 24, 0, 40) * 0.08);
 }
 
+function urbanUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 10) return 0;
+  return clamp(Math.round((spread - 10) * 0.5), 0, 12);
+}
+
+function longExposureUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 10) return 0;
+  return clamp(Math.round((spread - 10) * 0.6), 0, 14);
+}
+
 function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
   const spread = spreadVolatility(features);
   const base = features.cloudTotalPct >= 25 && features.cloudTotalPct <= 75 && features.visibilityKm >= 15;
@@ -89,6 +99,26 @@ function mistConfidence(features: DerivedHourFeatures, hardPass: boolean): Sessi
   return base
     ? confidenceFromSpread(spread, hardPass, 9, 18)
     : confidenceFromSpread(spread, hardPass, 7, 15);
+}
+
+function urbanConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const hasWetStreet = features.precipProbabilityPct >= 40
+    || (features.surfaceWetnessScore != null && features.surfaceWetnessScore >= 60);
+  const base = hasWetStreet && (features.isBlue || features.isNight) && features.windKph <= 10;
+  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 10, 20)
+    : confidenceFromSpread(spread, hardPass, 8, 16);
+}
+
+function longExposureConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const base = features.windKph <= 8 && features.gustKph <= 15 && (features.cloudTotalPct >= 25 || features.humidityPct >= 80);
+  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 8, 18)
+    : confidenceFromSpread(spread, hardPass, 6, 14);
 }
 
 function completeScore(
@@ -146,6 +176,23 @@ const STORM_CAPABILITIES: ScoringCapability[] = [
   'aerosols',
   'sun-geometry',
   'upper-air',
+];
+
+const URBAN_CAPABILITIES: ScoringCapability[] = [
+  'precipitation',
+  'visibility',
+  'humidity',
+  'wind',
+  'aerosols',
+  'surface-wetness',
+];
+
+const LONG_EXPOSURE_CAPABILITIES: ScoringCapability[] = [
+  'wind',
+  'cloud-stratification',
+  'visibility',
+  'humidity',
+  'sun-geometry',
 ];
 
 const goldenHourEvaluator: SessionEvaluator = {
@@ -367,7 +414,137 @@ const stormEvaluator: SessionEvaluator = {
   },
 };
 
-const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [goldenHourEvaluator, astroEvaluator, mistEvaluator, stormEvaluator];
+const longExposureEvaluator: SessionEvaluator = {
+  session: 'long-exposure',
+  requiredCapabilities: LONG_EXPOSURE_CAPABILITIES,
+  evaluateHour(features) {
+    const hardPass = features.windKph <= 30 && features.gustKph <= 45;
+    const windStability = sweetSpotScore(features.windKph, 0, 8, 0, 30);
+    const gustStability = sweetSpotScore(features.gustKph, 0, 15, 0, 45);
+    const cloudInterest = sweetSpotScore(features.cloudTotalPct, 30, 80, 0, 100);
+    const atmosphericMood = clamp(
+      (features.mistScore >= 20 ? Math.min(features.mistScore, 80) : 0)
+      + (features.humidityPct >= 75 ? Math.round((features.humidityPct - 75) * 1.2) : 0));
+    const lowAngleBoost = features.isGolden || features.isBlue ? 14 : 0;
+    const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.06, 0.2, 0.01, 0.4);
+    const visibilityRange = sweetSpotScore(features.visibilityKm, 2, 18, 0.3, 40);
+    const windPenalty = features.windKph > 20 ? 16 : features.windKph > 12 ? 8 : 0;
+    const gustPenalty = features.gustKph > 30 ? 10 : features.gustKph > 20 ? 5 : 0;
+    const rainPenalty = features.precipProbabilityPct > 70 ? 12 : features.precipProbabilityPct > 40 ? 5 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = longExposureUncertaintyPenalty(spread);
+    const score =
+      (windStability * 0.25)
+      + (cloudInterest * 0.2)
+      + (gustStability * 0.15)
+      + (atmosphericMood * 0.15)
+      + (hazeSweetSpot * 0.1)
+      + (visibilityRange * 0.15)
+      + lowAngleBoost
+      - windPenalty
+      - gustPenalty
+      - rainPenalty
+      - uncertaintyPenalty;
+    const reasons: string[] = [];
+    const warnings: string[] = [];
+
+    if (windStability >= 80) reasons.push('Calm winds are ideal for tripod stability and smooth exposures.');
+    if (cloudInterest >= 60) reasons.push('Cloud structure should streak nicely across a longer exposure.');
+    if (atmosphericMood >= 30) reasons.push('Mist or humidity adds mood that rewards slower shutter work.');
+    if (features.isGolden || features.isBlue) reasons.push('Low-angle light can produce dramatic long-exposure colour.');
+    if (visibilityRange >= 60) reasons.push('Visibility suits the soft-but-present depth long exposures benefit from.');
+    if (features.windKph > 20) warnings.push('Wind may cause camera shake or tripod vibration on longer exposures.');
+    if (features.gustKph > 25) warnings.push('Gusts could introduce intermittent vibration during exposures.');
+    if (features.precipProbabilityPct > 50) warnings.push('Rain risk may require weather protection for extended setups.');
+    if (features.cloudTotalPct > 95) warnings.push('Heavy overcast may produce flat, featureless streaks.');
+    if (features.cloudTotalPct < 10) warnings.push('Very few clouds may limit visual interest in longer exposures.');
+    if (!hardPass) warnings.push('Wind or gust levels are too high for reliable long-exposure work.');
+
+    return completeScore(
+      'long-exposure',
+      LONG_EXPOSURE_CAPABILITIES,
+      hardPass,
+      score,
+      longExposureConfidence(features, hardPass),
+      spread,
+      reasons,
+      warnings,
+    );
+  },
+};
+
+const urbanEvaluator: SessionEvaluator = {
+  session: 'urban',
+  requiredCapabilities: URBAN_CAPABILITIES,
+  evaluateHour(features) {
+    const hasWetSurface = features.precipProbabilityPct >= 30
+      || (features.surfaceWetnessScore != null && features.surfaceWetnessScore >= 40);
+    const hasAtmosphere = features.humidityPct >= 80
+      || features.visibilityKm <= 12
+      || features.cloudTotalPct >= 60;
+    const hasCityLight = features.isBlue || features.isNight;
+    const hardPass = (hasWetSurface || hasAtmosphere || hasCityLight) && features.windKph <= 35;
+
+    const wetStreetScore = features.surfaceWetnessScore != null
+      ? clamp(features.surfaceWetnessScore)
+      : sweetSpotScore(features.precipProbabilityPct, 30, 70, 5, 100);
+    const atmosphericMood = features.dramaScore;
+    const visibilitySweetSpot = sweetSpotScore(features.visibilityKm, 3, 15, 0.5, 30);
+    const cityLightBoost = features.isBlue ? 100 : features.isNight ? 80 : 0;
+    const humidityContrib = clamp(Math.round((features.humidityPct - 50) * 2));
+    const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.06, 0.2, 0.01, 0.4);
+
+    const windPenalty = features.windKph > 30 ? 14 : features.windKph > 20 ? 6 : 0;
+    const heavyRainPenalty = features.precipProbabilityPct > 85 ? 8 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = urbanUncertaintyPenalty(spread);
+
+    const score =
+      (wetStreetScore * 0.35)
+      + (atmosphericMood * 0.2)
+      + (visibilitySweetSpot * 0.15)
+      + (cityLightBoost * 0.15)
+      + (humidityContrib * 0.1)
+      + (hazeSweetSpot * 0.05)
+      - windPenalty
+      - heavyRainPenalty
+      - uncertaintyPenalty;
+
+    const reasons: string[] = [];
+    const warnings: string[] = [];
+
+    if (wetStreetScore >= 60) reasons.push('Recent or active rain should leave wet streets for reflections.');
+    if (visibilitySweetSpot >= 60 && features.visibilityKm <= 12) reasons.push('Atmospheric haze adds depth to city scenes.');
+    if (hasCityLight) reasons.push('Blue-hour or night light suits moody urban photography.');
+    if (features.cloudTotalPct >= 70) reasons.push('Overcast skies diffuse light evenly across street scenes.');
+    if (features.humidityPct >= 80) reasons.push('Humidity helps surfaces hold a reflective sheen.');
+
+    if (!hasWetSurface && features.humidityPct < 70) warnings.push('Dry conditions reduce the reflective atmosphere urban shooting benefits from.');
+    if (features.windKph > 25) warnings.push('Strong wind may make tripod setups or umbrella handling difficult.');
+    if (features.precipProbabilityPct > 85) warnings.push('Heavy continuous rain may obscure scenes more than help reflections.');
+    if (!hasCityLight && !features.isGolden && features.cloudTotalPct < 40) warnings.push('Midday light without atmosphere can flatten urban scenes.');
+
+    return completeScore(
+      'urban',
+      URBAN_CAPABILITIES,
+      hardPass,
+      score,
+      urbanConfidence(features, hardPass),
+      spread,
+      reasons,
+      warnings,
+    );
+  },
+};
+
+const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
+  goldenHourEvaluator,
+  astroEvaluator,
+  mistEvaluator,
+  stormEvaluator,
+  longExposureEvaluator,
+  urbanEvaluator,
+];
 
 export function getBuiltInSessionEvaluators(): SessionEvaluator[] {
   return [...BUILT_IN_SESSION_EVALUATORS];
