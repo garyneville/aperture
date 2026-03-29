@@ -1,120 +1,24 @@
 import { bar, pad, rpad } from './utils.js';
+import type {
+  AltLocation,
+  BriefRenderInput,
+  DarkSkyAlertCard,
+  DaySummary,
+  LongRangeCard,
+  Window,
+} from '../types/brief.js';
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+export type {
+  AltLocation,
+  CarWash,
+  DarkSkyAlertCard,
+  DaySummary,
+  LongRangeCard,
+  Window,
+  WindowHour,
+} from '../types/brief.js';
 
-export interface WindowHour {
-  score: number;
-  ch?: number;
-  visK?: number;
-  wind?: string;
-  pp?: number;
-  crepuscular?: number;
-  tpw?: number;
-}
-
-export interface Window {
-  label: string;
-  start: string;
-  end: string;
-  peak: number;
-  fallback?: boolean;
-  hours?: WindowHour[];
-  tops?: string[];
-}
-
-export interface AltLocation {
-  name: string;
-  driveMins: number;
-  bestScore: number;
-  bestDayHour?: string;
-  bestAstroHour?: string;
-  types?: string[];
-  isAstroWin?: boolean;
-  darkSky?: boolean;
-}
-
-export interface CarWash {
-  rating: string;
-  label: string;
-  score: number;
-  start: string;
-  end: string;
-  wind: number;
-  pp: number;
-  tmp?: number;
-}
-
-export interface DaySummary {
-  dayLabel: string;
-  dateKey: string;
-  dayIdx: number;
-  photoScore: number;
-  headlineScore?: number;
-  photoEmoji: string;
-  amScore?: number;
-  pmScore?: number;
-  astroScore?: number;
-  confidence?: string;
-  confidenceStdDev?: number | null;
-  amConfidence?: string;
-  pmConfidence?: string;
-  bestPhotoHour?: string;
-  bestTags?: string;
-  bestAlt?: AltLocation | null;
-  carWash: CarWash;
-}
-
-export interface FormatTelegramInput {
-  dontBother: boolean;
-  windows: Window[];
-  todayCarWash: CarWash;
-  dailySummary: DaySummary[];
-  altLocations: AltLocation[];
-  noAltsMsg?: string;
-  sunriseStr: string;
-  sunsetStr: string;
-  moonPct: number;
-  metarNote?: string;
-  today: string;
-  todayBestScore: number;
-  shSunsetQ: number | null;
-  shSunriseQ: number | null;
-  shSunsetText?: string;
-  sunDir: number | null;
-  crepPeak: number;
-  aiText: string;
-  peakKpTonight?: number | null;
-  longRangeTop?: LongRangeCard | null;
-  longRangeCardLabel?: string | null;
-  darkSkyAlert?: DarkSkyAlertCard | null;
-}
-
-export interface LongRangeCard {
-  name: string;
-  region: string;
-  driveMins: number;
-  bestScore: number;
-  amScore?: number;
-  pmScore?: number;
-  dayScore?: number;
-  astroScore?: number;
-  bestDayHour: string | null;
-  bestAstroHour: string | null;
-  isAstroWin: boolean;
-  darkSky: boolean;
-  elevation: number;
-  tags: string[];
-}
-
-export interface DarkSkyAlertCard {
-  name: string;
-  region: string;
-  driveMins: number;
-  astroScore: number;
-  bestAstroHour: string | null;
-}
+export type FormatTelegramInput = BriefRenderInput;
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

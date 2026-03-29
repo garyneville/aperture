@@ -7,7 +7,7 @@ The public entrypoint is still [`../format-email.ts`](../format-email.ts). That 
 ## Module map
 
 - [`types.ts`](./types.ts)
-  Shared formatter contracts: window types, day summary types, alt-location types, and the `FormatEmailInput` payload.
+  Compatibility shim for the canonical brief render contracts in [`../../types/brief.ts`](../../types/brief.ts). It preserves the old import path for email-specific modules and tests.
 
 - [`shared.ts`](./shared.ts)
   Cross-cutting render helpers and shared presentation primitives: colors, typography, cards, pills, stat grids, weather/moon icons, and a few general formatting helpers.
@@ -25,6 +25,9 @@ The public entrypoint is still [`../format-email.ts`](../format-email.ts). That 
   Renders the internal debug email from `DebugContext`, including the AI trace, long-range candidate table, kit advisory trace, and outdoor-comfort trace.
 
 ## Supporting files outside this folder
+
+- [`../../types/brief.ts`](../../types/brief.ts)
+  Canonical shared render contract: windows, day summaries, alternatives, and the renderer input payload used across email/site/Telegram.
 
 - [`../format-email.ts`](../format-email.ts)
   Public API and top-level composition. Keep this stable unless the external import path is intentionally changing.
