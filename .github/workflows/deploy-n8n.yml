@@ -93,9 +93,35 @@ jobs:
 
       - name: Verify no unsubstituted placeholders remain
         run: |
-          if grep -qE '__[A-Z_]+__' photography-weather-brief.json; then
+          missing=()
+          for placeholder in \
+            __GROQ_API_KEY__ \
+            __TELEGRAM_BOT_TOKEN__ \
+            __TELEGRAM_CHAT_ID__ \
+            __SENDGRID_API_KEY__ \
+            __EMAIL_FROM__ \
+            __PHOTO_WEATHER_EMAIL_TO__ \
+            __PHOTO_WEATHER_EMAIL_TO_2__ \
+            __PHOTO_WEATHER_DEBUG_EMAIL_TO__ \
+            __PHOTO_WEATHER_LAT__ \
+            __PHOTO_WEATHER_LON__ \
+            __PHOTO_WEATHER_LOCATION__ \
+            __PHOTO_WEATHER_TIMEZONE__ \
+            __PHOTO_WEATHER_ICAO__ \
+            __PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__ \
+            __SUNSETHUE_API_KEY__ \
+            __NASA_API_KEY__ \
+            __GEMINI_API_KEY__ \
+            __APERTURE_GITHUB_PAT__
+          do
+            if grep -qF "$placeholder" photography-weather-brief.json; then
+              missing+=("$placeholder")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
             echo "::error::Unsubstituted placeholders found:"
-            grep -oE '__[A-Z_]+__' photography-weather-brief.json | sort -u
+            printf '%s\n' "${missing[@]}"
             exit 1
           fi
 
