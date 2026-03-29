@@ -8,8 +8,10 @@ import {
   normalizeAiText,
   parseGroqResponse,
   resolveSpurSuggestion,
-  run,
   shouldReplaceAiText,
+} from '../../editorial/resolve-editorial.js';
+import {
+  run,
 } from './format-messages.adapter.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
 
