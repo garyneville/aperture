@@ -296,6 +296,61 @@ describe('session scoring foundation', () => {
     expect(result?.hourLabel).toBe('19:00');
   });
 
+  it('golden-hour bell-curve: broken cloud scores higher than clear sky or overcast', () => {
+    const broken = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ cloudTotalPct: 50, cloudLowPct: 15, cloudMidPct: 20, cloudHighPct: 15 })));
+    const clear  = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2 })));
+    const overcast = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ cloudTotalPct: 95, cloudLowPct: 40, cloudMidPct: 30, cloudHighPct: 25 })));
+
+    expect(broken.score).toBeGreaterThan(clear.score);
+    expect(broken.score).toBeGreaterThan(overcast.score);
+    expect(broken.reasons).toContain('Broken cloud cover can catch low-angle light well.');
+    expect(clear.warnings).toContain('Clear sky may lack the cloud texture needed for dramatic colour.');
+    expect(overcast.warnings).toContain('Featureless overcast may flatten the light.');
+  });
+
+  it('golden-hour azimuth penalty scales smoothly with occlusion risk', () => {
+    const low    = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ azimuthOcclusionRiskPct: 20, clearPathBonusPts: 4 })));
+    const medium = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ azimuthOcclusionRiskPct: 50, clearPathBonusPts: 0 })));
+    const high   = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({ azimuthOcclusionRiskPct: 80, clearPathBonusPts: -5 })));
+
+    expect(low.score).toBeGreaterThan(medium.score);
+    expect(medium.score).toBeGreaterThan(high.score);
+  });
+
+  it('storm bell-curve: moderate precip scores higher than dry or heavy rain', () => {
+    const moderate = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 45,
+      isGolden: true, windKph: 15,
+    })));
+    const dry = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 5,
+      isGolden: true, windKph: 15,
+    })));
+    const heavy = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 95,
+      isGolden: true, windKph: 15,
+    })));
+
+    expect(moderate.score).toBeGreaterThan(dry.score);
+    expect(moderate.score).toBeGreaterThan(heavy.score);
+    expect(moderate.reasons).toContain('Showery conditions could support rain shafts or fast-changing breaks.');
+  });
+
+  it('storm drama-cloud synergy peaks in partial cloud, not in full overcast', () => {
+    const partial = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82, cloudTotalPct: 60, precipProbabilityPct: 45,
+      isGolden: true, windKph: 18, crepuscularScore: 44,
+    })));
+    const overcast = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82, cloudTotalPct: 92, precipProbabilityPct: 45,
+      isGolden: true, windKph: 18, crepuscularScore: 44,
+    })));
+
+    expect(partial.score).toBeGreaterThan(overcast.score);
+    expect(partial.reasons).toContain('Partial cloud should let dramatic breaks develop rather than flatten the scene.');
+    expect(overcast.warnings).toContain('Dense overcast could flatten the scene before breaks appear.');
+  });
+
   it('summarizes per-session recommendations without duplicate session winners', () => {
     const summary = summarizeSessionRecommendations([
       deriveHourFeatures(makeHour({
