@@ -575,6 +575,69 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(result.debugContext.scores?.bestSession).toBeDefined();
   });
 
+  it('propagates azimuth scan risk into live session reasons and warnings', () => {
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-03-27T17:45:00Z'],
+          cloudcover: [55],
+          cloudcover_low: [20],
+          cloudcover_mid: [20],
+          cloudcover_high: [15],
+          visibility: [20000],
+          temperature_2m: [9],
+          relativehumidity_2m: [65],
+          dewpoint_2m: [4],
+          precipitation: [0],
+          windspeed_10m: [6],
+          windgusts_10m: [8],
+          cape: [400],
+          vapour_pressure_deficit: [0.7],
+          total_column_integrated_water_vapour: [11],
+        },
+        daily: {
+          sunrise: ['2026-03-27T05:52:00Z'],
+          sunset: ['2026-03-27T18:31:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-27T17:45:00Z'],
+          aerosol_optical_depth: [0.08],
+          dust: [0],
+          european_aqi: [12],
+          uv_index: [1],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-27T17:45:00Z'],
+          precipitation_probability: [10],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {
+        sunset: {
+          '2026-03-27T17:45:00Z': {
+            occlusionRisk: 18,
+            lowRisk: 12,
+            clearPathBonus: 8,
+          },
+        },
+      },
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
+    const goldenHour = result.debugContext.hourlyScoring[0]?.sessionScores?.find(score => score.session === 'golden-hour');
+
+    expect(goldenHour?.reasons).toContain('Low-angle light path looks relatively clear.');
+    expect(goldenHour?.warnings).not.toContain('Low-angle light may be blocked near the horizon.');
+  });
+
   it('propagates live CAPE into derived session features for storm selection', () => {
     const input: ScoreHoursInput = {
       lat: 53.8,

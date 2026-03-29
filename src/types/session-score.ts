@@ -39,6 +39,9 @@ export interface DerivedHourFeatures {
   isGolden: boolean;
   isBlue: boolean;
   tags: string[];
+  azimuthOcclusionRiskPct?: number | null;
+  azimuthLowCloudRiskPct?: number | null;
+  clearPathBonusPts?: number | null;
   boundaryLayerHeightM?: number | null;
   horizonGapPct?: number | null;
   seeingScore?: number | null;
