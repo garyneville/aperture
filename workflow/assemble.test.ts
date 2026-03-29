@@ -662,6 +662,12 @@ describe('workflow assembly', () => {
         todayHours: [],
         dailySummary: [],
         metarNote: '',
+        sessionRecommendation: {
+          primary: null,
+          runnerUps: [],
+          bySession: [],
+          hoursAnalyzed: 0,
+        },
         debugContext: expect.objectContaining({
           hourlyScoring: [],
           windows: [],

@@ -6,6 +6,8 @@ import type {
   SessionEvaluator,
   SessionHourSelection,
   SessionId,
+  SessionRecommendation,
+  SessionRecommendationSummary,
   SessionScore,
 } from '../types/session-score.js';
 
@@ -386,4 +388,26 @@ export function selectBestSessionAcrossHours(hours: DerivedHourFeatures[]): Sess
     if (!best) return candidate;
     return candidate.score > best.score ? candidate : best;
   }, null);
+}
+
+export function summarizeSessionRecommendations(hours: DerivedHourFeatures[]): SessionRecommendationSummary {
+  const bestBySession = new Map<SessionId, SessionRecommendation>();
+
+  for (const hour of hours) {
+    for (const score of evaluateBuiltInSessions(hour)) {
+      const candidate: SessionRecommendation = { ...score, hourLabel: hour.hourLabel };
+      const current = bestBySession.get(score.session);
+      if (!current || candidate.score > current.score) {
+        bestBySession.set(score.session, candidate);
+      }
+    }
+  }
+
+  const bySession = [...bestBySession.values()].sort((a, b) => b.score - a.score);
+  return {
+    primary: bySession[0] ?? null,
+    runnerUps: bySession.slice(1),
+    bySession,
+    hoursAnalyzed: hours.length,
+  };
 }

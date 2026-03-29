@@ -6,6 +6,7 @@ import {
   getBuiltInSessionEvaluators,
   selectBestBuiltInSession,
   selectBestSessionAcrossHours,
+  summarizeSessionRecommendations,
 } from './session-scoring.js';
 
 function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHourFeatureInput {
@@ -293,5 +294,53 @@ describe('session scoring foundation', () => {
 
     expect(result?.session).toBe('storm');
     expect(result?.hourLabel).toBe('19:00');
+  });
+
+  it('summarizes per-session recommendations without duplicate session winners', () => {
+    const summary = summarizeSessionRecommendations([
+      deriveHourFeatures(makeHour({
+        hourLabel: '06:00',
+        overallScore: 42,
+        dramaScore: 28,
+        clarityScore: 18,
+        mistScore: 80,
+        visibilityKm: 4,
+        humidityPct: 95,
+        temperatureC: 5,
+        dewPointC: 4,
+        windKph: 3,
+        isGolden: false,
+      })),
+      deriveHourFeatures(makeHour({
+        hourLabel: '19:00',
+        overallScore: 64,
+        dramaScore: 88,
+        clarityScore: 36,
+        mistScore: 10,
+        astroScore: 0,
+        crepuscularScore: 58,
+        cloudTotalPct: 74,
+        visibilityKm: 16,
+        aerosolOpticalDepth: 0.14,
+        precipProbabilityPct: 52,
+        humidityPct: 82,
+        windKph: 22,
+        gustKph: 34,
+        isGolden: true,
+        isBlue: false,
+        isNight: false,
+        azimuthOcclusionRiskPct: 20,
+        clearPathBonusPts: 8,
+        capeJkg: 1800,
+        lightningRisk: 28,
+        tags: ['dramatic sky', 'crepuscular rays'],
+      })),
+    ]);
+
+    expect(summary.primary?.session).toBe('storm');
+    expect(summary.primary?.hourLabel).toBe('19:00');
+    expect(summary.hoursAnalyzed).toBe(2);
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'mist', 'golden-hour', 'astro']);
+    expect(summary.runnerUps[0]?.session).toBe('mist');
   });
 });

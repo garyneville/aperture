@@ -573,6 +573,7 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session)).toEqual(['astro', 'mist', 'golden-hour', 'storm']);
     expect(result.debugContext.hourlyScoring[1]?.sessionScores?.some(score => score.session === 'mist')).toBe(true);
     expect(result.debugContext.scores?.bestSession).toBeDefined();
+    expect(result.sessionRecommendation.primary).toBeDefined();
   });
 
   it('propagates azimuth scan risk into live session reasons and warnings', () => {
@@ -636,6 +637,7 @@ describe('scoreAllDays session scoring foundation', () => {
 
     expect(goldenHour?.reasons).toContain('Low-angle light path looks relatively clear.');
     expect(goldenHour?.warnings).not.toContain('Low-angle light may be blocked near the horizon.');
+    expect(result.sessionRecommendation.bySession.some(entry => entry.session === 'golden-hour')).toBe(true);
   });
 
   it('propagates live CAPE into derived session features for storm selection', () => {
@@ -699,5 +701,7 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(hasStormLeader).toBe(true);
     expect(result.debugContext.scores?.bestSession?.session).toBe('storm');
     expect(result.debugContext.scores?.bestSession?.volatility).toBeGreaterThan(0);
+    expect(result.sessionRecommendation.primary?.session).toBe('storm');
+    expect(result.sessionRecommendation.runnerUps.every(entry => entry.session !== 'storm')).toBe(true);
   });
 });
