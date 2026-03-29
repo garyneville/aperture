@@ -24,28 +24,69 @@ function sweetSpotScore(
   return clamp(Math.round(((hardMax - value) / (hardMax - idealMax)) * 100));
 }
 
-function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+function spreadVolatility(features: DerivedHourFeatures): number | null {
+  if (features.ensembleCloudStdDevPct == null) return null;
+  return Math.round(features.ensembleCloudStdDevPct);
+}
+
+function confidenceFromSpread(
+  spread: number | null,
+  hardPass: boolean,
+  highCutoff: number,
+  mediumCutoff: number,
+): SessionConfidence {
   if (!hardPass) return 'low';
-  if (features.cloudTotalPct >= 25 && features.cloudTotalPct <= 75 && features.visibilityKm >= 15) {
-    return 'high';
-  }
-  return 'medium';
+  if (spread == null) return 'medium';
+  if (spread < highCutoff) return 'high';
+  if (spread < mediumCutoff) return 'medium';
+  return 'low';
+}
+
+function astroUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 8) return 0;
+  return clamp(Math.round((spread - 8) * 0.9), 0, 22);
+}
+
+function goldenHourUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 14) return 0;
+  return clamp(Math.round((spread - 14) * 0.45), 0, 10);
+}
+
+function mistUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 12) return 0;
+  return clamp(Math.round((spread - 12) * 0.55), 0, 12);
+}
+
+function stormVolatilityBonus(spread: number | null): number {
+  if (spread == null) return 0;
+  return Math.round(sweetSpotScore(spread, 8, 24, 0, 40) * 0.08);
+}
+
+function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const base = features.cloudTotalPct >= 25 && features.cloudTotalPct <= 75 && features.visibilityKm >= 15;
+  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 10, 24)
+    : confidenceFromSpread(spread, hardPass, 8, 18);
 }
 
 function astroConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
-  if (!hardPass) return 'low';
-  if (features.cloudTotalPct <= 15 && features.moonIlluminationPct <= 30 && features.transparencyScore >= 65) {
-    return 'high';
-  }
-  return 'medium';
+  const spread = spreadVolatility(features);
+  const base = features.cloudTotalPct <= 15 && features.moonIlluminationPct <= 30 && features.transparencyScore >= 65;
+  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 6, 14)
+    : confidenceFromSpread(spread, hardPass, 5, 10);
 }
 
 function mistConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
-  if (!hardPass) return 'low';
-  if (features.dewPointSpreadC <= 1.5 && features.humidityPct >= 92 && features.windKph <= 8) {
-    return 'high';
-  }
-  return 'medium';
+  const spread = spreadVolatility(features);
+  const base = features.dewPointSpreadC <= 1.5 && features.humidityPct >= 92 && features.windKph <= 8;
+  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 9, 18)
+    : confidenceFromSpread(spread, hardPass, 7, 15);
 }
 
 function completeScore(
@@ -54,6 +95,7 @@ function completeScore(
   hardPass: boolean,
   score: number,
   confidence: SessionConfidence,
+  volatility: number | null,
   reasons: string[],
   warnings: string[],
 ): SessionScore {
@@ -62,7 +104,7 @@ function completeScore(
     score: hardPass ? clamp(Math.round(score)) : 0,
     hardPass,
     confidence,
-    volatility: null,
+    volatility,
     reasons,
     warnings,
     requiredCapabilities,
@@ -113,6 +155,8 @@ const goldenHourEvaluator: SessionEvaluator = {
     const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.08, 0.18, 0.02, 0.35);
     const windPenalty = features.windKph > 30 ? 12 : features.windKph > 20 ? 6 : 0;
     const visibilityPenalty = features.visibilityKm < 8 ? 18 : features.visibilityKm < 15 ? 8 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = goldenHourUncertaintyPenalty(spread);
     const score =
       (features.overallScore * 0.35)
       + (features.dramaScore * 0.25)
@@ -120,7 +164,8 @@ const goldenHourEvaluator: SessionEvaluator = {
       + (cloudCanvas * 0.15)
       + (hazeSweetSpot * 0.1)
       - windPenalty
-      - visibilityPenalty;
+      - visibilityPenalty
+      - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
@@ -138,6 +183,7 @@ const goldenHourEvaluator: SessionEvaluator = {
       hardPass,
       score,
       goldenHourConfidence(features, hardPass),
+      spread,
       reasons,
       warnings,
     );
@@ -151,12 +197,15 @@ const astroEvaluator: SessionEvaluator = {
     const hardPass = features.isNight && features.cloudTotalPct <= 70;
     const moonPenalty = features.moonIlluminationPct > 70 ? 25 : features.moonIlluminationPct > 40 ? 12 : 0;
     const cloudPenalty = features.cloudTotalPct > 40 ? 16 : features.cloudTotalPct > 20 ? 8 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = astroUncertaintyPenalty(spread);
     const score =
       (features.astroScore * 0.6)
       + (features.transparencyScore * 0.25)
       + (Math.max(0, 100 - features.moonIlluminationPct) * 0.15)
       - moonPenalty
-      - cloudPenalty;
+      - cloudPenalty
+      - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
@@ -173,6 +222,7 @@ const astroEvaluator: SessionEvaluator = {
       hardPass,
       score,
       astroConfidence(features, hardPass),
+      spread,
       reasons,
       warnings,
     );
@@ -193,6 +243,8 @@ const mistEvaluator: SessionEvaluator = {
     const dewPointAlignment = clamp(Math.round(100 - (features.dewPointSpreadC * 18)));
     const windPenalty = features.windKph > 18 ? 14 : features.windKph > 10 ? 6 : 0;
     const rainPenalty = features.precipProbabilityPct > 75 ? 10 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = mistUncertaintyPenalty(spread);
     const score =
       (features.mistScore * 0.45)
       + (visibilitySweetSpot * 0.2)
@@ -200,7 +252,8 @@ const mistEvaluator: SessionEvaluator = {
       + (features.humidityPct * 0.15)
       + ((100 - Math.min(features.clarityScore, 100)) * 0.05)
       - windPenalty
-      - rainPenalty;
+      - rainPenalty
+      - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
@@ -217,6 +270,7 @@ const mistEvaluator: SessionEvaluator = {
       hardPass,
       score,
       mistConfidence(features, hardPass),
+      spread,
       reasons,
       warnings,
     );
@@ -234,6 +288,8 @@ const stormEvaluator: SessionEvaluator = {
     const lightningBoost = features.lightningRisk != null ? clamp(features.lightningRisk) : 0;
     const lowAngleBoost = features.isGolden || features.isBlue ? 16 : 0;
     const windPenalty = features.windKph > 45 ? 18 : features.windKph > 30 ? 8 : 0;
+    const spread = spreadVolatility(features);
+    const volatilityBonus = stormVolatilityBonus(spread);
     const score =
       (features.dramaScore * 0.45)
       + (features.crepuscularScore * 0.15)
@@ -242,6 +298,7 @@ const stormEvaluator: SessionEvaluator = {
       + (capeBoost * 0.1)
       + (lightningBoost * 0.05)
       + lowAngleBoost
+      + volatilityBonus
       - windPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
@@ -260,7 +317,8 @@ const stormEvaluator: SessionEvaluator = {
       STORM_CAPABILITIES,
       hardPass,
       score,
-      hardPass ? (features.dramaScore >= 70 || (features.capeJkg ?? 0) >= 1800 ? 'high' : 'medium') : 'low',
+      hardPass ? confidenceFromSpread(spread, hardPass, 10, 24) : 'low',
+      spread,
       reasons,
       warnings,
     );

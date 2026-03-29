@@ -90,6 +90,42 @@ describe('session scoring foundation', () => {
     expect(sessions[0]?.confidence).toBe('high');
   });
 
+  it('treats astro cloud spread as a confidence and score penalty', () => {
+    const stable = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isGolden: false,
+      isNight: true,
+      astroScore: 86,
+      cloudTotalPct: 9,
+      cloudLowPct: 4,
+      cloudMidPct: 5,
+      cloudHighPct: 6,
+      visibilityKm: 30,
+      humidityPct: 58,
+      aerosolOpticalDepth: 0.06,
+      moonIlluminationPct: 8,
+      ensembleCloudStdDevPct: 4,
+    })));
+    const volatile = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isGolden: false,
+      isNight: true,
+      astroScore: 86,
+      cloudTotalPct: 9,
+      cloudLowPct: 4,
+      cloudMidPct: 5,
+      cloudHighPct: 6,
+      visibilityKm: 30,
+      humidityPct: 58,
+      aerosolOpticalDepth: 0.06,
+      moonIlluminationPct: 8,
+      ensembleCloudStdDevPct: 22,
+    })));
+
+    expect(stable.confidence).toBe('high');
+    expect(volatile.confidence).toBe('low');
+    expect(volatile.volatility).toBe(22);
+    expect(volatile.score).toBeLessThan(stable.score);
+  });
+
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
     const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
       overallScore: 48,
@@ -144,6 +180,58 @@ describe('session scoring foundation', () => {
     expect(result?.session).toBe('storm');
     expect(result?.hardPass).toBe(true);
     expect(result?.reasons).toContain('Cloud structure and illumination already look storm-friendly.');
+  });
+
+  it('treats storm spread as volatility instead of a flat negative', () => {
+    const stable = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      overallScore: 52,
+      dramaScore: 72,
+      clarityScore: 34,
+      mistScore: 10,
+      astroScore: 0,
+      crepuscularScore: 36,
+      cloudTotalPct: 74,
+      visibilityKm: 16,
+      aerosolOpticalDepth: 0.14,
+      precipProbabilityPct: 52,
+      humidityPct: 82,
+      windKph: 22,
+      gustKph: 34,
+      isGolden: true,
+      isBlue: false,
+      isNight: false,
+      capeJkg: 1800,
+      lightningRisk: 28,
+      ensembleCloudStdDevPct: 4,
+      tags: ['dramatic sky', 'crepuscular rays'],
+    })));
+    const volatile = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      overallScore: 52,
+      dramaScore: 72,
+      clarityScore: 34,
+      mistScore: 10,
+      astroScore: 0,
+      crepuscularScore: 36,
+      cloudTotalPct: 74,
+      visibilityKm: 16,
+      aerosolOpticalDepth: 0.14,
+      precipProbabilityPct: 52,
+      humidityPct: 82,
+      windKph: 22,
+      gustKph: 34,
+      isGolden: true,
+      isBlue: false,
+      isNight: false,
+      capeJkg: 1800,
+      lightningRisk: 28,
+      ensembleCloudStdDevPct: 18,
+      tags: ['dramatic sky', 'crepuscular rays'],
+    })));
+
+    expect(stable.confidence).toBe('high');
+    expect(volatile.confidence).toBe('medium');
+    expect(volatile.volatility).toBe(18);
+    expect(volatile.score).toBeGreaterThan(stable.score);
   });
 
   it('can select the strongest session across multiple candidate hours', () => {

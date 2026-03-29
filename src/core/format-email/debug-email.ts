@@ -53,7 +53,8 @@ function sessionScoreSummary(hour: DebugContext['hourlyScoring'][number]): strin
     .map(score => {
       const confidence = displayDebugConfidence(score.confidence) || score.confidence;
       const gating = score.hardPass ? '' : ' gated';
-      return `${esc(displaySessionName(score.session))} ${esc(String(score.score))}/100${esc(gating)} (${esc(confidence)})`;
+      const volatility = score.volatility !== null && score.volatility !== undefined ? `, vol ${score.volatility}` : '';
+      return `${esc(displaySessionName(score.session))} ${esc(String(score.score))}/100${esc(gating)} (${esc(confidence)}${esc(volatility)})`;
     })
     .join('<br>');
 }
@@ -154,6 +155,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['Overall', scores ? `${scores.overall}/100` : null],
           ['Best session today', scores?.bestSession ? `${displaySessionName(scores.bestSession.session)} (${scores.bestSession.score}/100 at ${scores.bestSession.hour})` : null],
           ['Best session confidence', scores?.bestSession ? displayDebugConfidence(scores.bestSession.confidence) : null],
+          ['Best session volatility', scores?.bestSession?.volatility !== null && scores?.bestSession?.volatility !== undefined ? `${scores.bestSession.volatility}` : null],
           ['Certainty (daylight)', displayDebugConfidence(scores?.certainty)],
           ['Spread (daylight)', scores?.certaintySpread !== null && scores?.certaintySpread !== undefined ? `${scores.certaintySpread} pts` : null],
           ['Certainty (astro)', scores?.astroConfidence && scores.astroConfidence !== 'unknown' ? displayDebugConfidence(scores.astroConfidence) : null],

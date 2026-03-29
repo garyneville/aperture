@@ -55,7 +55,14 @@ describe('scoreAllDays moon timeline scoring', () => {
       },
       metarRaw: [],
       sunsetHue: [],
-      ensemble: { hourly: { time: [] } },
+      ensemble: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z', '2026-07-10T20:00:00Z'],
+          cloudcover_member01: [55, 60],
+          cloudcover_member02: [85, 78],
+          cloudcover_member03: [74, 72],
+        },
+      },
       azimuthByPhase: {},
     };
 
@@ -612,7 +619,14 @@ describe('scoreAllDays session scoring foundation', () => {
       },
       metarRaw: [],
       sunsetHue: [],
-      ensemble: { hourly: { time: [] } },
+      ensemble: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z', '2026-07-10T20:00:00Z'],
+          cloudcover_member01: [55, 60],
+          cloudcover_member02: [85, 78],
+          cloudcover_member03: [74, 72],
+        },
+      },
       azimuthByPhase: {},
     };
 
@@ -621,5 +635,6 @@ describe('scoreAllDays session scoring foundation', () => {
 
     expect(hasStormLeader).toBe(true);
     expect(result.debugContext.scores?.bestSession?.session).toBe('storm');
+    expect(result.debugContext.scores?.bestSession?.volatility).toBeGreaterThan(0);
   });
 });
