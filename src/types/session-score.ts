@@ -50,6 +50,8 @@ export interface DerivedHourFeatures {
   capeJkg?: number | null;
   verticalShearKts?: number | null;
   lightningRisk?: number | null;
+  ensembleCloudStdDevPct?: number | null;
+  ensembleCloudMeanPct?: number | null;
 }
 
 export interface SessionScore {

@@ -26,6 +26,7 @@ export interface DebugScores {
     hour: string;
     score: number;
     confidence: SessionConfidence;
+    volatility: number | null;
   };
 }
 
@@ -58,6 +59,7 @@ export interface DebugHourlySessionScore {
   score: number;
   hardPass: boolean;
   confidence: SessionConfidence;
+  volatility: number | null;
   reasons: string[];
   warnings: string[];
 }

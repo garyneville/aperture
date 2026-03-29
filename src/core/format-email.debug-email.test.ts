@@ -26,6 +26,7 @@ describe('formatDebugEmail', () => {
           hour: '19:00',
           score: 84,
           confidence: 'high',
+          volatility: 18,
         },
         certainty: 'medium',
         certaintySpread: 5,
@@ -48,8 +49,8 @@ describe('formatDebugEmail', () => {
         mist: 0,
         moon: { altitudeDeg: -2, illuminationPct: 8, azimuthDeg: null, isUp: false },
         sessionScores: [
-          { session: 'astro', score: 72, hardPass: true, confidence: 'high', reasons: ['Cloud cover is low enough for a plausible dark-sky run.'], warnings: [] },
-          { session: 'mist', score: 12, hardPass: false, confidence: 'low', reasons: [], warnings: ['Air looks quite clear for a dedicated mist session.'] },
+          { session: 'astro', score: 72, hardPass: true, confidence: 'high', volatility: 6, reasons: ['Cloud cover is low enough for a plausible dark-sky run.'], warnings: [] },
+          { session: 'mist', score: 12, hardPass: false, confidence: 'low', volatility: 6, reasons: [], warnings: ['Air looks quite clear for a dedicated mist session.'] },
         ],
         tags: ['astrophotography'],
       }],
@@ -119,6 +120,7 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Day scores and certainty');
     expect(html).toContain('Best session today');
     expect(html).toContain('Storm (84/100 at 19:00)');
+    expect(html).toContain('Best session volatility');
     expect(html).toContain('Certainty (daylight)');
     expect(html).toContain('Certainty (astro)');
     expect(html).toContain('Spread (daylight)');
@@ -143,8 +145,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('MAX_TOKENS');
     expect(html).toContain('Gemini response bytes');
     expect(html).toContain('Gemini truncation signal');
-    expect(html).toContain('Astro 72/100 (high)');
-    expect(html).toContain('Mist 12/100 gated (low)');
+    expect(html).toContain('Astro 72/100 (high, vol 6)');
+    expect(html).toContain('Mist 12/100 gated (low, vol 6)');
   });
 });
 

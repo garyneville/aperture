@@ -197,7 +197,7 @@ interface DateEntry { ts: string; i: number }
 
 interface EnsEntry { mean: number; stdDev: number }
 
-function toFeatureInputFromScoredHour(hour: ScoredHour): DerivedHourFeatureInput {
+function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | null): DerivedHourFeatureInput {
   return {
     hourLabel: hour.hour,
     overallScore: hour.score,
@@ -223,6 +223,8 @@ function toFeatureInputFromScoredHour(hour: ScoredHour): DerivedHourFeatureInput
     isGolden: hour.isGolden,
     isBlue: hour.isBlue,
     tags: hour.tags,
+    ensembleCloudStdDevPct: ensemble ? Math.round(ensemble.stdDev) : null,
+    ensembleCloudMeanPct: ensemble ? Math.round(ensemble.mean) : null,
   };
 }
 
@@ -558,6 +560,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         isBlue,
         tags,
         capeJkg: Math.round(cap),
+        ensembleCloudStdDevPct: ensIdx[ts] ? Math.round(ensIdx[ts]!.stdDev) : null,
+        ensembleCloudMeanPct: ensIdx[ts] ? Math.round(ensIdx[ts]!.mean) : null,
       };
 
       hours.push({
@@ -702,7 +706,11 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
-  const todayFeatures = todayHours.map(hour => deriveHourFeatures(featureInputsByTs[hour.ts] || toFeatureInputFromScoredHour(hour)));
+  const todayFeatures = todayHours.map(hour => {
+    const fallback = toFeatureInputFromScoredHour(hour, ensIdx[hour.ts] || null);
+    const captured = featureInputsByTs[hour.ts];
+    return deriveHourFeatures(captured ? { ...fallback, ...captured } : fallback);
+  });
 
   debugContext.hourlyScoring = todayHours.map((hour, index) => {
       const moonMetrics = getMoonMetrics(Date.parse(hour.ts), LAT, LON);
@@ -712,6 +720,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         score: score.score,
         hardPass: score.hardPass,
         confidence: score.confidence,
+        volatility: score.volatility,
         reasons: score.reasons,
         warnings: score.warnings,
       }));
@@ -747,6 +756,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       hour: bestSession.hourLabel,
       score: bestSession.score,
       confidence: bestSession.confidence,
+      volatility: bestSession.volatility,
     };
   }
 
