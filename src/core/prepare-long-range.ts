@@ -7,6 +7,7 @@ import {
   type Region,
 } from './long-range-locations.js';
 import type { SiteDarkness } from './site-darkness.js';
+import { DEFAULT_HOME_LOCATION, type HomeLocation } from '../types/home-location.js';
 
 export interface LongRangeLocationWithUrl {
   name: string;
@@ -32,10 +33,13 @@ const HOURLY_FIELDS = [
  * Returns long-range locations within the 4-hour drive limit,
  * each enriched with an Open-Meteo forecast URL and estimated drive time.
  */
-export function prepareLongRangeLocations(timezone: string): LongRangeLocationWithUrl[] {
+export function prepareLongRangeLocations(
+  timezone: string,
+  homeLocation: Pick<HomeLocation, 'lat' | 'lon'> = DEFAULT_HOME_LOCATION,
+): LongRangeLocationWithUrl[] {
   const tz = encodeURIComponent(timezone);
   return LONG_RANGE_LOCATIONS
-    .filter(isWithinDriveLimit)
+    .filter(loc => isWithinDriveLimit(loc, homeLocation))
     .map(loc => ({
       name: loc.name,
       lat: loc.lat,
@@ -45,7 +49,7 @@ export function prepareLongRangeLocations(timezone: string): LongRangeLocationWi
       tags: loc.tags,
       siteDarkness: loc.siteDarkness,
       darkSky: loc.darkSky,
-      driveMins: estimatedDriveMins(loc),
+      driveMins: estimatedDriveMins(loc, homeLocation),
       url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=1`,
     }));
 }

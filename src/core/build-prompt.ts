@@ -226,7 +226,7 @@ function buildAuroraNote(
       red: 'Storm-level activity',
     };
     const label = levelLabel[nearTerm.level] ?? nearTerm.level;
-    parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight at ~54°N.`);
+    parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight for ${homeLocation.name}.`);
   } else if (peakKpTonight !== null && peakKpTonight >= 5) {
     // Fall back to NOAA Kp when AuroraWatch UK is unavailable or green
     const localVisible = isAuroraLikelyVisibleAtLat(localLat, peakKpTonight);

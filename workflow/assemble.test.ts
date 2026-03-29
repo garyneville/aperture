@@ -53,7 +53,7 @@ describe('workflow assembly', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result).toHaveLength(8);
     expect(result[0]?.json?.name).toBe('Bolton Abbey');
-    expect(result[0]?.json?.leedsContext?.todayBestScore).toBe(61);
+    expect(result[0]?.json?.homeContext?.todayBestScore).toBe(61);
     expect(result[0]?.json?.url).toContain('timezone=Europe%2FLondon');
     expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
@@ -85,7 +85,7 @@ describe('workflow assembly', () => {
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(10);
     expect(result[0]?.json?.name).toBe('Pen-y-ghent');
-    expect(result[0]?.json?.leedsContext?.todayBestScore).toBe(42);
+    expect(result[0]?.json?.homeContext?.todayBestScore).toBe(42);
     expect(result[0]?.json?.url).toContain('forecast_days=1');
     expect(result[0]?.json?.url).not.toContain('__PHOTO_WEATHER_TIMEZONE__');
   });
@@ -193,7 +193,7 @@ describe('workflow assembly', () => {
             driveMins: 35,
             types: ['mist', 'atmospheric'],
             darkSky: false,
-            leedsContext: {
+            homeContext: {
               windows: [],
               dontBother: true,
               todayBestScore: 0,
@@ -216,7 +216,7 @@ describe('workflow assembly', () => {
             driveMins: 35,
             types: ['mist', 'atmospheric'],
             darkSky: false,
-            leedsContext: {
+            homeContext: {
               windows: [],
               dontBother: true,
               todayBestScore: 0,
@@ -311,7 +311,7 @@ describe('workflow assembly', () => {
             siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
             darkSky: true,
             driveMins: 120,
-            leedsContext: {
+            homeContext: {
               dailySummary: [{ headlineScore: 42 }],
             },
             hourly: {
@@ -347,7 +347,7 @@ describe('workflow assembly', () => {
             siteDarkness: { bortle: 2, siteDarknessScore: 88, source: 'test', lookupDate: '2026-03-16' },
             darkSky: true,
             driveMins: 120,
-            leedsContext: {
+            homeContext: {
               dailySummary: [{ headlineScore: 42 }],
             },
             hourly: {

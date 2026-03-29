@@ -439,7 +439,7 @@ describe('buildPrompt', () => {
         bestAstroHour: '22:00',
         isAstroWin: true,
         rank: 1,
-        deltaVsLeeds: 56,
+        deltaVsHome: 56,
         shown: true,
       }],
       now: new Date('2026-03-16T12:00:00Z'),
@@ -448,7 +448,7 @@ describe('buildPrompt', () => {
     expect(result.longRangeTop?.name).toBe('Kielder Forest');
     expect(result.longRangeCardLabel).toBe('Weekend opportunity');
     expect(result.darkSkyAlert?.name).toBe('Kielder Forest');
-    expect(result.longRangeDebugCandidates?.[0]?.deltaVsLeeds).toBe(56);
+    expect(result.longRangeDebugCandidates?.[0]?.deltaVsHome).toBe(56);
   });
 
   it('includes spurOfTheMoment schema key and location list in the dontBother prompt', () => {

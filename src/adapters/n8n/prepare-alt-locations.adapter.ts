@@ -3,7 +3,7 @@ import { getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {
-  const leedsContext = (() => {
+  const homeContext = (() => {
     try {
       return $input.first().json ?? {};
     } catch {
@@ -11,5 +11,5 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
   const locations = prepareAltLocations(getPhotoWeatherTimezone());
-  return locations.map(loc => ({ json: { ...loc, leedsContext } }));
+  return locations.map(loc => ({ json: { ...loc, homeContext } }));
 }

@@ -1,5 +1,5 @@
 import { scoreAllDays } from '../../core/score-hours.js';
-import { getPhotoWeatherLat, getPhotoWeatherLon } from '../../config.js';
+import { getPhotoWeatherLat, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 
 const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [], moonrise: [], moonset: [] } };
@@ -17,6 +17,7 @@ export function run({ $input }: N8nRuntime) {
   const result = scoreAllDays({
     lat: getPhotoWeatherLat(),
     lon: getPhotoWeatherLon(),
+    timezone: getPhotoWeatherTimezone(),
     weather: input.weather ?? EMPTY_WEATHER,
     airQuality: input.airQuality ?? EMPTY_HOURLY,
     metarRaw: input.metarRaw ?? [],

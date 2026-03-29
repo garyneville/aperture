@@ -184,7 +184,7 @@ describe('scoreAlternatives snow data extraction', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(10),
+      homeContext: makeLeedsContext(10),
     });
 
     // Mam Tor should appear (good conditions, low Leeds score)
@@ -213,7 +213,7 @@ describe('scoreAlternatives snow data extraction', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(10),
+      homeContext: makeLeedsContext(10),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
@@ -229,7 +229,7 @@ describe('scoreAlternatives snow data extraction', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(10),
+      homeContext: makeLeedsContext(10),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
@@ -248,7 +248,7 @@ describe('scoreAlternatives snow data extraction', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(10),
+      homeContext: makeLeedsContext(10),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
@@ -271,7 +271,7 @@ describe('scoreAlternatives elevation propagation', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(5),
+      homeContext: makeLeedsContext(5),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
@@ -288,7 +288,7 @@ describe('scoreAlternatives elevation propagation', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [boltonAbbeyMeta],
-      leedsContext: makeLeedsContext(5),
+      homeContext: makeLeedsContext(5),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Bolton Abbey');
@@ -310,7 +310,7 @@ describe('scoreAlternatives astro-hour clamping', () => {
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [mamTorMeta],
-      leedsContext: makeLeedsContext(5),
+      homeContext: makeLeedsContext(5),
     });
 
     const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
@@ -332,7 +332,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [boltonAbbeyMeta],
-      leedsContext: makeLeedsContext(5),
+      homeContext: makeLeedsContext(5),
     });
 
     const debug = result.debugContext.nearbyAlternatives?.find(a => a.name === 'Bolton Abbey');
@@ -347,7 +347,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [boltonAbbeyMeta],
-      leedsContext: makeLeedsContext(95), // Leeds dominates
+      homeContext: makeLeedsContext(95), // Leeds dominates
     });
 
     expect(result.altLocations).toHaveLength(0);
@@ -360,7 +360,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     expect(() => scoreAlternatives({
       altWeatherData: [{}],
       altLocationMeta: [boltonAbbeyMeta],
-      leedsContext: makeLeedsContext(10),
+      homeContext: makeLeedsContext(10),
     })).not.toThrow();
   });
 
@@ -374,7 +374,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const baseline = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [malhamMeta],
-      leedsContext: makeLeedsContext(0),
+      homeContext: makeLeedsContext(0),
     });
     const malhamScore = baseline.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove')?.bestScore;
     expect(typeof malhamScore).toBe('number');
@@ -382,7 +382,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const result = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [malhamMeta],
-      leedsContext: makeLeedsContext((malhamScore as number) - 8),
+      homeContext: makeLeedsContext((malhamScore as number) - 8),
     });
 
     const debug = result.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove');
@@ -403,7 +403,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const baseline = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [malhamMeta],
-      leedsContext: makeLeedsContext(0),
+      homeContext: makeLeedsContext(0),
     });
     const malhamScore = baseline.debugContext.nearbyAlternatives?.find(a => a.name === 'Malham Cove')?.bestScore;
     expect(typeof malhamScore).toBe('number');
@@ -423,7 +423,7 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     const result = scoreAlternatives({
       altWeatherData: [weather, weather],
       altLocationMeta: [malhamMeta, boltonAbbeyMeta],
-      leedsContext: {
+      homeContext: {
         ...makeLeedsContext(malhamScore as number),
         debugContext,
       },

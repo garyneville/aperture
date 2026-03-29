@@ -10,29 +10,29 @@ export function run({ $input }: N8nRuntime) {
     }
   })();
 
-  const altWeatherData = mergedItems.map(({ name: _name, lat: _lat, lon: _lon, driveMins: _driveMins, types: _types, siteDarkness: _siteDarkness, darkSky: _darkSky, elevationM: _elevationM, isUpland: _isUpland, mwisArea: _mwisArea, url: _url, leedsContext: _leedsContext, ...weather }) => weather);
+  const altWeatherData = mergedItems.map(({ name: _name, lat: _lat, lon: _lon, driveMins: _driveMins, types: _types, siteDarkness: _siteDarkness, darkSky: _darkSky, elevationM: _elevationM, isUpland: _isUpland, mwisArea: _mwisArea, url: _url, homeContext: _homeContext, ...weather }) => weather);
   const altLocationMeta = mergedItems.map(({ name, lat, lon, driveMins, types, siteDarkness, darkSky, elevationM, isUpland, mwisArea }) => ({ name, lat, lon, driveMins, types, siteDarkness, darkSky, elevationM: elevationM ?? 0, isUpland: isUpland ?? false, mwisArea: mwisArea ?? null }));
-  const leedsContext = mergedItems[0]?.leedsContext ?? {};
+  const homeContext = mergedItems[0]?.homeContext ?? {};
 
   const result = scoreAlternatives({
     altWeatherData,
     altLocationMeta,
-    leedsContext,
+    homeContext,
   });
 
   return [{ json: {
     altLocations: result.altLocations,
     closeContenders: result.closeContenders,
     noAltsMsg: result.noAltsMsg,
-    windows: leedsContext.windows,
-    dontBother: leedsContext.dontBother,
-    todayBestScore: leedsContext.todayBestScore,
-    todayCarWash: leedsContext.todayCarWash,
+    windows: homeContext.windows,
+    dontBother: homeContext.dontBother,
+    todayBestScore: homeContext.todayBestScore,
+    todayCarWash: homeContext.todayCarWash,
     dailySummary: result.augmentedSummary,
-    metarNote: leedsContext.metarNote,
-    sunrise: leedsContext.sunrise,
-    sunset: leedsContext.sunset,
-    moonPct: leedsContext.moonPct,
+    metarNote: homeContext.metarNote,
+    sunrise: homeContext.sunrise,
+    sunset: homeContext.sunset,
+    moonPct: homeContext.moonPct,
     debugContext: result.debugContext,
   } }];
 }

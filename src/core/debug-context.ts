@@ -68,7 +68,7 @@ export interface DebugNearbyAlternative {
   bortle: number;
   darknessScore: number;
   darknessDelta: number;
-  /** Delta vs Leeds overall/headline score (used for filtering — must beat Leeds by 8+ pts). */
+  /** Delta vs the home overall/headline score (used for filtering — must beat home by 8+ pts). */
   weatherDelta: number;
   /** Delta vs the selected local window peak (same baseline used in AI/fallback editorial text). */
   deltaVsWindowPeak: number | null;
@@ -132,7 +132,7 @@ export interface DebugLongRangeCandidate {
   driveMins: number;
   darkSky: boolean;
   rank: number;
-  deltaVsLeeds: number;
+  deltaVsHome: number;
   shown: boolean;
   discardedReason?: string;
 }

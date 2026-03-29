@@ -116,7 +116,7 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Window selection trace');
     expect(html).toContain('Hourly astro scoring');
     expect(html).toContain('Nearby alternatives');
-    expect(html).toContain('Δ vs Leeds');
+    expect(html).toContain('Δ vs Home');
     expect(html).toContain('Δ vs window');
     expect(html).toContain('AI editorial trace');
     expect(html).toContain('debug@example.com');
@@ -166,8 +166,8 @@ describe('formatDebugEmail — new debug sections', () => {
     const html = formatDebugEmail({
       ...baseDebugContext,
       longRangeCandidates: [
-        { name: 'Kielder Forest', region: 'northumberland', tags: ['dark-sky', 'forest'], bestScore: 91, dayScore: 40, astroScore: 91, driveMins: 120, darkSky: true, rank: 1, deltaVsLeeds: 31, shown: true },
-        { name: 'Whernside', region: 'yorkshire-dales', tags: ['moorland'], bestScore: 79, dayScore: 79, astroScore: 30, driveMins: 55, darkSky: false, rank: 2, deltaVsLeeds: 19, shown: false, discardedReason: 'eligible pool candidate behind Kielder Forest' },
+        { name: 'Kielder Forest', region: 'northumberland', tags: ['dark-sky', 'forest'], bestScore: 91, dayScore: 40, astroScore: 91, driveMins: 120, darkSky: true, rank: 1, deltaVsHome: 31, shown: true },
+        { name: 'Whernside', region: 'yorkshire-dales', tags: ['moorland'], bestScore: 79, dayScore: 79, astroScore: 30, driveMins: 55, darkSky: false, rank: 2, deltaVsHome: 19, shown: false, discardedReason: 'eligible pool candidate behind Kielder Forest' },
       ],
     });
     expect(html).toContain('Long-range pool');
@@ -191,7 +191,7 @@ describe('formatDebugEmail — new debug sections', () => {
           driveMins: 95,
           darkSky: true,
           rank: 1,
-          deltaVsLeeds: 6,
+          deltaVsHome: 6,
           shown: false,
           discardedReason: 'score below threshold (48 < 50)',
         },
@@ -205,7 +205,7 @@ describe('formatDebugEmail — new debug sections', () => {
           driveMins: 120,
           darkSky: true,
           rank: 2,
-          deltaVsLeeds: 8,
+          deltaVsHome: 8,
           shown: false,
           discardedReason: 'does not beat Leeds by 10 points (54 vs 46)',
         },

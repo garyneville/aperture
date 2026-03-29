@@ -28,7 +28,11 @@ function normaliseLongRangeCandidate(candidate: Record<string, unknown>, rank: n
     driveMins: typeof candidate.driveMins === 'number' ? candidate.driveMins : 0,
     darkSky: candidate.darkSky === true,
     rank,
-    deltaVsLeeds: typeof candidate.deltaVsLeeds === 'number' ? candidate.deltaVsLeeds : 0,
+    deltaVsHome: typeof candidate.deltaVsHome === 'number'
+      ? candidate.deltaVsHome
+      : typeof candidate.deltaVsLeeds === 'number'
+        ? candidate.deltaVsLeeds
+        : 0,
     shown: candidate.shown === true,
     discardedReason: typeof candidate.discardedReason === 'string' ? candidate.discardedReason : undefined,
   };

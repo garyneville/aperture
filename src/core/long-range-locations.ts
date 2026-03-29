@@ -1,3 +1,4 @@
+import { DEFAULT_HOME_LOCATION, type HomeLocation } from '../types/home-location.js';
 import { isDarkSkySite, siteDarknessFromBortle, type SiteDarkness } from './site-darkness.js';
 
 export interface LongRangeLocation {
@@ -35,12 +36,11 @@ export const REGION_DRIVE_FACTORS: Record<Region, number> = {
   'scottish-borders':  0.75,
 };
 
-/** Leeds coordinates for distance calculation. */
-const LEEDS_LAT = 53.82703;
-const LEEDS_LON = -1.570755;
 const EARTH_RADIUS_KM = 6371;
 const MAX_DRIVE_HOURS = 4;
 const AVG_SPEED_KMH = 80;
+
+type DriveOrigin = Pick<HomeLocation, 'lat' | 'lon'>;
 
 /** Haversine straight-line distance in km. */
 export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -51,17 +51,17 @@ export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: numb
   return EARTH_RADIUS_KM * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-/** Estimated drive time in minutes from Leeds, applying regional correction. */
-export function estimatedDriveMins(loc: LongRangeLocation): number {
-  const straightKm = haversineKm(LEEDS_LAT, LEEDS_LON, loc.lat, loc.lon);
+/** Estimated drive time in minutes from the chosen home location, applying regional correction. */
+export function estimatedDriveMins(loc: LongRangeLocation, origin: DriveOrigin = DEFAULT_HOME_LOCATION): number {
+  const straightKm = haversineKm(origin.lat, origin.lon, loc.lat, loc.lon);
   const factor = REGION_DRIVE_FACTORS[loc.region];
   const effectiveSpeedKmh = AVG_SPEED_KMH * factor;
   return Math.round((straightKm / effectiveSpeedKmh) * 60);
 }
 
 /** Returns true if estimated drive is within the 4-hour limit. */
-export function isWithinDriveLimit(loc: LongRangeLocation): boolean {
-  return estimatedDriveMins(loc) <= MAX_DRIVE_HOURS * 60;
+export function isWithinDriveLimit(loc: LongRangeLocation, origin: DriveOrigin = DEFAULT_HOME_LOCATION): boolean {
+  return estimatedDriveMins(loc, origin) <= MAX_DRIVE_HOURS * 60;
 }
 
 function defineLongRangeLocation(
