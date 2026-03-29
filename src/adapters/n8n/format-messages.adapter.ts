@@ -8,6 +8,12 @@ import {
 import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
 import type { SpurOfTheMomentSuggestion } from '../../core/format-email.js';
 import {
+  buildWindowDisplayPlan,
+  getRunTimeContext,
+  timeAwareBriefingFallback,
+  windowRange,
+} from '../../core/format-email/time-aware.js';
+import {
   emptyDebugContext,
   type DebugAiCheck,
   type DebugContext,
@@ -109,6 +115,43 @@ function peakWindowHour(window: WindowLike | undefined): WindowHourLike | null {
   return hours.find(hour => hour.score === window?.peak) || hours[0] || null;
 }
 
+type ValidationWindowContext = {
+  originalPrimaryWindow: WindowLike | null;
+  referenceWindow: WindowLike | null;
+  promotedFromPast: boolean;
+};
+
+function getValidationWindowContext(ctx: BriefContext): ValidationWindowContext {
+  const originalPrimaryWindow = ctx.windows?.[0] || null;
+  const generatedAt = ctx.debugContext?.metadata?.generatedAt;
+  if (!originalPrimaryWindow || !generatedAt || !ctx.windows?.length) {
+    return {
+      originalPrimaryWindow,
+      referenceWindow: originalPrimaryWindow,
+      promotedFromPast: false,
+    };
+  }
+
+  const displayPlan = buildWindowDisplayPlan(
+    ctx.windows as Parameters<typeof buildWindowDisplayPlan>[0],
+    getRunTimeContext(ctx.debugContext).nowMinutes,
+  );
+  return {
+    originalPrimaryWindow,
+    referenceWindow: (displayPlan.promotedFromPast ? displayPlan.primary : originalPrimaryWindow) as WindowLike | null,
+    promotedFromPast: displayPlan.promotedFromPast,
+  };
+}
+
+function windowReferenceFragments(window: WindowLike | null | undefined): string[] {
+  if (!window?.label || !window.start || !window.end) return [];
+  return [
+    window.label.toLowerCase(),
+    windowRange(window as { start: string; end: string }).toLowerCase(),
+    `${window.start} to ${window.end}`.toLowerCase(),
+  ];
+}
+
 export function normalizeAiText(text: string): string {
   const decimalFixed = text.replace(/(\d)\.\s+(\d)/g, '$1.$2');
   const cleaned = decimalFixed.replace(/\s+/g, ' ').trim();
@@ -129,9 +172,9 @@ export function normalizeAiText(text: string): string {
 }
 
 export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
-  const topWindow = ctx.windows?.[0];
+  const { referenceWindow: topWindow } = getValidationWindowContext(ctx);
   const topAlt = ctx.altLocations?.[0];
-  const peakHour = peakWindowHour(topWindow);
+  const peakHour = peakWindowHour(topWindow || undefined);
   const today = ctx.dailySummary?.[0];
   const SCORE_TOLERANCE = 5;
   const rulesTriggered: string[] = [];
@@ -220,7 +263,7 @@ export function isFactuallyIncoherentEditorial(aiText: string, ctx: BriefContext
 
 export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiCheck {
   const rulesTriggered: string[] = [];
-  const topWindow = ctx.windows?.[0];
+  const { referenceWindow: topWindow } = getValidationWindowContext(ctx);
   const sentences = splitAiSentences(aiText);
 
   if (!aiText || aiText === '(No AI summary)') {
@@ -237,11 +280,8 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
   }
 
   const lower = aiText.toLowerCase();
-  const mentionsWindow = [
-    topWindow.label?.toLowerCase(),
-    topWindow.start && topWindow.end ? `${topWindow.start}-${topWindow.end}`.toLowerCase() : '',
-    topWindow.start && topWindow.end ? `${topWindow.start} to ${topWindow.end}`.toLowerCase() : '',
-  ].filter((fragment): fragment is string => Boolean(fragment)).some(fragment => lower.includes(fragment));
+  const mentionsWindow = windowReferenceFragments(topWindow)
+    .some(fragment => lower.includes(fragment));
 
   const addsInsight = [
     'because',
@@ -276,6 +316,9 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'fallback',
     'not worth',
     'alternative',
+    'earlier today',
+    'already passed',
+    'remaining local option',
   ].some(fragment => lower.includes(fragment));
 
   if (isSingleSentenceCardRestatement(aiText, ctx)) {
@@ -304,6 +347,15 @@ export function shouldReplaceAiText(aiText: string, ctx: BriefContext): boolean 
 }
 
 export function buildFallbackAiText(ctx: BriefContext): string {
+  const generatedAt = ctx.debugContext?.metadata?.generatedAt;
+  if (generatedAt && ctx.windows?.length) {
+    const displayPlan = buildWindowDisplayPlan(
+      ctx.windows as Parameters<typeof buildWindowDisplayPlan>[0],
+      getRunTimeContext(ctx.debugContext).nowMinutes,
+    );
+    const timeAwareFallback = timeAwareBriefingFallback(displayPlan);
+    if (timeAwareFallback) return timeAwareFallback;
+  }
   return buildSharedFallbackAiText(ctx);
 }
 
@@ -386,6 +438,7 @@ type EditorialCandidate = {
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;
   passed: boolean;
+  reusableComponents: boolean;
 };
 
 function buildEditorialCandidate(
@@ -412,6 +465,7 @@ function buildEditorialCandidate(
     factualCheck,
     editorialCheck,
     passed: factualCheck.passed && editorialCheck.passed,
+    reusableComponents: factualCheck.passed,
   };
 }
 
@@ -426,6 +480,7 @@ export function chooseEditorialCandidate(
   primaryCandidate: EditorialCandidate | null;
   secondaryCandidate: EditorialCandidate | null;
   selectedCandidate: EditorialCandidate | null;
+  componentCandidate: EditorialCandidate | null;
   fallbackUsed: boolean;
 } {
   const candidates: Record<EditorialProvider, EditorialCandidate | null> = {
@@ -441,6 +496,12 @@ export function chooseEditorialCandidate(
     : secondaryCandidate?.passed
       ? secondaryCandidate
       : null;
+  const componentCandidate = selectedCandidate
+    || (primaryCandidate?.reusableComponents
+      ? primaryCandidate
+      : secondaryCandidate?.reusableComponents
+        ? secondaryCandidate
+        : null);
 
   return {
     primaryProvider: preferredProvider,
@@ -448,6 +509,7 @@ export function chooseEditorialCandidate(
     primaryCandidate,
     secondaryCandidate,
     selectedCandidate,
+    componentCandidate,
     fallbackUsed: selectedCandidate === null,
   };
 }
@@ -518,7 +580,7 @@ function compositionSpecificityScore(bullet: string, ctx: BriefContext): number 
 }
 
 function fallbackCompositionBullets(ctx: BriefContext): string[] {
-  const topWindow = ctx.windows?.[0];
+  const { referenceWindow: topWindow } = getValidationWindowContext(ctx);
   if (!topWindow) return [];
 
   const peakHour = topWindow.hours?.find(hour => hour.score === topWindow.peak)?.hour
@@ -805,9 +867,35 @@ export function run({ $input }: N8nRuntime) {
       return {};
     }
   })();
-  const { choices, geminiResponse, geminiInspire, ...ctx } = input;
+  const {
+    choices,
+    geminiResponse,
+    geminiInspire,
+    geminiStatusCode,
+    geminiFinishReason,
+    geminiCandidateCount,
+    geminiResponseByteLength,
+    geminiResponseTruncated,
+    ...ctx
+  } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const geminiRawContent = typeof geminiResponse === 'string' ? geminiResponse.trim() : '';
+  const geminiDiagnostics = (
+    geminiRawContent
+    || typeof geminiStatusCode === 'number'
+    || (typeof geminiFinishReason === 'string' && geminiFinishReason.trim().length > 0)
+    || typeof geminiCandidateCount === 'number'
+    || typeof geminiResponseByteLength === 'number'
+    || typeof geminiResponseTruncated === 'boolean'
+  )
+    ? {
+        statusCode: typeof geminiStatusCode === 'number' && Number.isFinite(geminiStatusCode) ? geminiStatusCode : null,
+        finishReason: typeof geminiFinishReason === 'string' && geminiFinishReason.trim().length > 0 ? geminiFinishReason.trim() : null,
+        candidateCount: typeof geminiCandidateCount === 'number' && Number.isFinite(geminiCandidateCount) ? geminiCandidateCount : null,
+        responseByteLength: typeof geminiResponseByteLength === 'number' && Number.isFinite(geminiResponseByteLength) ? geminiResponseByteLength : null,
+        truncated: geminiResponseTruncated === true,
+      }
+    : undefined;
   const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
     ? ctx.longRangeDebugCandidates
     : Array.isArray(ctx.longRangeCandidates)
@@ -823,14 +911,15 @@ export function run({ $input }: N8nRuntime) {
     rawContent,
     geminiRawContent,
   );
-  const activeCandidate = editorialChoice.selectedCandidate;
-  const traceCandidate = activeCandidate || editorialChoice.primaryCandidate || editorialChoice.secondaryCandidate;
-  const spurOfTheMoment = resolveSpurSuggestion(activeCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]);
-  const aiText = activeCandidate
-    ? activeCandidate.normalizedAiText
+  const editorialCandidate = editorialChoice.selectedCandidate;
+  const componentCandidate = editorialChoice.componentCandidate;
+  const traceCandidate = editorialCandidate || componentCandidate || editorialChoice.primaryCandidate || editorialChoice.secondaryCandidate;
+  const spurOfTheMoment = resolveSpurSuggestion(componentCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]);
+  const aiText = editorialCandidate
+    ? editorialCandidate.normalizedAiText
     : buildFallbackAiText(ctx);
-  const resolvedWeekStandout = validateWeekInsight(activeCandidate?.weekInsight || '', ctx.dailySummary);
-  const safeCompositionBullets = filterCompositionBullets(activeCandidate?.compositionBullets || [], ctx);
+  const resolvedWeekStandout = validateWeekInsight(componentCandidate?.weekInsight || '', ctx.dailySummary);
+  const safeCompositionBullets = filterCompositionBullets(componentCandidate?.compositionBullets || [], ctx);
 
   const debugContext = ctx.debugContext || emptyDebugContext();
   const debugMode = ctx.debugMode === true;
@@ -863,19 +952,20 @@ export function run({ $input }: N8nRuntime) {
     selectedProvider: editorialChoice.selectedProvider,
     rawGroqResponse: rawContent,
     rawGeminiResponse: geminiRawContent || undefined,
+    geminiDiagnostics,
     normalizedAiText: traceCandidate?.normalizedAiText || '',
     factualCheck: traceCandidate?.factualCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
     editorialCheck: traceCandidate?.editorialCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
     spurSuggestion: {
-      raw: activeCandidate?.spurRaw ? `${activeCandidate.spurRaw.locationName} (${activeCandidate.spurRaw.confidence})` : null,
-      confidence: activeCandidate?.spurRaw?.confidence ?? null,
+      raw: componentCandidate?.spurRaw ? `${componentCandidate.spurRaw.locationName} (${componentCandidate.spurRaw.confidence})` : null,
+      confidence: componentCandidate?.spurRaw?.confidence ?? null,
       resolved: spurOfTheMoment?.locationName || null,
-      dropped: Boolean(activeCandidate?.spurRaw) && !spurOfTheMoment,
-      dropReason: resolveSpurDropReason(activeCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]),
+      dropped: Boolean(componentCandidate?.spurRaw) && !spurOfTheMoment,
+      dropReason: resolveSpurDropReason(componentCandidate?.spurRaw || null, nearbyAltNames, longRangeDebugPool as LongRangeSpurCandidate[]),
     },
     weekStandout: {
-      parseStatus: activeCandidate?.weekStandoutParseStatus || 'absent',
-      rawValue: activeCandidate?.weekStandoutRawValue || null,
+      parseStatus: componentCandidate?.weekStandoutParseStatus || 'absent',
+      rawValue: componentCandidate?.weekStandoutRawValue || null,
       used: resolvedWeekStandout.usedRaw,
       decision: resolvedWeekStandout.decision,
       finalValue: resolvedWeekStandout.text || null,

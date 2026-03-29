@@ -154,6 +154,47 @@ describe('scoreLongRange', () => {
     }
   });
 
+  it('does not label midsummer candidates as astro-led when no astronomical darkness occurs', () => {
+    const times: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      times.push(`2026-06-15T${String(h).padStart(2, '0')}:00`);
+    }
+    const fill = (val: number) => new Array(24).fill(val);
+    const midsummerWeather: AltWeatherData = {
+      hourly: {
+        time: times,
+        cloudcover: fill(20),
+        cloudcover_low: fill(10),
+        cloudcover_mid: fill(20),
+        cloudcover_high: fill(40),
+        visibility: fill(40000),
+        precipitation_probability: fill(0),
+        precipitation: fill(0),
+        windspeed_10m: fill(5),
+        windgusts_10m: fill(10),
+        relativehumidity_2m: fill(55),
+        temperature_2m: fill(8),
+        dewpoint_2m: fill(3),
+        total_column_integrated_water_vapour: fill(10),
+      },
+      daily: {
+        sunrise: ['2026-06-15T04:30:00'],
+        sunset: ['2026-06-15T21:30:00'],
+      },
+    };
+
+    const result = scoreLongRange({
+      longRangeWeatherData: [midsummerWeather],
+      longRangeMeta: [baseMeta],
+      leedsHeadlineScore: 30,
+      isWeekday: false,
+    });
+
+    expect(result.longRangeTop).not.toBeNull();
+    expect(result.longRangeTop?.bestAstroHour).toBeNull();
+    expect(result.longRangeTop?.isAstroWin).toBe(false);
+  });
+
   it('does not show card when delta is below threshold even with decent score', () => {
     const excellentWeather = makeWeatherData({
       cloudcover: 15,

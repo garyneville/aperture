@@ -1,4 +1,4 @@
-import { getMoonMetrics, moonScoreAdjustment } from './astro.js';
+import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltLocation } from './prepare-alt-locations.js';
@@ -144,6 +144,7 @@ export interface ScoreAlternativesOutput {
 
 const DAY_THRESHOLD = 58;
 const ASTRO_THRESHOLD = 60;
+const ASTRO_DARK_ELEVATION = -18;
 
 /* ------------------------------------------------------------------ */
 /*  Per-location scoring                                              */
@@ -280,7 +281,7 @@ function scoreLoc(wData: AltWeatherData, loc: AltLocation): LocDayScore[] {
         if (isGoldPm || (t > goldPmE && t <= bluePmE)) pmScore = Math.max(pmScore, score);
       }
 
-    if (isNight) {
+      if (isNight && getSolarAltitude(+t, loc.lat, loc.lon) < ASTRO_DARK_ELEVATION) {
         const moonMetrics = getMoonMetrics(+t, loc.lat, loc.lon);
         let astro = 0;
         astro += moonScoreAdjustment(moonMetrics);

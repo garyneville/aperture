@@ -80,6 +80,14 @@ export interface DebugAiCheck {
   rulesTriggered: string[];
 }
 
+export interface DebugGeminiDiagnostics {
+  statusCode: number | null;
+  finishReason: string | null;
+  candidateCount: number | null;
+  responseByteLength: number | null;
+  truncated: boolean;
+}
+
 export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
 export type WeekStandoutDecision = 'raw-used' | 'fallback-used' | 'omitted';
 
@@ -97,6 +105,7 @@ export interface DebugAiTrace {
   selectedProvider?: 'groq' | 'gemini' | 'template';
   rawGroqResponse: string;
   rawGeminiResponse?: string;
+  geminiDiagnostics?: DebugGeminiDiagnostics;
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;

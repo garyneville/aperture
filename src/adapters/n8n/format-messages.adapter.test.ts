@@ -114,6 +114,49 @@ describe('format-messages adapter editorial fallback', () => {
     expect(text).not.toContain('evening');
   });
 
+  it('switches fallback copy to the next upcoming window when the original primary window is already past', () => {
+    const eveningCtx = {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56 }],
+      }, {
+        label: 'Evening astro window',
+        start: '21:00',
+        end: '23:00',
+        peak: 48,
+        hours: [{ hour: '22:00', score: 48 }],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '22:00',
+        astroScore: 68,
+        bestAstroHour: '22:00',
+        darkSkyStartsAt: '21:00',
+      }],
+      altLocations: [],
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-18T19:16:00Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.55,
+          timezone: 'Europe/London',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+
+    const text = buildFallbackAiText(eveningCtx);
+    expect(text).toContain('Midnight astro window 00:00-04:00 was earlier today.');
+    expect(text).toContain('Evening astro window 21:00-23:00 is the best remaining local option.');
+    expect(text).not.toContain('The midnight astro window from 00:00-04:00 is the strongest local slot today.');
+  });
+
   it('forces fallback when a non-dontBother run has no chosen local window', () => {
     const noWindowCtx = {
       windows: [],
@@ -424,6 +467,83 @@ describe('chooseEditorialCandidate', () => {
     expect(choice.primaryCandidate?.passed).toBe(false);
     expect(choice.secondaryCandidate?.passed).toBe(true);
   });
+
+  it('validates against the next upcoming window when the original primary window has already passed', () => {
+    const pastWindowCtx = {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        tops: ['astrophotography'],
+        hours: [{ hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 }],
+      }, {
+        label: 'Evening astro window',
+        start: '21:00',
+        end: '23:00',
+        peak: 48,
+        tops: ['astrophotography'],
+        hours: [{ hour: '22:00', score: 48, ct: 12, visK: 10, aod: 0.14 }],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '22:00',
+        astroScore: 68,
+        bestAstroHour: '22:00',
+        darkSkyStartsAt: '21:00',
+      }],
+      peakKpTonight: 6.1,
+      altLocations: [],
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-18T19:16:00Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.55,
+          timezone: 'Europe/London',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+    const groqContent = JSON.stringify({
+      editorial: 'The midnight astro window was earlier today. The evening astro window from 21:00-23:00 is now the best remaining local option as darker skies settle in.',
+      composition: ['Keep a clean skyline ready for the darker second slot'],
+    });
+    const geminiContent = JSON.stringify({
+      editorial: 'The midnight astro window from 00:00-04:00 scores 56/100. Peak local time is around 03:00.',
+      composition: ['Wide-field constellation framing'],
+    });
+
+    const choice = chooseEditorialCandidate('groq', pastWindowCtx, groqContent, geminiContent);
+
+    expect(choice.selectedProvider).toBe('groq');
+    expect(choice.primaryCandidate?.passed).toBe(true);
+    expect(choice.primaryCandidate?.factualCheck.passed).toBe(true);
+    expect(choice.primaryCandidate?.editorialCheck.passed).toBe(true);
+  });
+
+  it('keeps reusable composition and spur data when only the editorial check fails', () => {
+    const groqContent = JSON.stringify({
+      editorial: 'Conditions stay clean tonight.',
+      composition: ['Frame the canal bridge under the clearest western sky'],
+      weekStandout: 'Wednesday is the standout day.',
+      spurOfTheMoment: {
+        locationName: 'Aysgarth Falls',
+        hookLine: 'Soft overcast and full flow make the falls worth the drive today.',
+        confidence: 0.8,
+      },
+    });
+
+    const choice = chooseEditorialCandidate('groq', ctx, groqContent, '');
+
+    expect(choice.selectedProvider).toBe('template');
+    expect(choice.selectedCandidate).toBeNull();
+    expect(choice.componentCandidate?.provider).toBe('groq');
+    expect(choice.componentCandidate?.compositionBullets).toEqual(['Frame the canal bridge under the clearest western sky']);
+    expect(choice.componentCandidate?.spurRaw?.locationName).toBe('Aysgarth Falls');
+  });
 });
 
 describe('parseGroqResponse — weekStandout parse status', () => {
@@ -728,6 +848,85 @@ describe('run — weekStandout validation', () => {
     expect(result.debugEmailHtml).toContain('present in raw response → used');
   });
 
+  it('keeps composition bullets and spur output when editorial text falls back to the template', () => {
+    const content = JSON.stringify({
+      editorial: 'Conditions stay clean tonight.',
+      composition: [
+        'Frame the canal bridge under the clearest western sky',
+        'Keep a low roofline below the darkest part of the slot',
+      ],
+      weekStandout: 'Wednesday is the standout day.',
+      spurOfTheMoment: {
+        locationName: 'Aysgarth Falls',
+        hookLine: 'Soft overcast and full flow make the falls worth the drive today.',
+        confidence: 0.8,
+      },
+    });
+
+    const result = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content } }],
+            dontBother: false,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [{
+              label: 'Evening astro window',
+              start: '19:00',
+              end: '21:00',
+              peak: 60,
+              tops: ['astrophotography'],
+              hours: [{ hour: '21:00', score: 60 }],
+            }],
+            dailySummary: [
+              makeDay('Today', 0, 60, 'high', 12),
+              makeDay('Tomorrow', 1, 55, 'medium', 15),
+              makeDay('Wednesday', 2, 70, 'medium', 16),
+            ],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 10,
+              pp: 10,
+              tmp: 8,
+            },
+            altLocations: [],
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            today: 'Monday 16 March',
+            todayBestScore: 60,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as {
+      emailHtml: string;
+      debugEmailHtml: string;
+    };
+
+    expect(result.emailHtml).toContain('Frame the canal bridge under the clearest western sky');
+    expect(result.emailHtml).toContain('Soft overcast and full flow make the falls worth the drive today.');
+    expect(result.debugEmailHtml).toContain('Editorial check:</span> Failed (editorial must contain two sentences');
+    expect(result.debugEmailHtml).toContain('does not reference the chosen local window');
+    expect(result.debugEmailHtml).toContain('Aysgarth Falls (0.8)');
+  });
+
   it('drops a spur suggestion when the location was already scored in the nearby alternatives pool', () => {
     const content = JSON.stringify({
       editorial: 'Leeds is not worth it today due to poor conditions. Consider Brimham Rocks instead.',
@@ -940,6 +1139,11 @@ describe('run — model fallback reporting (#222)', () => {
           json: {
             choices: [{ message: { content: groqContent } }],
             geminiResponse: geminiContent,
+            geminiStatusCode: 200,
+            geminiFinishReason: 'MAX_TOKENS',
+            geminiCandidateCount: 1,
+            geminiResponseByteLength: 382,
+            geminiResponseTruncated: true,
             dontBother: false,
             debugMode: true,
             debugModeSource: 'debug recipient configured',
@@ -1000,5 +1204,8 @@ describe('run — model fallback reporting (#222)', () => {
     expect(result.debugEmailHtml).toContain('Model fallback');
     expect(result.debugEmailHtml).toContain('gemini failed, used groq');
     expect(result.debugEmailHtml).toContain('Hardcoded fallback');
+    expect(result.debugEmailHtml).toContain('Gemini HTTP status');
+    expect(result.debugEmailHtml).toContain('MAX_TOKENS');
+    expect(result.debugEmailHtml).toContain('Gemini truncation signal');
   });
 });

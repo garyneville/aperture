@@ -163,8 +163,20 @@ function outdoorSummaryLine(
   return `${capitalizedRain}${windNote}. Around ${avgTmp}°C. Limited outdoor opportunities.`;
 }
 
-function shouldDisplayOutdoorHour(hour: NextDayHour, showOvernight: boolean): boolean {
+function hourFallsWithinPhotoWindow(hour: string, window: Window): boolean {
+  const hourMinutes = clockToMinutes(hour);
+  const startMinutes = clockToMinutes(window.start);
+  const endMinutes = clockToMinutes(window.end);
+  if (hourMinutes === null || startMinutes === null || endMinutes === null) return false;
+  if (endMinutes < startMinutes) {
+    return hourMinutes >= startMinutes || hourMinutes <= endMinutes;
+  }
+  return hourMinutes >= startMinutes && hourMinutes <= endMinutes;
+}
+
+function shouldDisplayOutdoorHour(hour: NextDayHour, showOvernight: boolean, photoWindows: Window[] = []): boolean {
   if (showOvernight) return true;
+  if (photoWindows.some(window => hourFallsWithinPhotoWindow(hour.hour, window))) return true;
   const minutes = clockToMinutes(hour.hour) ?? 0;
   return !hour.isNight || (minutes >= 18 * 60 && minutes < 23 * 60);
 }
@@ -189,7 +201,7 @@ export function nextDayHourlyOutlookSection(
   };
   const hours = (tomorrow?.hours || [])
     .filter(hour => config.startAtMinutes === null || config.startAtMinutes === undefined || (clockToMinutes(hour.hour) ?? -1) >= config.startAtMinutes)
-    .filter(hour => shouldDisplayOutdoorHour(hour, Boolean(config.showOvernight)));
+    .filter(hour => shouldDisplayOutdoorHour(hour, Boolean(config.showOvernight), config.photoWindows || []));
   if (!hours.length) return '';
 
   const scoredHours = hours.map(hour => {

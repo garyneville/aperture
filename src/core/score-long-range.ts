@@ -1,4 +1,4 @@
-import { getMoonMetrics, moonScoreAdjustment } from './astro.js';
+import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
 import { clamp } from './utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
@@ -74,6 +74,8 @@ export interface ScoreLongRangeOutput {
   /** Dark sky alert: perfect astro conditions at a known dark site. */
   darkSkyAlert: DarkSkyAlert | null;
 }
+
+const ASTRO_DARK_ELEVATION = -18;
 
 /* ------------------------------------------------------------------ */
 /*  Thresholds                                                        */
@@ -187,7 +189,7 @@ function scoreLocToday(wData: AltWeatherData, meta: LongRangeMeta): LongRangeCan
       }
     }
 
-    if (isNight) {
+    if (isNight && getSolarAltitude(+t, meta.lat, meta.lon) < ASTRO_DARK_ELEVATION) {
       const moonMetrics = getMoonMetrics(+t, meta.lat, meta.lon);
       let astro = 0;
       astro += moonScoreAdjustment(moonMetrics);

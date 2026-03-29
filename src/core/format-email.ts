@@ -22,6 +22,7 @@ import {
   bestDaySessionLabel,
   bestTimeLabel,
   buildWindowDisplayPlan,
+  clockToMinutes,
   displayBestTags,
   displayTag,
   getRunTimeContext,
@@ -51,6 +52,7 @@ import type {
   DaySummary,
   FormatEmailInput,
   LongRangeCard,
+  RunTimeContext,
   SpurOfTheMomentSuggestion,
 } from './format-email/types.js';
 import { confidenceDetail, effectiveConf } from './format-email/shared.js';
@@ -276,40 +278,81 @@ function departByTime(targetTime: string | null | undefined, driveMins: number):
   return `${String(departHours).padStart(2, '0')}:${String(departMins).padStart(2, '0')}`;
 }
 
-function longRangeFeasibilityNote(longRangeTop: LongRangeCard): string {
+function longRangeFeasibilityNote(longRangeTop: LongRangeCard, runTime: RunTimeContext): { note: string; suppress: boolean } {
   const targetTime = longRangeTop.isAstroWin ? longRangeTop.bestAstroHour : longRangeTop.bestDayHour;
   const departBy = departByTime(targetTime, longRangeTop.driveMins);
+  const windowType = longRangeTop.isAstroWin ? 'astro window' : 'light window';
+
+  if (departBy && targetTime) {
+    const departByMinutes = clockToMinutes(departBy);
+    if (departByMinutes !== null) {
+      const minutesUntilDeparture = departByMinutes - runTime.nowMinutes;
+      if (minutesUntilDeparture < 0) {
+        return { note: '', suppress: true };
+      }
+      if (minutesUntilDeparture < 60) {
+        return {
+          note: `Departure window closing - leave by ~${departBy} for the ${targetTime} ${windowType}.`,
+          suppress: false,
+        };
+      }
+      if (minutesUntilDeparture <= 180) {
+        return {
+          note: `Departing soon - leave by ~${departBy} for the ${targetTime} ${windowType}.`,
+          suppress: false,
+        };
+      }
+    }
+  }
 
   if (longRangeTop.driveMins >= 180) {
     if (departBy && targetTime) {
-      return `Road-trip option - leave by ~${departBy} for the ${targetTime} ${longRangeTop.isAstroWin ? 'astro window' : 'light window'}. Overnight recommended.`;
+      return {
+        note: `Road-trip option - leave by ~${departBy} for the ${targetTime} ${windowType}. Overnight recommended.`,
+        suppress: false,
+      };
     }
-    return 'Road-trip option - best treated as a dedicated trip rather than a same-day short-notice run.';
+    return {
+      note: 'Road-trip option - best treated as a dedicated trip rather than a same-day short-notice run.',
+      suppress: false,
+    };
   }
   if (longRangeTop.driveMins >= 120) {
     if (departBy && targetTime) {
-      return `Long drive - leave by ~${departBy} for the ${targetTime} ${longRangeTop.isAstroWin ? 'astro window' : 'light window'}.`;
+      return {
+        note: `Long drive - leave by ~${departBy} for the ${targetTime} ${windowType}.`,
+        suppress: false,
+      };
     }
-    return 'Long drive - better as a planned outing than a casual detour.';
+    return {
+      note: 'Long drive - better as a planned outing than a casual detour.',
+      suppress: false,
+    };
   }
-  if (longRangeTop.driveMins >= 90) return 'Long drive - better as a planned outing than a casual detour.';
-  return '';
+  if (longRangeTop.driveMins >= 90) {
+    return {
+      note: 'Long drive - better as a planned outing than a casual detour.',
+      suppress: false,
+    };
+  }
+  return { note: '', suppress: false };
 }
 
 function longRangeSection(
   longRangeTop: LongRangeCard | null | undefined,
   cardLabel: string | null | undefined,
   darkSkyAlert: DarkSkyAlertCard | null | undefined,
+  runTime: RunTimeContext,
 ): string {
   const cards: string[] = [];
+  const feasibility = longRangeTop ? longRangeFeasibilityNote(longRangeTop, runTime) : { note: '', suppress: false };
 
-  if (longRangeTop && cardLabel) {
+  if (longRangeTop && cardLabel && !feasibility.suppress) {
     const displayLabel = displayLongRangeLabel(cardLabel) || cardLabel;
     const regionLabel = longRangeTop.region.replace(/-/g, ' ').replace(/\b\w/g, char => char.toUpperCase());
     const timing = longRangeTop.isAstroWin
       ? `Best astro around ${longRangeTop.bestAstroHour || 'evening'}${longRangeTop.darkSky ? ' - dark sky site' : ''}`
       : `Best at ${longRangeTop.bestDayHour || 'time TBD'} - ${longRangeTop.tags.slice(0, 2).map(tag => displayTag(tag)).join(', ')}`;
-    const feasibility = longRangeFeasibilityNote(longRangeTop);
     cards.push(card(`
       <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${esc(displayLabel)}</div>
       <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(longRangeTop.name)}</div>
@@ -321,7 +364,7 @@ function longRangeSection(
         ${metricChip('Astro', longRangeTop.astroScore ?? 0, scoreState(longRangeTop.astroScore ?? 0).fg)}
       </div>
       <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(timing)}</div>
-      ${feasibility ? `<div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};">${esc(feasibility)}</div>` : ''}
+      ${feasibility.note ? `<div style="Margin-top:8px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.secondary};">${esc(feasibility.note)}</div>` : ''}
     `, '', `border-top:3px solid ${C.secondary};`));
   }
 
@@ -504,7 +547,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const tomorrowOutlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
   const outlookHtml = todayOutlookHtml || tomorrowOutlookHtml;
   const outlookSectionTitle = todayOutlookHtml ? 'Remaining today' : 'Tomorrow\'s weather';
-  const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert);
+  const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert, runTime);
   const footerKey = `<div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
     <b>Key</b> &middot;
     <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;

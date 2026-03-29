@@ -73,6 +73,14 @@ describe('formatDebugEmail', () => {
         primaryProvider: 'gemini',
         selectedProvider: 'gemini',
         rawGroqResponse: '{"editorial":"Good night."}',
+        rawGeminiResponse: '{"editorial":"Good night.","composition":["Low northern horizon"]}',
+        geminiDiagnostics: {
+          statusCode: 200,
+          finishReason: 'MAX_TOKENS',
+          candidateCount: 1,
+          responseByteLength: 812,
+          truncated: true,
+        },
         normalizedAiText: 'Good night.',
         factualCheck: { passed: true, rulesTriggered: [] },
         editorialCheck: { passed: false, rulesTriggered: ['does not add editorial insight beyond card data'] },
@@ -103,6 +111,8 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Certainty (astro)');
     expect(html).toContain('Spread (daylight)');
     expect(html).toContain('Spread (astro)');
+    expect(html).toContain('Fair');
+    expect(html).not.toContain('>medium<');
     expect(html).toContain('Window selection trace');
     expect(html).toContain('Hourly astro scoring');
     expect(html).toContain('Nearby alternatives');
@@ -117,6 +127,10 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('absent from raw response');
     expect(html).toContain('Model fallback');
     expect(html).toContain('Hardcoded fallback');
+    expect(html).toContain('Gemini HTTP status');
+    expect(html).toContain('MAX_TOKENS');
+    expect(html).toContain('Gemini response bytes');
+    expect(html).toContain('Gemini truncation signal');
   });
 });
 

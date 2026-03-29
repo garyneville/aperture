@@ -196,6 +196,14 @@ interface EnsEntry { mean: number; stdDev: number }
 // Degrees below horizon at which astronomical twilight ends (sky is truly dark)
 const ASTRO_DARK_ELEVATION = -18;
 
+function debugConfidenceLabel(confidence: string | null | undefined): string | null {
+  if (!confidence || confidence === 'unknown') return confidence ?? null;
+  if (confidence === 'medium') return 'Fair';
+  if (confidence === 'high') return 'High';
+  if (confidence === 'low') return 'Low';
+  return confidence;
+}
+
 /**
  * scoreAllDays — pure extraction of the n8n "Score Hours" node logic.
  *
@@ -624,9 +632,9 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       pm: todayDay.pmScore,
       astro: todayDay.astroScore,
       overall: todayDay.headlineScore ?? todayDay.photoScore,
-      certainty: todayDay.confidence ?? null,
+      certainty: debugConfidenceLabel(todayDay.confidence),
       certaintySpread: todayDay.confidenceStdDev ?? null,
-      astroConfidence: todayDay.astroConfidence ?? null,
+      astroConfidence: debugConfidenceLabel(todayDay.astroConfidence),
       astroConfidenceStdDev: todayDay.astroConfidenceStdDev ?? null,
     };
   }

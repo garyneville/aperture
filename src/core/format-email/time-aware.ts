@@ -148,19 +148,31 @@ export function timeAwareLocalSummary(
   primary: Window | null,
   lines: string[],
 ): string {
+  const referencesWindow = (line: string, window: Window | null): boolean => {
+    if (!line || !window) return false;
+    const lower = line.toLowerCase();
+    return lower.includes(window.label.toLowerCase()) && lower.includes(windowRange(window).toLowerCase());
+  };
+  const dedupedLines = lines.filter(line => {
+    if (!line) return false;
+    if (plan.promotedFromPast && referencesWindow(line, primary)) return false;
+    if (plan.promotedFromPast && referencesWindow(line, plan.past[0] || null)) return false;
+    return true;
+  });
+
   if (plan.promotedFromPast && primary && plan.past[0]) {
     const earlier = plan.past[0];
     return [
       `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 earlier today.`,
       `${primary.label}: ${windowRange(primary)} at ${primary.peak}/100 is the best remaining local option.`,
-      ...lines,
+      ...dedupedLines,
     ].filter(Boolean).join('\n');
   }
   if (plan.allPast && plan.past[0]) {
     const earlier = plan.past[0];
     return `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 was the strongest local window earlier today. No local photo window remains today.`;
   }
-  return lines.filter(Boolean).join('\n');
+  return dedupedLines.join('\n');
 }
 
 export function displayTag(tag: string): string {

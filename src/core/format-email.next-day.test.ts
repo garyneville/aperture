@@ -7,6 +7,7 @@ import {
   type DaySummary,
   type FormatEmailInput,
   type NextDayHour,
+  type Window,
 } from './format-email.js';
 import type { DebugContext } from './debug-context.js';
 
@@ -223,6 +224,36 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(debugContext.outdoorComfort?.bestWindow).not.toBeNull();
     expect(debugContext.outdoorComfort?.bestWindow?.start).toBe('09:00');
     expect(debugContext.outdoorComfort?.bestWindow?.end).toBe('10:00');
+  });
+
+  it('includes the exact end hour of the last listed photo window in remaining-today mode', () => {
+    const today = makeTomorrowDay([
+      { hour: '20:00', tmp: 9, pp: 5, wind: 8, pr: 0, visK: 18, ct: 20, isNight: false },
+      { hour: '21:00', tmp: 8, pp: 5, wind: 8, pr: 0, visK: 18, ct: 20, isNight: true },
+      { hour: '22:00', tmp: 7, pp: 5, wind: 8, pr: 0, visK: 18, ct: 20, isNight: true },
+      { hour: '23:00', tmp: 6, pp: 5, wind: 8, pr: 0, visK: 18, ct: 20, isNight: true },
+    ]);
+    const photoWindows: Window[] = [{
+      label: 'Evening astro window',
+      start: '21:00',
+      end: '23:00',
+      peak: 48,
+      tops: ['astrophotography'],
+    }];
+
+    const html = nextDayHourlyOutlookSection(today, undefined, {
+      title: 'Today from 20:00',
+      caption: "Today's remaining-hours outlook",
+      summaryContext: 'today',
+      startAtMinutes: 20 * 60,
+      showOvernight: false,
+      photoWindows,
+    });
+
+    expect(html).toContain('20:00');
+    expect(html).toContain('21:00');
+    expect(html).toContain('22:00');
+    expect(html).toContain('23:00');
   });
 
   it('renders the section inside the main formatEmail output when tomorrow has hours', () => {

@@ -666,4 +666,60 @@ describe('workflow assembly', () => {
       },
     }]);
   });
+
+  it('assembles Gemini fallback extraction that preserves full text and truncation diagnostics', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const httpNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Gemini Fallback');
+    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Fallback');
+    expect(httpNode).toBeTruthy();
+    expect(extractNode).toBeTruthy();
+    expect(httpNode.parameters.body).toContain('maxOutputTokens: 1600');
+    expect(httpNode.parameters.options.response.response.fullResponse).toBe(true);
+    expect(httpNode.parameters.options.response.response.responseFormat).toBe('json');
+
+    const fn = new Function('$', '$input', extractNode.parameters.jsCode);
+    const result = fn(
+      () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            statusCode: 200,
+            body: {
+              candidates: [{
+                finishReason: 'MAX_TOKENS',
+                content: {
+                  parts: [
+                    { text: '{"editorial":"The moon sets before ' },
+                    { text: 'the midnight astro window begins.","composition":["Face north"]}' },
+                  ],
+                },
+              }],
+            },
+          },
+        }),
+        all: () => [],
+      },
+    );
+
+    expect(result).toEqual([{
+      json: {
+        geminiResponse: '{"editorial":"The moon sets before the midnight astro window begins.","composition":["Face north"]}',
+        geminiStatusCode: 200,
+        geminiFinishReason: 'MAX_TOKENS',
+        geminiCandidateCount: 1,
+        geminiResponseByteLength: expect.any(Number),
+        geminiResponseTruncated: true,
+      },
+    }]);
+  });
 });

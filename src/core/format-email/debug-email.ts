@@ -34,6 +34,12 @@ function debugKeyValueLines(items: Array<[string, string | number | null | undef
     .join('');
 }
 
+function displayDebugConfidence(confidence: string | null | undefined): string | null {
+  if (!confidence) return null;
+  if (confidence === 'medium') return 'Fair';
+  return confidence;
+}
+
 export function formatDebugEmail(debugContext: DebugContext): string {
   const metadata = debugContext.metadata;
   const scores = debugContext.scores;
@@ -127,9 +133,9 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['PM', scores ? `${scores.pm}/100` : null],
           ['Astro', scores ? `${scores.astro}/100` : null],
           ['Overall', scores ? `${scores.overall}/100` : null],
-          ['Certainty (daylight)', scores?.certainty || null],
+          ['Certainty (daylight)', displayDebugConfidence(scores?.certainty)],
           ['Spread (daylight)', scores?.certaintySpread !== null && scores?.certaintySpread !== undefined ? `${scores.certaintySpread} pts` : null],
-          ['Certainty (astro)', scores?.astroConfidence && scores.astroConfidence !== 'unknown' ? scores.astroConfidence : null],
+          ['Certainty (astro)', scores?.astroConfidence && scores.astroConfidence !== 'unknown' ? displayDebugConfidence(scores.astroConfidence) : null],
           ['Spread (astro)', scores?.astroConfidenceStdDev !== null && scores?.astroConfidenceStdDev !== undefined ? `${scores.astroConfidenceStdDev} pts` : null],
         ]))}
         ${spacer(8)}
@@ -166,6 +172,15 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
             ['Model fallback', aiTrace.modelFallbackUsed ? `Yes — ${aiTrace.primaryProvider} failed, used ${aiTrace.selectedProvider}` : 'No'],
             ['Hardcoded fallback', aiTrace.fallbackUsed ? 'Yes — both models failed, using template text' : 'No'],
+            ['Gemini HTTP status', aiTrace.geminiDiagnostics?.statusCode ?? null],
+            ['Gemini finish reason', aiTrace.geminiDiagnostics?.finishReason || null],
+            ['Gemini candidates', aiTrace.geminiDiagnostics?.candidateCount ?? null],
+            ['Gemini response bytes', aiTrace.geminiDiagnostics?.responseByteLength ?? null],
+            ['Gemini truncation signal', aiTrace.geminiDiagnostics
+              ? (aiTrace.geminiDiagnostics.truncated
+                  ? `Yes (${aiTrace.geminiDiagnostics.finishReason || 'incomplete Gemini response'})`
+                  : 'No')
+              : null],
             ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` → dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'}` : ' → shown'}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
             ['weekStandout', (() => {

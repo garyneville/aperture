@@ -52,6 +52,41 @@ function makeWeatherFixture(opts: {
   };
 }
 
+function makeHighScoringWeatherFixture(opts: {
+  date: string;
+  sunrise: string;
+  sunset: string;
+}): AltWeatherData {
+  const { date, sunrise, sunset } = opts;
+  const hours = Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`);
+  const precip = new Array(24).fill(1);
+  const sunsetHour = Number.parseInt(sunset.slice(11, 13), 10);
+  precip[sunsetHour] = 0;
+
+  return {
+    hourly: {
+      time: hours,
+      cloudcover: hours.map(() => 15),
+      cloudcover_low: hours.map(() => 5),
+      cloudcover_mid: hours.map(() => 25),
+      cloudcover_high: hours.map(() => 45),
+      visibility: hours.map(() => 50000),
+      temperature_2m: hours.map(() => 8),
+      relativehumidity_2m: hours.map(() => 50),
+      dewpoint_2m: hours.map(() => 7),
+      precipitation_probability: hours.map(() => 0),
+      precipitation: precip,
+      windspeed_10m: hours.map(() => 3),
+      windgusts_10m: hours.map(() => 5),
+      total_column_integrated_water_vapour: hours.map(() => 8),
+    },
+    daily: {
+      sunrise: [sunrise],
+      sunset: [sunset],
+    },
+  };
+}
+
 /** Minimal Leeds context that never beats any alt. */
 function makeLeedsContext(leedsHeadlineScore = 10) {
   return {
@@ -263,6 +298,28 @@ describe('scoreAlternatives elevation propagation', () => {
   });
 });
 
+describe('scoreAlternatives astro-hour clamping', () => {
+  it('does not assign a bestAstroHour on summer nights with no astronomical darkness', () => {
+    const mamTorMeta = ALT_LOCATIONS.find(l => l.name === 'Mam Tor')!;
+    const weather = makeHighScoringWeatherFixture({
+      date: '2026-06-15',
+      sunrise: '2026-06-15T04:30:00',
+      sunset: '2026-06-15T21:30:00',
+    });
+
+    const result = scoreAlternatives({
+      altWeatherData: [weather],
+      altLocationMeta: [mamTorMeta],
+      leedsContext: makeLeedsContext(5),
+    });
+
+    const todayAlt = result.altLocations.find(a => a.name === 'Mam Tor');
+    expect(todayAlt).toBeDefined();
+    expect(todayAlt?.bestAstroHour).toBeNull();
+    expect(todayAlt?.isAstroWin).toBe(false);
+  });
+});
+
 /* ------------------------------------------------------------------ */
 /*  Regression: lowland scoring behaviour unchanged                   */
 /* ------------------------------------------------------------------ */
@@ -309,7 +366,11 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
 
   it('shows a nearby alternative that beats Leeds by exactly 8 points', () => {
     const malhamMeta = ALT_LOCATIONS.find(l => l.name === 'Malham Cove')!;
-    const weather = makeWeatherFixture({ cloudcover: 0, visibility: 50000 });
+    const weather = makeHighScoringWeatherFixture({
+      date: '2026-03-15',
+      sunrise: '2026-03-15T06:15:00',
+      sunset: '2026-03-15T18:15:00',
+    });
     const baseline = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [malhamMeta],
@@ -334,7 +395,11 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
   it('surfaces darker astro near-misses as close contenders', () => {
     const malhamMeta = ALT_LOCATIONS.find(l => l.name === 'Malham Cove')!;
     const boltonAbbeyMeta = ALT_LOCATIONS.find(l => l.name === 'Bolton Abbey')!;
-    const weather = makeWeatherFixture({ cloudcover: 0, visibility: 50000 });
+    const weather = makeHighScoringWeatherFixture({
+      date: '2026-03-15',
+      sunrise: '2026-03-15T06:15:00',
+      sunset: '2026-03-15T18:15:00',
+    });
     const baseline = scoreAlternatives({
       altWeatherData: [weather],
       altLocationMeta: [malhamMeta],
