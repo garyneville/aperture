@@ -204,27 +204,49 @@ const astroEvaluator: SessionEvaluator = {
   session: 'astro',
   requiredCapabilities: ASTRO_CAPABILITIES,
   evaluateHour(features) {
-    const hardPass = features.isNight && features.cloudTotalPct <= 70;
-    const moonPenalty = features.moonIlluminationPct > 70 ? 25 : features.moonIlluminationPct > 40 ? 12 : 0;
-    const cloudPenalty = features.cloudTotalPct > 40 ? 16 : features.cloudTotalPct > 20 ? 8 : 0;
+    // HARD GATES – tighter cloud cap and a transparency floor
+    const hardPass = features.isNight
+      && features.cloudTotalPct <= 60
+      && features.transparencyScore >= 15;
+
+    // NON-LINEAR CLOUD PENALTY – quadratic ramp starting at 10 %
+    const cloudFrac = clamp(features.cloudTotalPct - 10, 0, 50) / 50;   // 0‑1 above 10 %
+    const cloudPenalty = Math.round(cloudFrac * cloudFrac * 30);         // 0‑30
+
+    // NON-LINEAR MOON WASHOUT PENALTY – cubic ramp past 25 %
+    const moonFrac = clamp(features.moonIlluminationPct - 25, 0, 75) / 75;
+    const moonPenalty = Math.round(moonFrac * moonFrac * moonFrac * 35); // 0‑35
+
+    // NON-LINEAR TRANSPARENCY BONUS – sweet-spot curve (best between 65-95)
+    const transparencySweetSpot = sweetSpotScore(features.transparencyScore, 65, 95, 20, 100);
+
     const spread = spreadVolatility(features);
     const uncertaintyPenalty = astroUncertaintyPenalty(spread);
+
     const score =
-      (features.astroScore * 0.6)
-      + (features.transparencyScore * 0.25)
+      (features.astroScore * 0.55)
+      + (transparencySweetSpot * 0.2)
+      + (features.transparencyScore * 0.1)
       + (Math.max(0, 100 - features.moonIlluminationPct) * 0.15)
       - moonPenalty
       - cloudPenalty
       - uncertaintyPenalty;
+
     const reasons: string[] = [];
     const warnings: string[] = [];
 
-    if (features.cloudTotalPct <= 20) reasons.push('Cloud cover is low enough for a plausible dark-sky run.');
-    if (features.moonIlluminationPct <= 30) reasons.push('Moonlight should stay subdued for darker skies.');
-    if (features.transparencyScore >= 60) reasons.push('Current haze and humidity look workable for transparency.');
+    if (features.cloudTotalPct <= 15) reasons.push('Cloud cover is excellent for deep-sky imaging.');
+    else if (features.cloudTotalPct <= 25) reasons.push('Cloud cover is low enough for a plausible dark-sky run.');
+    if (features.moonIlluminationPct <= 15) reasons.push('Near-new-moon darkness favours faint nebulae and galaxies.');
+    else if (features.moonIlluminationPct <= 30) reasons.push('Moonlight should stay subdued for darker skies.');
+    if (features.transparencyScore >= 75) reasons.push('Transparency looks strong for clean deep-sky contrast.');
+    else if (features.transparencyScore >= 55) reasons.push('Current haze and humidity look workable for transparency.');
     if (!features.isNight) warnings.push('This hour is not inside a darkness window.');
-    if (features.cloudTotalPct > 40) warnings.push('Cloud cover is getting close to an astro deal-breaker.');
-    if (features.moonIlluminationPct > 50) warnings.push('Bright moonlight may wash out faint targets.');
+    if (features.cloudTotalPct > 45) warnings.push('Cloud cover is approaching an astro deal-breaker.');
+    else if (features.cloudTotalPct > 30) warnings.push('Moderate cloud may interrupt longer exposures.');
+    if (features.moonIlluminationPct > 70) warnings.push('Bright moonlight will wash out all but the brightest targets.');
+    else if (features.moonIlluminationPct > 45) warnings.push('Moonlight may wash out faint targets.');
+    if (features.transparencyScore < 30) warnings.push('Poor transparency will limit deep-sky contrast.');
 
     return completeScore(
       'astro',
