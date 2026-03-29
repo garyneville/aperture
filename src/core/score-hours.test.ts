@@ -510,3 +510,60 @@ describe('scoreAllDays clear-sky AM/PM scoring', () => {
     expect(pmHour?.clarity).toBeGreaterThan(55);
   });
 });
+
+describe('scoreAllDays session scoring foundation', () => {
+  it('adds per-hour session score traces to the debug context', () => {
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-03-27T03:00:00Z', '2026-03-27T07:00:00Z'],
+          cloudcover: [6, 55],
+          cloudcover_low: [2, 35],
+          cloudcover_mid: [1, 12],
+          cloudcover_high: [3, 8],
+          visibility: [26000, 6000],
+          temperature_2m: [5, 7],
+          relativehumidity_2m: [68, 95],
+          dewpoint_2m: [2, 6],
+          precipitation: [0, 0],
+          windspeed_10m: [4, 3],
+          windgusts_10m: [7, 5],
+          cape: [0, 0],
+          vapour_pressure_deficit: [0.6, 0.2],
+          total_column_integrated_water_vapour: [9, 12],
+        },
+        daily: {
+          sunrise: ['2026-03-27T05:52:00Z'],
+          sunset: ['2026-03-27T18:31:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-03-27T03:00:00Z', '2026-03-27T07:00:00Z'],
+          aerosol_optical_depth: [0.05, 0.09],
+          dust: [0, 0],
+          european_aqi: [8, 12],
+          uv_index: [0, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-03-27T03:00:00Z', '2026-03-27T07:00:00Z'],
+          precipitation_probability: [0, 18],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
+
+    expect(result.debugContext.hourlyScoring).toHaveLength(2);
+    expect(result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session)).toEqual(['astro', 'mist', 'golden-hour']);
+    expect(result.debugContext.hourlyScoring[1]?.sessionScores?.some(score => score.session === 'mist')).toBe(true);
+  });
+});

@@ -2,6 +2,7 @@ import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import { evaluateBuiltInSessions } from './session-scoring.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
 // ── Input interfaces ─────────────────────────────────────────────────────────
@@ -642,10 +643,16 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
-  debugContext.hourlyScoring = todayHours
-    .filter(hour => hour.isNight)
-    .map(hour => {
+  debugContext.hourlyScoring = todayHours.map(hour => {
       const moonMetrics = getMoonMetrics(Date.parse(hour.ts), LAT, LON);
+      const sessionScores = evaluateBuiltInSessions(hour).map(score => ({
+        session: score.session,
+        score: score.score,
+        hardPass: score.hardPass,
+        confidence: score.confidence,
+        reasons: score.reasons,
+        warnings: score.warnings,
+      }));
       return {
         hour: hour.hour,
         timestamp: hour.ts,
@@ -666,6 +673,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
           azimuthDeg: moonMetrics.isUp ? Math.round(moonMetrics.azimuthDeg) : null,
           isUp: moonMetrics.isUp,
         },
+        sessionScores,
         tags: hour.tags,
       };
     });
