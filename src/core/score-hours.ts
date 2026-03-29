@@ -2,7 +2,7 @@ import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
-import { evaluateBuiltInSessions } from './session-scoring.js';
+import { evaluateBuiltInSessions, selectBestSessionAcrossHours } from './session-scoring.js';
 import { deriveHourFeatures } from './features/derive-hour-features.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
 
@@ -644,34 +644,36 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
-  debugContext.hourlyScoring = todayHours.map(hour => {
+  const todayFeatures = todayHours.map(hour => deriveHourFeatures({
+    hourLabel: hour.hour,
+    overallScore: hour.score,
+    dramaScore: hour.drama,
+    clarityScore: hour.clarity,
+    mistScore: hour.mist,
+    astroScore: hour.astro,
+    crepuscularScore: hour.crepuscular,
+    cloudLowPct: hour.cl,
+    cloudMidPct: hour.cm,
+    cloudHighPct: hour.ch,
+    cloudTotalPct: hour.ct,
+    visibilityKm: hour.visK,
+    aerosolOpticalDepth: hour.aod,
+    precipProbabilityPct: hour.pp,
+    humidityPct: hour.hum,
+    temperatureC: hour.tmp,
+    dewPointC: hour.dew,
+    windKph: hour.wind,
+    gustKph: hour.gusts,
+    moonIlluminationPct: hour.moon,
+    isNight: hour.isNight,
+    isGolden: hour.isGolden,
+    isBlue: hour.isBlue,
+    tags: hour.tags,
+  }));
+
+  debugContext.hourlyScoring = todayHours.map((hour, index) => {
       const moonMetrics = getMoonMetrics(Date.parse(hour.ts), LAT, LON);
-      const features = deriveHourFeatures({
-        hourLabel: hour.hour,
-        overallScore: hour.score,
-        dramaScore: hour.drama,
-        clarityScore: hour.clarity,
-        mistScore: hour.mist,
-        astroScore: hour.astro,
-        crepuscularScore: hour.crepuscular,
-        cloudLowPct: hour.cl,
-        cloudMidPct: hour.cm,
-        cloudHighPct: hour.ch,
-        cloudTotalPct: hour.ct,
-        visibilityKm: hour.visK,
-        aerosolOpticalDepth: hour.aod,
-        precipProbabilityPct: hour.pp,
-        humidityPct: hour.hum,
-        temperatureC: hour.tmp,
-        dewPointC: hour.dew,
-        windKph: hour.wind,
-        gustKph: hour.gusts,
-        moonIlluminationPct: hour.moon,
-        isNight: hour.isNight,
-        isGolden: hour.isGolden,
-        isBlue: hour.isBlue,
-        tags: hour.tags,
-      });
+      const features = todayFeatures[index]!;
       const sessionScores = evaluateBuiltInSessions(features).map(score => ({
         session: score.session,
         score: score.score,
@@ -704,6 +706,16 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         tags: hour.tags,
       };
     });
+
+  const bestSession = selectBestSessionAcrossHours(todayFeatures);
+  if (debugContext.scores && bestSession) {
+    debugContext.scores.bestSession = {
+      session: bestSession.session,
+      hour: bestSession.hourLabel,
+      score: bestSession.score,
+      confidence: bestSession.confidence,
+    };
+  }
 
   return { todayHours, dailySummary, metarNote, debugContext };
 }

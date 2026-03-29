@@ -21,6 +21,12 @@ describe('formatDebugEmail', () => {
         pm: 15,
         astro: 75,
         overall: 60,
+        bestSession: {
+          session: 'storm',
+          hour: '19:00',
+          score: 84,
+          confidence: 'high',
+        },
         certainty: 'medium',
         certaintySpread: 5,
         astroConfidence: 'high',
@@ -111,6 +117,8 @@ describe('formatDebugEmail', () => {
 
     expect(html).toContain('Run metadata');
     expect(html).toContain('Day scores and certainty');
+    expect(html).toContain('Best session today');
+    expect(html).toContain('Storm (84/100 at 19:00)');
     expect(html).toContain('Certainty (daylight)');
     expect(html).toContain('Certainty (astro)');
     expect(html).toContain('Spread (daylight)');
