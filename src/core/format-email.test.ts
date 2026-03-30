@@ -1208,6 +1208,111 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('scores 65/100 (75 min drive)');
   });
 
+  it('surfaces a strong specialist session without reverting to no-window copy', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Best urban session',
+        start: '03:00',
+        end: '03:00',
+        peak: 67,
+        fallback: true,
+        hours: [{ hour: '03:00', score: 2, ch: 98, visK: 11.1, wind: '8', pp: 0 }],
+        tops: ['urban'],
+      }],
+      todayCarWash: {
+        rating: 'Great',
+        label: 'Great',
+        score: 95,
+        start: '08:00',
+        end: '10:00',
+        wind: 16,
+        pp: 0,
+        tmp: 8,
+      },
+      dailySummary: [{
+        dayLabel: 'Monday',
+        dateKey: '2026-03-30',
+        dayIdx: 0,
+        photoScore: 47,
+        headlineScore: 47,
+        photoEmoji: 'Marginal',
+        amScore: 26,
+        pmScore: 44,
+        astroScore: 41,
+        confidence: 'medium',
+        confidenceStdDev: 20,
+        amConfidence: 'low',
+        pmConfidence: 'medium',
+        astroConfidence: 'medium',
+        astroConfidenceStdDev: 24,
+        bestPhotoHour: '03:00',
+        bestTags: 'urban',
+        carWash: {
+          rating: 'Great',
+          label: 'Great',
+          score: 95,
+          start: '08:00',
+          end: '10:00',
+          wind: 16,
+          pp: 0,
+          tmp: 8,
+        },
+      }],
+      altLocations: [],
+      noAltsMsg: undefined,
+      sunriseStr: '07:43',
+      sunsetStr: '20:37',
+      moonPct: 87,
+      metarNote: '',
+      today: 'Monday 30 March',
+      todayBestScore: 47,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      shSunsetText: undefined,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Urban conditions are strongest before dawn while the broader day stays mediocre.',
+      sessionRecommendation: {
+        primary: {
+          session: 'urban',
+          hourLabel: '03:00',
+          score: 67,
+          hardPass: true,
+          confidence: 'low',
+          volatility: 22,
+          reasons: ['Wet streets and city light should hold up best before dawn.'],
+          warnings: ['Confidence is low because model spread is still fairly wide.'],
+          requiredCapabilities: [],
+        },
+        runnerUps: [{
+          session: 'long-exposure',
+          hourLabel: '06:00',
+          score: 36,
+          hardPass: true,
+          confidence: 'low',
+          volatility: 21,
+          reasons: [],
+          warnings: [],
+          requiredCapabilities: [],
+        }],
+        bySession: [],
+        hoursAnalyzed: 24,
+      },
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Best urban session');
+    expect(html).toContain('Best session today');
+    expect(html).toContain('Urban at 03:00');
+    expect(html).toContain('Low confidence');
+    expect(html).toContain('Spread 22 pts');
+    expect(html).toContain('Runner-up: Long exposure at 06:00 (36/100).');
+    expect(html).not.toContain('No clear window today');
+    expect(html).not.toContain('Not a great photography day locally');
+  });
+
   it('strips the AI briefing opener when it restates the window label and score', () => {
     const input: FormatEmailInput = {
       dontBother: false,

@@ -30,6 +30,7 @@ export function run({ $input }: N8nRuntime) {
     closeContenders: input.closeContenders,
     noAltsMsg: input.noAltsMsg,
     metarNote: input.metarNote,
+    sessionRecommendation: input.sessionRecommendation,
     sunrise: input.sunrise,
     sunset: input.sunset,
     moonPct: input.moonPct,

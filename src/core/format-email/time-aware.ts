@@ -4,6 +4,12 @@ import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../a
 import type { DebugContext } from '../debug-context.js';
 import { esc } from '../utils.js';
 import { DEFAULT_HOME_LOCATION, resolveHomeLatitude } from '../../types/home-location.js';
+import type {
+  SessionConfidence,
+  SessionId,
+  SessionRecommendation,
+  SessionRecommendationSummary,
+} from '../../types/session-score.js';
 import {
   C,
   FONT,
@@ -200,6 +206,71 @@ export function displayBestTags(bestTags: string | undefined, fallback = 'mixed 
     .map(tag => displayTag(tag))
     .filter(tag => tag && tag !== 'general' && tag !== 'poor');
   return visibleTags.join(', ') || fallback;
+}
+
+export function displaySessionName(session: SessionId): string {
+  switch (session) {
+    case 'golden-hour':
+      return 'Golden hour';
+    case 'astro':
+      return 'Astro';
+    case 'mist':
+      return 'Mist';
+    case 'storm':
+      return 'Storm';
+    case 'urban':
+      return 'Urban';
+    case 'long-exposure':
+      return 'Long exposure';
+    case 'street':
+      return 'Street';
+    case 'wildlife':
+      return 'Wildlife';
+    case 'waterfall':
+      return 'Waterfall';
+    case 'seascape':
+      return 'Seascape';
+  }
+}
+
+export function sessionConfidenceLabel(confidence: SessionConfidence): string {
+  switch (confidence) {
+    case 'high':
+      return 'High confidence';
+    case 'medium':
+      return 'Fair confidence';
+    case 'low':
+      return 'Low confidence';
+  }
+}
+
+export function sessionVolatilityLabel(primary: SessionRecommendation): string | null {
+  if (primary.volatility === null || primary.volatility === undefined) return null;
+  if (primary.session === 'storm') {
+    return primary.volatility >= 20
+      ? `Volatile opportunity · spread ${primary.volatility} pts`
+      : `Changeable setup · spread ${primary.volatility} pts`;
+  }
+  return `Spread ${primary.volatility} pts`;
+}
+
+export function sessionRecommendationHeadline(primary: SessionRecommendation): string {
+  return `${displaySessionName(primary.session)} at ${primary.hourLabel}`;
+}
+
+export function sessionRecommendationBody(primary: SessionRecommendation): string {
+  const reasons = primary.reasons.slice(0, 2).join(' ');
+  const warning = primary.warnings[0] || '';
+  return [reasons, warning].filter(Boolean).join(' ')
+    || `${displaySessionName(primary.session)} is the strongest specialist setup in the current forecast.`;
+}
+
+export function sessionRunnerUpLine(summary: SessionRecommendationSummary | undefined): string | null {
+  const primary = summary?.primary;
+  const runnerUp = summary?.runnerUps?.[0];
+  if (!primary || !runnerUp) return null;
+  if (primary.confidence !== 'low' && (primary.volatility ?? 0) < 20) return null;
+  return `Runner-up: ${displaySessionName(runnerUp.session)} at ${runnerUp.hourLabel} (${runnerUp.score}/100).`;
 }
 
 export function bestDaySessionLabel(bestDayHour: string | null | undefined): string {
