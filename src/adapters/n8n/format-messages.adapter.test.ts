@@ -821,6 +821,7 @@ describe('run — weekStandout validation', () => {
         weekInsight?: string;
       };
       emailHtml: string;
+      siteHtml: string;
       debugEmailHtml: string;
     };
   };
@@ -851,6 +852,87 @@ describe('run — weekStandout validation', () => {
     expect(result.briefJson.location.name).toBe('Leeds');
     expect(result.briefJson.aiText).toContain('Conditions improve through the evening astro window');
     expect(result.briefJson.weekInsight).toBe('Wednesday is the standout day.');
+  });
+
+  it('keeps daylight utility glyphs entity-encoded in assembled html outputs', () => {
+    const result = makeRuntimeOutput('Wednesday is the standout day.');
+
+    expect(result.emailHtml).toContain('&#x1F697; / &#x1F6B6;');
+    expect(result.emailHtml).not.toContain('🚗 / 🚶');
+    expect(result.emailHtml).not.toContain('��');
+
+    const siteResult = run({
+      $input: {
+        first: () => ({
+          json: {
+            choices: [{ message: { content: JSON.stringify({
+              editorial: 'Conditions improve through the evening astro window toward 21:00. Clearer skies hold into the best hour.',
+              composition: ['Frame the skyline against the western glow'],
+              weekStandout: 'Wednesday is the standout day.',
+            }) } }],
+            dontBother: false,
+            debugMode: true,
+            debugModeSource: 'debug recipient configured',
+            debugEmailTo: 'debug@example.com',
+            windows: [{
+              label: 'Evening astro window',
+              start: '19:00',
+              end: '21:00',
+              peak: 60,
+              tops: ['astrophotography'],
+              hours: [{ hour: '21:00', score: 60 }],
+            }],
+            dailySummary: [
+              makeDay('Today', 0, 60, 'high', 5),
+              makeDay('Tomorrow', 1, 55, 'medium', 15),
+              makeDay('Wednesday', 2, 70, 'low', 39),
+            ],
+            todayCarWash: {
+              rating: 'OK',
+              label: 'Usable',
+              score: 60,
+              start: '06:00',
+              end: '08:00',
+              wind: 10,
+              pp: 10,
+              tmp: 8,
+            },
+            altLocations: [],
+            sunriseStr: '06:18',
+            sunsetStr: '18:11',
+            moonPct: 8,
+            metarNote: '',
+            debugContext: {
+              metadata: {
+                generatedAt: '2026-03-16T05:00:00.000Z',
+                timezone: 'Europe/London',
+              },
+              hourlyScoring: [],
+              windows: [],
+              nearbyAlternatives: [],
+            },
+            today: 'Monday 16 March',
+            todayBestScore: 60,
+            shSunsetQ: null,
+            shSunriseQ: null,
+            shSunsetText: null,
+            sunDir: null,
+            crepPeak: 0,
+          },
+        }),
+        all: () => [],
+      },
+      $: () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+    })[0].json as {
+      siteHtml: string;
+    };
+
+    expect(siteResult.siteHtml).toContain('&#x1F697; / &#x1F6B6;');
+    expect(siteResult.siteHtml).not.toContain('🚗 / 🚶');
+    expect(siteResult.siteHtml).not.toContain('��');
   });
 
   it('replaces a semantically wrong weekStandout with the reliability fallback', () => {
@@ -1166,7 +1248,7 @@ describe('run — weekStandout validation', () => {
   });
 });
 
-describe('run — model fallback reporting (#222)', () => {
+describe('run — model fallback reporting (#74)', () => {
   it('reports model fallback when primary fails and secondary succeeds', () => {
     // Gemini (primary) gives a truncated/bad response; Groq (secondary) passes
     const groqContent = JSON.stringify({
@@ -1244,7 +1326,11 @@ describe('run — model fallback reporting (#222)', () => {
     })[0].json as { debugEmailHtml: string };
 
     expect(result.debugEmailHtml).toContain('Model fallback');
-    expect(result.debugEmailHtml).toContain('gemini failed, used groq');
+    expect(result.debugEmailHtml).toContain('Primary rejection');
+    expect(result.debugEmailHtml).toContain('Yes — gemini rejected:');
+    expect(result.debugEmailHtml).toContain('response truncated (MAX_TOKENS)');
+    expect(result.debugEmailHtml).toContain('used groq');
+    expect(result.debugEmailHtml).not.toContain('gemini failed, used groq');
     expect(result.debugEmailHtml).toContain('Hardcoded fallback');
     expect(result.debugEmailHtml).toContain('Gemini HTTP status');
     expect(result.debugEmailHtml).toContain('MAX_TOKENS');

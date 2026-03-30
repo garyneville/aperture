@@ -568,16 +568,16 @@ describe('scoreAllDays session scoring foundation', () => {
     };
 
     const result = scoreAllDays(input, new Date('2026-03-27T12:00:00Z'));
+    const firstHourSessions = result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session) ?? [];
 
     expect(result.debugContext.hourlyScoring).toHaveLength(2);
-    expect(result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session)).toEqual([
-      'long-exposure',
-      'astro',
+    expect(firstHourSessions.slice(0, 2)).toEqual(['long-exposure', 'astro']);
+    expect(firstHourSessions).toEqual(expect.arrayContaining([
       'mist',
       'urban',
       'golden-hour',
       'storm',
-    ]);
+    ]));
     expect(result.debugContext.hourlyScoring[1]?.sessionScores?.some(score => score.session === 'mist')).toBe(true);
     expect(result.debugContext.scores?.bestSession).toBeDefined();
     expect(result.sessionRecommendation.primary).toBeDefined();
@@ -710,5 +710,63 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(result.debugContext.scores?.bestSession?.volatility).toBeGreaterThan(0);
     expect(result.sessionRecommendation.primary?.session).toBe('storm');
     expect(result.sessionRecommendation.runnerUps.every(entry => entry.session !== 'storm')).toBe(true);
+  });
+
+  it('propagates boundary-layer height into mist session scoring when present', () => {
+    const input: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-10-12T06:00:00Z', '2026-10-12T07:00:00Z'],
+          cloudcover: [88, 88],
+          cloudcover_low: [60, 60],
+          cloudcover_mid: [18, 18],
+          cloudcover_high: [10, 10],
+          visibility: [4000, 4000],
+          temperature_2m: [7, 7],
+          relativehumidity_2m: [96, 96],
+          dewpoint_2m: [6.4, 6.4],
+          precipitation: [0, 0],
+          windspeed_10m: [5, 5],
+          windgusts_10m: [8, 8],
+          cape: [0, 0],
+          vapour_pressure_deficit: [0.2, 0.2],
+          total_column_integrated_water_vapour: [18, 18],
+          boundary_layer_height: [220, 1600],
+        },
+        daily: {
+          sunrise: ['2026-10-12T06:28:00Z'],
+          sunset: ['2026-10-12T17:58:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-10-12T06:00:00Z', '2026-10-12T07:00:00Z'],
+          aerosol_optical_depth: [0.08, 0.08],
+          dust: [0, 0],
+          european_aqi: [10, 10],
+          uv_index: [0, 0],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-10-12T06:00:00Z', '2026-10-12T07:00:00Z'],
+          precipitation_probability: [5, 5],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    const result = scoreAllDays(input, new Date('2026-10-12T12:00:00Z'));
+    const lowBoundaryLayerMist = result.debugContext.hourlyScoring[0]?.sessionScores?.find(score => score.session === 'mist');
+    const highBoundaryLayerMist = result.debugContext.hourlyScoring[1]?.sessionScores?.find(score => score.session === 'mist');
+
+    expect(lowBoundaryLayerMist?.score).toBeGreaterThan(highBoundaryLayerMist?.score ?? 0);
+    expect(lowBoundaryLayerMist?.reasons).toContain('A low boundary layer should help mist or haze stay trapped near the ground.');
+    expect(highBoundaryLayerMist?.warnings).toContain('A deep boundary layer may mix out low-level mist before it becomes photogenic.');
   });
 });

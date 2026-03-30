@@ -54,4 +54,42 @@ describe('deriveHourFeatures', () => {
     expect(features.lightPollutionBortle).toBe(4);
     expect(features.lightningRisk).toBe(12);
   });
+
+  it('derives stronger trap and haze signals from a shallow moist boundary layer', () => {
+    const trapped = deriveHourFeatures(makeInput({
+      boundaryLayerHeightM: 220,
+      humidityPct: 84,
+      aerosolOpticalDepth: 0.12,
+      visibilityKm: 20,
+    }));
+    const mixed = deriveHourFeatures(makeInput({
+      boundaryLayerHeightM: 1600,
+      humidityPct: 84,
+      aerosolOpticalDepth: 0.12,
+      visibilityKm: 20,
+    }));
+
+    expect(trapped.boundaryLayerTrapScore).toBeGreaterThan(mixed.boundaryLayerTrapScore ?? -1);
+    expect(trapped.hazeTrapRisk).toBeGreaterThan(mixed.hazeTrapRisk ?? -1);
+    expect(trapped.transparencyScore).toBeLessThan(mixed.transparencyScore);
+  });
+
+  it('distinguishes translucent upper cloud from dense low blocking cloud', () => {
+    const translucent = deriveHourFeatures(makeInput({
+      cloudTotalPct: 58,
+      cloudLowPct: 6,
+      cloudMidPct: 16,
+      cloudHighPct: 48,
+    }));
+    const blocked = deriveHourFeatures(makeInput({
+      cloudTotalPct: 58,
+      cloudLowPct: 34,
+      cloudMidPct: 12,
+      cloudHighPct: 12,
+    }));
+
+    expect(translucent.cloudOpticalThicknessPct).toBeLessThan(blocked.cloudOpticalThicknessPct);
+    expect(translucent.highCloudTranslucencyScore).toBeGreaterThan(blocked.highCloudTranslucencyScore);
+    expect(translucent.lowCloudBlockingScore).toBeLessThan(blocked.lowCloudBlockingScore);
+  });
 });

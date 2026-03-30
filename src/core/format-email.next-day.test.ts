@@ -226,6 +226,31 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(debugContext.outdoorComfort?.bestWindow?.end).toBe('10:00');
   });
 
+  it('keeps the best outdoor window focused on the peak comfort cluster', () => {
+    const tomorrow = makeTomorrowDay([
+      { hour: '08:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '09:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '10:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '11:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '12:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '13:00', tmp: 6, pp: 25, wind: 22, pr: 0, visK: 18, isNight: false },
+      { hour: '14:00', tmp: 14, pp: 0, wind: 10, pr: 0, visK: 20, isNight: false },
+      { hour: '15:00', tmp: 14, pp: 0, wind: 10, pr: 0, visK: 20, isNight: false },
+      { hour: '16:00', tmp: 14, pp: 0, wind: 10, pr: 0, visK: 20, isNight: false },
+    ]);
+    const debugContext: DebugContext = { hourlyScoring: [], windows: [], nearbyAlternatives: [] };
+
+    const html = nextDayHourlyOutlookSection(tomorrow, debugContext);
+
+    expect(debugContext.outdoorComfort?.bestWindow).toEqual({
+      start: '14:00',
+      end: '16:00',
+      label: 'Best for a run',
+    });
+    expect(html).toContain('Best outdoor window: 14:00–16:00.');
+    expect(html).not.toContain('Best outdoor window: 08:00–16:00.');
+  });
+
   it('includes the exact end hour of the last listed photo window in remaining-today mode', () => {
     const today = makeTomorrowDay([
       { hour: '20:00', tmp: 9, pp: 5, wind: 8, pr: 0, visK: 18, ct: 20, isNight: false },

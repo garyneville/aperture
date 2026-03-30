@@ -547,6 +547,37 @@ export function chooseEditorialCandidate(
   };
 }
 
+function summarizeCandidateRejection(
+  provider: EditorialProvider,
+  rawContent: string,
+  candidate: EditorialCandidate | null,
+  geminiDiagnostics?: DebugGeminiDiagnostics,
+): string | null {
+  const reasons: string[] = [];
+
+  if (!rawContent.trim()) {
+    if (provider === 'gemini' && geminiDiagnostics?.statusCode !== null && geminiDiagnostics?.statusCode !== undefined) {
+      reasons.push(`HTTP ${geminiDiagnostics.statusCode} but empty response body`);
+    } else {
+      reasons.push('empty response body');
+    }
+  }
+
+  if (provider === 'gemini' && geminiDiagnostics?.truncated) {
+    reasons.push(`response truncated (${geminiDiagnostics.finishReason || 'incomplete Gemini response'})`);
+  }
+
+  if (candidate && !candidate.factualCheck.passed) {
+    reasons.push(`factual validation failed: ${candidate.factualCheck.rulesTriggered.join(', ')}`);
+  }
+
+  if (candidate && !candidate.editorialCheck.passed) {
+    reasons.push(`editorial validation failed: ${candidate.editorialCheck.rulesTriggered.join(', ')}`);
+  }
+
+  return reasons.length ? reasons.join('; ') : null;
+}
+
 function normaliseCompositionBullet(text: string): string {
   return text
     .replace(/^[\s\u2022*-]+/, '')
@@ -879,6 +910,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     groqRawContent,
     geminiRawContent,
   );
+  const secondaryProvider: EditorialProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
   const editorialCandidate = editorialChoice.selectedCandidate;
   const componentCandidate = editorialChoice.componentCandidate;
   const traceCandidate = editorialCandidate
@@ -898,6 +930,26 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   const safeGeminiInspire = typeof geminiInspire === 'string' && geminiInspire.trim().length > 0
     ? geminiInspire.trim()
     : undefined;
+  const primaryRawContent = preferredProvider === 'gemini' ? geminiRawContent : groqRawContent;
+  const secondaryRawContent = secondaryProvider === 'gemini' ? geminiRawContent : groqRawContent;
+  const primaryRejectionReason = editorialChoice.selectedProvider === preferredProvider
+    ? null
+    : summarizeCandidateRejection(
+        preferredProvider,
+        primaryRawContent,
+        editorialChoice.primaryCandidate,
+        preferredProvider === 'gemini' ? geminiDiagnostics : undefined,
+      );
+  const secondaryRejectionReason = editorialChoice.selectedProvider === secondaryProvider
+    ? null
+    : editorialChoice.selectedProvider === 'template'
+      ? summarizeCandidateRejection(
+          secondaryProvider,
+          secondaryRawContent,
+          editorialChoice.secondaryCandidate,
+          secondaryProvider === 'gemini' ? geminiDiagnostics : undefined,
+        )
+      : null;
 
   return {
     editorial: {
@@ -915,6 +967,8 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     debugAiTrace: {
       primaryProvider: editorialChoice.primaryProvider,
       selectedProvider: editorialChoice.selectedProvider,
+      primaryRejectionReason,
+      secondaryRejectionReason,
       rawGroqResponse: groqRawContent,
       rawGeminiResponse: geminiRawContent || undefined,
       geminiDiagnostics,

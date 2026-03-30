@@ -99,11 +99,13 @@ describe('workflow assembly', () => {
     writeWorkflow(workflowJson, outputPath);
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const weatherNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Weather');
     const weatherConnections = data.connections['HTTP: Weather']?.main?.[0] ?? [];
     expect(weatherConnections).toEqual(expect.arrayContaining([
       expect.objectContaining({ node: 'HTTP: Air Quality', index: 0 }),
       expect.objectContaining({ node: 'Code: Wrap Weather', index: 0 }),
     ]));
+    expect(weatherNode?.parameters?.url).toContain('boundary_layer_height');
 
     const ensembleConnection = data.connections['HTTP: Ensemble']?.main?.[0]?.[0];
     expect(ensembleConnection?.node).toBe('Code: Wrap Ensemble');
