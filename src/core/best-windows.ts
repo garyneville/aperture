@@ -1,4 +1,5 @@
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import type { SessionId, SessionRecommendationSummary } from '../types/session-score.js';
 
 export interface ScoredHour {
   ts: string;
@@ -51,6 +52,13 @@ export interface Window {
   label: string;
   darkPhaseStart?: string | null;
   postMoonsetScore?: number | null;
+}
+
+type WindowSelectionSource = 'threshold' | 'fallback' | 'session-fallback';
+
+interface WindowCandidate extends Omit<Window, 'label'> {
+  labelHint?: string;
+  selectionSource: WindowSelectionSource;
 }
 
 export interface DailySummary {
@@ -110,6 +118,7 @@ export interface BestWindowsInput {
   todayHours: ScoredHour[];
   dailySummary: DailySummary[];
   metarNote: string;
+  sessionRecommendation?: SessionRecommendationSummary;
   debugContext?: DebugContext;
 }
 
@@ -120,6 +129,7 @@ export interface BestWindowsOutput {
   todayCarWash: CarWash;
   dailySummary: DailySummary[];
   metarNote: string;
+  sessionRecommendation?: SessionRecommendationSummary;
   sunrise: string | undefined;
   sunset: string | undefined;
   moonPct: number;
@@ -127,6 +137,8 @@ export interface BestWindowsOutput {
 }
 
 const PHOTO_THRESHOLD = 48;
+const STRONG_SESSION_FALLBACK_SCORE = 58;
+const SESSION_FALLBACK_MARGIN = 10;
 
 function uniqueTags(tags: string[]): string[] {
   return [...new Set(tags.filter(Boolean))];
@@ -168,9 +180,9 @@ function alignTodaySummaryWithWindow(
   ];
 }
 
-export function groupWindows(hrs: ScoredHour[], threshold = 45): Omit<Window, 'label'>[] {
-  const wins: Omit<Window, 'label'>[] = [];
-  let cur: Omit<Window, 'label'> | null = null;
+export function groupWindows(hrs: ScoredHour[], threshold = 45): WindowCandidate[] {
+  const wins: WindowCandidate[] = [];
+  let cur: WindowCandidate | null = null;
 
   for (const h of hrs) {
     if (h.score >= threshold) {
@@ -180,6 +192,7 @@ export function groupWindows(hrs: ScoredHour[], threshold = 45): Omit<Window, 'l
           end: h.hour, et: h.t,
           peak: h.score, tops: h.tags,
           hours: [h], fallback: false,
+          selectionSource: 'threshold',
         };
       } else {
         cur.end = h.hour;
@@ -210,9 +223,9 @@ function sameSession(a: ScoredHour | null, b: ScoredHour | null): boolean {
 }
 
 function expandCollapsedDaylightWindow(
-  window: Omit<Window, 'label'>,
+  window: WindowCandidate,
   hrs: ScoredHour[],
-): Omit<Window, 'label'> {
+): WindowCandidate {
   if (window.start !== window.end || window.hours.length !== 1) return window;
 
   const anchor = window.hours[0];
@@ -242,7 +255,7 @@ function expandCollapsedDaylightWindow(
   };
 }
 
-export function buildFallbackWindow(hrs: ScoredHour[]): Omit<Window, 'label'> | null {
+export function buildFallbackWindow(hrs: ScoredHour[]): WindowCandidate | null {
   const candidates = hrs.filter(h =>
     (h.isGoldAm || h.isBlueAm || h.isGoldPm || h.isBluePm) &&
     typeof h.score === 'number'
@@ -274,10 +287,73 @@ export function buildFallbackWindow(hrs: ScoredHour[]): Omit<Window, 'label'> | 
     start: hours[0].hour, st: hours[0].t,
     end: hours[hours.length - 1].hour, et: hours[hours.length - 1].t,
     peak: best.score, tops, hours, fallback: true,
+    selectionSource: 'fallback',
   };
 }
 
-function labelWindow(w: Omit<Window, 'label'>, sunrise?: string, sunset?: string): string {
+function sessionFallbackLabel(session: SessionId): string {
+  switch (session) {
+    case 'urban':
+      return 'Best urban session';
+    case 'long-exposure':
+      return 'Best long-exposure session';
+    case 'mist':
+      return 'Best mist session';
+    case 'storm':
+      return 'Best storm session';
+    case 'wildlife':
+      return 'Best wildlife session';
+    case 'waterfall':
+      return 'Best waterfall session';
+    case 'seascape':
+      return 'Best seascape session';
+    case 'street':
+      return 'Best street session';
+    case 'golden-hour':
+      return 'Best golden-hour session';
+    case 'astro':
+      return 'Best astro session';
+  }
+}
+
+function sessionFallbackTag(session: SessionId): string {
+  switch (session) {
+    case 'long-exposure':
+      return 'long exposure';
+    case 'golden-hour':
+      return 'golden hour';
+    default:
+      return session;
+  }
+}
+
+function buildSessionFallbackWindow(
+  hrs: ScoredHour[],
+  sessionRecommendation?: SessionRecommendationSummary,
+): WindowCandidate | null {
+  const primary = sessionRecommendation?.primary;
+  if (!primary) return null;
+  if (primary.score < STRONG_SESSION_FALLBACK_SCORE) return null;
+
+  const anchor = hrs.find(hour => hour.hour === primary.hourLabel);
+  if (!anchor) return null;
+
+  return {
+    start: anchor.hour,
+    st: anchor.t,
+    end: anchor.hour,
+    et: anchor.t,
+    peak: primary.score,
+    tops: [sessionFallbackTag(primary.session)],
+    hours: [anchor],
+    fallback: true,
+    labelHint: sessionFallbackLabel(primary.session),
+    selectionSource: 'session-fallback',
+  };
+}
+
+function labelWindow(w: WindowCandidate, sunrise?: string, sunset?: string): string {
+  if (w.labelHint) return w.labelHint;
   const sunrD = sunrise ? new Date(sunrise) : null;
   const sunsetD = sunset ? new Date(sunset) : null;
   const s = new Date(w.st);
@@ -315,7 +391,7 @@ function labelWindow(w: Omit<Window, 'label'>, sunrise?: string, sunset?: string
   return 'Good light window';
 }
 
-function annotateDarkPhase(window: Omit<Window, 'label'>, darkSkyStartsAt?: string | null): Omit<Window, 'label'> {
+function annotateDarkPhase(window: WindowCandidate, darkSkyStartsAt?: string | null): WindowCandidate {
   if (!darkSkyStartsAt || !window.hours.length) return window;
 
   const splitIndex = window.hours.findIndex(hour => hour.hour === darkSkyStartsAt);
@@ -332,13 +408,17 @@ function annotateDarkPhase(window: Omit<Window, 'label'>, darkSkyStartsAt?: stri
 }
 
 export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
-  const { todayHours, dailySummary, metarNote } = input;
+  const { todayHours, dailySummary, metarNote, sessionRecommendation } = input;
 
   let windows = groupWindows(todayHours);
   windows = windows.map(window => expandCollapsedDaylightWindow(window, todayHours));
   if (!windows.length) {
     const fallback = buildFallbackWindow(todayHours);
-    if (fallback) windows = [fallback];
+    const sessionFallback = buildSessionFallbackWindow(todayHours, sessionRecommendation);
+    const fallbackToUse = sessionFallback && (!fallback || sessionFallback.peak >= fallback.peak + SESSION_FALLBACK_MARGIN)
+      ? sessionFallback
+      : (fallback || sessionFallback);
+    if (fallbackToUse) windows = [fallbackToUse];
   }
 
   const sunrise = dailySummary[0]?.sunrise;
@@ -355,10 +435,12 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
 
   const hasLocalWindow = labelledWindows.length > 0;
   const todayHeadline = alignedDailySummary[0]?.headlineScore ?? alignedDailySummary[0]?.photoScore ?? 0;
+  const primarySelectionSource = windows[0]?.selectionSource;
+  const strongSessionFallback = primarySelectionSource === 'session-fallback';
   const todayBestScore = hasLocalWindow
-    ? Math.max(labelledWindows[0].peak, todayHeadline)
+    ? (strongSessionFallback ? todayHeadline : Math.max(labelledWindows[0].peak, todayHeadline))
     : Math.min(todayHeadline, PHOTO_THRESHOLD - 1);
-  const dontBother = !hasLocalWindow || todayBestScore < PHOTO_THRESHOLD;
+  const dontBother = !hasLocalWindow || (!strongSessionFallback && todayBestScore < PHOTO_THRESHOLD);
 
   const todayCarWash = alignedDailySummary[0]?.carWash || {
     score: 0, rating: '\u274c', label: 'No good window',
@@ -369,8 +451,13 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
   debugContext.windows = labelledWindows.map((window, index) => {
     const selected = index === 0;
     const scoreGap = selected ? 0 : Math.max(0, labelledWindows[0].peak - window.peak);
+    const source = windows[index]?.selectionSource;
     const selectionReason = selected
-      ? (window.fallback ? 'selected as the strongest fallback session after no clean threshold window emerged' : 'selected as the highest-scoring local window')
+      ? (source === 'session-fallback'
+          ? 'selected from the strongest session recommendation after no clean threshold window emerged'
+          : window.fallback
+            ? 'selected as the strongest fallback session after no clean threshold window emerged'
+            : 'selected as the highest-scoring local window')
       : (window.fallback
           ? 'kept as a backup fallback session'
           : `kept as backup window; ${scoreGap} point${scoreGap === 1 ? '' : 's'} below the selected slot`);
@@ -396,6 +483,7 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     todayCarWash,
     dailySummary: alignedDailySummary,
     metarNote,
+    sessionRecommendation,
     sunrise,
     sunset,
     moonPct: todayHours[0]?.moon ?? 0,

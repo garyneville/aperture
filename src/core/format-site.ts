@@ -20,6 +20,7 @@ import {
   buildWindowDisplayPlan,
   classifyWindowTiming,
   clockToMinutes,
+  displaySessionName,
   displayTag,
   forecastBestLine,
   getRunTimeContext,
@@ -29,6 +30,11 @@ import {
   moonAstroContext,
   moonDescriptor,
   peakHourForWindow,
+  sessionConfidenceLabel,
+  sessionRecommendationBody,
+  sessionRecommendationHeadline,
+  sessionRunnerUpLine,
+  sessionVolatilityLabel,
   timeAwareBriefingFallback,
   timeAwareLocalSummary,
   windowRange,
@@ -397,6 +403,31 @@ function sWindowSection(
     : '';
 
   return `<div class="section-stack">${[...windowCards, aiCard, compCard].filter(Boolean).join('')}</div>`;
+}
+
+function sSessionRecommendationCard(sessionRecommendation: FormatEmailInput['sessionRecommendation']): string {
+  const primary = sessionRecommendation?.primary;
+  if (!primary) return '';
+
+  const confidenceTone = primary.confidence === 'high'
+    ? C.success
+    : primary.confidence === 'medium'
+      ? C.primary
+      : C.warning;
+  const volatility = sessionVolatilityLabel(primary);
+  const runnerUp = sessionRunnerUpLine(sessionRecommendation);
+
+  return sCard(`
+    <div class="card-overline">Best session today</div>
+    <div class="card-headline">${esc(sessionRecommendationHeadline(primary))}</div>
+    <div class="chip-row" style="margin-top:10px;">
+      ${sScorePill(primary.score)}
+      ${sChip('Confidence', sessionConfidenceLabel(primary.confidence), confidenceTone)}
+      ${volatility ? sChip(primary.session === 'storm' ? 'Volatility' : 'Models', volatility, C.tertiary) : ''}
+    </div>
+    <p class="card-body" style="margin-top:10px;">${esc(sessionRecommendationBody(primary))}</p>
+    ${runnerUp ? `<p class="card-body" style="margin-top:8px;color:${C.subtle};">${esc(runnerUp)}</p>` : ''}
+  `, { accentSide: 'left', accentColor: scoreState(primary.score).fg });
 }
 
 // ── Creative spark ────────────────────────────────────────────────────────────
@@ -852,6 +883,7 @@ export function formatSite(input: FormatEmailInput): string {
     darkSkyAlert,
     spurOfTheMoment,
     geminiInspire,
+    sessionRecommendation,
     debugContext,
   } = input;
   const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
@@ -899,7 +931,9 @@ export function formatSite(input: FormatEmailInput): string {
 
   const localSummary = effectiveDontBother
     ? (hasLocalWindow
-        ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
+        ? (sessionRecommendation?.primary
+            ? `Overall conditions stay marginal, but ${displaySessionName(sessionRecommendation.primary.session).toLowerCase()} is the strongest specialist opportunity if you want to be selective.`
+            : 'Not a great photography day locally — better to enjoy the outdoors instead.')
         : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
     : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
 
@@ -971,6 +1005,9 @@ export function formatSite(input: FormatEmailInput): string {
 
   const utilityBar = sDaylightUtilityBar(todayCarWashData, runTime);
   if (utilityBar) sections.push(utilityBar);
+
+  const sessionCard = sSessionRecommendationCard(sessionRecommendation);
+  if (sessionCard) sections.push(sessionCard);
 
   const signals = sSignalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);
   if (signals) sections.push(signals);

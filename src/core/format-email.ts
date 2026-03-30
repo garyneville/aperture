@@ -23,6 +23,7 @@ import {
   bestTimeLabel,
   buildWindowDisplayPlan,
   clockToMinutes,
+  displaySessionName,
   displayBestTags,
   displayTag,
   getRunTimeContext,
@@ -31,6 +32,11 @@ import {
   moonAstroContext,
   moonDescriptor,
   peakHourForWindow,
+  sessionConfidenceLabel,
+  sessionRecommendationBody,
+  sessionRecommendationHeadline,
+  sessionRunnerUpLine,
+  sessionVolatilityLabel,
   timeAwareLocalSummary,
   todayWindowSection,
   windowRange,
@@ -409,6 +415,31 @@ function spurOfTheMomentCard(spur: SpurOfTheMomentSuggestion): string {
   `, '', `border-left:3px solid ${C.primary};`);
 }
 
+function sessionRecommendationCard(sessionRecommendation: FormatEmailInput['sessionRecommendation']): string {
+  const primary = sessionRecommendation?.primary;
+  if (!primary) return '';
+
+  const confidenceTone = primary.confidence === 'high'
+    ? C.success
+    : primary.confidence === 'medium'
+      ? C.primary
+      : C.warning;
+  const volatility = sessionVolatilityLabel(primary);
+  const runnerUp = sessionRunnerUpLine(sessionRecommendation);
+
+  return card(`
+    <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Best session today</div>
+    <div class="headline" style="Margin:0;font-family:${FONT};font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.01em;color:${C.ink};">${esc(sessionRecommendationHeadline(primary))}</div>
+    <div style="Margin-top:10px;">
+      ${scorePill(primary.score)}
+      ${metricChip('Confidence', sessionConfidenceLabel(primary.confidence), confidenceTone)}
+      ${volatility ? metricChip(primary.session === 'storm' ? 'Volatility' : 'Models', volatility, C.tertiary) : ''}
+    </div>
+    <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(sessionRecommendationBody(primary))}</div>
+    ${runnerUp ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.subtle};">${esc(runnerUp)}</div>` : ''}
+  `, '', `border-left:3px solid ${scoreState(primary.score).fg};`);
+}
+
 export function formatEmail(input: FormatEmailInput): string {
   const {
     dontBother,
@@ -439,6 +470,7 @@ export function formatEmail(input: FormatEmailInput): string {
     darkSkyAlert,
     spurOfTheMoment,
     geminiInspire,
+    sessionRecommendation,
     debugContext,
   } = input;
   const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
@@ -490,7 +522,9 @@ export function formatEmail(input: FormatEmailInput): string {
 
   const localSummary = effectiveDontBother
     ? (hasLocalWindow
-        ? 'Not a great photography day locally — better to enjoy the outdoors instead.'
+        ? (sessionRecommendation?.primary
+            ? `Overall conditions stay marginal, but ${displaySessionName(sessionRecommendation.primary.session).toLowerCase()} is the strongest specialist opportunity if you want to be selective.`
+            : 'Not a great photography day locally — better to enjoy the outdoors instead.')
         : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
     : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
 
@@ -562,6 +596,7 @@ export function formatEmail(input: FormatEmailInput): string {
   const outlookHtml = todayOutlookHtml || tomorrowOutlookHtml;
   const outlookSectionTitle = todayOutlookHtml ? 'Remaining today' : 'Tomorrow\'s weather';
   const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert, runTime);
+  const sessionCard = sessionRecommendationCard(sessionRecommendation);
   const footerKey = `<div style="padding:12px 4px;border-top:1px solid ${C.outline};font-family:${FONT};font-size:11px;line-height:1.6;color:${C.subtle};">
     <b>Key</b> &middot;
     <b>Score bands</b> Excellent &ge; ${SCORE_THRESHOLDS.excellent} &middot; Good ${SCORE_THRESHOLDS.good}&ndash;${SCORE_THRESHOLDS.excellent - 1} &middot; Marginal ${SCORE_THRESHOLDS.marginal}&ndash;${SCORE_THRESHOLDS.good - 1} &middot; Poor &lt; ${SCORE_THRESHOLDS.marginal} &middot;
@@ -579,6 +614,10 @@ export function formatEmail(input: FormatEmailInput): string {
     spacer(8),
     `<tr><td>${daylightUtilityTodayCard(todayCarWashData, runTime)}</td></tr>`,
   ];
+
+  if (sessionCard) {
+    sections.push(spacer(8), `<tr><td>${sessionCard}</td></tr>`);
+  }
 
   if (signals) {
     sections.push(spacer(8), `<tr><td>${signals}</td></tr>`);
