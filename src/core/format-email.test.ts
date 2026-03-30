@@ -321,6 +321,125 @@ describe('formatEmail hero summary', () => {
     expect(html).not.toContain('Tomorrow&#39;s weather');
   });
 
+  it('keeps the debug outdoor trace aligned with the rendered remaining-today outlook', () => {
+    const input: FormatEmailInput = {
+      dontBother: false,
+      windows: [{
+        label: 'Late morning local window',
+        start: '09:00',
+        end: '10:00',
+        peak: 58,
+        hours: [{ hour: '09:00', score: 58, ch: 10, visK: 18, wind: '10', pp: 0, tpw: 18 }],
+        tops: ['landscape'],
+      }],
+      todayCarWash: {
+        rating: 'OK',
+        label: 'Usable',
+        score: 60,
+        start: '09:00',
+        end: '11:00',
+        wind: 18,
+        pp: 0,
+        tmp: 7,
+      },
+      dailySummary: [{
+        dayLabel: 'Today',
+        dateKey: '2026-03-30',
+        dayIdx: 0,
+        photoScore: 58,
+        headlineScore: 58,
+        photoEmoji: 'Good',
+        amScore: 58,
+        pmScore: 24,
+        astroScore: 12,
+        confidence: 'high',
+        confidenceStdDev: 8,
+        bestPhotoHour: '09:00',
+        bestTags: 'landscape',
+        carWash: {
+          rating: 'OK',
+          label: 'Usable',
+          score: 60,
+          start: '09:00',
+          end: '11:00',
+          wind: 18,
+          pp: 0,
+          tmp: 7,
+        },
+        hours: [
+          { hour: '09:00', tmp: 6, pp: 0, wind: 26, gusts: 32, visK: 20, pr: 0, ct: 20, isNight: false },
+          { hour: '10:00', tmp: 7, pp: 0, wind: 26, gusts: 32, visK: 20, pr: 0, ct: 20, isNight: false },
+        ],
+      }, {
+        dayLabel: 'Tomorrow',
+        dateKey: '2026-03-31',
+        dayIdx: 1,
+        photoScore: 70,
+        headlineScore: 70,
+        photoEmoji: 'Excellent',
+        amScore: 70,
+        pmScore: 64,
+        astroScore: 18,
+        confidence: 'high',
+        confidenceStdDev: 6,
+        bestPhotoHour: '09:00',
+        bestTags: 'landscape',
+        carWash: {
+          rating: 'Good',
+          label: 'Favourable',
+          score: 82,
+          start: '09:00',
+          end: '12:00',
+          wind: 10,
+          pp: 0,
+          tmp: 13,
+        },
+        hours: [
+          { hour: '09:00', tmp: 12, pp: 0, wind: 10, gusts: 14, visK: 20, pr: 0, ct: 15, isNight: false },
+          { hour: '10:00', tmp: 13, pp: 0, wind: 10, gusts: 14, visK: 20, pr: 0, ct: 15, isNight: false },
+        ],
+      }],
+      altLocations: [],
+      sunriseStr: '06:40',
+      sunsetStr: '19:34',
+      moonPct: 12,
+      today: 'Monday 30 March',
+      todayBestScore: 58,
+      shSunsetQ: null,
+      shSunriseQ: null,
+      sunDir: null,
+      crepPeak: 0,
+      aiText: 'Usable local conditions through late morning.',
+      debugContext: {
+        metadata: {
+          generatedAt: '2026-03-30T08:00:00.000Z',
+          location: 'Leeds',
+          latitude: 53.8,
+          longitude: -1.57,
+          timezone: 'Europe/London',
+          workflowVersion: 'debug-trace-v1',
+          debugModeEnabled: false,
+        },
+        hourlyScoring: [],
+        windows: [],
+        nearbyAlternatives: [],
+      },
+    };
+
+    const html = formatEmail(input);
+
+    expect(html).toContain('Remaining today');
+    expect(input.debugContext?.outdoorComfort?.hours).toHaveLength(2);
+    expect(input.debugContext?.outdoorComfort?.hours[0]).toMatchObject({
+      hour: '09:00',
+      tmp: 6,
+      wind: 26,
+      comfortScore: 75,
+      label: 'Best for a walk',
+    });
+    expect(input.debugContext?.outdoorComfort?.hours[0].tmp).not.toBe(12);
+  });
+
   it('treats overnight windows as live once the evening start time has passed', () => {
     const input: FormatEmailInput = {
       dontBother: false,

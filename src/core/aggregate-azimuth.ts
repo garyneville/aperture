@@ -28,6 +28,8 @@ export interface OcclusionEntry {
   avgVisK: number;
   lowRisk: number;
   wetRisk: number;
+  horizonGapPct: number;
+  gapQualityScore: number;
   occlusionRisk: number;
   clearPathBonus: number;
   sampleCount: number;
@@ -105,9 +107,18 @@ export function aggregateAzimuth(scanResults: AzimuthWeatherData[], sampleMeta: 
       const avgVisK = bucket.visK / weightSum;
       const lowRisk = clamp(Math.round(avgLow * 0.65 + bucket.farLowMax * 0.35));
       const wetRisk = clamp(Math.round(avgPp * 0.65 + avgPrecip * 0.35));
+      const horizonGapPct = clamp(Math.round(100 - lowRisk));
+      const gapDepthPct = clamp(Math.round(avgTotal - avgLow));
+      const visibilitySupport = avgVisK >= 8 ? clamp(Math.round((avgVisK - 8) * 5), 0, 100) : 0;
+      const gapQualityScore = clamp(Math.round(
+        (horizonGapPct * 0.55)
+        + (gapDepthPct * 0.20)
+        + (visibilitySupport * 0.15)
+        + ((100 - wetRisk) * 0.10),
+      ));
       const visibilityPenalty = avgVisK < 8 ? Math.round((8 - avgVisK) * 3) : 0;
       const occlusionRisk = clamp(Math.round(lowRisk * 0.45 + avgTotal * 0.30 + wetRisk * 0.20 + visibilityPenalty * 0.05));
-      const clearPathBonus = occlusionRisk < 20 ? 8 : occlusionRisk < 32 ? 4 : occlusionRisk > 75 ? -10 : occlusionRisk > 60 ? -5 : 0;
+      const clearPathBonus = gapQualityScore > 75 ? 8 : gapQualityScore > 60 ? 4 : gapQualityScore < 25 ? -10 : gapQualityScore < 40 ? -5 : 0;
 
       result[phase][ts] = {
         avgLow: Math.round(avgLow),
@@ -116,7 +127,12 @@ export function aggregateAzimuth(scanResults: AzimuthWeatherData[], sampleMeta: 
         avgTotal: Math.round(avgTotal),
         avgPp: Math.round(avgPp),
         avgVisK: Math.round(avgVisK * 10) / 10,
-        lowRisk, wetRisk, occlusionRisk, clearPathBonus,
+        lowRisk,
+        wetRisk,
+        horizonGapPct,
+        gapQualityScore,
+        occlusionRisk,
+        clearPathBonus,
         sampleCount: bucket.samples,
       };
     }

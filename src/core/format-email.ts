@@ -592,7 +592,9 @@ export function formatEmail(input: FormatEmailInput): string {
     [topWindow, ...remainingPhotoWindows].filter((window): window is NonNullable<typeof window> => Boolean(window)),
     debugContext,
   );
-  const tomorrowOutlookHtml = nextDayHourlyOutlookSection(tomorrow, debugContext);
+  const tomorrowOutlookHtml = todayOutlookHtml
+    ? ''
+    : nextDayHourlyOutlookSection(tomorrow, debugContext);
   const outlookHtml = todayOutlookHtml || tomorrowOutlookHtml;
   const outlookSectionTitle = todayOutlookHtml ? 'Remaining today' : 'Tomorrow\'s weather';
   const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert, runTime);

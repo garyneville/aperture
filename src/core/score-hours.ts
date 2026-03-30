@@ -26,6 +26,7 @@ export interface WeatherData {
     cape?: number[];
     vapour_pressure_deficit?: number[];
     total_column_integrated_water_vapour?: number[];
+    boundary_layer_height?: number[];
   };
   daily?: {
     sunrise: string[];
@@ -71,6 +72,8 @@ export interface EnsembleData {
 export interface AzimuthScanResult {
   occlusionRisk?: number | null;
   lowRisk?: number | null;
+  horizonGapPct?: number | null;
+  gapQualityScore?: number | null;
   clearPathBonus?: number;
 }
 
@@ -120,6 +123,8 @@ export interface ScoredHour {
   pp: number;
   pr: number;
   vpd: number;
+  boundaryLayerHeightM?: number | null;
+  horizonGapPct?: number | null;
   azimuthRisk: number | null;
   isGolden: boolean;
   isGoldAm: boolean;
@@ -228,6 +233,8 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     azimuthOcclusionRiskPct: hour.azimuthRisk,
     azimuthLowCloudRiskPct: null,
     clearPathBonusPts: null,
+    boundaryLayerHeightM: hour.boundaryLayerHeightM ?? null,
+    horizonGapPct: hour.horizonGapPct ?? null,
     ensembleCloudStdDevPct: ensemble ? Math.round(ensemble.stdDev) : null,
     ensembleCloudMeanPct: ensemble ? Math.round(ensemble.mean) : null,
   };
@@ -395,6 +402,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       const prev = i > 0 ? (w.hourly!.precipitation?.[i - 1] ?? 0) : 0;
       // TPW — total precipitable water (mm)
       const tpw  = w.hourly!.total_column_integrated_water_vapour?.[i] ?? 20;
+      const blh  = w.hourly!.boundary_layer_height?.[i] ?? null;
 
       const qi   = aqIdx[ts] ?? -1;
       const aod  = qi >= 0 ? (aq.hourly!.aerosol_optical_depth?.[qi]  ?? 0.2) : 0.2;
@@ -417,6 +425,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       const azimuthScan = azimuthPhase ? (azimuthByPhase as Record<string, Record<string, AzimuthScanResult>>)?.[azimuthPhase]?.[ts] || null : null;
       const azimuthRisk = azimuthScan?.occlusionRisk ?? null;
       const azimuthLowRisk = azimuthScan?.lowRisk ?? null;
+      const horizonGapPct = azimuthScan?.horizonGapPct ?? null;
 
       const moonMetrics = getMoonMetrics(+t, LAT, LON);
       const moon = moonMetrics.illumination;
@@ -567,6 +576,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         azimuthOcclusionRiskPct: azimuthRisk !== null ? Math.round(azimuthRisk) : null,
         azimuthLowCloudRiskPct: azimuthLowRisk !== null ? Math.round(azimuthLowRisk) : null,
         clearPathBonusPts: azimuthScan?.clearPathBonus ?? null,
+        boundaryLayerHeightM: blh != null ? Math.round(blh) : null,
+        horizonGapPct: horizonGapPct !== null ? Math.round(horizonGapPct) : null,
         capeJkg: Math.round(cap),
         ensembleCloudStdDevPct: ensIdx[ts] ? Math.round(ensIdx[ts]!.stdDev) : null,
         ensembleCloudMeanPct: ensIdx[ts] ? Math.round(ensIdx[ts]!.mean) : null,
@@ -583,6 +594,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         wind: Math.round(spd), gusts: Math.round(gst),
         tmp: Math.round(tmp * 10) / 10, hum, dew: Math.round(dew * 10) / 10,
         pp, pr, vpd,
+        boundaryLayerHeightM: blh != null ? Math.round(blh) : null,
+        horizonGapPct: horizonGapPct !== null ? Math.round(horizonGapPct) : null,
         azimuthRisk: azimuthRisk !== null ? Math.round(azimuthRisk) : null,
         isGolden, isGoldAm, isGoldPm, isBlue, isBlueAm, isBluePm, isNight,
         moon: Math.round(moon * 100), uv, tags,

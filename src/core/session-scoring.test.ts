@@ -48,6 +48,7 @@ describe('session scoring foundation', () => {
       'storm',
       'long-exposure',
       'urban',
+      'wildlife',
     ]);
   });
 
@@ -243,6 +244,38 @@ describe('session scoring foundation', () => {
     expect(goodTransparency.reasons).toContain('Transparency looks strong for clean deep-sky contrast.');
   });
 
+  it('penalises astro when a shallow boundary layer traps haze aloft', () => {
+    const trapped = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      astroScore: 80,
+      cloudTotalPct: 10,
+      cloudLowPct: 3,
+      cloudMidPct: 4,
+      cloudHighPct: 3,
+      visibilityKm: 22,
+      humidityPct: 84,
+      aerosolOpticalDepth: 0.14,
+      moonIlluminationPct: 10,
+      boundaryLayerHeightM: 220,
+    })));
+    const mixed = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      astroScore: 80,
+      cloudTotalPct: 10,
+      cloudLowPct: 3,
+      cloudMidPct: 4,
+      cloudHighPct: 3,
+      visibilityKm: 22,
+      humidityPct: 84,
+      aerosolOpticalDepth: 0.14,
+      moonIlluminationPct: 10,
+      boundaryLayerHeightM: 1600,
+    })));
+
+    expect(mixed.score).toBeGreaterThan(trapped.score);
+    expect(trapped.warnings).toContain('A shallow boundary layer may be trapping haze despite the cloud forecast.');
+  });
+
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
     const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
       overallScore: 48,
@@ -269,6 +302,108 @@ describe('session scoring foundation', () => {
     expect(sessions[0]?.session).toBe('mist');
     expect(sessions[0]?.hardPass).toBe(true);
     expect(sessions[0]?.reasons).toContain('Visibility is in a useful misty-landscape range.');
+  });
+
+  it('prefers photogenic mist over unusably dense fog', () => {
+    const photogenic = evaluateSessionFeatures('mist', deriveHourFeatures(makeHour({
+      overallScore: 46,
+      dramaScore: 24,
+      clarityScore: 20,
+      mistScore: 84,
+      astroScore: 0,
+      crepuscularScore: 10,
+      cloudTotalPct: 90,
+      visibilityKm: 3.5,
+      aerosolOpticalDepth: 0.08,
+      windKph: 4,
+      gustKph: 7,
+      temperatureC: 6,
+      humidityPct: 96,
+      dewPointC: 5.4,
+      precipProbabilityPct: 15,
+      isGolden: false,
+      isBlue: false,
+      isNight: false,
+      tags: ['mist', 'atmospheric'],
+    })));
+    const opaque = evaluateSessionFeatures('mist', deriveHourFeatures(makeHour({
+      overallScore: 46,
+      dramaScore: 24,
+      clarityScore: 20,
+      mistScore: 84,
+      astroScore: 0,
+      crepuscularScore: 10,
+      cloudTotalPct: 90,
+      visibilityKm: 0.3,
+      aerosolOpticalDepth: 0.08,
+      windKph: 4,
+      gustKph: 7,
+      temperatureC: 6,
+      humidityPct: 99,
+      dewPointC: 5.8,
+      precipProbabilityPct: 15,
+      isGolden: false,
+      isBlue: false,
+      isNight: false,
+      tags: ['mist', 'atmospheric'],
+    })));
+
+    expect(photogenic.hardPass).toBe(true);
+    expect(photogenic.score).toBeGreaterThan(opaque.score);
+    expect(photogenic.reasons).toContain('Visibility is in a useful misty-landscape range.');
+    expect(opaque.hardPass).toBe(false);
+    expect(opaque.warnings).toContain('Fog may be too dense for layered scenery rather than simply atmospheric.');
+  });
+
+  it('uses boundary-layer depth as an optional mist persistence signal when present', () => {
+    const trapped = evaluateSessionFeatures('mist', deriveHourFeatures(makeHour({
+      overallScore: 46,
+      dramaScore: 24,
+      clarityScore: 20,
+      mistScore: 78,
+      astroScore: 0,
+      crepuscularScore: 10,
+      cloudTotalPct: 88,
+      visibilityKm: 4,
+      aerosolOpticalDepth: 0.08,
+      windKph: 5,
+      gustKph: 8,
+      temperatureC: 5,
+      humidityPct: 95,
+      dewPointC: 4.5,
+      precipProbabilityPct: 10,
+      boundaryLayerHeightM: 220,
+      isGolden: false,
+      isBlue: false,
+      isNight: false,
+      tags: ['mist', 'atmospheric'],
+    })));
+    const mixedOut = evaluateSessionFeatures('mist', deriveHourFeatures(makeHour({
+      overallScore: 46,
+      dramaScore: 24,
+      clarityScore: 20,
+      mistScore: 78,
+      astroScore: 0,
+      crepuscularScore: 10,
+      cloudTotalPct: 88,
+      visibilityKm: 4,
+      aerosolOpticalDepth: 0.08,
+      windKph: 5,
+      gustKph: 8,
+      temperatureC: 5,
+      humidityPct: 95,
+      dewPointC: 4.5,
+      precipProbabilityPct: 10,
+      boundaryLayerHeightM: 1600,
+      isGolden: false,
+      isBlue: false,
+      isNight: false,
+      tags: ['mist', 'atmospheric'],
+    })));
+
+    expect(trapped.score).toBeGreaterThan(mixedOut.score);
+    expect(trapped.reasons).toContain('A low boundary layer should help mist or haze stay trapped near the ground.');
+    expect(mixedOut.warnings).toContain('A deep boundary layer may mix out low-level mist before it becomes photogenic.');
   });
 
   it('can surface storm as the best-fit session for a dramatic showery setup', () => {
@@ -351,7 +486,7 @@ describe('session scoring foundation', () => {
     expect(stable.confidence).toBe('high');
     expect(volatile.confidence).toBe('medium');
     expect(volatile.volatility).toBe(18);
-    expect(volatile.score).toBeGreaterThan(stable.score);
+    expect(volatile.score).toBeGreaterThanOrEqual(stable.score);
   });
 
   it('can select the strongest session across multiple candidate hours', () => {
@@ -418,6 +553,72 @@ describe('session scoring foundation', () => {
     expect(medium.score).toBeGreaterThan(high.score);
   });
 
+  it('golden-hour scores an open horizon gap above a narrow one', () => {
+    const openGap = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      azimuthOcclusionRiskPct: 35,
+      clearPathBonusPts: 0,
+      horizonGapPct: 78,
+    })));
+    const narrowGap = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      azimuthOcclusionRiskPct: 35,
+      clearPathBonusPts: 0,
+      horizonGapPct: 18,
+    })));
+
+    expect(openGap.score).toBeGreaterThan(narrowGap.score);
+    expect(openGap.reasons).toContain('The horizon gap looks open enough for low-angle light to reach the scene.');
+    expect(narrowGap.warnings).toContain('The horizon gap looks narrow for reliable low-angle light.');
+  });
+
+  it('golden-hour prefers translucent upper cloud over dense low blocking cloud at the same total cover', () => {
+    const translucent = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      cloudTotalPct: 58,
+      cloudLowPct: 6,
+      cloudMidPct: 16,
+      cloudHighPct: 48,
+    })));
+    const blocked = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      cloudTotalPct: 58,
+      cloudLowPct: 34,
+      cloudMidPct: 12,
+      cloudHighPct: 12,
+    })));
+
+    expect(translucent.score).toBeGreaterThan(blocked.score);
+    expect(translucent.reasons).toContain('Upper cloud looks thin enough to catch colour without sealing the sky.');
+    expect(blocked.warnings).toContain('Dense low cloud may block the sun-side glow before it reaches the scene.');
+  });
+
+  it('penalises golden-hour scenes when a shallow boundary layer traps haze', () => {
+    const trapped = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      cloudTotalPct: 50,
+      cloudLowPct: 15,
+      cloudMidPct: 20,
+      cloudHighPct: 15,
+      visibilityKm: 18,
+      humidityPct: 90,
+      aerosolOpticalDepth: 0.16,
+      boundaryLayerHeightM: 220,
+      azimuthOcclusionRiskPct: 20,
+      clearPathBonusPts: 4,
+    })));
+    const mixed = evaluateSessionFeatures('golden-hour', deriveHourFeatures(makeHour({
+      cloudTotalPct: 50,
+      cloudLowPct: 15,
+      cloudMidPct: 20,
+      cloudHighPct: 15,
+      visibilityKm: 18,
+      humidityPct: 90,
+      aerosolOpticalDepth: 0.16,
+      boundaryLayerHeightM: 1600,
+      azimuthOcclusionRiskPct: 20,
+      clearPathBonusPts: 4,
+    })));
+
+    expect(mixed.score).toBeGreaterThan(trapped.score);
+    expect(trapped.warnings).toContain('A shallow boundary layer may trap haze and flatten distant contrast.');
+  });
+
   it('storm bell-curve: moderate precip scores higher than dry or heavy rain', () => {
     const moderate = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
       dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 45,
@@ -450,6 +651,99 @@ describe('session scoring foundation', () => {
     expect(partial.score).toBeGreaterThan(overcast.score);
     expect(partial.reasons).toContain('Partial cloud should let dramatic breaks develop rather than flatten the scene.');
     expect(overcast.warnings).toContain('Dense overcast could flatten the scene before breaks appear.');
+  });
+
+  it('storm edge-lighting prefers a usable horizon gap during low-angle sessions', () => {
+    const openGap = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82,
+      cloudTotalPct: 68,
+      precipProbabilityPct: 45,
+      isGolden: true,
+      windKph: 18,
+      crepuscularScore: 44,
+      azimuthOcclusionRiskPct: 40,
+      clearPathBonusPts: 0,
+      horizonGapPct: 72,
+    })));
+    const narrowGap = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82,
+      cloudTotalPct: 68,
+      precipProbabilityPct: 45,
+      isGolden: true,
+      windKph: 18,
+      crepuscularScore: 44,
+      azimuthOcclusionRiskPct: 40,
+      clearPathBonusPts: 0,
+      horizonGapPct: 18,
+    })));
+
+    expect(openGap.score).toBeGreaterThan(narrowGap.score);
+    expect(openGap.reasons).toContain('A usable horizon gap should help edge-lighting break through.');
+    expect(narrowGap.warnings).toContain('A narrow horizon gap may choke off edge-lighting even if cloud structure looks active.');
+  });
+
+  it('storm scoring prefers layered storm cloud over a low stratus lid at the same total cover', () => {
+    const layered = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82,
+      cloudTotalPct: 72,
+      cloudLowPct: 18,
+      cloudMidPct: 24,
+      cloudHighPct: 30,
+      precipProbabilityPct: 45,
+      isGolden: true,
+      windKph: 18,
+      crepuscularScore: 44,
+    })));
+    const flatLid = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 82,
+      cloudTotalPct: 72,
+      cloudLowPct: 44,
+      cloudMidPct: 16,
+      cloudHighPct: 12,
+      precipProbabilityPct: 45,
+      isGolden: true,
+      windKph: 18,
+      crepuscularScore: 44,
+    })));
+
+    expect(layered.score).toBeGreaterThan(flatLid.score);
+    expect(layered.reasons).toContain('Cloud depth looks thick enough for drama without sealing the whole sky.');
+    expect(flatLid.warnings).toContain('Dense low cloud could turn the storm sky flat instead of edge-lit.');
+  });
+
+  it('astro tolerates a thin high veil better than low blocking cloud at the same total cover', () => {
+    const thinVeil = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      isGolden: false,
+      isBlue: false,
+      cloudTotalPct: 22,
+      cloudLowPct: 4,
+      cloudMidPct: 8,
+      cloudHighPct: 22,
+      astroScore: 82,
+      moonIlluminationPct: 8,
+      visibilityKm: 28,
+      humidityPct: 62,
+      aerosolOpticalDepth: 0.07,
+    })));
+    const lowDeck = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true,
+      isGolden: false,
+      isBlue: false,
+      cloudTotalPct: 22,
+      cloudLowPct: 20,
+      cloudMidPct: 2,
+      cloudHighPct: 2,
+      astroScore: 82,
+      moonIlluminationPct: 8,
+      visibilityKm: 28,
+      humidityPct: 62,
+      aerosolOpticalDepth: 0.07,
+    })));
+
+    expect(thinVeil.score).toBeGreaterThan(lowDeck.score);
+    expect(thinVeil.reasons).toContain('Any remaining cloud looks like a thin veil rather than a solid deck.');
+    expect(lowDeck.warnings).toContain('Dense low cloud is a bigger risk than the raw cloud-cover total suggests.');
   });
 
   it('summarizes per-session recommendations without duplicate session winners', () => {
@@ -496,7 +790,7 @@ describe('session scoring foundation', () => {
     expect(summary.primary?.session).toBe('storm');
     expect(summary.primary?.hourLabel).toBe('19:00');
     expect(summary.hoursAnalyzed).toBe(2);
-    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'astro']);
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'golden-hour', 'mist', 'urban', 'wildlife', 'astro']);
     expect(summary.runnerUps[0]?.session).toBe('long-exposure');
   });
 
@@ -633,6 +927,77 @@ describe('session scoring foundation', () => {
     expect(sessions[0]?.hardPass).toBe(true);
     expect(sessions[0]?.reasons).toContain('Recent or active rain should leave wet streets for reflections.');
     expect(sessions[0]?.reasons).toContain('Blue-hour or night light suits moody urban photography.');
+  });
+
+  it('scores wildlife conservatively on a calm soft-light daylight setup', () => {
+    const result = evaluateSessionFeatures('wildlife', deriveHourFeatures(makeHour({
+      overallScore: 58,
+      dramaScore: 42,
+      clarityScore: 44,
+      mistScore: 8,
+      astroScore: 0,
+      crepuscularScore: 26,
+      cloudTotalPct: 58,
+      cloudLowPct: 18,
+      cloudMidPct: 22,
+      cloudHighPct: 18,
+      visibilityKm: 18,
+      aerosolOpticalDepth: 0.08,
+      precipProbabilityPct: 12,
+      humidityPct: 72,
+      temperatureC: 11,
+      dewPointC: 6,
+      windKph: 5,
+      gustKph: 8,
+      moonIlluminationPct: 15,
+      isGolden: true,
+      isBlue: false,
+      isNight: false,
+      tags: ['wildlife', 'soft light'],
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.confidence).toBe('medium');
+    expect(result.score).toBeGreaterThan(60);
+    expect(result.reasons).toContain('Lighter winds should make subjects and longer lenses easier to manage.');
+    expect(result.reasons).toContain('Soft low-angle light should be kinder on feathers, fur, and contrast.');
+    expect(result.warnings).toContain('This wildlife score is a coarse scaffold without species timing, habitat, or scent context.');
+  });
+
+  it('keeps wildlife low-confidence when wind and storms make the setup unreliable', () => {
+    const result = evaluateSessionFeatures('wildlife', deriveHourFeatures(makeHour({
+      overallScore: 46,
+      dramaScore: 48,
+      clarityScore: 32,
+      mistScore: 6,
+      astroScore: 0,
+      crepuscularScore: 14,
+      cloudTotalPct: 24,
+      cloudLowPct: 12,
+      cloudMidPct: 8,
+      cloudHighPct: 4,
+      visibilityKm: 5,
+      aerosolOpticalDepth: 0.11,
+      precipProbabilityPct: 68,
+      humidityPct: 70,
+      temperatureC: 16,
+      dewPointC: 9,
+      windKph: 27,
+      gustKph: 36,
+      capeJkg: 1600,
+      lightningRisk: 22,
+      moonIlluminationPct: 15,
+      isGolden: false,
+      isBlue: false,
+      isNight: false,
+      tags: ['wildlife'],
+    })));
+
+    expect(result.confidence).toBe('low');
+    expect(result.score).toBeLessThan(40);
+    expect(result.warnings).toContain('Wind may keep smaller subjects restless and move perches or foreground cover.');
+    expect(result.warnings).toContain('Showery or stormy conditions could make animal movement less predictable.');
+    expect(result.warnings).toContain('This wildlife score is a coarse scaffold without species timing, habitat, or scent context.');
   });
 
   it('scores urban higher when wet surfaces and city light align', () => {

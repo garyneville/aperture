@@ -76,7 +76,7 @@ export function outdoorComfortLabel(
   return { text: 'Poor conditions', fg: C.error, bg: C.errorContainer, highlight: false };
 }
 
-function outdoorComfortReason(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK' | 'pr'>): string {
+export function outdoorComfortReason(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK' | 'pr'>): string {
   const reasons: string[] = [];
   if (h.pr > 1 || h.pp >= 60) reasons.push('rain-heavy');
   else if (h.pr > 0.2 || h.pp >= 35) reasons.push('rain risk');
@@ -93,46 +93,31 @@ function outdoorComfortReason(h: Pick<NextDayHour, 'tmp' | 'pp' | 'wind' | 'visK
   return reasons.slice(0, 2).join(', ');
 }
 
-function bestOutdoorWindow(
-  hours: NextDayHour[],
-  scored: Array<{ score: number; label: { text: string; highlight: boolean } }>,
-): { start: string; end: string; label: string } | null {
-  let bestRun: { start: number; end: number } | null = null;
-  let currentStart = -1;
-  let currentLen = 0;
-  let bestLen = 0;
-
-  for (let index = 0; index < hours.length; index++) {
-    if (scored[index].label.highlight) {
-      if (currentStart === -1) currentStart = index;
-      currentLen++;
-      if (currentLen > bestLen) {
-        bestLen = currentLen;
-        bestRun = { start: currentStart, end: index };
-      }
-    } else {
-      currentStart = -1;
-      currentLen = 0;
-    }
-  }
-
-  if (!bestRun) return null;
-  const startHour = hours[bestRun.start].hour;
-  const endHour = hours[bestRun.end].hour;
-  const topLabel = scored
-    .slice(bestRun.start, bestRun.end + 1)
-    .reduce((best, hour) => hour.score > best.score ? hour : best)
-    .label.text;
-  return { start: startHour, end: endHour, label: topLabel };
+export interface OutdoorOutlookRow {
+  hour: NextDayHour;
+  score: number;
+  label: ReturnType<typeof outdoorComfortLabel>;
+  reason: string;
 }
 
-interface HourlyOutlookOptions {
-  title: string;
-  caption: string;
+export interface OutdoorOutlookOptions {
   summaryContext: 'today' | 'tomorrow';
   startAtMinutes?: number | null;
   showOvernight?: boolean;
   photoWindows?: Window[];
+}
+
+export interface OutdoorOutlookModel {
+  hours: NextDayHour[];
+  rows: OutdoorOutlookRow[];
+  dayRows: OutdoorOutlookRow[];
+  bestWindow: { start: string; end: string; label: string } | null;
+  summaryLine: string;
+}
+
+interface HourlyOutlookSectionOptions extends OutdoorOutlookOptions {
+  title: string;
+  caption: string;
 }
 
 function outdoorSummaryLine(
@@ -185,12 +170,104 @@ function formatPhotoWindowList(windows: Window[]): string {
   return windows.map(window => `${window.label} ${windowRange(window)}`).join(' · ');
 }
 
+function findContiguousRuns<T>(items: T[], predicate: (item: T) => boolean): Array<{ start: number; end: number }> {
+  const runs: Array<{ start: number; end: number }> = [];
+  let start = -1;
+
+  for (let index = 0; index < items.length; index++) {
+    if (predicate(items[index])) {
+      if (start === -1) start = index;
+      continue;
+    }
+    if (start !== -1) {
+      runs.push({ start, end: index - 1 });
+      start = -1;
+    }
+  }
+
+  if (start !== -1) {
+    runs.push({ start, end: items.length - 1 });
+  }
+
+  return runs;
+}
+
+function bestOutdoorWindow(rows: OutdoorOutlookRow[]): { start: string; end: string; label: string } | null {
+  const highlightedRows = rows.filter(row => row.label.highlight);
+  if (!highlightedRows.length) return null;
+
+  const peakScore = Math.max(...highlightedRows.map(row => row.score));
+  const focusedThreshold = Math.max(55, peakScore - 10);
+  const focusedRuns = findContiguousRuns(rows, row => row.label.highlight && row.score >= focusedThreshold);
+  const fallbackRuns = findContiguousRuns(rows, row => row.label.highlight);
+  const candidateRuns = focusedRuns.length ? focusedRuns : fallbackRuns;
+
+  if (!candidateRuns.length) return null;
+
+  const [bestRun] = candidateRuns
+    .map(run => {
+      const runRows = rows.slice(run.start, run.end + 1);
+      const peak = Math.max(...runRows.map(row => row.score));
+      const average = runRows.reduce((sum, row) => sum + row.score, 0) / runRows.length;
+      return { ...run, peak, average, length: runRows.length };
+    })
+    .sort((left, right) => (
+      right.peak - left.peak
+      || right.average - left.average
+      || right.length - left.length
+      || left.start - right.start
+    ));
+
+  const runRows = rows.slice(bestRun.start, bestRun.end + 1);
+  const topRow = runRows.reduce((best, row) => row.score > best.score ? row : best);
+  return {
+    start: rows[bestRun.start].hour.hour,
+    end: rows[bestRun.end].hour.hour,
+    label: topRow.label.text,
+  };
+}
+
+export function buildOutdoorOutlookModel(
+  day: DaySummary | undefined,
+  options: Partial<OutdoorOutlookOptions> = {},
+): OutdoorOutlookModel | null {
+  const config: OutdoorOutlookOptions = {
+    summaryContext: 'tomorrow',
+    startAtMinutes: null,
+    showOvernight: false,
+    photoWindows: [],
+    ...options,
+  };
+  const hours = (day?.hours || [])
+    .filter(hour => config.startAtMinutes === null || config.startAtMinutes === undefined || (clockToMinutes(hour.hour) ?? -1) >= config.startAtMinutes)
+    .filter(hour => shouldDisplayOutdoorHour(hour, Boolean(config.showOvernight), config.photoWindows || []));
+
+  if (!hours.length) return null;
+
+  const rows = hours.map(hour => {
+    const score = outdoorComfortScore(hour);
+    const label = outdoorComfortLabel(score, hour);
+    const reason = outdoorComfortReason(hour);
+    return { hour, score, label, reason };
+  });
+  const dayRows = rows.filter(({ hour }) => !hour.isNight);
+  const bestWindow = bestOutdoorWindow(dayRows);
+
+  return {
+    hours,
+    rows,
+    dayRows,
+    bestWindow,
+    summaryLine: outdoorSummaryLine(bestWindow, hours, config.summaryContext),
+  };
+}
+
 export function nextDayHourlyOutlookSection(
   tomorrow: DaySummary | undefined,
   debugContext?: DebugContext,
-  options: Partial<HourlyOutlookOptions> = {},
+  options: Partial<HourlyOutlookSectionOptions> = {},
 ): string {
-  const config: HourlyOutlookOptions = {
+  const config: HourlyOutlookSectionOptions = {
     title: 'Tomorrow at a glance',
     caption: 'Tomorrow&apos;s hourly weather outlook',
     summaryContext: 'tomorrow',
@@ -199,25 +276,11 @@ export function nextDayHourlyOutlookSection(
     photoWindows: [],
     ...options,
   };
-  const hours = (tomorrow?.hours || [])
-    .filter(hour => config.startAtMinutes === null || config.startAtMinutes === undefined || (clockToMinutes(hour.hour) ?? -1) >= config.startAtMinutes)
-    .filter(hour => shouldDisplayOutdoorHour(hour, Boolean(config.showOvernight), config.photoWindows || []));
-  if (!hours.length) return '';
-
-  const scoredHours = hours.map(hour => {
-    const score = outdoorComfortScore(hour);
-    const label = outdoorComfortLabel(score, hour);
-    return { hour, score, label };
-  });
-
-  const dayHoursOnly = hours.filter(hour => !hour.isNight);
-  const dayScored = scoredHours.filter(entry => !entry.hour.isNight);
-  const bestWindow = bestOutdoorWindow(dayHoursOnly, dayScored.map(entry => ({ score: entry.score, label: entry.label })));
-  const summaryLine = outdoorSummaryLine(bestWindow, hours, config.summaryContext);
+  const model = buildOutdoorOutlookModel(tomorrow, config);
+  if (!model) return '';
 
   if (debugContext) {
-    const debugHours: DebugOutdoorComfortHour[] = scoredHours
-      .filter(({ hour }) => !hour.isNight)
+    const debugHours: DebugOutdoorComfortHour[] = model.dayRows
       .map(({ hour, score, label }) => ({
         hour: hour.hour,
         comfortScore: score,
@@ -228,16 +291,15 @@ export function nextDayHourlyOutlookSection(
         visK: hour.visK,
         pr: hour.pr,
       }));
-    debugContext.outdoorComfort = { bestWindow, hours: debugHours };
+    debugContext.outdoorComfort = { bestWindow: model.bestWindow, hours: debugHours };
   }
 
-  const hourRows = scoredHours.map(({ hour, score, label }) => {
+  const hourRows = model.rows.map(({ hour, score, label, reason }) => {
     const rowBg = label.highlight ? label.bg : 'transparent';
     const textColor = label.highlight ? label.fg : C.muted;
     const indicatorDot = label.highlight
       ? `<span style="color:${label.fg};font-size:14px;">&#x25CF;</span>&ensp;`
       : `<span style="color:${C.outline};font-size:14px;">&#x25CB;</span>&ensp;`;
-    const reason = outdoorComfortReason(hour);
     return `<tr style="background:${rowBg};">
       <td valign="middle" style="padding:6px 8px;font-family:${FONT};font-size:12px;font-weight:600;color:${C.ink};white-space:nowrap;">${esc(hour.hour)}</td>
       <td valign="middle" style="padding:6px 4px;text-align:center;white-space:nowrap;">${weatherIconForHour(hour)}</td>
@@ -273,7 +335,7 @@ export function nextDayHourlyOutlookSection(
 
   return card(`
     <div style="Margin:0 0 6px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">${config.title}</div>
-    <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(summaryLine)}</div>
+    <div style="Margin-top:4px;font-family:${FONT};font-size:14px;line-height:1.5;color:${C.muted};">${esc(model.summaryLine)}</div>
     ${photoWindowsLine}
     <div style="Margin-top:12px;overflow-x:auto;">${table}</div>
   `);

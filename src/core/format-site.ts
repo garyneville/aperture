@@ -5,6 +5,7 @@ import {
   BRAND_LOGO,
   C,
   SCORE_THRESHOLDS,
+  UTILITY_GLYPHS,
   type SummaryStat,
   confidenceDetail,
   dayHeading,
@@ -41,8 +42,7 @@ import {
 } from './format-email/time-aware.js';
 import { buildKitTips } from './format-email/kit-advisory.js';
 import {
-  outdoorComfortLabel,
-  outdoorComfortScore,
+  buildOutdoorOutlookModel,
 } from './format-email/next-day.js';
 import { renderAiBriefingText } from './ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
@@ -237,8 +237,6 @@ function sSignalCards(
 }
 
 // ── Daylight utility bar ──────────────────────────────────────────────────────
-
-const UTILITY_GLYPHS = '<span aria-hidden="true">🚗 / 🚶</span>';
 
 function sDaylightUtilityBar(
   todayCarWash: FormatEmailInput['todayCarWash'],
@@ -650,17 +648,6 @@ function sForecastMoonPct(day: DaySummary): number | null {
   return typeof representative?.moon === 'number' ? Math.round(representative.moon) : null;
 }
 
-function sHourFallsWithinPhotoWindow(hour: string, window: Window): boolean {
-  const hourMinutes = clockToMinutes(hour);
-  const startMinutes = clockToMinutes(window.start);
-  const endMinutes = clockToMinutes(window.end);
-  if (hourMinutes === null || startMinutes === null || endMinutes === null) return false;
-  if (endMinutes < startMinutes) {
-    return hourMinutes >= startMinutes || hourMinutes <= endMinutes;
-  }
-  return hourMinutes >= startMinutes && hourMinutes <= endMinutes;
-}
-
 function sHourlyOutlookSection(
   day: DaySummary | undefined,
   opts: {
@@ -672,48 +659,29 @@ function sHourlyOutlookSection(
     photoWindows?: Window[];
   },
 ): string {
-  if (!day?.hours?.length) return '';
+  const model = buildOutdoorOutlookModel(day, opts);
+  if (!model) return '';
 
-  const hours = day.hours
-    .filter(h => opts.startAtMinutes == null || (clockToMinutes(h.hour) ?? -1) >= opts.startAtMinutes)
-    .filter(h => {
-      if (opts.showOvernight) return true;
-      if ((opts.photoWindows || []).some(window => sHourFallsWithinPhotoWindow(h.hour, window))) return true;
-      const mins = clockToMinutes(h.hour) ?? 0;
-      return !h.isNight || (mins >= 18 * 60 && mins < 23 * 60);
-    });
-
-  if (!hours.length) return '';
-
-  const dayHours = hours.filter(h => !h.isNight);
-  const avgTmp = dayHours.length
-    ? Math.round(dayHours.reduce((s, h) => s + h.tmp, 0) / dayHours.length)
-    : null;
-  const maxPp   = dayHours.length ? Math.max(...dayHours.map(h => h.pp))   : 0;
-  const maxWind = dayHours.length ? Math.max(...dayHours.map(h => h.wind)) : 0;
-  const rainNote = maxPp > 60 ? 'Heavy rain likely' : maxPp > 30 ? 'Some rain likely' : maxPp > 10 ? 'Chance of showers' : 'Mostly dry';
-  const windNote = maxWind > 40 ? ' with strong winds' : maxWind > 25 ? ' with breezy spells' : '';
-  const summaryLine = avgTmp !== null ? `${rainNote}${windNote}. Around ${avgTmp}\u00b0C.` : `${rainNote}${windNote}.`;
-
-  const rows = hours.map(h => {
-    const comfort = outdoorComfortScore(h);
-    const label   = outdoorComfortLabel(comfort, h);
+  const rows = model.rows.map(({ hour, score, label, reason }) => {
     const rowBg   = label.highlight ? `${label.bg}33` : 'transparent';
     const dot     = label.highlight ? `<span style="color:${label.fg};">&#x25CF;</span>` : `<span style="color:var(--c-outline);">&#x25CB;</span>`;
     return `<tr style="background:${rowBg};">
-      <td style="font-size:12px;font-weight:600;">${esc(h.hour)}</td>
-      <td class="col-sky">${weatherIconForHour(h, 18)}</td>
-      <td>${Math.round(h.tmp)}\u00b0C</td>
-      <td>${h.pp}%</td>
-      <td>${h.wind}km/h</td>
+      <td style="font-size:12px;font-weight:600;">${esc(hour.hour)}</td>
+      <td class="col-sky">${weatherIconForHour(hour, 18)}</td>
+      <td>${Math.round(hour.tmp)}\u00b0C</td>
+      <td>${hour.pp}%</td>
+      <td>${hour.wind}km/h</td>
       <td class="col-comfort">${dot}&ensp;${esc(label.text)}</td>
-      <td style="color:var(--c-subtle);">${comfort}/100</td>
+      <td style="color:var(--c-subtle);">
+        <div>${score}/100</div>
+        ${reason ? `<div style="font-size:10px;opacity:0.8;">${esc(reason)}</div>` : ''}
+      </td>
     </tr>`;
   }).join('');
 
   return sCard(`
     <div class="card-overline">${esc(opts.title)}</div>
-    <p class="card-body" style="margin-top:4px;">${esc(summaryLine)}</p>
+    <p class="card-body" style="margin-top:4px;">${esc(model.summaryLine)}</p>
     <div class="hourly-scroll">
       <table class="hourly-table">
         <caption>${esc(opts.caption)}</caption>

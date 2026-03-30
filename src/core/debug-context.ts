@@ -123,6 +123,8 @@ export interface DebugWeekStandoutTrace {
 export interface DebugAiTrace {
   primaryProvider?: 'groq' | 'gemini';
   selectedProvider?: 'groq' | 'gemini' | 'template';
+  primaryRejectionReason?: string | null;
+  secondaryRejectionReason?: string | null;
   rawGroqResponse: string;
   rawGeminiResponse?: string;
   geminiDiagnostics?: DebugGeminiDiagnostics;

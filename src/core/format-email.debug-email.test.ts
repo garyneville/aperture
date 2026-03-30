@@ -193,6 +193,55 @@ describe('formatDebugEmail — new debug sections', () => {
     expect(html).toContain('eligible pool candidate behind Kielder Forest');
   });
 
+  it('shows the explicit primary rejection reason when a secondary model is selected', () => {
+    const html = formatDebugEmail({
+      ...baseDebugContext,
+      ai: {
+        primaryProvider: 'gemini',
+        selectedProvider: 'groq',
+        primaryRejectionReason: 'response truncated (MAX_TOKENS); editorial validation failed: editorial must contain two sentences',
+        secondaryRejectionReason: null,
+        rawGroqResponse: '{"editorial":"Conditions hold through the astro window.","composition":["Face north with a low tree line"]}',
+        rawGeminiResponse: '{"editorial":"The moon sets before the midnight astro window begins at 00:',
+        geminiDiagnostics: {
+          statusCode: 200,
+          finishReason: 'MAX_TOKENS',
+          candidateCount: 1,
+          responseByteLength: 382,
+          truncated: true,
+        },
+        normalizedAiText: 'Conditions hold through the astro window.',
+        factualCheck: { passed: true, rulesTriggered: [] },
+        editorialCheck: { passed: true, rulesTriggered: [] },
+        spurSuggestion: {
+          raw: null,
+          confidence: null,
+          resolved: null,
+          dropped: false,
+        },
+        weekStandout: {
+          parseStatus: 'absent',
+          rawValue: null,
+          used: false,
+          decision: 'fallback-used',
+          finalValue: 'Today is the most reliable forecast.',
+          fallbackReason: 'missing weekStandout value',
+        },
+        fallbackUsed: false,
+        modelFallbackUsed: true,
+        finalAiText: 'Conditions hold through the astro window.',
+      },
+    });
+
+    expect(html).toContain('Primary rejection');
+    expect(html).toContain('response truncated (MAX_TOKENS)');
+    expect(html).toContain('editorial validation failed: editorial must contain two sentences');
+    expect(html).toContain('Model fallback');
+    expect(html).toContain('Yes — gemini rejected: response truncated (MAX_TOKENS); editorial validation failed: editorial must contain two sentences; used groq');
+    expect(html).toContain('Hardcoded fallback');
+    expect(html).toContain('No');
+  });
+
   it('shows discarded long-range candidates even when none met the display threshold', () => {
     const html = formatDebugEmail({
       ...baseDebugContext,

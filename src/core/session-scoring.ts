@@ -64,6 +64,29 @@ function mistUncertaintyPenalty(spread: number | null): number {
   return clamp(Math.round((spread - 12) * 0.55), 0, 12);
 }
 
+function mistVisibilitySweetSpot(visibilityKm: number): number {
+  const sweetSpot = sweetSpotScore(visibilityKm, 1.2, 6, 0.4, 14);
+  const denseFogPenalty = visibilityKm < 0.5 ? 28 : visibilityKm < 0.8 ? 14 : 0;
+  return clamp(sweetSpot - denseFogPenalty);
+}
+
+function mistDewPointAlignmentScore(dewPointSpreadC: number): number {
+  return sweetSpotScore(dewPointSpreadC, 0, 1.2, -0.1, 5.5);
+}
+
+function mistHumiditySupportScore(humidityPct: number): number {
+  return sweetSpotScore(humidityPct, 92, 100, 75, 101);
+}
+
+function mistWindPersistenceScore(windKph: number): number {
+  return sweetSpotScore(windKph, 0, 6, -1, 25);
+}
+
+function mistBoundaryLayerSupportScore(boundaryLayerHeightM: number | null | undefined): number | null {
+  if (boundaryLayerHeightM == null) return null;
+  return sweetSpotScore(boundaryLayerHeightM, 0, 350, -1, 1800);
+}
+
 function stormVolatilityBonus(spread: number | null): number {
   if (spread == null) return 0;
   return Math.round(sweetSpotScore(spread, 8, 24, 0, 40) * 0.08);
@@ -79,9 +102,31 @@ function longExposureUncertaintyPenalty(spread: number | null): number {
   return clamp(Math.round((spread - 10) * 0.6), 0, 14);
 }
 
+function cloudOpticalWindowScore(features: DerivedHourFeatures): number {
+  return sweetSpotScore(features.cloudOpticalThicknessPct, 18, 52, 0, 90);
+}
+
+function wildlifeConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const base = hardPass
+    && features.windKph <= 10
+    && features.gustKph <= 18
+    && features.visibilityKm >= 10
+    && (features.isGolden || features.isBlue || (features.cloudTotalPct >= 45 && features.cloudTotalPct <= 80))
+    && features.precipProbabilityPct <= 35
+    && (features.lightningRisk ?? 0) < 20
+    && (features.capeJkg ?? 0) < 800;
+  if (!hardPass) return 'low';
+  if (spread == null) return base ? 'medium' : 'low';
+  return base && spread < 12 ? 'medium' : 'low';
+}
+
 function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
   const spread = spreadVolatility(features);
-  const base = features.cloudTotalPct >= 25 && features.cloudTotalPct <= 75 && features.visibilityKm >= 15;
+  const base = features.cloudTotalPct >= 25
+    && features.cloudTotalPct <= 75
+    && features.visibilityKm >= 15
+    && (features.hazeTrapRisk == null || features.hazeTrapRisk <= 55);
   if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
   return base
     ? confidenceFromSpread(spread, hardPass, 10, 24)
@@ -90,7 +135,10 @@ function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean):
 
 function astroConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
   const spread = spreadVolatility(features);
-  const base = features.cloudTotalPct <= 15 && features.moonIlluminationPct <= 30 && features.transparencyScore >= 65;
+  const base = features.cloudTotalPct <= 15
+    && features.moonIlluminationPct <= 30
+    && features.transparencyScore >= 65
+    && (features.hazeTrapRisk == null || features.hazeTrapRisk <= 55);
   if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
   return base
     ? confidenceFromSpread(spread, hardPass, 6, 14)
@@ -99,11 +147,17 @@ function astroConfidence(features: DerivedHourFeatures, hardPass: boolean): Sess
 
 function mistConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
   const spread = spreadVolatility(features);
-  const base = features.dewPointSpreadC <= 1.5 && features.humidityPct >= 92 && features.windKph <= 8;
-  if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
+  const base = features.dewPointSpreadC <= 1.5
+    && features.humidityPct >= 92
+    && features.windKph <= 8
+    && features.visibilityKm >= 0.8
+    && features.visibilityKm <= 8
+    && (features.boundaryLayerHeightM == null || features.boundaryLayerHeightM <= 800);
+  if (!hardPass || features.visibilityKm < 0.8) return 'low';
+  if (spread == null) return base ? 'high' : 'medium';
   return base
-    ? confidenceFromSpread(spread, hardPass, 9, 18)
-    : confidenceFromSpread(spread, hardPass, 7, 15);
+    ? confidenceFromSpread(spread, hardPass, 8, 16)
+    : confidenceFromSpread(spread, hardPass, 6, 12);
 }
 
 function urbanConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
@@ -200,12 +254,21 @@ const LONG_EXPOSURE_CAPABILITIES: ScoringCapability[] = [
   'sun-geometry',
 ];
 
+const WILDLIFE_CAPABILITIES: ScoringCapability[] = [
+  'sun-geometry',
+  'cloud-stratification',
+  'visibility',
+  'wind',
+  'precipitation',
+];
+
 const goldenHourEvaluator: SessionEvaluator = {
   session: 'golden-hour',
   requiredCapabilities: GOLDEN_HOUR_CAPABILITIES,
   evaluateHour(features) {
     const hardPass = features.isGolden || features.isBlue;
     const cloudCanvas = bellCurve(features.cloudTotalPct, 50, 22);
+    const opticalWindow = cloudOpticalWindowScore(features);
     const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.08, 0.18, 0.02, 0.35);
     const windPenalty = features.windKph > 30 ? 12 : features.windKph > 20 ? 6 : 0;
     const visibilityPenalty = features.visibilityKm < 8 ? 18 : features.visibilityKm < 15 ? 8 : 0;
@@ -214,7 +277,20 @@ const goldenHourEvaluator: SessionEvaluator = {
       ? clamp(Math.round(occ * occ * 22), 0, 22)
       : 0;
     const clearPathBoost = features.clearPathBonusPts != null ? features.clearPathBonusPts * 2 : 0;
+    const horizonGapBoost = features.horizonGapPct != null
+      ? clamp(Math.round(sweetSpotScore(features.horizonGapPct, 60, 100, 20, 100) * 0.08), 0, 8)
+      : 0;
+    const horizonGapPenalty = features.horizonGapPct != null && features.horizonGapPct < 30
+      ? clamp(Math.round((30 - features.horizonGapPct) * 0.3), 0, 8)
+      : 0;
     const clearSkyPenalty = features.cloudTotalPct < 15 ? clamp(Math.round((15 - features.cloudTotalPct) * 0.6)) : 0;
+    const translucentHighBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.08), 0, 8);
+    const lowCloudBlockPenalty = features.lowCloudBlockingScore >= 35
+      ? clamp(Math.round((features.lowCloudBlockingScore - 35) * 0.16), 0, 12)
+      : 0;
+    const trappedHazePenalty = features.hazeTrapRisk == null
+      ? 0
+      : clamp(Math.round((features.hazeTrapRisk - 45) * 0.16), 0, 10);
     const spread = spreadVolatility(features);
     const uncertaintyPenalty = goldenHourUncertaintyPenalty(spread);
     const score =
@@ -222,23 +298,34 @@ const goldenHourEvaluator: SessionEvaluator = {
       + (features.dramaScore * 0.25)
       + (features.crepuscularScore * 0.15)
       + (cloudCanvas * 0.15)
+      + (opticalWindow * 0.08)
       + (hazeSweetSpot * 0.1)
       + clearPathBoost
+      + horizonGapBoost
+      + translucentHighBonus
       - windPenalty
       - visibilityPenalty
       - azimuthPenalty
+      - horizonGapPenalty
       - clearSkyPenalty
+      - lowCloudBlockPenalty
+      - trappedHazePenalty
       - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
     if (cloudCanvas >= 70) reasons.push('Broken cloud cover can catch low-angle light well.');
+    if (features.highCloudTranslucencyScore >= 90) reasons.push('Upper cloud looks thin enough to catch colour without sealing the sky.');
     if (features.crepuscularScore >= 40) reasons.push('Crepuscular-ray potential is already elevated.');
     if (features.visibilityKm >= 18) reasons.push('Visibility should preserve depth and distant contrast.');
+    if ((features.horizonGapPct ?? 0) >= 65) reasons.push('The horizon gap looks open enough for low-angle light to reach the scene.');
     if ((features.azimuthOcclusionRiskPct ?? 100) < 25) reasons.push('Low-angle light path looks relatively clear.');
     if (features.cloudTotalPct < 15) warnings.push('Clear sky may lack the cloud texture needed for dramatic colour.');
     if (features.cloudTotalPct >= 90) warnings.push('Featureless overcast may flatten the light.');
+    if (features.lowCloudBlockingScore >= 40) warnings.push('Dense low cloud may block the sun-side glow before it reaches the scene.');
     if (features.visibilityKm < 10) warnings.push('Heavy haze could mute contrast despite good color.');
+    if ((features.horizonGapPct ?? 100) <= 25) warnings.push('The horizon gap looks narrow for reliable low-angle light.');
+    if ((features.hazeTrapRisk ?? 0) >= 65) warnings.push('A shallow boundary layer may trap haze and flatten distant contrast.');
     if (features.windKph > 25) warnings.push('Wind may make long-lens or tripod work fussier.');
     if ((features.azimuthOcclusionRiskPct ?? 0) > 60) warnings.push('Low-angle light may be blocked near the horizon.');
     if (!hardPass) warnings.push('This hour is outside the low-angle light window.');
@@ -266,7 +353,8 @@ const astroEvaluator: SessionEvaluator = {
       && features.transparencyScore >= 15;
 
     // NON-LINEAR CLOUD PENALTY – quadratic ramp starting at 10 %
-    const cloudFrac = clamp(features.cloudTotalPct - 10, 0, 50) / 50;   // 0-1 above 10 %
+    const effectiveCloudOpacity = Math.round((features.cloudTotalPct * 0.65) + (features.cloudOpticalThicknessPct * 0.35));
+    const cloudFrac = clamp(effectiveCloudOpacity - 10, 0, 50) / 50;   // 0-1 above 10 %
     const cloudPenalty = Math.round(cloudFrac * cloudFrac * 30);         // 0-30
 
     // NON-LINEAR MOON WASHOUT PENALTY – cubic ramp past 25 %
@@ -275,6 +363,10 @@ const astroEvaluator: SessionEvaluator = {
 
     // NON-LINEAR TRANSPARENCY BONUS – sweet-spot curve (best between 65-95)
     const transparencySweetSpot = sweetSpotScore(features.transparencyScore, 65, 95, 20, 100);
+    const thinVeilBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.05), 0, 5);
+    const lowCloudPenalty = features.lowCloudBlockingScore >= 35
+      ? clamp(Math.round((features.lowCloudBlockingScore - 35) * 0.18), 0, 10)
+      : 0;
 
     const spread = spreadVolatility(features);
     const uncertaintyPenalty = astroUncertaintyPenalty(spread);
@@ -284,8 +376,10 @@ const astroEvaluator: SessionEvaluator = {
       + (transparencySweetSpot * 0.2)
       + (features.transparencyScore * 0.1)
       + (Math.max(0, 100 - features.moonIlluminationPct) * 0.15)
+      + thinVeilBonus
       - moonPenalty
       - cloudPenalty
+      - lowCloudPenalty
       - uncertaintyPenalty;
 
     const reasons: string[] = [];
@@ -297,12 +391,15 @@ const astroEvaluator: SessionEvaluator = {
     else if (features.moonIlluminationPct <= 30) reasons.push('Moonlight should stay subdued for darker skies.');
     if (features.transparencyScore >= 75) reasons.push('Transparency looks strong for clean deep-sky contrast.');
     else if (features.transparencyScore >= 55) reasons.push('Current haze and humidity look workable for transparency.');
+    if (features.highCloudTranslucencyScore >= 70 && features.cloudOpticalThicknessPct <= 35) reasons.push('Any remaining cloud looks like a thin veil rather than a solid deck.');
     if (!features.isNight) warnings.push('This hour is not inside a darkness window.');
     if (features.cloudTotalPct > 45) warnings.push('Cloud cover is approaching an astro deal-breaker.');
     else if (features.cloudTotalPct > 30) warnings.push('Moderate cloud may interrupt longer exposures.');
+    if (features.lowCloudBlockingScore >= 30) warnings.push('Dense low cloud is a bigger risk than the raw cloud-cover total suggests.');
     if (features.moonIlluminationPct > 70) warnings.push('Bright moonlight will wash out all but the brightest targets.');
     else if (features.moonIlluminationPct > 45) warnings.push('Moonlight may wash out faint targets.');
     if (features.transparencyScore < 30) warnings.push('Poor transparency will limit deep-sky contrast.');
+    if ((features.hazeTrapRisk ?? 0) >= 60) warnings.push('A shallow boundary layer may be trapping haze despite the cloud forecast.');
 
     return completeScore(
       'astro',
@@ -323,33 +420,48 @@ const mistEvaluator: SessionEvaluator = {
   evaluateHour(features) {
     const hardPass = (
       features.mistScore >= 30
-      || features.humidityPct >= 88
-      || features.visibilityKm <= 10
-      || features.dewPointSpreadC <= 3
-    ) && features.windKph <= 25;
-    const visibilitySweetSpot = sweetSpotScore(features.visibilityKm, 1.5, 8, 0.1, 18);
-    const dewPointAlignment = clamp(Math.round(100 - (features.dewPointSpreadC * 18)));
-    const windPenalty = features.windKph > 18 ? 14 : features.windKph > 10 ? 6 : 0;
-    const rainPenalty = features.precipProbabilityPct > 75 ? 10 : 0;
+      || features.humidityPct >= 90
+      || (features.visibilityKm >= 0.4 && features.visibilityKm <= 12)
+      || features.dewPointSpreadC <= 2.5
+    ) && features.windKph <= 24 && features.visibilityKm >= 0.4;
+    const visibilitySweetSpot = mistVisibilitySweetSpot(features.visibilityKm);
+    const dewPointAlignment = mistDewPointAlignmentScore(features.dewPointSpreadC);
+    const humiditySupport = mistHumiditySupportScore(features.humidityPct);
+    const windPersistence = mistWindPersistenceScore(features.windKph);
+    const boundaryLayerSupport = mistBoundaryLayerSupportScore(features.boundaryLayerHeightM);
+    const rainPenalty = features.precipProbabilityPct > 85 ? 14 : features.precipProbabilityPct > 70 ? 8 : 0;
+    const densityPenalty = features.visibilityKm < 0.5 ? 18 : features.visibilityKm < 0.8 ? 8 : 0;
     const spread = spreadVolatility(features);
     const uncertaintyPenalty = mistUncertaintyPenalty(spread);
+    const components: Array<[number, number]> = [
+      [features.mistScore, 0.34],
+      [visibilitySweetSpot, 0.24],
+      [dewPointAlignment, 0.16],
+      [humiditySupport, 0.12],
+      [windPersistence, 0.10],
+      [100 - Math.min(features.clarityScore, 100), 0.04],
+    ];
+    if (boundaryLayerSupport != null) {
+      components.push([boundaryLayerSupport, 0.10]);
+    }
+    const weightedScore = components.reduce((total, [value, weight]) => total + (value * weight), 0)
+      / components.reduce((total, [, weight]) => total + weight, 0);
     const score =
-      (features.mistScore * 0.45)
-      + (visibilitySweetSpot * 0.2)
-      + (dewPointAlignment * 0.15)
-      + (features.humidityPct * 0.15)
-      + ((100 - Math.min(features.clarityScore, 100)) * 0.05)
-      - windPenalty
+      weightedScore
       - rainPenalty
+      - densityPenalty
       - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
     if (visibilitySweetSpot >= 70) reasons.push('Visibility is in a useful misty-landscape range.');
-    if (features.dewPointSpreadC <= 2) reasons.push('Temperature and dew point are close enough for fog formation.');
-    if (features.windKph <= 8) reasons.push('Light winds should help shallow fog or mist hold together.');
-    if (features.visibilityKm > 15) warnings.push('Air looks quite clear for a dedicated mist session.');
-    if (features.windKph > 15) warnings.push('Breezier conditions may mix out shallow fog.');
+    if (features.dewPointSpreadC <= 1.5) reasons.push('Temperature and dew point are close enough for fog formation.');
+    if (windPersistence >= 70) reasons.push('Light winds should help shallow fog or mist hold together.');
+    if ((boundaryLayerSupport ?? 0) >= 70) reasons.push('A low boundary layer should help mist or haze stay trapped near the ground.');
+    if (features.visibilityKm < 0.8) warnings.push('Fog may be too dense for layered scenery rather than simply atmospheric.');
+    if (features.visibilityKm > 12) warnings.push('Air looks quite clear for a dedicated mist session.');
+    if (features.windKph > 12) warnings.push('Breezier conditions may mix out shallow fog.');
+    if (features.boundaryLayerHeightM != null && features.boundaryLayerHeightM > 1200) warnings.push('A deep boundary layer may mix out low-level mist before it becomes photogenic.');
     if (features.precipProbabilityPct > 75) warnings.push('Persistent rain may turn mood into simple bad visibility.');
 
     return completeScore(
@@ -372,6 +484,7 @@ const stormEvaluator: SessionEvaluator = {
     const hardPass = features.cloudTotalPct >= 20 && features.cloudTotalPct <= 95;
     const showerBand = bellCurve(features.precipProbabilityPct, 45, 22);
     const cloudStructure = sweetSpotScore(features.cloudTotalPct, 45, 85, 10, 100);
+    const opticalWindow = sweetSpotScore(features.cloudOpticalThicknessPct, 28, 68, 10, 95);
     const capeBoost = features.capeJkg != null ? sweetSpotScore(features.capeJkg, 1200, 3500, 100, 5000) : 0;
     const lightningBoost = features.lightningRisk != null ? clamp(features.lightningRisk) : 0;
     const lowAngleBoost = features.isGolden || features.isBlue ? 16 : 0;
@@ -379,8 +492,18 @@ const stormEvaluator: SessionEvaluator = {
     const azimuthEdgeLightBoost = (features.isGolden || features.isBlue) && features.clearPathBonusPts != null
       ? features.clearPathBonusPts * 2
       : 0;
+    const horizonGapBoost = (features.isGolden || features.isBlue) && features.horizonGapPct != null
+      ? clamp(Math.round(sweetSpotScore(features.horizonGapPct, 55, 100, 15, 100) * 0.08), 0, 8)
+      : 0;
+    const horizonGapPenalty = (features.isGolden || features.isBlue) && features.horizonGapPct != null && features.horizonGapPct < 25
+      ? clamp(Math.round((25 - features.horizonGapPct) * 0.3), 0, 6)
+      : 0;
     const azimuthPenalty = (features.isGolden || features.isBlue) && features.azimuthOcclusionRiskPct != null
       ? features.azimuthOcclusionRiskPct > 70 ? 10 : features.azimuthOcclusionRiskPct > 55 ? 5 : 0
+      : 0;
+    const translucentHighBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.05), 0, 6);
+    const lowCloudBlockPenalty = features.lowCloudBlockingScore >= 40
+      ? clamp(Math.round((features.lowCloudBlockingScore - 40) * 0.16), 0, 10)
       : 0;
     const dramaCloudSynergy = Math.round(
       (features.dramaScore / 100) * bellCurve(features.cloudTotalPct, 60, 18) * 0.08,
@@ -392,26 +515,35 @@ const stormEvaluator: SessionEvaluator = {
       + (features.crepuscularScore * 0.15)
       + (showerBand * 0.15)
       + (cloudStructure * 0.1)
+      + (opticalWindow * 0.08)
       + (capeBoost * 0.1)
       + (lightningBoost * 0.05)
       + lowAngleBoost
       + azimuthEdgeLightBoost
+      + horizonGapBoost
+      + translucentHighBonus
       + dramaCloudSynergy
       + volatilityBonus
       - windPenalty
+      - horizonGapPenalty
+      - lowCloudBlockPenalty
       - azimuthPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
 
     if (features.dramaScore >= 60 && cloudStructure >= 50) reasons.push('Cloud structure and illumination already look storm-friendly.');
     if (dramaCloudSynergy >= 4) reasons.push('Partial cloud should let dramatic breaks develop rather than flatten the scene.');
+    if (features.cloudOpticalThicknessPct >= 28 && features.cloudOpticalThicknessPct <= 68) reasons.push('Cloud depth looks thick enough for drama without sealing the whole sky.');
     if (showerBand >= 60) reasons.push('Showery conditions could support rain shafts or fast-changing breaks.');
     if (features.isGolden || features.isBlue) reasons.push('Low-angle light improves the odds of rays and edge lighting.');
+    if ((features.horizonGapPct ?? 0) >= 60 && (features.isGolden || features.isBlue)) reasons.push('A usable horizon gap should help edge-lighting break through.');
     if ((features.azimuthOcclusionRiskPct ?? 100) < 30 && (features.isGolden || features.isBlue)) reasons.push('The sun-side gap looks open enough for edge-lit breaks.');
     if ((features.capeJkg ?? 0) >= 1500) reasons.push('Convective energy is elevated enough for more dramatic development.');
     if (features.cloudTotalPct < 30) warnings.push('There may not be enough storm structure yet.');
     if (features.cloudTotalPct > 90) warnings.push('Dense overcast could flatten the scene before breaks appear.');
     if (features.dramaScore >= 60 && features.cloudTotalPct > 90) warnings.push('High drama score but overcast sky may not deliver visual payoff.');
+    if (features.lowCloudBlockingScore >= 50) warnings.push('Dense low cloud could turn the storm sky flat instead of edge-lit.');
+    if ((features.horizonGapPct ?? 100) < 25 && (features.isGolden || features.isBlue)) warnings.push('A narrow horizon gap may choke off edge-lighting even if cloud structure looks active.');
     if ((features.azimuthOcclusionRiskPct ?? 0) > 65 && (features.isGolden || features.isBlue)) warnings.push('Blocked sun-side cloud may limit edge-lighting and ray potential.');
     if (features.windKph > 35) warnings.push('Strong winds may make shooting awkward and reduce stability.');
     if ((features.lightningRisk ?? 0) >= 50) warnings.push('Elevated lightning risk warrants a safety-first setup.');
@@ -552,6 +684,86 @@ const urbanEvaluator: SessionEvaluator = {
   },
 };
 
+const wildlifeEvaluator: SessionEvaluator = {
+  session: 'wildlife',
+  requiredCapabilities: WILDLIFE_CAPABILITIES,
+  evaluateHour(features) {
+    const lightningRisk = features.lightningRisk ?? 0;
+    const capeJkg = features.capeJkg ?? 0;
+    const hardPass = !features.isNight
+      && features.visibilityKm >= 3
+      && features.windKph <= 30
+      && features.gustKph <= 40
+      && features.precipProbabilityPct <= 85
+      && lightningRisk < 50;
+
+    const calmWind = sweetSpotScore(features.windKph, 0, 8, 0, 25);
+    const gustControl = sweetSpotScore(features.gustKph, 0, 15, 0, 40);
+    const softLight = features.isGolden
+      ? 100
+      : features.isBlue
+        ? 85
+        : sweetSpotScore(features.cloudTotalPct, 45, 80, 10, 100);
+    const visibilityWorking = sweetSpotScore(features.visibilityKm, 8, 30, 2, 40);
+    const weatherQuiet = clamp(
+      100
+      - (features.precipProbabilityPct > 60 ? 35 : features.precipProbabilityPct > 35 ? 15 : 0)
+      - (capeJkg >= 1500 ? 20 : capeJkg >= 800 ? 10 : 0)
+      - (lightningRisk >= 40 ? 25 : lightningRisk >= 20 ? 10 : 0),
+    );
+
+    const windPenalty = features.windKph > 22 ? 16 : features.windKph > 14 ? 8 : 0;
+    const gustPenalty = features.gustKph > 32 ? 12 : features.gustKph > 22 ? 6 : 0;
+    const harshLightPenalty = !features.isGolden && !features.isBlue && features.cloudTotalPct < 30 ? 10 : 0;
+    const hazePenalty = features.visibilityKm < 6 ? 10 : 0;
+    const spread = spreadVolatility(features);
+    const uncertaintyPenalty = spread == null ? 0 : clamp(Math.round((spread - 10) * 0.5), 0, 10);
+
+    const score =
+      (calmWind * 0.24)
+      + (gustControl * 0.16)
+      + (softLight * 0.18)
+      + (visibilityWorking * 0.16)
+      + (weatherQuiet * 0.14)
+      + (features.overallScore * 0.08)
+      - windPenalty
+      - gustPenalty
+      - harshLightPenalty
+      - hazePenalty
+      - uncertaintyPenalty
+      - 10;
+
+    const reasons: string[] = [];
+    const warnings: string[] = [
+      'This wildlife score is a coarse scaffold without species timing, habitat, or scent context.',
+    ];
+
+    if (calmWind >= 70) reasons.push('Lighter winds should make subjects and longer lenses easier to manage.');
+    if (softLight >= 70 && (features.isGolden || features.isBlue)) reasons.push('Soft low-angle light should be kinder on feathers, fur, and contrast.');
+    else if (softLight >= 70) reasons.push('Cloud-filtered light should suit wildlife contrast without harsh glare.');
+    if (visibilityWorking >= 60) reasons.push('Visibility looks clear enough for longer-lens subject separation.');
+    if (weatherQuiet >= 70) reasons.push('The broader weather pattern looks quiet enough for a general wildlife outing.');
+
+    if (features.windKph > 18 || features.gustKph > 25) warnings.push('Wind may keep smaller subjects restless and move perches or foreground cover.');
+    if (features.precipProbabilityPct > 60 || capeJkg >= 1200 || lightningRisk >= 20) warnings.push('Showery or stormy conditions could make animal movement less predictable.');
+    if (features.visibilityKm < 6) warnings.push('Haze or murk may limit long-lens reach and subject separation.');
+    if (!features.isGolden && !features.isBlue && features.cloudTotalPct < 30) warnings.push('Harsh direct light may flatten subjects and backgrounds.');
+    if (features.isNight) warnings.push('This scaffold is tuned for daylight wildlife rather than nocturnal setups.');
+    if (!hardPass) warnings.push('Current wind, visibility, or storm risk makes wildlife shooting less dependable.');
+
+    return completeScore(
+      'wildlife',
+      WILDLIFE_CAPABILITIES,
+      hardPass,
+      score,
+      wildlifeConfidence(features, hardPass),
+      spread,
+      reasons,
+      warnings,
+    );
+  },
+};
+
 const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
   goldenHourEvaluator,
   astroEvaluator,
@@ -559,6 +771,7 @@ const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
   stormEvaluator,
   longExposureEvaluator,
   urbanEvaluator,
+  wildlifeEvaluator,
 ];
 
 export function getBuiltInSessionEvaluators(): SessionEvaluator[] {

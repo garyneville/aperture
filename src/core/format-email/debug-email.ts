@@ -126,6 +126,12 @@ export function formatDebugEmail(debugContext: DebugContext): string {
       : `<span style="color:${C.muted};">Hidden</span>`,
   ]));
   const aiTrace = debugContext.ai;
+  const modelFallbackLabel = aiTrace?.modelFallbackUsed
+    ? `Yes — ${aiTrace.primaryProvider} rejected${aiTrace.primaryRejectionReason ? `: ${aiTrace.primaryRejectionReason}` : ''}; used ${aiTrace.selectedProvider}`
+    : 'No';
+  const hardcodedFallbackLabel = aiTrace?.fallbackUsed
+    ? `Yes — both models rejected, using template text`
+    : 'No';
 
   return `<!doctype html>
 <html lang="en">
@@ -193,8 +199,10 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Selected provider', aiTrace.selectedProvider || null],
             ['Factual check', aiTrace.factualCheck.passed ? 'Passed' : `Failed (${aiTrace.factualCheck.rulesTriggered.join(', ')})`],
             ['Editorial check', aiTrace.editorialCheck.passed ? 'Passed' : `Failed (${aiTrace.editorialCheck.rulesTriggered.join(', ')})`],
-            ['Model fallback', aiTrace.modelFallbackUsed ? `Yes — ${aiTrace.primaryProvider} failed, used ${aiTrace.selectedProvider}` : 'No'],
-            ['Hardcoded fallback', aiTrace.fallbackUsed ? 'Yes — both models failed, using template text' : 'No'],
+            ['Primary rejection', aiTrace.primaryRejectionReason || null],
+            ['Secondary rejection', aiTrace.secondaryRejectionReason || null],
+            ['Model fallback', modelFallbackLabel],
+            ['Hardcoded fallback', hardcodedFallbackLabel],
             ['Gemini HTTP status', aiTrace.geminiDiagnostics?.statusCode ?? null],
             ['Gemini finish reason', aiTrace.geminiDiagnostics?.finishReason || null],
             ['Gemini candidates', aiTrace.geminiDiagnostics?.candidateCount ?? null],
