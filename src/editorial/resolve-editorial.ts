@@ -498,7 +498,7 @@ function buildEditorialCandidate(
     factualCheck,
     editorialCheck,
     passed: factualCheck.passed && editorialCheck.passed,
-    reusableComponents: factualCheck.passed,
+    reusableComponents: parsed.weekStandoutParseStatus !== 'parse-failure',
   };
 }
 
@@ -917,16 +917,30 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     || componentCandidate
     || editorialChoice.primaryCandidate
     || editorialChoice.secondaryCandidate;
+  const bestSpurRaw = componentCandidate?.spurRaw
+    || editorialChoice.primaryCandidate?.spurRaw
+    || editorialChoice.secondaryCandidate?.spurRaw
+    || null;
   const spurOfTheMoment = resolveSpurSuggestion(
-    componentCandidate?.spurRaw || null,
+    bestSpurRaw,
     nearbyAltNames,
     longRangePool,
   );
   const aiText = editorialCandidate
     ? editorialCandidate.normalizedAiText
     : buildFallbackAiText(ctx);
-  const resolvedWeekStandout = validateWeekInsight(componentCandidate?.weekInsight || '', ctx.dailySummary);
-  const safeCompositionBullets = filterCompositionBullets(componentCandidate?.compositionBullets || [], ctx);
+  const bestWeekInsight = (componentCandidate?.weekInsight || '')
+    || editorialChoice.primaryCandidate?.weekInsight
+    || editorialChoice.secondaryCandidate?.weekInsight
+    || '';
+  const resolvedWeekStandout = validateWeekInsight(bestWeekInsight, ctx.dailySummary);
+  const safeCompositionBullets = filterCompositionBullets(
+    (componentCandidate?.compositionBullets?.length ? componentCandidate.compositionBullets : null)
+      || editorialChoice.primaryCandidate?.compositionBullets
+      || editorialChoice.secondaryCandidate?.compositionBullets
+      || [],
+    ctx,
+  );
   const safeGeminiInspire = typeof geminiInspire === 'string' && geminiInspire.trim().length > 0
     ? geminiInspire.trim()
     : undefined;
@@ -976,11 +990,11 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       factualCheck: traceCandidate?.factualCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
       editorialCheck: traceCandidate?.editorialCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
       spurSuggestion: {
-        raw: componentCandidate?.spurRaw ? `${componentCandidate.spurRaw.locationName} (${componentCandidate.spurRaw.confidence})` : null,
-        confidence: componentCandidate?.spurRaw?.confidence ?? null,
+        raw: bestSpurRaw ? `${bestSpurRaw.locationName} (${bestSpurRaw.confidence})` : null,
+        confidence: bestSpurRaw?.confidence ?? null,
         resolved: spurOfTheMoment?.locationName || null,
-        dropped: Boolean(componentCandidate?.spurRaw) && !spurOfTheMoment,
-        dropReason: resolveSpurDropReason(componentCandidate?.spurRaw || null, nearbyAltNames, longRangePool),
+        dropped: Boolean(bestSpurRaw) && !spurOfTheMoment,
+        dropReason: resolveSpurDropReason(bestSpurRaw, nearbyAltNames, longRangePool),
       },
       weekStandout: {
         parseStatus: componentCandidate?.weekStandoutParseStatus || 'absent',
