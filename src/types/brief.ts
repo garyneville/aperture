@@ -21,6 +21,10 @@ export interface Window {
   start: string;
   end: string;
   peak: number;
+  /** The clock time (HH:MM) of the highest-scoring hour within this window.
+   * Populated by the scoring pipeline. Prefer this over inferring from hours[].score,
+   * since WindowHour.score is the daily final score while peak is the session score. */
+  peakHour?: string | null;
   darkPhaseStart?: string | null;
   postMoonsetScore?: number | null;
   fallback?: boolean;

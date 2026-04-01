@@ -214,6 +214,15 @@ export function formatDebugEmail(debugContext: DebugContext): string {
               : null],
             ['Spur suggestion', aiTrace.spurSuggestion.raw ? `${aiTrace.spurSuggestion.raw}${aiTrace.spurSuggestion.dropped ? ` → dropped: ${aiTrace.spurSuggestion.dropReason || 'no reason recorded'}` : ' → shown'}` : 'None'],
             ['Resolved spur', aiTrace.spurSuggestion.resolved || null],
+            ['Composition bullets', (() => {
+              const comp = aiTrace.compositionBullets;
+              if (!comp) return 'No trace data';
+              const srcLabel = comp.sourceProvider ? ` from ${comp.sourceProvider}` : '';
+              if (comp.rawCount === 0) return `None received${srcLabel} — fallback template used (${comp.resolvedCount} generated)`;
+              if (comp.resolvedCount === 0) return `${comp.rawCount} received${srcLabel} → all dropped by filter — fallback template used ⚠`;
+              if (comp.resolvedCount < comp.rawCount) return `${comp.rawCount} received${srcLabel} → ${comp.resolvedCount} passed filter`;
+              return `${comp.rawCount} received${srcLabel} → ${comp.resolvedCount} used`;
+            })()],
             ['weekStandout', (() => {
               const weekStandout = aiTrace.weekStandout;
               if (weekStandout.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
@@ -266,20 +275,22 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           const windowLine = outdoorComfort.bestWindow
             ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};"><span style="font-weight:700;color:${C.onPrimaryContainer};">Best window:</span> ${esc(outdoorComfort.bestWindow.start)}–${esc(outdoorComfort.bestWindow.end)} (${esc(outdoorComfort.bestWindow.label)})</div>`
             : `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No highlighted outdoor window found.</div>`;
+          // Drift check: compare only like-for-like fields between the two pipeline sources.
+          // Visibility (visK) is present in both traces and can be directly compared.
+          // NOTE: scoring.cloud is cloud-cover %, while outdoor.pp is precipitation probability %
+          // — these are different meteorological variables and must NOT be compared against each other.
           const driftWarnings: string[] = [];
           const scoringByHour = new Map(debugContext.hourlyScoring.map(h => [h.hour, h]));
           for (const hour of outdoorComfort.hours) {
             const scoring = scoringByHour.get(hour.hour);
             if (!scoring) continue;
+            // Visibility: both traces expose visK in km — a >1km gap suggests different source API calls.
             if (Math.abs(scoring.visK - hour.visK) > 1) {
-              driftWarnings.push(`${hour.hour}: vis ${scoring.visK}km (scoring) vs ${hour.visK}km (outdoor)`);
-            }
-            if (Math.abs(scoring.cloud - hour.pp) > 5) {
-              driftWarnings.push(`${hour.hour}: cloud ${scoring.cloud}% (scoring) vs rain ${hour.pp}% (outdoor)`);
+              driftWarnings.push(`${hour.hour}: vis ${scoring.visK}km (scoring) vs ${hour.visK}km (outdoor) — likely different source API calls`);
             }
           }
           const driftLine = driftWarnings.length
-            ? `<div style="Margin-top:8px;padding:8px;background:#FFF3CD;border:1px solid #FFECB5;border-radius:6px;font-family:${FONT};font-size:11px;line-height:1.5;color:#664D03;">⚠ Data drift detected between scoring trace and outdoor comfort source:<br>${driftWarnings.map(w => esc(w)).join('<br>')}</div>`
+            ? `<div style="Margin-top:8px;padding:8px;background:#FFF3CD;border:1px solid #FFECB5;border-radius:6px;font-family:${FONT};font-size:11px;line-height:1.5;color:#664D03;">⚠ Visibility data drift detected between scoring trace and outdoor comfort source (different API calls):<br>${driftWarnings.map(w => esc(w)).join('<br>')}</div>`
             : '';
           return `${spacer(8)}${debugCard('Outdoor comfort window trace', `${debugTable(['Hour', 'Temp', 'Rain', 'Wind', 'Vis', 'Precip', 'Score', 'Label'], outdoorRows)}${windowLine}${driftLine}`)}`;
         })()}
