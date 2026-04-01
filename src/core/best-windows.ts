@@ -335,17 +335,28 @@ function buildSessionFallbackWindow(
   if (!primary) return null;
   if (primary.score < STRONG_SESSION_FALLBACK_SCORE) return null;
 
-  const anchor = hrs.find(hour => hour.hour === primary.hourLabel);
-  if (!anchor) return null;
+  const anchorIdx = hrs.findIndex(hour => hour.hour === primary.hourLabel);
+  if (anchorIdx < 0) return null;
+  const anchor = hrs[anchorIdx];
+
+  // Expand to adjacent hours with non-trivial overall scores to give
+  // the photographer a practical arrival/departure buffer.
+  const floor = Math.max(0, anchor.score - 15);
+  let startIdx = anchorIdx;
+  let endIdx = anchorIdx;
+  while (startIdx > 0 && startIdx > anchorIdx - 2 && hrs[startIdx - 1].score > floor) startIdx--;
+  while (endIdx < hrs.length - 1 && endIdx < anchorIdx + 2 && hrs[endIdx + 1].score > floor) endIdx++;
+
+  const hours = hrs.slice(startIdx, endIdx + 1);
 
   return {
-    start: anchor.hour,
-    st: anchor.t,
-    end: anchor.hour,
-    et: anchor.t,
+    start: hours[0].hour,
+    st: hours[0].t,
+    end: hours[hours.length - 1].hour,
+    et: hours[hours.length - 1].t,
     peak: primary.score,
     tops: [sessionFallbackTag(primary.session)],
-    hours: [anchor],
+    hours,
     fallback: true,
     labelHint: sessionFallbackLabel(primary.session),
     selectionSource: 'session-fallback',
