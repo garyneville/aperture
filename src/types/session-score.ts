@@ -36,6 +36,7 @@ export interface DerivedHourFeatures {
   dewPointSpreadC: number;
   windKph: number;
   gustKph: number;
+  windDirectionDeg: number | null;
   boundaryLayerTrapScore: number | null;
   hazeTrapRisk: number | null;
   cloudOpticalThicknessPct: number;

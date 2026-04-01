@@ -30,6 +30,7 @@ function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHour
     dewPointC: 4,
     windKph: 11,
     gustKph: 18,
+    windDirectionDeg: null,
     moonIlluminationPct: 12,
     isGolden: true,
     isBlue: false,
