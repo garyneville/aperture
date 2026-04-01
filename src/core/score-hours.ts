@@ -23,6 +23,7 @@ export interface WeatherData {
     precipitation?: number[];
     windspeed_10m?: number[];
     windgusts_10m?: number[];
+    winddirection_10m?: number[];
     cape?: number[];
     vapour_pressure_deficit?: number[];
     total_column_integrated_water_vapour?: number[];
@@ -116,6 +117,7 @@ export interface ScoredHour {
   aod: number;
   tpw: number;
   wind: number;
+  windDir: number | null;
   gusts: number;
   tmp: number;
   hum: number;
@@ -225,6 +227,7 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     dewPointC: hour.dew,
     windKph: hour.wind,
     gustKph: hour.gusts,
+    windDirectionDeg: hour.windDir,
     moonIlluminationPct: hour.moon,
     isNight: hour.isNight,
     isGolden: hour.isGolden,
@@ -397,6 +400,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       const pr   = w.hourly!.precipitation?.[i]   ?? 0;
       const spd  = w.hourly!.windspeed_10m?.[i]   ?? 0;
       const gst  = w.hourly!.windgusts_10m?.[i]   ?? 0;
+      const wdir = w.hourly!.winddirection_10m?.[i] ?? null;
       const cap  = w.hourly!.cape?.[i]            ?? 0;
       const vpd  = w.hourly!.vapour_pressure_deficit?.[i] ?? 0.5;
       const prev = i > 0 ? (w.hourly!.precipitation?.[i - 1] ?? 0) : 0;
@@ -568,6 +572,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         dewPointC: Math.round(dew * 10) / 10,
         windKph: Math.round(spd),
         gustKph: Math.round(gst),
+        windDirectionDeg: wdir != null ? Math.round(wdir) : null,
         moonIlluminationPct: Math.round(moon * 100),
         isNight,
         isGolden,
@@ -591,7 +596,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         visK: Math.round(visK * 10) / 10,
         aod: Math.round(aod * 100) / 100,
         tpw: Math.round(tpw),
-        wind: Math.round(spd), gusts: Math.round(gst),
+        wind: Math.round(spd), windDir: wdir != null ? Math.round(wdir) : null, gusts: Math.round(gst),
         tmp: Math.round(tmp * 10) / 10, hum, dew: Math.round(dew * 10) / 10,
         pp, pr, vpd,
         boundaryLayerHeightM: blh != null ? Math.round(blh) : null,

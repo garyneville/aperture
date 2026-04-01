@@ -11,6 +11,69 @@ import type {
   SessionScore,
 } from '../types/session-score.js';
 
+// ── Wind direction helpers ─────────────────────────────────────────────────
+
+/** Compass label for a bearing (0-360). */
+function compassLabel(deg: number): string {
+  const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+}
+
+/**
+ * How well aligned is the wind with the sun azimuth?
+ * Returns 0-100: 100 = wind blows directly from sun-side (into your back),
+ * 0 = wind blows from behind you toward the sun.
+ *
+ * Useful for storm edge-lighting (crosswind better) and reflection
+ * disruption (headwind/tailwind gentler on still water).
+ */
+function windSunCrossAngle(windDeg: number | null, sunAzimuthPhase: 'sunrise' | 'sunset' | null): number | null {
+  if (windDeg == null || sunAzimuthPhase == null) return null;
+  // Rough east/west proxy: sunrise ~90°, sunset ~270°
+  const sunAz = sunAzimuthPhase === 'sunrise' ? 90 : 270;
+  const diff = Math.abs(((windDeg - sunAz + 540) % 360) - 180);
+  // 90° diff = perfect crosswind
+  return Math.round(sweetSpotScore(diff, 60, 120, 0, 180));
+}
+
+/**
+ * Score how sheltered still water is from wind disruption.
+ * Low wind + wind coming from a direction that doesn't rake across open water
+ * is best. Simplified: just penalise higher wind harder and give a gentle
+ * bonus when the wind is light and not gusting.
+ */
+function reflectionWindScore(windKph: number, gustKph: number): number {
+  const calmScore = sweetSpotScore(windKph, 0, 4, 0, 14);
+  const gustScore = sweetSpotScore(gustKph, 0, 8, 0, 20);
+  return Math.round((calmScore * 0.65) + (gustScore * 0.35));
+}
+
+/**
+ * Does the wind favour mist persistence?
+ * Calm wind keeps fog in place; moderate wind mixes it out.
+ * A sheltered direction (qualitative — simplified to magnitude only for now)
+ * is handled by the existing calm-wind score.
+ */
+function mistWindDirectionNote(windKph: number, windDeg: number | null): string | null {
+  if (windDeg == null) return null;
+  if (windKph <= 4) return `Light ${compassLabel(windDeg)} wind helps mist hold.`;
+  if (windKph <= 10) return `Gentle ${compassLabel(windDeg)} breeze — mist may thin on exposed ground.`;
+  return null;
+}
+
+/**
+ * Wind context for wildlife: calmer is better (noise, scent carry, and subject stress).
+ * Downwind approach is a field skill, but strong wind from any direction is a negative.
+ */
+function wildlifeWindNote(windKph: number, gustKph: number, windDeg: number | null): string | null {
+  if (windDeg == null) return null;
+  const dir = compassLabel(windDeg);
+  if (windKph <= 6 && gustKph <= 12) return `Very light ${dir} wind — ideal for quiet approach and stable long-lens work.`;
+  if (windKph <= 12) return `Light ${dir} wind — plan your approach upwind of the subject.`;
+  if (windKph <= 20) return `Moderate ${dir} wind — subjects may shelter on the lee side; expect restless perches.`;
+  return `Strong ${dir} wind — challenging conditions for wildlife; subjects may hunker down.`;
+}
+
 function sweetSpotScore(
   value: number,
   idealMin: number,
@@ -326,7 +389,10 @@ const goldenHourEvaluator: SessionEvaluator = {
     if (features.visibilityKm < 10) warnings.push('Heavy haze could mute contrast despite good color.');
     if ((features.horizonGapPct ?? 100) <= 25) warnings.push('The horizon gap looks narrow for reliable low-angle light.');
     if ((features.hazeTrapRisk ?? 0) >= 65) warnings.push('A shallow boundary layer may trap haze and flatten distant contrast.');
-    if (features.windKph > 25) warnings.push('Wind may make long-lens or tripod work fussier.');
+    if (features.windKph > 25) {
+      const dirNote = features.windDirectionDeg != null ? ` from the ${compassLabel(features.windDirectionDeg)}` : '';
+      warnings.push(`Wind${dirNote} may make long-lens or tripod work fussier.`);
+    }
     if ((features.azimuthOcclusionRiskPct ?? 0) > 60) warnings.push('Low-angle light may be blocked near the horizon.');
     if (!hardPass) warnings.push('This hour is outside the low-angle light window.');
 
@@ -454,9 +520,11 @@ const mistEvaluator: SessionEvaluator = {
     const reasons: string[] = [];
     const warnings: string[] = [];
 
+    const mistNote = mistWindDirectionNote(features.windKph, features.windDirectionDeg);
     if (visibilitySweetSpot >= 70) reasons.push('Visibility is in a useful misty-landscape range.');
     if (features.dewPointSpreadC <= 1.5) reasons.push('Temperature and dew point are close enough for fog formation.');
     if (windPersistence >= 70) reasons.push('Light winds should help shallow fog or mist hold together.');
+    if (mistNote) reasons.push(mistNote);
     if ((boundaryLayerSupport ?? 0) >= 70) reasons.push('A low boundary layer should help mist or haze stay trapped near the ground.');
     if (features.visibilityKm < 0.8) warnings.push('Fog may be too dense for layered scenery rather than simply atmospheric.');
     if (features.visibilityKm > 12) warnings.push('Air looks quite clear for a dedicated mist session.');
@@ -539,6 +607,15 @@ const stormEvaluator: SessionEvaluator = {
     if ((features.horizonGapPct ?? 0) >= 60 && (features.isGolden || features.isBlue)) reasons.push('A usable horizon gap should help edge-lighting break through.');
     if ((features.azimuthOcclusionRiskPct ?? 100) < 30 && (features.isGolden || features.isBlue)) reasons.push('The sun-side gap looks open enough for edge-lit breaks.');
     if ((features.capeJkg ?? 0) >= 1500) reasons.push('Convective energy is elevated enough for more dramatic development.');
+    const stormAzPhase = (features.isGolden || features.isBlue)
+      ? (features.isGolden ? (features.isBlue ? null : 'sunset' as const) : 'sunrise' as const)
+      : null;
+    const crossAngle = windSunCrossAngle(features.windDirectionDeg, stormAzPhase);
+    if (crossAngle != null && crossAngle >= 65) reasons.push('Crosswind relative to the sun could drive rain shafts sideways for more dramatic framing.');
+    if (features.windDirectionDeg != null && features.windKph > 15) {
+      const dir = compassLabel(features.windDirectionDeg);
+      reasons.push(`Storm movement from the ${dir} — position downwind for approaching fronts.`);
+    }
     if (features.cloudTotalPct < 30) warnings.push('There may not be enough storm structure yet.');
     if (features.cloudTotalPct > 90) warnings.push('Dense overcast could flatten the scene before breaks appear.');
     if (features.dramaScore >= 60 && features.cloudTotalPct > 90) warnings.push('High drama score but overcast sky may not deliver visual payoff.');
@@ -568,6 +645,7 @@ const longExposureEvaluator: SessionEvaluator = {
     const hardPass = features.windKph <= 30 && features.gustKph <= 45;
     const windStability = sweetSpotScore(features.windKph, 0, 8, 0, 30);
     const gustStability = sweetSpotScore(features.gustKph, 0, 15, 0, 45);
+    const reflectionScore = reflectionWindScore(features.windKph, features.gustKph);
     const cloudInterest = sweetSpotScore(features.cloudTotalPct, 30, 80, 0, 100);
     const atmosphericMood = clamp(
       (features.mistScore >= 20 ? Math.min(features.mistScore, 80) : 0)
@@ -575,6 +653,7 @@ const longExposureEvaluator: SessionEvaluator = {
     const lowAngleBoost = features.isGolden || features.isBlue ? 14 : 0;
     const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.06, 0.2, 0.01, 0.4);
     const visibilityRange = sweetSpotScore(features.visibilityKm, 2, 18, 0.3, 40);
+    const reflectionBonus = reflectionScore >= 80 ? 5 : 0;
     const windPenalty = features.windKph > 20 ? 16 : features.windKph > 12 ? 8 : 0;
     const gustPenalty = features.gustKph > 30 ? 10 : features.gustKph > 20 ? 5 : 0;
     const rainPenalty = features.precipProbabilityPct > 70 ? 12 : features.precipProbabilityPct > 40 ? 5 : 0;
@@ -588,6 +667,7 @@ const longExposureEvaluator: SessionEvaluator = {
       + (hazeSweetSpot * 0.1)
       + (visibilityRange * 0.15)
       + lowAngleBoost
+      + reflectionBonus
       - windPenalty
       - gustPenalty
       - rainPenalty
@@ -596,6 +676,7 @@ const longExposureEvaluator: SessionEvaluator = {
     const warnings: string[] = [];
 
     if (windStability >= 80) reasons.push('Calm winds are ideal for tripod stability and smooth exposures.');
+    if (reflectionScore >= 75) reasons.push('Very light wind favours clean water reflections for long-exposure work.');
     if (cloudInterest >= 60) reasons.push('Cloud structure should streak nicely across a longer exposure.');
     if (atmosphericMood >= 30) reasons.push('Mist or humidity adds mood that rewards slower shutter work.');
     if (features.isGolden || features.isBlue) reasons.push('Low-angle light can produce dramatic long-exposure colour.');
@@ -738,7 +819,9 @@ const wildlifeEvaluator: SessionEvaluator = {
       'This wildlife score is a coarse scaffold without species timing, habitat, or scent context.',
     ];
 
+    const windNote = wildlifeWindNote(features.windKph, features.gustKph, features.windDirectionDeg);
     if (calmWind >= 70) reasons.push('Lighter winds should make subjects and longer lenses easier to manage.');
+    if (windNote) reasons.push(windNote);
     if (softLight >= 70 && (features.isGolden || features.isBlue)) reasons.push('Soft low-angle light should be kinder on feathers, fur, and contrast.');
     else if (softLight >= 70) reasons.push('Cloud-filtered light should suit wildlife contrast without harsh glare.');
     if (visibilityWorking >= 60) reasons.push('Visibility looks clear enough for longer-lens subject separation.');

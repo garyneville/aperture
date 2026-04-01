@@ -22,6 +22,7 @@ function makeInput(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHou
     dewPointC: 4,
     windKph: 11,
     gustKph: 18,
+    windDirectionDeg: null,
     moonIlluminationPct: 12,
     isNight: false,
     isGolden: true,
