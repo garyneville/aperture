@@ -241,6 +241,19 @@ export function buildFallbackAiText(ctx: AiBriefingContext): string {
     return `${firstSentence} If you miss it, ${nextWindow.label.toLowerCase()} is the later fallback from ${windowRange(nextWindow)}.`;
   }
 
+  if (topAlt?.name && typeof topAlt.bestScore === 'number' && topAlt.bestScore > (topWindow.peak ?? 0)) {
+    const altDrive = topAlt.driveMins ? ` (${topAlt.driveMins}-minute drive)` : '';
+    return `${firstSentence} ${topAlt.name} scores higher at ${topAlt.bestScore}/100 if you can make the trip${altDrive}.`;
+  }
+
+  if (typeof topWindow.peak === 'number' && topWindow.peak >= 75) {
+    return `${firstSentence} Conditions look strong — worth getting out for.`;
+  }
+
+  if (typeof topWindow.peak === 'number' && topWindow.peak < 42) {
+    return `${firstSentence} Marginal conditions overall, so keep expectations modest.`;
+  }
+
   return firstSentence;
 }
 

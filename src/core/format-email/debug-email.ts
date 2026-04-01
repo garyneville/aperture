@@ -266,7 +266,22 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           const windowLine = outdoorComfort.bestWindow
             ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.ink};"><span style="font-weight:700;color:${C.onPrimaryContainer};">Best window:</span> ${esc(outdoorComfort.bestWindow.start)}–${esc(outdoorComfort.bestWindow.end)} (${esc(outdoorComfort.bestWindow.label)})</div>`
             : `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No highlighted outdoor window found.</div>`;
-          return `${spacer(8)}${debugCard('Outdoor comfort window trace', `${debugTable(['Hour', 'Temp', 'Rain', 'Wind', 'Vis', 'Precip', 'Score', 'Label'], outdoorRows)}${windowLine}`)}`;
+          const driftWarnings: string[] = [];
+          const scoringByHour = new Map(debugContext.hourlyScoring.map(h => [h.hour, h]));
+          for (const hour of outdoorComfort.hours) {
+            const scoring = scoringByHour.get(hour.hour);
+            if (!scoring) continue;
+            if (Math.abs(scoring.visK - hour.visK) > 1) {
+              driftWarnings.push(`${hour.hour}: vis ${scoring.visK}km (scoring) vs ${hour.visK}km (outdoor)`);
+            }
+            if (Math.abs(scoring.cloud - hour.pp) > 5) {
+              driftWarnings.push(`${hour.hour}: cloud ${scoring.cloud}% (scoring) vs rain ${hour.pp}% (outdoor)`);
+            }
+          }
+          const driftLine = driftWarnings.length
+            ? `<div style="Margin-top:8px;padding:8px;background:#FFF3CD;border:1px solid #FFECB5;border-radius:6px;font-family:${FONT};font-size:11px;line-height:1.5;color:#664D03;">⚠ Data drift detected between scoring trace and outdoor comfort source:<br>${driftWarnings.map(w => esc(w)).join('<br>')}</div>`
+            : '';
+          return `${spacer(8)}${debugCard('Outdoor comfort window trace', `${debugTable(['Hour', 'Temp', 'Rain', 'Wind', 'Vis', 'Precip', 'Score', 'Label'], outdoorRows)}${windowLine}${driftLine}`)}`;
         })()}
       </td>
     </tr>
