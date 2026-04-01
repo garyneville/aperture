@@ -556,10 +556,20 @@ function summarizeCandidateRejection(
   const reasons: string[] = [];
 
   if (!rawContent.trim()) {
+    // Truly empty body — no content at all.
     if (provider === 'gemini' && geminiDiagnostics?.statusCode !== null && geminiDiagnostics?.statusCode !== undefined) {
       reasons.push(`HTTP ${geminiDiagnostics.statusCode} but empty response body`);
     } else {
       reasons.push('empty response body');
+    }
+  } else if (candidate && candidate.editorial === rawContent) {
+    // Non-empty body but the editorial field was absent or unparseable from the JSON —
+    // the whole rawContent was used as the editorial fallback, indicating the expected
+    // "editorial" key was missing. This is NOT an empty body; clarify in the trace.
+    if (provider === 'gemini' && geminiDiagnostics?.statusCode !== null && geminiDiagnostics?.statusCode !== undefined) {
+      reasons.push(`HTTP ${geminiDiagnostics.statusCode} — response received (${geminiDiagnostics.responseByteLength ?? '?'} bytes) but editorial field absent or unparseable`);
+    } else {
+      reasons.push('editorial field absent or unparseable in response JSON');
     }
   }
 
@@ -934,13 +944,18 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     || editorialChoice.secondaryCandidate?.weekInsight
     || '';
   const resolvedWeekStandout = validateWeekInsight(bestWeekInsight, ctx.dailySummary);
-  const safeCompositionBullets = filterCompositionBullets(
+  const rawCompositionBullets: string[] = (
     (componentCandidate?.compositionBullets?.length ? componentCandidate.compositionBullets : null)
-      || editorialChoice.primaryCandidate?.compositionBullets
-      || editorialChoice.secondaryCandidate?.compositionBullets
-      || [],
-    ctx,
+    // Cross-candidate fallback: try the other providers if the component candidate has no bullets.
+    ?? (editorialChoice.primaryCandidate?.compositionBullets?.length
+      ? editorialChoice.primaryCandidate.compositionBullets
+      : null)
+    ?? (editorialChoice.secondaryCandidate?.compositionBullets?.length
+      ? editorialChoice.secondaryCandidate.compositionBullets
+      : null)
+    ?? []
   );
+  const safeCompositionBullets = filterCompositionBullets(rawCompositionBullets, ctx);
   const safeGeminiInspire = typeof geminiInspire === 'string' && geminiInspire.trim().length > 0
     ? geminiInspire.trim()
     : undefined;
@@ -995,6 +1010,16 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
         resolved: spurOfTheMoment?.locationName || null,
         dropped: Boolean(bestSpurRaw) && !spurOfTheMoment,
         dropReason: resolveSpurDropReason(bestSpurRaw, nearbyAltNames, longRangePool),
+      },
+      compositionBullets: {
+        rawCount: rawCompositionBullets.length,
+        resolvedCount: safeCompositionBullets.length,
+        sourceProvider: rawCompositionBullets.length > 0
+          ? ((componentCandidate?.compositionBullets?.length ? componentCandidate.provider : null)
+            ?? (editorialChoice.primaryCandidate?.compositionBullets?.length ? editorialChoice.primaryCandidate.provider : null)
+            ?? (editorialChoice.secondaryCandidate?.compositionBullets?.length ? editorialChoice.secondaryCandidate.provider : null))
+          : null,
+        resolved: safeCompositionBullets,
       },
       weekStandout: {
         parseStatus: componentCandidate?.weekStandoutParseStatus || 'absent',

@@ -131,6 +131,13 @@ export interface DebugAiTrace {
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;
+  /** Composition bullets received from providers and the final resolved set after filtering. */
+  compositionBullets?: {
+    rawCount: number;
+    resolvedCount: number;
+    sourceProvider: string | null;
+    resolved: string[];
+  };
   spurSuggestion: {
     raw: string | null;
     confidence: number | null;

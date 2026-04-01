@@ -56,6 +56,12 @@ export function isAstroWindow(window: Window | undefined): boolean {
 
 export function peakHourForWindow(window: Window | undefined): string | null {
   if (!window?.hours?.length) return null;
+  // Prefer the explicit peakHour field populated by the scoring pipeline.
+  // Falling back to score-matching is unreliable: window.peak holds the session
+  // score (e.g. 100 for long-exposure) while hour.score holds the daily final
+  // score (e.g. 14), so the equality check never fires and we'd silently take
+  // the last hour in the array instead of the actual peak hour.
+  if (window.peakHour) return window.peakHour;
   const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
   return peakHour?.hour || null;
 }
