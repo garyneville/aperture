@@ -440,12 +440,12 @@ const astroEvaluator: SessionEvaluator = {
     // ALTITUDE-AWARE MOON WASHOUT – uses a stepped altitude factor
     // modeled on Krisciunas–Schaefer sky-brightness principles:
     // higher moon = less atmospheric extinction of moonlight = more sky-glow.
-    // The 5-band table from the research report:
-    //   ≤-6°  → 0.0   (well below horizon, no moonlight)
-    //   -6–0° → 0.05  (just below horizon, faint horizon glow for bright moons)
-    //   0–15° → 0.25  (low: heavy atmospheric extinction)
-    //   15–45°→ 0.60  (mid: moderate extinction)
-    //   ≥45°  → 1.00  (high/overhead: minimal extinction, max sky-glow)
+    // The 5-band table from the research report (interpolated within bands):
+    //   ≤-6°     → 0.00           (well below horizon, no moonlight)
+    //   -6° – 0° → 0.05           (just below, faint horizon glow for bright moons)
+    //   0° – 15° → 0.10 – 0.25    (low: heavy atmospheric extinction)
+    //   15° – 45°→ 0.25 – 0.60    (mid: moderate extinction)
+    //   ≥45°     → 0.60 – 1.00    (high/overhead: minimal extinction, max sky-glow)
     const moonAlt = features.moonAltitudeDeg ?? null;
     const moonAltFactor = moonAlt != null
       ? (moonAlt <= -6 ? 0
@@ -529,7 +529,7 @@ const astroEvaluator: SessionEvaluator = {
     if (features.lowCloudBlockingScore >= 30) warnings.push('Dense low cloud is a bigger risk than the raw cloud-cover total suggests.');
     if (features.moonIlluminationPct > 70 && moonAltFactor > 0.3) warnings.push('Bright moonlight will wash out all but the brightest targets.');
     else if (features.moonIlluminationPct > 45 && moonAltFactor > 0.3) warnings.push('Moonlight may wash out faint targets.');
-    if (moonAlt != null && moonAlt >= 45 && features.moonIlluminationPct > 50) warnings.push('Moon is high in the sky — maximum sky-glow impact on deep-sky imaging.');
+    if (moonAlt != null && moonAlt >= 45 && features.moonIlluminationPct > 50) warnings.push('Moon is at high altitude — strong sky-glow impact on deep-sky imaging.');
     if (features.transparencyScore < 30) warnings.push('Poor transparency will limit deep-sky contrast.');
     if ((features.hazeTrapRisk ?? 0) >= 60) warnings.push('A shallow boundary layer may be trapping haze despite the cloud forecast.');
     if (seeing != null && seeing < 30) warnings.push('Poor seeing may bloat stars and reduce fine detail in long exposures.');

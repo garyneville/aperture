@@ -291,7 +291,7 @@ describe('session scoring foundation', () => {
 
     expect(lowMoon.score).toBeGreaterThan(highMoon.score);
     expect(lowMoon.reasons).toContain('Moon is low on the horizon, limiting its sky-glow impact.');
-    expect(highMoon.warnings).toContain('Moon is high in the sky — maximum sky-glow impact on deep-sky imaging.');
+    expect(highMoon.warnings).toContain('Moon is at high altitude — strong sky-glow impact on deep-sky imaging.');
   });
 
   it('eliminates moon penalty entirely when the moon is below the horizon', () => {
