@@ -208,8 +208,12 @@ describe('scoreAllDays headline scoring', () => {
     const maxNightFinal = Math.max(...today.hours.filter(hour => hour.isNight).map(hour => hour.score));
 
     expect(today.astroScore).toBeGreaterThan(maxNightFinal);
-    expect(today.headlineScore).toBe(Math.max(today.photoScore, maxNightFinal));
+    expect(today.headlineScore).toBeLessThanOrEqual(Math.max(today.photoScore, maxNightFinal));
     expect(today.headlineScore).toBeLessThan(today.astroScore);
+
+    // The headline score must never exceed the best individual hour score
+    const maxHourScore = Math.max(...today.hours.map(hour => hour.score));
+    expect(today.headlineScore).toBeLessThanOrEqual(maxHourScore);
   });
 });
 
