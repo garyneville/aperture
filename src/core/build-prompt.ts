@@ -16,6 +16,17 @@ import type { SessionRecommendationSummary } from '../types/session-score.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
+/**
+ * Extract HH:MM from an ISO-8601 date-time string that is already localised.
+ * Open-Meteo returns sunrise/sunset adjusted to the requested timezone, so
+ * parsing through `new Date()` + `toLocaleTimeString(…, { timeZone })` would
+ * apply the UTC→local offset a second time during DST.
+ */
+function extractLocalHHMM(iso: string): string {
+  const m = iso.match(/T(\d{2}:\d{2})/);
+  return m ? m[1] : '--:--';
+}
+
 const SEASONAL_CONTEXT: Record<number, string> = {
   1:  'January — frost and snow possible on high ground; bare trees; frozen reservoirs.',
   2:  'February — snowdrops in woodland; low sun angle throughout the day.',
@@ -354,12 +365,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const debugContext = input.debugContext || emptyDebugContext();
   const homeLocationName = homeLocation.name;
 
-  const sunriseStr = sunrise
-    ? new Date(sunrise).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone })
-    : '--:--';
-  const sunsetStr = sunset
-    ? new Date(sunset).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone })
-    : '--:--';
+  const sunriseStr = sunrise ? extractLocalHHMM(sunrise) : '--:--';
+  const sunsetStr = sunset ? extractLocalHHMM(sunset) : '--:--';
   const today = now.toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', timeZone: homeLocation.timezone,
   });
