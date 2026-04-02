@@ -93,4 +93,36 @@ describe('deriveHourFeatures', () => {
     expect(translucent.highCloudTranslucencyScore).toBeGreaterThan(blocked.highCloudTranslucencyScore);
     expect(translucent.lowCloudBlockingScore).toBeLessThan(blocked.lowCloudBlockingScore);
   });
+
+  it('derives a seeing proxy from gustiness, BLH, and CAPE when no external seeing is provided', () => {
+    const calm = deriveHourFeatures(makeInput({
+      windKph: 3,
+      gustKph: 5,
+      boundaryLayerHeightM: 300,
+      capeJkg: 0,
+    }));
+    const turbulent = deriveHourFeatures(makeInput({
+      windKph: 22,
+      gustKph: 40,
+      boundaryLayerHeightM: 1500,
+      capeJkg: 1500,
+    }));
+
+    expect(calm.seeingScore).not.toBeNull();
+    expect(turbulent.seeingScore).not.toBeNull();
+    expect(calm.seeingScore!).toBeGreaterThan(turbulent.seeingScore!);
+  });
+
+  it('preserves externally provided seeingScore without overwriting with proxy', () => {
+    const features = deriveHourFeatures(makeInput({
+      seeingScore: 85,
+      windKph: 22,
+      gustKph: 40,
+      boundaryLayerHeightM: 1500,
+      capeJkg: 1500,
+    }));
+
+    // External value should be preserved, not overwritten by the proxy
+    expect(features.seeingScore).toBe(85);
+  });
 });

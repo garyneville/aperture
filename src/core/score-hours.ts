@@ -137,6 +137,7 @@ export interface ScoredHour {
   isNight: boolean;
   moon: number;
   moonAltDeg: number | null;
+  solarAltDeg: number | null;
   uv: number;
   tags: string[];
 }
@@ -231,6 +232,7 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     windDirectionDeg: hour.windDir,
     moonIlluminationPct: hour.moon,
     moonAltitudeDeg: hour.moonAltDeg ?? null,
+    solarAltitudeDeg: hour.solarAltDeg ?? null,
     isNight: hour.isNight,
     isGolden: hour.isGolden,
     isBlue: hour.isBlue,
@@ -435,6 +437,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
       const moonMetrics = getMoonMetrics(+t, LAT, LON);
       const moon = moonMetrics.illumination;
+      const solarAltDeg = getSolarAltitude(+t, LAT, LON);
       const shQ   = isGoldAm ? shSunriseQ : isGoldPm ? shSunsetQ : null;
       const shBoost = shQ !== null ? Math.round(shQ * 25) : 0;
 
@@ -505,7 +508,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
       // ── ASTRO ─────────────────────────────────────────────────────────
       let astro = 0;
-      if (isNight && getSolarAltitude(+t, LAT, LON) < ASTRO_DARK_ELEVATION) {
+      if (isNight && solarAltDeg < ASTRO_DARK_ELEVATION) {
         astro += moonScoreAdjustment(moonMetrics);
         if (ct < 10)    astro += 30; else if (ct < 30)    astro += 10; else if (ct > 60)    astro -= 20;
         if (visK > 25)  astro += 15;
@@ -577,6 +580,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         windDirectionDeg: wdir != null ? Math.round(wdir) : null,
         moonIlluminationPct: Math.round(moon * 100),
         moonAltitudeDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10,
+        solarAltitudeDeg: Math.round(solarAltDeg * 10) / 10,
         isNight,
         isGolden,
         isBlue,
@@ -606,7 +610,8 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         horizonGapPct: horizonGapPct !== null ? Math.round(horizonGapPct) : null,
         azimuthRisk: azimuthRisk !== null ? Math.round(azimuthRisk) : null,
         isGolden, isGoldAm, isGoldPm, isBlue, isBlueAm, isBluePm, isNight,
-        moon: Math.round(moon * 100), moonAltDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10, uv, tags,
+        moon: Math.round(moon * 100), moonAltDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10,
+        solarAltDeg: Math.round(solarAltDeg * 10) / 10, uv, tags,
       });
     });
 

@@ -307,7 +307,7 @@ describe('session scoring foundation', () => {
     })));
 
     expect(moonDown.score).toBeGreaterThan(moonUp.score);
-    expect(moonDown.reasons).toContain('Moon is below the horizon — bright moonlight is not a factor right now.');
+    expect(moonDown.reasons).toContain('Moon is well below the horizon — bright moonlight is not a factor right now.');
   });
 
   it('rewards good astronomical seeing for sharp star imaging', () => {
@@ -364,6 +364,118 @@ describe('session scoring foundation', () => {
 
     expect(ideal.confidence).toBe('high');
     expect(degraded.confidence).not.toBe('high');
+  });
+
+  it('applies a graduated twilight ramp between nautical and astronomical darkness', () => {
+    const fullDark = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      solarAltitudeDeg: -20,
+    })));
+    const nautical = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      solarAltitudeDeg: -14,
+    })));
+
+    expect(fullDark.score).toBeGreaterThan(nautical.score);
+    expect(nautical.score).toBeGreaterThan(0); // still gets partial credit
+    expect(nautical.warnings).toContain('Late nautical twilight — sky is darkening but not yet at full astronomical darkness.');
+  });
+
+  it('derives a seeing proxy from gustiness and boundary-layer data', () => {
+    const calm = deriveHourFeatures(makeHour({
+      isNight: true, windKph: 3, gustKph: 5, boundaryLayerHeightM: 300, capeJkg: 0,
+    }));
+    const turbulent = deriveHourFeatures(makeHour({
+      isNight: true, windKph: 20, gustKph: 38, boundaryLayerHeightM: 1400, capeJkg: 1200,
+    }));
+
+    expect(calm.seeingScore).toBeGreaterThan(turbulent.seeingScore!);
+    expect(calm.seeingScore).toBeGreaterThanOrEqual(60);
+    expect(turbulent.seeingScore).toBeLessThan(50);
+  });
+
+  it('uses derived seeing proxy in astro scoring when no external seeing is provided', () => {
+    const calmNight = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      windKph: 3, gustKph: 5, boundaryLayerHeightM: 300, capeJkg: 0,
+    })));
+    const turbulentNight = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      windKph: 20, gustKph: 38, boundaryLayerHeightM: 1400, capeJkg: 1200,
+    })));
+
+    // Calm conditions should score higher because the proxy produces better seeing
+    expect(calmNight.score).toBeGreaterThan(turbulentNight.score);
+  });
+
+  it('uses the 5-band moon altitude table for more granular penalty scaling', () => {
+    const overhead = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: 55,
+    })));
+    const midAlt = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: 30,
+    })));
+    const lowAlt = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: 8,
+    })));
+    const justBelow = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: -3,
+    })));
+    const wellBelow = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: -15,
+    })));
+
+    // Scores should increase as moon moves lower
+    expect(lowAlt.score).toBeGreaterThan(midAlt.score);
+    expect(midAlt.score).toBeGreaterThan(overhead.score);
+    expect(justBelow.score).toBeGreaterThan(lowAlt.score);
+    expect(wellBelow.score).toBeGreaterThan(justBelow.score);
+  });
+
+  it('applies stepped Bortle penalties aligned with Milky Way visibility thresholds', () => {
+    const bortle2 = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 2,
+    })));
+    const bortle4 = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 4,
+    })));
+    const bortle5 = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 5,
+    })));
+    const bortle6 = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 6,
+    })));
+
+    // Dark sites should score highest, steep drop from Bortle 5→6
+    expect(bortle2.score).toBeGreaterThan(bortle4.score);
+    expect(bortle4.score).toBeGreaterThan(bortle5.score);
+    expect(bortle5.score).toBeGreaterThan(bortle6.score);
+    // The Bortle 5→6 gap (marginal → poor for MW) should be larger than 4→5
+    expect(bortle5.score - bortle6.score).toBeGreaterThan(bortle4.score - bortle5.score);
+    expect(bortle4.reasons).toContain('Rural-transition site is workable for Milky Way imaging.');
+    expect(bortle5.warnings).toContain('Milky Way may look washed out; best results from narrowband or bright targets.');
   });
 
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
