@@ -1008,7 +1008,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=__GEMINI_API_KEY__",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=__GEMINI_API_KEY__",
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
@@ -1059,7 +1059,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=__GEMINI_API_KEY__",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=__GEMINI_API_KEY__",
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
