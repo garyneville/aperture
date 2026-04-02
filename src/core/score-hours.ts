@@ -136,6 +136,7 @@ export interface ScoredHour {
   isBluePm: boolean;
   isNight: boolean;
   moon: number;
+  moonAltDeg: number | null;
   uv: number;
   tags: string[];
 }
@@ -229,6 +230,7 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     gustKph: hour.gusts,
     windDirectionDeg: hour.windDir,
     moonIlluminationPct: hour.moon,
+    moonAltitudeDeg: hour.moonAltDeg ?? null,
     isNight: hour.isNight,
     isGolden: hour.isGolden,
     isBlue: hour.isBlue,
@@ -574,6 +576,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         gustKph: Math.round(gst),
         windDirectionDeg: wdir != null ? Math.round(wdir) : null,
         moonIlluminationPct: Math.round(moon * 100),
+        moonAltitudeDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10,
         isNight,
         isGolden,
         isBlue,
@@ -603,7 +606,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
         horizonGapPct: horizonGapPct !== null ? Math.round(horizonGapPct) : null,
         azimuthRisk: azimuthRisk !== null ? Math.round(azimuthRisk) : null,
         isGolden, isGoldAm, isGoldPm, isBlue, isBlueAm, isBluePm, isNight,
-        moon: Math.round(moon * 100), uv, tags,
+        moon: Math.round(moon * 100), moonAltDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10, uv, tags,
       });
     });
 

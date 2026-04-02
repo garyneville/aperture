@@ -277,6 +277,95 @@ describe('session scoring foundation', () => {
     expect(trapped.warnings).toContain('A shallow boundary layer may be trapping haze despite the cloud forecast.');
   });
 
+  it('reduces moon washout penalty when the moon is low on the horizon', () => {
+    const highMoon = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: 60,
+    })));
+    const lowMoon = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 80,
+      moonAltitudeDeg: 8,
+    })));
+
+    expect(lowMoon.score).toBeGreaterThan(highMoon.score);
+    expect(lowMoon.reasons).toContain('Moon is low on the horizon, limiting its sky-glow impact.');
+    expect(highMoon.warnings).toContain('Moon is high in the sky — maximum sky-glow impact on deep-sky imaging.');
+  });
+
+  it('eliminates moon penalty entirely when the moon is below the horizon', () => {
+    const moonUp = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 90,
+      moonAltitudeDeg: 45,
+    })));
+    const moonDown = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 90,
+      moonAltitudeDeg: -10,
+    })));
+
+    expect(moonDown.score).toBeGreaterThan(moonUp.score);
+    expect(moonDown.reasons).toContain('Moon is below the horizon — bright moonlight is not a factor right now.');
+  });
+
+  it('rewards good astronomical seeing for sharp star imaging', () => {
+    const goodSeeing = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      seeingScore: 82,
+    })));
+    const poorSeeing = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      seeingScore: 20,
+    })));
+
+    expect(goodSeeing.score).toBeGreaterThan(poorSeeing.score);
+    expect(goodSeeing.reasons).toContain('Atmospheric seeing looks steady for sharp star imaging.');
+    expect(poorSeeing.warnings).toContain('Poor seeing may bloat stars and reduce fine detail in long exposures.');
+  });
+
+  it('penalises light-polluted sites and rewards dark-sky locations', () => {
+    const darkSite = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 2,
+    })));
+    const suburbanSite = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 5,
+    })));
+    const urbanSite = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
+      visibilityKm: 28, humidityPct: 55, aerosolOpticalDepth: 0.06, moonIlluminationPct: 10,
+      lightPollutionBortle: 8,
+    })));
+
+    expect(darkSite.score).toBeGreaterThan(suburbanSite.score);
+    expect(suburbanSite.score).toBeGreaterThan(urbanSite.score);
+    expect(darkSite.reasons).toContain('Dark-sky site conditions favour faint deep-sky targets.');
+    expect(urbanSite.warnings).toContain('Heavy light pollution limits deep-sky imaging to narrowband or bright targets.');
+  });
+
+  it('factors seeing and light pollution into astro confidence', () => {
+    const ideal = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 86, cloudTotalPct: 9, cloudLowPct: 4, cloudMidPct: 5, cloudHighPct: 6,
+      visibilityKm: 30, humidityPct: 58, aerosolOpticalDepth: 0.06, moonIlluminationPct: 8,
+      seeingScore: 75, lightPollutionBortle: 3,
+    })));
+    const degraded = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 86, cloudTotalPct: 9, cloudLowPct: 4, cloudMidPct: 5, cloudHighPct: 6,
+      visibilityKm: 30, humidityPct: 58, aerosolOpticalDepth: 0.06, moonIlluminationPct: 8,
+      seeingScore: 30, lightPollutionBortle: 7,
+    })));
+
+    expect(ideal.confidence).toBe('high');
+    expect(degraded.confidence).not.toBe('high');
+  });
+
   it('can surface mist as the best-fit session for a fog-prone hour', () => {
     const sessions = evaluateBuiltInSessions(deriveHourFeatures(makeHour({
       overallScore: 48,

@@ -198,10 +198,14 @@ function goldenHourConfidence(features: DerivedHourFeatures, hardPass: boolean):
 
 function astroConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
   const spread = spreadVolatility(features);
+  const seeingOk = features.seeingScore == null || features.seeingScore >= 50;
+  const bortleOk = features.lightPollutionBortle == null || features.lightPollutionBortle <= 5;
   const base = features.cloudTotalPct <= 15
     && features.moonIlluminationPct <= 30
     && features.transparencyScore >= 65
-    && (features.hazeTrapRisk == null || features.hazeTrapRisk <= 55);
+    && (features.hazeTrapRisk == null || features.hazeTrapRisk <= 55)
+    && seeingOk
+    && bortleOk;
   if (spread == null) return base && hardPass ? 'high' : hardPass ? 'medium' : 'low';
   return base
     ? confidenceFromSpread(spread, hardPass, 6, 14)
@@ -423,15 +427,35 @@ const astroEvaluator: SessionEvaluator = {
     const cloudFrac = clamp(effectiveCloudOpacity - 10, 0, 50) / 50;   // 0-1 above 10 %
     const cloudPenalty = Math.round(cloudFrac * cloudFrac * 30);         // 0-30
 
-    // NON-LINEAR MOON WASHOUT PENALTY – cubic ramp past 25 %
-    const moonFrac = clamp(features.moonIlluminationPct - 25, 0, 75) / 75;
-    const moonPenalty = Math.round(moonFrac * moonFrac * moonFrac * 35); // 0-35
+    // ALTITUDE-AWARE MOON WASHOUT – cubic ramp past 25 % illumination,
+    // scaled by how high the moon sits.  A bright moon near the horizon
+    // scatters far less sky-glow than one overhead.
+    const moonIllumFrac = clamp(features.moonIlluminationPct - 25, 0, 75) / 75;
+    const moonAlt = features.moonAltitudeDeg ?? null;
+    const moonAltFactor = moonAlt != null && moonAlt > 0
+      ? clamp(moonAlt, 0, 70) / 70
+      : moonAlt != null && moonAlt <= 0 ? 0 : 1; // moon below horizon → 0; unknown → assume worst
+    const moonPenalty = Math.round(moonIllumFrac * moonIllumFrac * moonIllumFrac * 35 * moonAltFactor);
 
     // NON-LINEAR TRANSPARENCY BONUS – sweet-spot curve (best between 65-95)
     const transparencySweetSpot = sweetSpotScore(features.transparencyScore, 65, 95, 20, 100);
     const thinVeilBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.05), 0, 5);
     const lowCloudPenalty = features.lowCloudBlockingScore >= 35
       ? clamp(Math.round((features.lowCloudBlockingScore - 35) * 0.18), 0, 10)
+      : 0;
+
+    // SEEING – astronomical seeing measures turbulence-induced star bloat.
+    // 0-100 scale: higher is better (steadier atmosphere).
+    const seeing = features.seeingScore ?? null;
+    const seeingBonus = seeing != null ? clamp(Math.round((seeing - 40) * 0.12), -5, 8) : 0;
+
+    // LIGHT POLLUTION (Bortle 1-9) – darker sites earn a bonus,
+    // heavily light-polluted sites get a penalty.
+    const bortle = features.lightPollutionBortle ?? null;
+    const bortlePenalty = bortle != null
+      ? (bortle <= 3 ? -clamp(Math.round((4 - bortle) * 4), 0, 12) // bonus for dark sites (negative penalty)
+        : bortle >= 6 ? clamp(Math.round((bortle - 5) * 4), 0, 16) // penalty for light-polluted sites
+          : 0)
       : 0;
 
     const spread = spreadVolatility(features);
@@ -443,9 +467,11 @@ const astroEvaluator: SessionEvaluator = {
       + (features.transparencyScore * 0.1)
       + (Math.max(0, 100 - features.moonIlluminationPct) * 0.15)
       + thinVeilBonus
+      + seeingBonus
       - moonPenalty
       - cloudPenalty
       - lowCloudPenalty
+      - bortlePenalty
       - uncertaintyPenalty;
 
     const reasons: string[] = [];
@@ -455,17 +481,24 @@ const astroEvaluator: SessionEvaluator = {
     else if (features.cloudTotalPct <= 25) reasons.push('Cloud cover is low enough for a plausible dark-sky run.');
     if (features.moonIlluminationPct <= 15) reasons.push('Near-new-moon darkness favours faint nebulae and galaxies.');
     else if (features.moonIlluminationPct <= 30) reasons.push('Moonlight should stay subdued for darker skies.');
+    if (moonAlt != null && moonAlt <= 0 && features.moonIlluminationPct > 25) reasons.push('Moon is below the horizon — bright moonlight is not a factor right now.');
+    if (moonAlt != null && moonAlt > 0 && moonAlt <= 15 && features.moonIlluminationPct > 40) reasons.push('Moon is low on the horizon, limiting its sky-glow impact.');
     if (features.transparencyScore >= 75) reasons.push('Transparency looks strong for clean deep-sky contrast.');
     else if (features.transparencyScore >= 55) reasons.push('Current haze and humidity look workable for transparency.');
     if (features.highCloudTranslucencyScore >= 70 && features.cloudOpticalThicknessPct <= 35) reasons.push('Any remaining cloud looks like a thin veil rather than a solid deck.');
+    if (seeing != null && seeing >= 70) reasons.push('Atmospheric seeing looks steady for sharp star imaging.');
+    if (bortle != null && bortle <= 3) reasons.push('Dark-sky site conditions favour faint deep-sky targets.');
     if (!features.isNight) warnings.push('This hour is not inside a darkness window.');
     if (features.cloudTotalPct > 45) warnings.push('Cloud cover is approaching an astro deal-breaker.');
     else if (features.cloudTotalPct > 30) warnings.push('Moderate cloud may interrupt longer exposures.');
     if (features.lowCloudBlockingScore >= 30) warnings.push('Dense low cloud is a bigger risk than the raw cloud-cover total suggests.');
-    if (features.moonIlluminationPct > 70) warnings.push('Bright moonlight will wash out all but the brightest targets.');
-    else if (features.moonIlluminationPct > 45) warnings.push('Moonlight may wash out faint targets.');
+    if (features.moonIlluminationPct > 70 && moonAltFactor > 0.3) warnings.push('Bright moonlight will wash out all but the brightest targets.');
+    else if (features.moonIlluminationPct > 45 && moonAltFactor > 0.3) warnings.push('Moonlight may wash out faint targets.');
+    if (moonAlt != null && moonAlt >= 50 && features.moonIlluminationPct > 50) warnings.push('Moon is high in the sky — maximum sky-glow impact on deep-sky imaging.');
     if (features.transparencyScore < 30) warnings.push('Poor transparency will limit deep-sky contrast.');
     if ((features.hazeTrapRisk ?? 0) >= 60) warnings.push('A shallow boundary layer may be trapping haze despite the cloud forecast.');
+    if (seeing != null && seeing < 30) warnings.push('Poor seeing may bloat stars and reduce fine detail in long exposures.');
+    if (bortle != null && bortle >= 7) warnings.push('Heavy light pollution limits deep-sky imaging to narrowband or bright targets.');
 
     return completeScore(
       'astro',
