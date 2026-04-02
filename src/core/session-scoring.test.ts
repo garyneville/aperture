@@ -639,6 +639,17 @@ describe('session scoring foundation', () => {
     expect(moderate.reasons).toContain('Showery conditions could support rain shafts or fast-changing breaks.');
   });
 
+  it('storm scores zero in dry calm conditions with no convective activity', () => {
+    const calm = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
+      dramaScore: 78, crepuscularScore: 61, cloudTotalPct: 40, precipProbabilityPct: 0,
+      windKph: 9, gustKph: 14, isGolden: true, capeJkg: undefined, lightningRisk: undefined,
+    })));
+
+    expect(calm.score).toBe(0);
+    expect(calm.hardPass).toBe(false);
+    expect(calm.warnings).toContain('No precipitation, wind, or convective activity to support a storm session.');
+  });
+
   it('storm drama-cloud synergy peaks in partial cloud, not in full overcast', () => {
     const partial = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
       dramaScore: 82, cloudTotalPct: 60, precipProbabilityPct: 45,

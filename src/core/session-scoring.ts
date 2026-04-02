@@ -549,7 +549,11 @@ const stormEvaluator: SessionEvaluator = {
   session: 'storm',
   requiredCapabilities: STORM_CAPABILITIES,
   evaluateHour(features) {
-    const hardPass = features.cloudTotalPct >= 20 && features.cloudTotalPct <= 95;
+    const stormActivity = features.precipProbabilityPct >= 20
+      || features.windKph >= 25
+      || (features.capeJkg != null && features.capeJkg >= 500)
+      || (features.lightningRisk != null && features.lightningRisk >= 10);
+    const hardPass = features.cloudTotalPct >= 20 && features.cloudTotalPct <= 95 && stormActivity;
     const showerBand = bellCurve(features.precipProbabilityPct, 45, 22);
     const cloudStructure = sweetSpotScore(features.cloudTotalPct, 45, 85, 10, 100);
     const opticalWindow = sweetSpotScore(features.cloudOpticalThicknessPct, 28, 68, 10, 95);
@@ -624,6 +628,7 @@ const stormEvaluator: SessionEvaluator = {
     if ((features.azimuthOcclusionRiskPct ?? 0) > 65 && (features.isGolden || features.isBlue)) warnings.push('Blocked sun-side cloud may limit edge-lighting and ray potential.');
     if (features.windKph > 35) warnings.push('Strong winds may make shooting awkward and reduce stability.');
     if ((features.lightningRisk ?? 0) >= 50) warnings.push('Elevated lightning risk warrants a safety-first setup.');
+    if (!stormActivity) warnings.push('No precipitation, wind, or convective activity to support a storm session.');
 
     return completeScore(
       'storm',
