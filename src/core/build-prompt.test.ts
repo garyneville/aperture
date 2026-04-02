@@ -824,4 +824,65 @@ describe('buildPrompt', () => {
     expect(result.debugContext.metadata?.workflowVersion).toBe('test-workflow-v2');
   });
 
+  it('does not double-apply DST offset for sunrise/sunset strings (regression)', () => {
+    // April 2 is in BST (UTC+1).  Open-Meteo with timezone=Europe/London
+    // returns already-localised ISO strings WITHOUT the Z suffix.
+    // The old code parsed them through new Date() + toLocaleTimeString,
+    // which re-applied the +1 offset, producing UTC+2 times.
+    const result = buildPrompt({
+      windows: [{
+        label: 'Golden hour',
+        start: '19:00',
+        st: '2026-04-02T19:00:00',
+        end: '20:00',
+        et: '2026-04-02T20:00:00',
+        peak: 55,
+        tops: ['golden hour'],
+        hours: [{
+          ts: '2026-04-02T19:00:00', t: '2026-04-02T19:00:00',
+          hour: '19:00', score: 55, drama: 30, clarity: 40, mist: 0, astro: 0, crepuscular: 0, shQ: null,
+          cl: 30, cm: 20, ch: 10, ct: 40, visK: 15, aod: 0.1, tpw: 10,
+          wind: 10, windDir: 200, gusts: 18, tmp: 12, hum: 60, dew: 5, pp: 5, pr: 0,
+          moon: 0.1, tags: ['golden hour'],
+        }],
+        fallback: false,
+      }],
+      dontBother: false,
+      todayBestScore: 55,
+      todayCarWash: { score: 70, rating: '✅', label: 'Good', start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12 },
+      dailySummary: [{
+        dateKey: '2026-04-02', dayLabel: 'Today', dayIdx: 0, hours: [],
+        photoScore: 55, headlineScore: 55, photoEmoji: '👍', photoRating: 'Good',
+        bestPhotoHour: '19:00', bestTags: 'golden hour',
+        carWash: { score: 70, rating: '✅', label: 'Good', start: '15:00', end: '17:00', wind: 10, pp: 10, tmp: 12 },
+        sunrise: '2026-04-02T06:36:00', sunset: '2026-04-02T19:43:00',
+        shSunsetQuality: null, shSunriseQuality: null, shSunsetText: null,
+        sunDirection: 260, crepRayPeak: 0, confidence: 'high' as const, confidenceStdDev: 8,
+        durationBonus: 0, amConfidence: 'medium' as const, amConfidenceStdDev: 8,
+        pmConfidence: 'medium' as const, pmConfidenceStdDev: 8, goldAmMins: 0, goldPmMins: 0,
+        amScore: 30, pmScore: 55, astroScore: 0,
+        astroConfidence: 'unknown' as const, astroConfidenceStdDev: null,
+        darkSkyStartsAt: null, bestAmHour: '—', bestPmHour: '19:00',
+        sunriseOcclusionRisk: null, sunsetOcclusionRisk: null,
+      }],
+      altLocations: [],
+      noAltsMsg: null,
+      metarNote: '',
+      // Already-localised BST times from Open-Meteo (no Z suffix)
+      sunrise: '2026-04-02T06:36:00',
+      sunset: '2026-04-02T19:43:00',
+      moonPct: 15,
+      now: new Date('2026-04-02T12:00:00Z'),
+    });
+
+    // Should show the pre-localised BST times, NOT UTC+2
+    expect(result.sunriseStr).toBe('06:36');
+    expect(result.sunsetStr).toBe('19:43');
+    expect(result.prompt).toContain('Sunrise: 06:36');
+    expect(result.prompt).toContain('Sunset: 19:43');
+    // Must NOT contain the double-offset times
+    expect(result.prompt).not.toContain('Sunrise: 07:36');
+    expect(result.prompt).not.toContain('Sunset: 20:43');
+  });
+
 });
