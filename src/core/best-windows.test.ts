@@ -1082,8 +1082,6 @@ describe('bestWindows', () => {
           moon: 12,
           uv: 0,
           tags: ['golden hour'],
-          boundaryLayerHeightM: null,
-          horizonGapPct: null,
         },
       ],
       dailySummary: [{
