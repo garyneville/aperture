@@ -631,7 +631,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       ? nightHoursArr.reduce((best, hour) => hour.score > best.score ? hour : best)
       : null;
     const astroScore = bestNightH?.astro ?? 0;
-    const headlineScore = Math.max(bestPhoto, bestNightFinalH?.score ?? 0);
+    const headlineScore = Math.max(bestPhotoRaw, bestNightFinalH?.score ?? 0);
     const sunriseOcclusionRisk = avg(amHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
     const sunsetOcclusionRisk  = avg(pmHours.map(h => h.azimuthRisk).filter((v): v is number => v !== null));
 

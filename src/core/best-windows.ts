@@ -449,7 +449,7 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
   const primarySelectionSource = windows[0]?.selectionSource;
   const strongSessionFallback = primarySelectionSource === 'session-fallback';
   const todayBestScore = hasLocalWindow
-    ? (strongSessionFallback ? todayHeadline : Math.max(labelledWindows[0].peak, todayHeadline))
+    ? Math.min(strongSessionFallback ? todayHeadline : Math.max(labelledWindows[0].peak, todayHeadline), labelledWindows[0].peak)
     : Math.min(todayHeadline, PHOTO_THRESHOLD - 1);
   const dontBother = !hasLocalWindow || (!strongSessionFallback && todayBestScore < PHOTO_THRESHOLD);
 
