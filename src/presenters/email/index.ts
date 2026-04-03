@@ -5,26 +5,11 @@ import {
   FONT,
   card,
   creativeSpark,
-  scoreState,
   sectionTitle,
   spacer,
 } from './shared.js';
+import { todayWindowSection } from './time-aware.js';
 import {
-  buildWindowDisplayPlan,
-  getRunTimeContext,
-} from '../../domain/windowing/index.js';
-import {
-  displaySessionName,
-  isAstroWindow,
-  localSummaryLines,
-  peakHourForWindow,
-  timeAwareLocalSummary,
-  todayWindowSection,
-} from './time-aware.js';
-import { auroraVisibleKpThresholdForLat } from '../../domain/editorial/aurora-visibility.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
-import {
-  buildKitTips,
   evaluateKitRules,
   kitAdvisoryCard,
 } from './kit-advisory.js';
@@ -40,16 +25,15 @@ import type {
   DaySummary,
   FormatEmailInput,
   LongRangeCard,
-  RunTimeContext,
   SpurOfTheMomentSuggestion,
 } from './types.js';
-import { confidenceDetail, effectiveConf } from './shared.js';
 import { signalCards } from './sections/signals.js';
-import { alternativeSection, alternativeSummaryTitle, alternativeTimingSummary, spurOfTheMomentCard } from './sections/alternatives.js';
+import { alternativeSection, spurOfTheMomentCard } from './sections/alternatives.js';
 import { longRangeSection } from './sections/long-range.js';
 import { sessionRecommendationCard } from './sections/session-recommendation.js';
 import { footerKey } from './sections/footer.js';
 import { heroSection } from './sections/hero.js';
+import { buildSharedPresentationContext } from '../shared/presenter-context.js';
 
 export { formatDebugEmail } from './debug-email.js';
 export { buildKitTips, evaluateKitRules, type KitTip } from './kit-advisory.js';
@@ -105,38 +89,27 @@ export function formatEmail(input: FormatEmailInput): string {
     sessionRecommendation,
     debugContext,
   } = input;
-  const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
-  const locationName = resolveHomeLocationName({ location: input.location, debugContext });
-
-  const todayDay = dailySummary[0] || ({} as DaySummary);
-  const runTime = getRunTimeContext(debugContext);
-  const hasLocalWindow = (windows?.length || 0) > 0;
-  const effectiveDontBother = dontBother || !hasLocalWindow;
-  const displayPlan = buildWindowDisplayPlan(windows, runTime.nowMinutes);
-  const topWindow = !effectiveDontBother ? displayPlan.primary : null;
-  const heroScore = todayDay.headlineScore ?? todayBestScore;
-  const peakLocalHour = effectiveDontBother
-    ? null
-    : peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
-  const todayScoreState = scoreState(heroScore);
-  const topWindowIsAstro = isAstroWindow(topWindow || undefined);
-  const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
-  const todayConfidence = confidenceDetail(todayEffConf);
-  const topPrimaryAlternative = altLocations?.[0] || null;
-  const topCloseContender = closeContenders?.[0] || null;
-  const topAlternative = topPrimaryAlternative || topCloseContender || todayDay.bestAlt || null;
-  const topAlternativeIsCloseContender = !topPrimaryAlternative && !!topCloseContender && topAlternative?.name === topCloseContender.name;
-  const nextWindow = !effectiveDontBother
-    ? displayPlan.remaining.find(window => window !== topWindow) || null
-    : null;
-
-  const localSummary = effectiveDontBother
-    ? (hasLocalWindow
-        ? (sessionRecommendation?.primary
-            ? `Overall conditions stay marginal, but ${displaySessionName(sessionRecommendation.primary.session).toLowerCase()} is the strongest specialist opportunity if you want to be selective.`
-            : 'Not a great photography day locally — better to enjoy the outdoors instead.')
-        : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
-    : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
+  const {
+    homeLatitude,
+    locationName,
+    todayDay,
+    runTime,
+    effectiveDontBother,
+    displayPlan,
+    topWindow,
+    heroScore,
+    peakLocalHour,
+    todayScoreState,
+    topWindowIsAstro,
+    todayEffConf,
+    todayEffStdDev,
+    topAlternative,
+    topAlternativeIsCloseContender,
+    localSummary,
+    kitTips,
+    tomorrow,
+    photoWindowsForTodayOutlook,
+  } = buildSharedPresentationContext(input);
 
   const hero = heroSection({
     heroScore,
@@ -161,7 +134,6 @@ export function formatEmail(input: FormatEmailInput): string {
   });
 
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);
-  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
   const kitCard = kitAdvisoryCard(kitTips);
 
   if (debugContext) {
@@ -169,12 +141,10 @@ export function formatEmail(input: FormatEmailInput): string {
     debugContext.kitAdvisory = { rules: trace, tipsShown };
   }
 
-  const tomorrow = dailySummary.find(day => day.dayIdx === 1);
-  const remainingPhotoWindows = displayPlan.remaining.filter(window => window !== topWindow);
   const todayOutlookHtml = remainingTodayHourlyOutlookSection(
     todayDay,
     runTime,
-    [topWindow, ...remainingPhotoWindows].filter((window): window is NonNullable<typeof window> => Boolean(window)),
+    photoWindowsForTodayOutlook,
     debugContext,
   );
   const tomorrowOutlookHtml = todayOutlookHtml

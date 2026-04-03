@@ -4,6 +4,10 @@ This folder holds the photo brief email formatter.
 
 The public entrypoint is [`index.ts`](./index.ts).
 
+`index.ts` now consumes the shared derived presenter context from
+[`../shared/presenter-context.ts`](../shared/presenter-context.ts) before
+assembling email-specific markup.
+
 ## Module map
 
 - [`types.ts`](./types.ts)
@@ -48,6 +52,10 @@ The public entrypoint is [`index.ts`](./index.ts).
 
 - [`../shared/brief-primitives.ts`](../shared/brief-primitives.ts)
   Cross-presenter render primitives: icons, colours, and stat helpers.
+
+- [`../shared/presenter-context.ts`](../shared/presenter-context.ts)
+  Shared email/site context builder for the common no-go/window, local-summary,
+  top-alternative, and outlook state.
 
 ## Tests
 
