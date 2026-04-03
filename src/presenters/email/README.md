@@ -14,9 +14,11 @@ The public entrypoint is [`index.ts`](./index.ts).
 
 - [`time-aware.ts`](./time-aware.ts)
   Rerun-aware window display logic. This is where local windows are classified as past/current/future, where the "next window" promotion happens, and where the today-window section is rendered.
+  
+  **Note:** General-purpose window helpers (`displaySessionName`, `bestTimeLabel`, `localSummaryLines`, etc.) have been moved to [`../shared/window-helpers.ts`](../shared/window-helpers.ts) for cross-presenter use. This module re-exports them for backwards compatibility.
 
 - [`kit-advisory.ts`](./kit-advisory.ts)
-  Rule-based kit recommendation logic. It computes the displayed tips and the debug trace for which rules matched and which tips were shown.
+  Email-specific kit advisory rendering (`kitAdvisoryCard`). The core recommendation logic has been moved to [`../shared/kit-advisory.ts`](../shared/kit-advisory.ts) for cross-presenter use. This module re-exports `buildKitTips` and `evaluateKitRules` for backwards compatibility.
 
 - [`next-day.ts`](./next-day.ts)
   Outdoor-comfort scoring plus the "remaining today" / "tomorrow at a glance" weather tables and the days-ahead forecast cards.

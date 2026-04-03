@@ -14,6 +14,12 @@ This folder contains cross-cutting render primitives used by multiple presenters
 - [`brief-primitives.ts`](./brief-primitives.ts)
   Main export file containing colors, fonts, icons, score helpers, and formatting utilities.
 
+- [`window-helpers.ts`](./window-helpers.ts)
+  Cross-presenter utilities for window and session display. Functions for formatting session names, window labels, moon descriptors, and time-aware summaries.
+
+- [`kit-advisory.ts`](./kit-advisory.ts)
+  Rule-based kit recommendation logic shared across presenters. Builds photography equipment tips based on weather conditions.
+
 ## Main Files / Module Map
 
 - `brief-primitives.ts`
@@ -24,6 +30,20 @@ This folder contains cross-cutting render primitives used by multiple presenters
   - **Score Helpers** — Score thresholds, score state calculation, confidence detail
   - **Stat Helpers** — Summary stat formatting, confidence formatting
   - **Car Wash Helpers** — Car wash rating calculation
+
+- `window-helpers.ts`
+  Window and session display utilities:
+  - **Session Names** — `displaySessionName()` maps SessionId to display names
+  - **Window Labels** — `bestTimeLabel()`, `bestDaySessionLabel()` for window labeling
+  - **Moon Descriptors** — `moonDescriptor()` for moon phase display
+  - **Window Helpers** — `isAstroWindow()`, `peakHourForWindow()` for window analysis
+  - **Summary Builders** — `localSummaryLines()`, `timeAwareLocalSummary()` for text generation
+  - **Tag Formatting** — `displayTag()`, `displayBestTags()` for condition tags
+
+- `kit-advisory.ts`
+  Kit recommendation logic:
+  - **Tip Building** — `buildKitTips()` generates equipment recommendations
+  - **Rule Evaluation** — `evaluateKitRules()` for debug trace output
 
 ## Exported Primitives
 

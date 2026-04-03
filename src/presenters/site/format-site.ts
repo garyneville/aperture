@@ -20,8 +20,8 @@ import {
   moonDescriptor,
   peakHourForWindow,
   timeAwareLocalSummary,
-} from '../email/time-aware.js';
-import { buildKitTips } from '../email/kit-advisory.js';
+} from '../shared/window-helpers.js';
+import { buildKitTips } from '../shared/kit-advisory.js';
 import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
 import type {
   BriefRenderInput as FormatEmailInput,
