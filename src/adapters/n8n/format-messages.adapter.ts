@@ -1,4 +1,4 @@
-import { serializeDebugPayload } from '../../core/debug-payload.js';
+import { serializeDebugPayload } from '../../lib/debug-payload.js';
 import {
   getPhotoBriefEditorialPrimaryProvider,
   getPhotoWeatherLat,
@@ -6,7 +6,7 @@ import {
   getPhotoWeatherLon,
   getPhotoWeatherTimezone,
 } from '../../config.js';
-import { resolveEditorial } from '../../editorial/resolve-editorial.js';
+import { resolveEditorial } from '../../domain/editorial/resolution/resolve-editorial.js';
 import type { FinalRuntimePayload } from './contracts/final-runtime-payload.js';
 import { prepareDebugContext, hydrateDebugContext } from './hydrate-debug-context.js';
 import { firstInputJson } from './input.js';

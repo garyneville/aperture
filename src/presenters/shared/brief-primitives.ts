@@ -1,6 +1,6 @@
-import { esc } from '../../core/utils.js';
-import { WEATHER_ICON_SVGS } from '../../core/weather-icons.js';
-import { MOON_ICON_SVGS } from '../../core/moon-icons.js';
+import { esc } from '../../lib/utils.js';
+import { WEATHER_ICON_SVGS } from '../../lib/weather-icons.js';
+import { MOON_ICON_SVGS } from '../../lib/moon-icons.js';
 import {
   ColorPage,
   ColorSurface,

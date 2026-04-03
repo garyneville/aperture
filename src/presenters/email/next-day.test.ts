@@ -8,8 +8,8 @@ import {
   type FormatEmailInput,
   type NextDayHour,
   type Window,
-} from './format-email.js';
-import type { DebugContext } from './debug-context.js';
+} from './index.js';
+import type { DebugContext } from '../../lib/debug-context.js';
 
 describe('outdoorComfortScore', () => {
   it('returns 100 for ideal conditions', () => {

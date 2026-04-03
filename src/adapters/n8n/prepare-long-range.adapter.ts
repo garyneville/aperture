@@ -1,4 +1,4 @@
-import { prepareLongRangeLocations } from '../../core/prepare-long-range.js';
+import { prepareLongRangeLocations } from '../../lib/prepare-long-range.js';
 import { getPhotoWeatherLat, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { formatDebugEmail } from './format-email.js';
-import type { DebugContext } from './debug-context.js';
+import { formatDebugEmail } from './index.js';
+import type { DebugContext } from '../../lib/debug-context.js';
 
 describe('formatDebugEmail', () => {
   it('renders the structured debug sections for a traced run', () => {

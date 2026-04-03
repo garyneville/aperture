@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { describe, it } from 'vitest';
-import { OUTPUT_PATH as WORKFLOW_OUTPUT_PATH, assembleWorkflow } from './assemble.js';
-import { OUTPUT_PATH as EMAIL_LAYOUT_OUTPUT_PATH, buildGeneratedModule } from './compile-email.js';
+import { OUTPUT_PATH as WORKFLOW_OUTPUT_PATH, assembleWorkflow } from './build/assemble.js';
+import { OUTPUT_PATH as EMAIL_LAYOUT_OUTPUT_PATH, buildGeneratedModule } from './build/compile-email.js';
 
 function normalizeEol(value: string): string {
   return value.replace(/\r\n/g, '\n');

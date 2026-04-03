@@ -6,8 +6,8 @@ import {
   type CarWash,
   type FormatEmailInput,
   type Window,
-} from './format-email.js';
-import type { DebugContext } from './debug-context.js';
+} from './index.js';
+import type { DebugContext } from '../../lib/debug-context.js';
 
 describe('buildKitTips', () => {
   const baseCarWash: CarWash = {

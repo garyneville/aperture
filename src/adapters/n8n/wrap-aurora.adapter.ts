@@ -1,4 +1,4 @@
-import { fuseAuroraSignals, parseAuroraWatchUK, parseNasaDonkiCme } from '../../core/aurora-providers.js';
+import { fuseAuroraSignals, parseAuroraWatchUK, parseNasaDonkiCme } from '../../lib/aurora-providers.js';
 import type { N8nRuntime } from './types.js';
 
 /**

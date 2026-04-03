@@ -1,4 +1,4 @@
-import { scoreAlternatives } from '../../core/score-alternatives.js';
+import { scoreAlternatives } from '../../lib/score-alternatives.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {

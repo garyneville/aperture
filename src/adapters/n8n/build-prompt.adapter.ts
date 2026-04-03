@@ -1,4 +1,4 @@
-import { buildPrompt } from '../../core/build-prompt.js';
+import { buildPrompt } from '../../domain/editorial/prompt/build-prompt.js';
 import {
   PHOTO_BRIEF_WORKFLOW_VERSION,
   getPhotoWeatherIcao,
