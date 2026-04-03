@@ -13,9 +13,12 @@ The public entrypoint is [`index.ts`](./index.ts).
   Cross-cutting render helpers and shared presentation primitives: colors, typography, cards, pills, stat grids, weather/moon icons, and a few general formatting helpers.
 
 - [`time-aware.ts`](./time-aware.ts)
-  Rerun-aware window display logic. This is where local windows are classified as past/current/future, where the "next window" promotion happens, and where the today-window section is rendered.
+  Rerun-aware window display logic. This is where local windows are classified as past/current/future, where the "next window" promotion happens, and where the today-window section is assembled.
   
-  **Note:** General-purpose window helpers (`displaySessionName`, `bestTimeLabel`, `localSummaryLines`, etc.) have been moved to [`../shared/window-helpers.ts`](../shared/window-helpers.ts) for cross-presenter use. This module re-exports them for backwards compatibility.
+  **Note:** This module is now focused on email-specific rendering orchestration. Card rendering has moved to [`window-cards.ts`](./window-cards.ts) and general-purpose window helpers have moved to [`../shared/window-helpers.ts`](../shared/window-helpers.ts). Both are re-exported for backwards compatibility.
+
+- [`window-cards.ts`](./window-cards.ts)
+  Email-specific window card rendering. Contains `windowCard()` for rendering individual photography windows, `compositionCard()` for shot ideas, and `poorDayFallbackLine()` for marginal conditions. This is pure presentation logic with no time-aware orchestration.
 
 - [`kit-advisory.ts`](./kit-advisory.ts)
   Email-specific kit advisory rendering (`kitAdvisoryCard`). The core recommendation logic has been moved to [`../shared/kit-advisory.ts`](../shared/kit-advisory.ts) for cross-presenter use. This module re-exports `buildKitTips` and `evaluateKitRules` for backwards compatibility.

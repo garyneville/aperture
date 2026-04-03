@@ -18,6 +18,7 @@ export type {
   DaySummary,
   LongRangeCard,
   NextDayHour,
+  RunTimeContext,
   SpurOfTheMomentSuggestion,
   Window,
   WindowDisplayPlan,

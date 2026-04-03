@@ -14,23 +14,13 @@
  */
 
 import { resolveEditorial } from '../../domain/editorial/resolution/resolve-editorial.js';
-import type {
-  DebugContext,
-  DebugGeminiDiagnostics,
-  DebugPayloadSnapshot,
-} from '../../lib/debug-context.js';
 import { emptyDebugContext } from '../../lib/debug-context.js';
-import { upsertDebugPayloadSnapshot } from '../../lib/debug-payload.js';
-import { serializeDebugPayload } from '../../lib/debug-payload.js';
+import { upsertDebugPayloadSnapshot, serializeDebugPayload } from '../../lib/debug-payload.js';
 import { formatSite } from '../../presenters/site/format-site.js';
 import { formatTelegram } from '../../presenters/telegram/format-telegram.js';
 import { formatDebugEmail, formatEmail } from '../../presenters/email/index.js';
 import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
 import { toScoredForecastContext } from './mappers/to-scored-forecast.js';
-import type {
-  BriefContext,
-  LongRangeSpurCandidate,
-} from '../../domain/editorial/resolution/resolve-editorial.js';
 import type { EditorialDecision } from './contracts.js';
 import type {
   FinalizeConfig,
@@ -39,6 +29,15 @@ import type {
   PreparedDebugContext,
   RawEditorialInput,
 } from './finalize-brief-contracts.js';
+
+// Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
+import type {
+  BriefContext,
+  DebugContext,
+  DebugGeminiDiagnostics,
+  DebugPayloadSnapshot,
+  LongRangeSpurCandidate,
+} from '../../contracts/index.js';
 
 // Re-export contracts for consumers
 export type {

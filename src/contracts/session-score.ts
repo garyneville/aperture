@@ -9,6 +9,7 @@ export type {
   SessionConfidence,
   SessionEvaluator,
   SessionId,
+  SessionRecommendation,
   SessionRecommendationSummary,
   SessionScore,
 } from '../types/session-score.js';

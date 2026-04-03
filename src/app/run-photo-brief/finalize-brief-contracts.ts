@@ -9,10 +9,16 @@
  * 5. Rendering all outputs (email, Telegram, site, JSON)
  */
 
-import type { DebugContext, DebugGeminiDiagnostics } from '../../lib/debug-context.js';
-import type { BriefContext, LongRangeSpurCandidate } from '../../domain/editorial/resolution/resolve-editorial.js';
 import type { EditorialDecision } from './contracts.js';
 import type { BriefJson } from '../../types/brief.js';
+
+// Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
+import type {
+  BriefContext,
+  DebugContext,
+  DebugGeminiDiagnostics,
+  LongRangeSpurCandidate,
+} from '../../contracts/index.js';
 
 /**
  * Raw editorial inputs from AI providers.

@@ -241,7 +241,7 @@ describe('renderRemainingTodayOutlook', () => {
       { hour: '10:00', tmp: 15, pp: 5, wind: 8, isNight: false },
       { hour: '11:00', tmp: 16, pp: 5, wind: 8, isNight: false },
     ]);
-    const runTime: RunTimeContext = { nowMinutes: 9 * 60 + 30 }; // 09:30
+    const runTime: RunTimeContext = { nowMinutes: 9 * 60 + 30, nowLabel: '09:30', timezone: 'Europe/London' }; // 09:30
     const html = renderRemainingTodayOutlook(today, runTime, []);
 
     expect(html).toContain('Today from 10:00');
@@ -255,7 +255,7 @@ describe('renderRemainingTodayOutlook', () => {
       { hour: '09:00', tmp: 14, pp: 5, wind: 8, isNight: false },
       { hour: '10:00', tmp: 15, pp: 5, wind: 8, isNight: false },
     ]);
-    const runTime: RunTimeContext = { nowMinutes: 9 * 60 }; // 09:00 exactly
+    const runTime: RunTimeContext = { nowMinutes: 9 * 60, nowLabel: '09:00', timezone: 'Europe/London' }; // 09:00 exactly
     const html = renderRemainingTodayOutlook(today, runTime, []);
 
     expect(html).toContain('Today from 09:00');
@@ -277,7 +277,7 @@ describe('renderRemainingTodayOutlook', () => {
       tops: ['astrophotography'],
     }];
 
-    const html = renderRemainingTodayOutlook(today, { nowMinutes: 20 * 60 }, photoWindows);
+    const html = renderRemainingTodayOutlook(today, { nowMinutes: 20 * 60, nowLabel: '20:00', timezone: 'Europe/London' }, photoWindows);
 
     expect(html).toContain('20:00');
     expect(html).toContain('21:00');
@@ -291,7 +291,7 @@ describe('renderRemainingTodayOutlook', () => {
       { hour: '15:00', tmp: 15, pp: 5, wind: 8, isNight: false },
     ]);
     const debugContext: DebugContext = { hourlyScoring: [], windows: [], nearbyAlternatives: [] };
-    renderRemainingTodayOutlook(today, { nowMinutes: 13 * 60 }, [], debugContext);
+    renderRemainingTodayOutlook(today, { nowMinutes: 13 * 60, nowLabel: '13:00', timezone: 'Europe/London' }, [], debugContext);
 
     expect(debugContext.outdoorComfort).toBeDefined();
     expect(debugContext.outdoorComfort!.hours).toHaveLength(2);
