@@ -209,7 +209,10 @@ export interface DebugOutdoorComfort {
 export interface DebugPayloadSnapshot {
   label: string;
   byteLength: number;
-  json: string;
+  /** Human-readable summary of the payload (preferred over raw json). */
+  summary?: string;
+  /** Full JSON payload — only included when explicitly requested (may be very large). */
+  json?: string;
 }
 
 export interface DebugContext {

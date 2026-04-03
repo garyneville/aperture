@@ -33,7 +33,7 @@ assembling email-specific markup.
   Canonical HTML renderer for hourly outdoor outlook sections. Pure presentation logic with no scoring decisions. Renders tables, rows, and debug context updates.
 
 - [`debug-email.ts`](./debug-email.ts)
-  Renders the internal debug email from `DebugContext`, including the AI trace, long-range candidate table, kit advisory trace, and outdoor-comfort trace.
+  Renders the internal debug email from `DebugContext`, including the AI trace, long-range candidate table, kit advisory trace, and outdoor-comfort trace. Payload snapshots are summarized (large arrays show min/max/mean/count) to keep debug output concise — typically under 500 lines instead of 25,000+.
 
 ## Supporting files outside this folder
 

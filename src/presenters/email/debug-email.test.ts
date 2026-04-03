@@ -129,7 +129,7 @@ describe('formatDebugEmail', () => {
         {
           label: 'Score input payload',
           byteLength: 128,
-          json: '{"weather":{"hourly":{"time":["2026-03-16T04:00:00.000Z"]}}}',
+          summary: '{"weather": {"hourly": {"time": ["2026-03-16T04:00:00.000Z"]}}}',
         },
       ],
     });
