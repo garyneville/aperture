@@ -1,9 +1,9 @@
-import type { EditorialDecision } from '../../app/run-photo-brief/contracts.js';
-import type { ScoredForecastContext } from '../../types/scored-forecast.js';
 import {
   BRIEF_JSON_SCHEMA_VERSION,
+  type EditorialDecision,
+  type ScoredForecastContext,
   type BriefJson,
-} from '../../types/brief.js';
+} from '../../contracts/index.js';
 
 export function renderBriefAsJson(
   scoredContext: ScoredForecastContext,
