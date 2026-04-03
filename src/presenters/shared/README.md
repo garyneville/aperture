@@ -1,0 +1,115 @@
+# Shared Presenter Primitives Primer
+
+This folder contains cross-cutting render primitives used by multiple presenters. These are presentation utilities that don't belong to any single output channel.
+
+## Purpose
+
+- share common formatting utilities across email, site, and other presenters
+- provide consistent colors, icons, and styling primitives
+- avoid duplication of presentation constants
+- keep individual presenters focused on layout, not utility functions
+
+## Public Entry Points
+
+- [`brief-primitives.ts`](./brief-primitives.ts)
+  Main export file containing colors, fonts, icons, score helpers, and formatting utilities.
+
+## Main Files / Module Map
+
+- `brief-primitives.ts`
+  Single-file module exporting:
+  - **Colors (`C`)** — Centralized color palette from design tokens
+  - **Typography** — Font family constants
+  - **Icons** — Brand logo SVG, utility glyphs
+  - **Score Helpers** — Score thresholds, score state calculation, confidence detail
+  - **Stat Helpers** — Summary stat formatting, confidence formatting
+  - **Car Wash Helpers** — Car wash rating calculation
+
+## Exported Primitives
+
+### Colors (`C` object)
+
+```typescript
+C.page, C.surface, C.surfaceVariant  // Backgrounds
+C.ink, C.muted, C.subtle             // Text
+C.primary, C.secondary, C.tertiary   // Accents
+C.success, C.warning, C.error        // States
+C.accent, C.brand                    // Brand colors
+// ... (see file for complete set)
+```
+
+All colors come from [`../../tokens/tokens.ts`](../../tokens/tokens.ts) and are kept in sync with the design system.
+
+### Score Helpers
+
+```typescript
+SCORE_THRESHOLDS = { excellent: 75, good: 58, marginal: 42 }
+
+scoreState(score): { label, fg, bg, border }
+// Returns 'Excellent', 'Good', 'Marginal', or 'Poor' with appropriate colors
+
+confidenceDetail(confidence): { label, fg, bg, border } | null
+// Returns styling for 'high', 'medium', 'low', or 'unknown' confidence
+```
+
+### Icons
+
+```typescript
+BRAND_LOGO  // SVG string for the aperture logo
+UTILITY_GLYPHS  // Emoji indicators (🚗 / 🚶)
+// Weather and moon icons are in ../../lib/weather-icons.ts and moon-icons.ts
+```
+
+### Typography
+
+```typescript
+FONT  // Base font family
+MONO  // Monospace font family
+```
+
+## What Belongs Here
+
+- Color constants and palettes
+- Score/confidence formatting helpers
+- Icon SVGs and glyphs
+- Typography constants
+- Shared CSS-in-JS patterns
+- General formatting utilities that multiple presenters need
+
+## What Does Not Belong Here
+
+- **Business logic** — belongs in `src/domain`
+- **Presenter-specific layout** — belongs in the individual presenter folders
+- **HTML document structure** — belongs in `../site/site-layout.ts`
+- **Email-specific markup** — belongs in `../email/`
+- **Complex formatting** — if it's specific to one section or output, keep it there
+
+## Working Rule
+
+Keep this layer thin. Only extract to `shared/` when:
+1. At least two presenters need the same utility
+2. It's a genuine presentation concern (color, icon, formatting)
+3. It's not business logic in disguise
+
+When in doubt, start in the specific presenter and extract later. Business logic should not accumulate here—if you find yourself adding scoring rules or editorial decisions, move that code to `src/domain`.
+
+## Relationship to Design Tokens
+
+This module re-exports from the design tokens system:
+
+```
+../../tokens/tokens.ts  (source of truth)
+         ↓
+   brief-primitives.ts  (presenter-friendly exports)
+         ↓
+   ../email/, ../site/  (consuming presenters)
+```
+
+When design tokens change, this module provides a compatibility layer for presenters.
+
+## Related Docs
+
+- [`../email/README.md`](../email/README.md) — Email presenter (major consumer)
+- [`../site/README.md`](../site/README.md) — Site presenter (major consumer)
+- [`../../tokens/tokens.ts`](../../tokens/tokens.ts) — Design token source
+- [`../../lib/README.md`](../../lib/README.md) — Shared library utilities (not presenter-specific)
