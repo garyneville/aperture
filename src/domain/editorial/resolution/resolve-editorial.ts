@@ -3,7 +3,7 @@ import {
   buildWindowDisplayPlan,
   getRunTimeContext,
   timeAwareBriefingFallback,
-} from '../../../presenters/email/time-aware.js';
+} from '../../../domain/windowing/index.js';
 import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
 import { filterCompositionBullets } from './composition.js';

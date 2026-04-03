@@ -9,7 +9,8 @@ import {
   scorePill,
   scoreState,
 } from '../shared.js';
-import { clockToMinutes, displayTag } from '../time-aware.js';
+import { clockToMinutes } from '../../../domain/windowing/index.js';
+import { displayTag } from '../time-aware.js';
 import type { LongRangeCard, DarkSkyAlertCard, RunTimeContext } from '../types.js';
 
 function displayLongRangeLabel(cardLabel: string | null | undefined): string | null {

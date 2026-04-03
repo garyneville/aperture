@@ -1,5 +1,5 @@
 import { esc } from '../../../lib/utils.js';
-import { clockToMinutes, minutesToClock } from '../../email/time-aware.js';
+import { clockToMinutes, minutesToClock } from '../../../domain/windowing/index.js';
 import type { DarkSkyAlertCard, LongRangeCard, RunTimeContext } from '../../../types/brief.js';
 import { C } from '../../shared/brief-primitives.js';
 import { sCard, sChip, sScorePill, sPill } from './shared.js';

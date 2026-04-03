@@ -20,6 +20,10 @@ This folder contains the business logic for weather scoring and editorial genera
   - `prompt/build-prompt.ts` — Editorial prompt construction
   - `resolution/resolve-editorial.ts` — Editorial resolution with fallbacks
 
+- [`windowing/`](./windowing/)
+  - Window scheduling policy: time conversion, window classification, display planning, fallback text
+  - Used by both domain (editorial resolution, validation) and presenters
+
 - [`../contracts/`](../contracts/)
   Re-export surface for stable domain types:
   - `scored-forecast.ts` — `ScoredForecastContext`
@@ -91,6 +95,12 @@ Raw Forecast Data
 - **n8n-specific code** — belongs in `src/adapters/n8n`
 - **Orchestration/sequencing** — belongs in `src/app`
 - **Shared utilities** — belongs in `src/lib`
+
+## Dependency Rule
+
+**Domain must not import from Presenters.** If you find yourself wanting to import from `src/presenters/`, that code probably belongs in `src/domain/` itself (as a shared module like `windowing/`) or in `src/lib/`.
+
+This rule prevents domain logic from becoming coupled to presentation concerns and keeps the business logic independent of how results are formatted.
 
 ## Tests
 

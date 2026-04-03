@@ -4,7 +4,8 @@ import {
   C,
   type SummaryStat,
 } from '../../shared/brief-primitives.js';
-import { moonAstroContext, windowRange } from '../../email/time-aware.js';
+import { windowRange } from '../../../domain/windowing/index.js';
+import { moonAstroContext } from '../../email/time-aware.js';
 import type { Window } from '../../../types/brief.js';
 
 function sStatGrid(items: SummaryStat[], variant: 'dark' | 'light' = 'dark'): string {

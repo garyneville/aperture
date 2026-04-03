@@ -4,9 +4,10 @@ import {
 } from '../../../lib/ai-briefing.js';
 import {
   buildWindowDisplayPlan,
+  clockToMinutes,
   getRunTimeContext,
   windowRange,
-} from '../../../presenters/email/time-aware.js';
+} from '../../../domain/windowing/index.js';
 import type { DebugAiCheck } from '../../../lib/debug-context.js';
 import type {
   BriefContext,
@@ -14,12 +15,6 @@ import type {
   WindowHourLike,
   WindowLike,
 } from './types.js';
-
-function clockToMinutes(value: string | null | undefined): number | null {
-  if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return null;
-  const [hours, minutes] = value.split(':').map(Number);
-  return hours * 60 + minutes;
-}
 
 export function peakWindowHour(window: WindowLike | undefined): WindowHourLike | null {
   const hours = window?.hours;

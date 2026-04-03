@@ -1,9 +1,7 @@
 import { explainAstroScoreGap } from '../../lib/astro-score-explanation.js';
 import { renderAiBriefingText } from '../../lib/ai-briefing.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../lib/aurora-visibility.js';
-import type { DebugContext } from '../../lib/debug-context.js';
 import { esc } from '../../lib/utils.js';
-import { DEFAULT_HOME_LOCATION, resolveHomeLatitude } from '../../types/home-location.js';
 import type {
   SessionConfidence,
   SessionId,
@@ -31,6 +29,16 @@ import type {
   WindowDisplayPlan,
   WindowHour,
 } from './types.js';
+import { resolveHomeLatitude } from '../../types/home-location.js';
+import {
+  buildWindowDisplayPlan,
+  classifyWindowTiming,
+  clockToMinutes,
+  getRunTimeContext,
+  minutesToClock,
+  timeAwareBriefingFallback,
+  windowRange,
+} from '../../domain/windowing/index.js';
 
 export function moonDescriptor(moonPct: number): string {
   if (moonPct <= 5) return 'New-ish';
@@ -66,94 +74,18 @@ export function peakHourForWindow(window: Window | undefined): string | null {
   return peakHour?.hour || null;
 }
 
-export function windowRange(window: { start: string; end: string }): string {
-  return window.start === window.end ? window.start : `${window.start}-${window.end}`;
-}
-
-export function clockToMinutes(value: string | null | undefined): number | null {
-  if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return null;
-  const [hours, minutes] = value.split(':').map(Number);
-  return (hours * 60) + minutes;
-}
-
-export function minutesToClock(totalMinutes: number): string {
-  const normalized = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
-  const hours = Math.floor(normalized / 60);
-  const minutes = normalized % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-}
-
-export function getRunTimeContext(debugContext?: DebugContext): RunTimeContext {
-  const metadata = debugContext?.metadata;
-  const timezone = metadata?.timezone || DEFAULT_HOME_LOCATION.timezone;
-  const now = metadata?.generatedAt ? new Date(metadata.generatedAt) : null;
-  if (!now) {
-    return { nowMinutes: 0, nowLabel: '00:00', timezone };
-  }
-
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: timezone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now);
-  const hour = Number(parts.find(part => part.type === 'hour')?.value || '0');
-  const minute = Number(parts.find(part => part.type === 'minute')?.value || '0');
-  return {
-    nowMinutes: (hour * 60) + minute,
-    nowLabel: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
-    timezone,
-  };
-}
-
-export function classifyWindowTiming(window: Window, nowMinutes: number): 'past' | 'current' | 'future' {
-  const startMinutes = clockToMinutes(window.start);
-  const endMinutes = clockToMinutes(window.end);
-  if (startMinutes === null || endMinutes === null) return 'future';
-  if (endMinutes < startMinutes) {
-    if (nowMinutes >= startMinutes) return 'current';
-    if (nowMinutes < endMinutes) return 'current';
-    return 'future';
-  }
-  if (endMinutes < nowMinutes) return 'past';
-  if (startMinutes <= nowMinutes) return 'current';
-  return 'future';
-}
-
-export function buildWindowDisplayPlan(windows: Window[] | undefined, nowMinutes: number): WindowDisplayPlan {
-  const allWindows = windows || [];
-  if (!allWindows.length) {
-    return { primary: null, remaining: [], past: [], promotedFromPast: false, allPast: false };
-  }
-
-  const remaining = allWindows
-    .filter(window => classifyWindowTiming(window, nowMinutes) !== 'past')
-    .sort((a, b) => (clockToMinutes(a.start) ?? 0) - (clockToMinutes(b.start) ?? 0));
-  const past = allWindows
-    .filter(window => classifyWindowTiming(window, nowMinutes) === 'past')
-    .sort((a, b) => (clockToMinutes(a.start) ?? 0) - (clockToMinutes(b.start) ?? 0));
-  const primary = remaining[0] || allWindows[0] || null;
-  const originalPrimary = allWindows[0] || null;
-
-  return {
-    primary,
-    remaining,
-    past,
-    promotedFromPast: Boolean(primary && originalPrimary && primary !== originalPrimary),
-    allPast: remaining.length === 0,
-  };
-}
-
-export function timeAwareBriefingFallback(plan: WindowDisplayPlan): string | null {
-  const earlier = plan.past[0] || null;
-  if (plan.promotedFromPast && earlier && plan.primary) {
-    return `${earlier.label} ${windowRange(earlier)} was earlier today. ${plan.primary.label} ${windowRange(plan.primary)} is the best remaining local option.`;
-  }
-  if (plan.allPast && earlier) {
-    return `${earlier.label} ${windowRange(earlier)} was the strongest local window earlier today. No local photo window remains today.`;
-  }
-  return null;
-}
+// Re-export windowing functions for backwards compatibility.
+// These are implemented in src/domain/windowing/ and re-exported here
+// so existing presenter imports continue to work.
+export {
+  buildWindowDisplayPlan,
+  classifyWindowTiming,
+  clockToMinutes,
+  getRunTimeContext,
+  minutesToClock,
+  timeAwareBriefingFallback,
+  windowRange,
+} from '../../domain/windowing/index.js';
 
 export function timeAwareLocalSummary(
   plan: WindowDisplayPlan,

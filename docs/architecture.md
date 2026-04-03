@@ -198,6 +198,75 @@ When adding a new shared type:
 2. If other layers need it, re-export from `src/contracts/`
 3. Import from contracts in consuming layers
 
+## Dependency Rules
+
+These rules keep the architecture clean and prevent circular dependencies:
+
+### Domain must not import from Presenters
+
+**Rule:** Code in `src/domain/` must never import from `src/presenters/`.
+
+**Why:** Domain logic is business logic and should not depend on presentation concerns. If domain needs display-related logic (like window classification or time formatting), extract it to a shared module like `src/domain/windowing/`.
+
+**Example violation:**
+```typescript
+// BAD: Domain importing from presenters
+import { buildWindowDisplayPlan } from '../../../presenters/email/time-aware.js';
+```
+
+**Correct approach:**
+```typescript
+// GOOD: Domain importing from shared domain module
+import { buildWindowDisplayPlan } from '../../../domain/windowing/index.js';
+```
+
+### Adapters should be thin
+
+**Rule:** Adapter code should only normalize inputs, call domain/app functions, and shape outputs. If business logic starts to dominate an adapter, extract it into `src/app/`, `src/domain/`, or `src/presenters/`.
+
+**Why:** Adapters are plumbing, not product. Keeping them thin makes the core application independent of the runtime environment (n8n today, could be Express tomorrow).
+
+### Presenters render view models, not core decision logic
+
+**Rule:** Presenters transform data into output formats. They should not make business decisions about what data to include or calculate derived values that affect meaning.
+
+**Why:** Presenters are the view layer. Business decisions belong in domain. If multiple presenters need the same calculation, extract it to a shared module (`src/domain/windowing/`, `src/lib/`, etc.).
+
+**Example:**
+- ✅ **Presenter:** "Format this window time as HH:MM"
+- ❌ **Presenter:** "Decide which window is primary based on current time"
+- ✅ **Domain:** "Calculate which window is primary"
+- ✅ **Presenter:** "Render the primary window"
+
+### Layer Import Direction
+
+Dependencies flow inward:
+
+```
+Adapters → App → Domain ← Presenters
+              ↓
+            Lib (shared utilities)
+```
+
+- **Adapters** can import: `app`, `domain`, `contracts`, `lib`
+- **App** can import: `domain`, `contracts`, `lib`
+- **Domain** can import: `contracts`, `lib`, `domain/*` (siblings)
+- **Presenters** can import: `contracts`, `lib`, `domain/*` (for policy)
+- **Lib** can import: `contracts`, `lib/*` (siblings)
+
+### Contracts vs Types
+
+**Rule:** Import types from `src/contracts/` for cross-layer sharing, not from internal implementation paths.
+
+**Example:**
+```typescript
+// GOOD: Import from contracts
+import type { BriefJson } from '../contracts/index.js';
+
+// AVOID: Importing from internal paths across layer boundaries
+import type { BriefJson } from '../types/brief.js'; // Don't do this from presenters
+```
+
 ## Guardrails
 
 Refactors should keep these green at every step:
