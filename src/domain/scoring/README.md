@@ -32,11 +32,10 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 
 - the scoring math in [`score-all-days.ts`](./score-all-days.ts) without corresponding fixture or unit coverage
 - the built-in session ranking order in [`sessions/index.ts`](./sessions/index.ts) without checking downstream presentation assumptions
-- debug payload shape in [`../../core/debug-context.ts`](../../core/debug-context.ts), because email/debug tooling depends on it
+- debug payload shape in [`../../lib/debug-context.ts`](../../lib/debug-context.ts), because email/debug tooling depends on it
 
 ## Tests
 
 - [`score-all-days.test.ts`](./score-all-days.test.ts)
 - [`features/derive-hour-features.test.ts`](./features/derive-hour-features.test.ts)
 - [`sessions/index.test.ts`](./sessions/index.test.ts)
-- legacy compatibility tests under [`../../core`](../../core)
