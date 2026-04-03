@@ -2,32 +2,15 @@ import { renderSiteDocument } from './site-layout.js';
 import {
   C,
   type SummaryStat,
-  confidenceDetail,
-  effectiveConf,
   scoreState,
 } from '../shared/brief-primitives.js';
-import {
-  buildWindowDisplayPlan,
-  getRunTimeContext,
-  minutesToClock,
-} from '../../domain/windowing/index.js';
+import { minutesToClock } from '../../domain/windowing/index.js';
 import {
   bestDaySessionLabel,
   bestTimeLabel,
-  displaySessionName,
-  isAstroWindow,
-  localSummaryLines,
   moonDescriptor,
-  peakHourForWindow,
-  timeAwareLocalSummary,
 } from '../shared/window-helpers.js';
-import { buildKitTips } from '../shared/kit-advisory.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
-import type {
-  BriefRenderInput as FormatEmailInput,
-  DaySummary,
-  Window,
-} from '../../types/brief.js';
+import type { BriefRenderInput as FormatEmailInput } from '../../types/brief.js';
 
 // Extracted sections
 import { sHeroCard } from './sections/hero.js';
@@ -44,6 +27,7 @@ import { sPhotoForecastCards } from './sections/forecast.js';
 import { sSpurCard } from './sections/spur-of-moment.js';
 import { sFooterKey } from './sections/footer.js';
 import { sSection, sCard } from './sections/shared.js';
+import { buildSharedPresentationContext } from '../shared/presenter-context.js';
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
@@ -80,28 +64,27 @@ export function formatSite(input: FormatEmailInput): string {
     sessionRecommendation,
     debugContext,
   } = input;
-  const homeLatitude = resolveHomeLatitude({ location: input.location, debugContext });
-  const locationName = resolveHomeLocationName({ location: input.location, debugContext });
-
-  const todayDay = dailySummary[0] || ({} as DaySummary);
-  const runTime = getRunTimeContext(debugContext);
-  const hasLocalWindow = (windows?.length || 0) > 0;
-  const effectiveDontBother = dontBother || !hasLocalWindow;
-  const displayPlan = buildWindowDisplayPlan(windows, runTime.nowMinutes);
-  const topWindow = !effectiveDontBother ? displayPlan.primary : null;
-  const heroScore = todayDay.headlineScore ?? todayBestScore;
-  const peakLocalHour = effectiveDontBother
-    ? null
-    : peakHourForWindow(topWindow || undefined) || todayDay.bestPhotoHour;
-  const todayScoreState = scoreState(heroScore);
-  const topWindowIsAstro = isAstroWindow(topWindow || undefined);
-  const { confidence: todayEffConf, stdDev: todayEffStdDev } = effectiveConf(todayDay, topWindowIsAstro);
-  const todayConfidence = confidenceDetail(todayEffConf);
-  const topPrimaryAlternative = altLocations?.[0] || null;
-  const topCloseContender = closeContenders?.[0] || null;
-  const topAlternative = topPrimaryAlternative || topCloseContender || todayDay.bestAlt || null;
-  const topAlternativeIsCloseContender = !topPrimaryAlternative && !!topCloseContender
-    && topAlternative?.name === topCloseContender.name;
+  const {
+    homeLatitude,
+    locationName,
+    todayDay,
+    runTime,
+    effectiveDontBother,
+    displayPlan,
+    topWindow,
+    heroScore,
+    peakLocalHour,
+    todayScoreState,
+    todayEffStdDev,
+    todayConfidence,
+    topAlternative,
+    topAlternativeIsCloseContender,
+    localSummary,
+    kitTips,
+    tomorrow,
+    photoWindowsForTodayOutlook,
+    startAtMinutes,
+  } = buildSharedPresentationContext(input);
 
   const factStats: SummaryStat[] = [
     { label: 'Sunrise', value: sunriseStr, tone: C.primary },
@@ -123,14 +106,6 @@ export function formatSite(input: FormatEmailInput): string {
     { label: bestTimeLabel(topWindow, displayPlan.promotedFromPast), value: peakLocalHour || 'No clear slot', tone: C.onPrimaryContainer },
   ];
 
-  const localSummary = effectiveDontBother
-    ? (hasLocalWindow
-        ? (sessionRecommendation?.primary
-            ? `Overall conditions stay marginal, but ${displaySessionName(sessionRecommendation.primary.session).toLowerCase()} is the strongest specialist opportunity if you want to be selective.`
-            : 'Not a great photography day locally — better to enjoy the outdoors instead.')
-        : `No local window cleared the threshold today — treat ${locationName} as a pass unless you just want a walk.`)
-    : timeAwareLocalSummary(displayPlan, topWindow, localSummaryLines(displayPlan, topWindow, todayDay));
-
   const spurMatchesTopAlt = !!spurOfTheMoment && !!topAlternative
     && spurOfTheMoment.locationName === topAlternative.name;
   const altSpurHook = spurMatchesTopAlt ? `\n"${spurOfTheMoment!.hookLine}"` : '';
@@ -149,16 +124,7 @@ export function formatSite(input: FormatEmailInput): string {
     ? `${topAlternative.name} · ${topAlternative.bestScore}/100 · ${topAlternative.driveMins} min drive${altTimingNote}${altSpurHook}`
     : '';
 
-  // Kit advisory
-  const kitTips = buildKitTips(todayCarWashData, windows, todayDay.astroScore ?? 0, moonPct, 3, runTime.nowMinutes);
-
   // Hourly outlook
-  const tomorrow = dailySummary.find(d => d.dayIdx === 1);
-  const remainingPhotoWindows = displayPlan.remaining.filter(window => window !== topWindow);
-  const startAtMinutes = runTime.nowMinutes % 60 === 0
-    ? runTime.nowMinutes
-    : runTime.nowMinutes + (60 - (runTime.nowMinutes % 60));
-
   const todayOutlookHtml = sHourlyOutlookSection({
     day: todayDay,
     title: `Today from ${minutesToClock(startAtMinutes)}`,
@@ -166,7 +132,7 @@ export function formatSite(input: FormatEmailInput): string {
     summaryContext: 'today',
     startAtMinutes,
     showOvernight: false,
-    photoWindows: [topWindow, ...remainingPhotoWindows].filter((window): window is Window => Boolean(window)),
+    photoWindows: photoWindowsForTodayOutlook,
   });
   const tomorrowOutlookHtml = !todayOutlookHtml
     ? sHourlyOutlookSection({

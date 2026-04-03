@@ -22,7 +22,7 @@ This folder contains the static site HTML renderer. It transforms brief data int
 ### Core Formatters
 
 - `format-site.ts`
-  Orchestrates section assembly. Imports all section modules and composes them into the final page content, then passes to `site-layout.ts` for document wrapping.
+  Orchestrates section assembly. Consumes the shared presenter context from [`../shared/presenter-context.ts`](../shared/presenter-context.ts), composes the final page content from section modules, then passes that content to `site-layout.ts` for document wrapping.
 
 - `site-layout.ts`
   HTML document template with CSS variables, responsive styles, and script includes. Wraps the section content in a complete `<!DOCTYPE html>` document.

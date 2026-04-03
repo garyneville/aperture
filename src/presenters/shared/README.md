@@ -20,6 +20,9 @@ This folder contains cross-cutting render primitives used by multiple presenters
 - [`kit-advisory.ts`](./kit-advisory.ts)
   Rule-based kit recommendation logic shared across presenters. Builds photography equipment tips based on weather conditions.
 
+- [`presenter-context.ts`](./presenter-context.ts)
+  Shared context builder for the email and site presenters. Computes the common no-go/window selection state, local summary, top alternative, and outlook inputs before each renderer diverges into markup.
+
 - [`outdoor-comfort.ts`](./outdoor-comfort.ts)
   Pure functions for outdoor comfort scoring (0-100), labels, and reason codes. Input: weather metrics. Output: comfort score, label with styling, and reason strings. This is the "tuning seam" for outdoor comfort algorithm adjustments. Moved from `../email/` to enable sharing across presenters.
 
@@ -50,6 +53,12 @@ This folder contains cross-cutting render primitives used by multiple presenters
   Kit recommendation logic:
   - **Tip Building** — `buildKitTips()` generates equipment recommendations
   - **Rule Evaluation** — `evaluateKitRules()` for debug trace output
+
+- `presenter-context.ts`
+  Shared email/site derived state:
+  - **Context Building** — `buildSharedPresentationContext()` computes the common renderer inputs once
+  - **Local Summary** — centralizes the duplicated local-summary branching used by email and site
+  - **Outlook Inputs** — prepares the photo-window and rounded-start-time inputs used by both renderers
 
 - `outdoor-comfort.ts`
   Outdoor comfort scoring logic:
