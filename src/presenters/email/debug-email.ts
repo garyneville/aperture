@@ -311,7 +311,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         ${debugCard('Payload snapshots', payloadSnapshots.length
           ? payloadSnapshots.map(snapshot => `
               <div style="Margin-top:${snapshot === payloadSnapshots[0] ? '0' : '12px'};font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">${esc(snapshot.label)} <span style="font-weight:400;color:${C.muted};">(${esc(String(snapshot.byteLength))} bytes)</span></div>
-              <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};max-height:none;">${esc(snapshot.json)}</pre>
+              <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};max-height:400px;overflow:auto;">${esc(snapshot.summary || snapshot.json || '(no data)')}</pre>
+              ${snapshot.json && snapshot.json.length > 100 ? `<div style="Margin-top:4px;font-family:${FONT};font-size:11px;line-height:1.4;color:${C.muted};">Full payload available in system logs if needed.</div>` : ''}
             `).join('')
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No payload snapshots were captured for this run.</div>`
         )}
