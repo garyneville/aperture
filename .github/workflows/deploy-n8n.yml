@@ -68,7 +68,17 @@ jobs:
           name: workflow-json
 
       - name: Substitute secrets into workflow JSON
+        env:
+          PHOTO_BRIEF_TRIGGER_PATH: ${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}
         run: |
+          NORMALIZED_TRIGGER_PATH=$(python3 -c "import os; print(os.environ['PHOTO_BRIEF_TRIGGER_PATH'].strip().strip('/'))")
+          if [ -z "$NORMALIZED_TRIGGER_PATH" ]; then
+            echo "::error::PHOTO_BRIEF_TRIGGER_PATH is empty after normalization"
+            exit 1
+          fi
+          ESCAPED_TRIGGER_PATH=$(printf '%s' "$NORMALIZED_TRIGGER_PATH" | sed -e 's/[\\/&]/\\&/g')
+          echo "PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED=${NORMALIZED_TRIGGER_PATH}" >> "$GITHUB_ENV"
+
           sed -i \
             -e 's|__GROQ_API_KEY__|${{ secrets.GROQ_API_KEY }}|g' \
             -e 's|__TELEGRAM_BOT_TOKEN__|${{ secrets.TELEGRAM_BOT_TOKEN }}|g' \
@@ -78,7 +88,7 @@ jobs:
             -e 's|__PHOTO_WEATHER_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_EMAIL_TO }}|g' \
             -e 's|__PHOTO_WEATHER_EMAIL_TO_2__|${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}|g' \
             -e 's|__PHOTO_WEATHER_DEBUG_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}|g' \
-            -e 's|__PHOTO_BRIEF_TRIGGER_PATH__|${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}|g' \
+            -e "s|__PHOTO_BRIEF_TRIGGER_PATH__|${ESCAPED_TRIGGER_PATH}|g" \
             -e 's|__PHOTO_WEATHER_LAT__|${{ secrets.PHOTO_WEATHER_LAT }}|g' \
             -e 's|__PHOTO_WEATHER_LON__|${{ secrets.PHOTO_WEATHER_LON }}|g' \
             -e 's|__PHOTO_WEATHER_LOCATION__|${{ secrets.PHOTO_WEATHER_LOCATION }}|g' \
@@ -228,10 +238,14 @@ jobs:
       - name: Trigger workflow run after deploy
         env:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
-          PHOTO_BRIEF_TRIGGER_PATH: ${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}
         run: |
           BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
-          TRIGGER_URL="${BASE_URL}/webhook/${PHOTO_BRIEF_TRIGGER_PATH}"
+          TRIGGER_PATH=$(python3 -c "import os; print(os.environ['PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED'].strip().strip('/'))")
+          if [ -z "$TRIGGER_PATH" ]; then
+            echo "::error::PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED is empty"
+            exit 1
+          fi
+          TRIGGER_URL="${BASE_URL}/webhook/${TRIGGER_PATH}"
           PAYLOAD=$(python3 - <<'PY'
           import json, os
           print(json.dumps({
@@ -248,20 +262,30 @@ jobs:
           PY
           )
 
-          HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
-            -X POST \
-            -H "Accept: application/json" \
-            -H "Content-Type: application/json" \
-            -d "${PAYLOAD}" \
-            "${TRIGGER_URL}")
+          for attempt in $(seq 1 12); do
+            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
+              -X POST \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -d "${PAYLOAD}" \
+              "${TRIGGER_URL}")
 
-          case "$HTTP_CODE" in
-            2*) ;;
-            *)
-              echo "::error::Trigger webhook returned HTTP ${HTTP_CODE}"
-              cat trigger-response.json
-              exit 1
-              ;;
-          esac
+            case "$HTTP_CODE" in
+              2*)
+                break
+                ;;
+              404)
+                if [ "$attempt" -lt 12 ]; then
+                  echo "Webhook not registered yet (attempt ${attempt}/12); retrying in 5s"
+                  sleep 5
+                  continue
+                fi
+                ;;
+            esac
+
+            echo "::error::Trigger webhook returned HTTP ${HTTP_CODE}"
+            cat trigger-response.json
+            exit 1
+          done
 
           echo "Triggered post-deploy workflow execution"
