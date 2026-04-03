@@ -7,7 +7,7 @@ import type {
   FormatMessagesOutput,
   RenderableRuntimeContext,
 } from './contracts/final-runtime-payload.js';
-import { toScoredForecastContext } from './mappers/to-scored-forecast.js';
+import { toScoredForecastContext } from '../../app/run-photo-brief/mappers/to-scored-forecast.js';
 
 export function renderOutputs(
   ctx: RenderableRuntimeContext,

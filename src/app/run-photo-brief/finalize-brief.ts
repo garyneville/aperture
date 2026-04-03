@@ -26,7 +26,7 @@ import { formatSite } from '../../presenters/site/format-site.js';
 import { formatTelegram } from '../../presenters/telegram/format-telegram.js';
 import { formatDebugEmail, formatEmail } from '../../presenters/email/index.js';
 import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
-import { toScoredForecastContext } from '../../adapters/n8n/mappers/to-scored-forecast.js';
+import { toScoredForecastContext } from './mappers/to-scored-forecast.js';
 import type {
   BriefContext,
   LongRangeSpurCandidate,
