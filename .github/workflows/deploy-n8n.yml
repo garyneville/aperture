@@ -11,6 +11,7 @@
 #   SENDGRID_API_KEY, EMAIL_FROM,
 #   PHOTO_WEATHER_EMAIL_TO, PHOTO_WEATHER_EMAIL_TO_2,
 #   PHOTO_WEATHER_DEBUG_EMAIL_TO,
+#   PHOTO_BRIEF_TRIGGER_PATH,
 #   PHOTO_WEATHER_LAT, PHOTO_WEATHER_LON, PHOTO_WEATHER_LOCATION,
 #   PHOTO_WEATHER_TIMEZONE, PHOTO_WEATHER_ICAO,
 #   PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER,
@@ -76,6 +77,7 @@ jobs:
             -e 's|__PHOTO_WEATHER_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_EMAIL_TO }}|g' \
             -e 's|__PHOTO_WEATHER_EMAIL_TO_2__|${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}|g' \
             -e 's|__PHOTO_WEATHER_DEBUG_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}|g' \
+            -e 's|__PHOTO_BRIEF_TRIGGER_PATH__|${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}|g' \
             -e 's|__PHOTO_WEATHER_LAT__|${{ secrets.PHOTO_WEATHER_LAT }}|g' \
             -e 's|__PHOTO_WEATHER_LON__|${{ secrets.PHOTO_WEATHER_LON }}|g' \
             -e 's|__PHOTO_WEATHER_LOCATION__|${{ secrets.PHOTO_WEATHER_LOCATION }}|g' \
@@ -100,6 +102,7 @@ jobs:
             __PHOTO_WEATHER_EMAIL_TO__ \
             __PHOTO_WEATHER_EMAIL_TO_2__ \
             __PHOTO_WEATHER_DEBUG_EMAIL_TO__ \
+            __PHOTO_BRIEF_TRIGGER_PATH__ \
             __PHOTO_WEATHER_LAT__ \
             __PHOTO_WEATHER_LON__ \
             __PHOTO_WEATHER_LOCATION__ \
@@ -220,3 +223,44 @@ jobs:
             -H "Accept: application/json" \
             "${BASE_URL}/api/v1/workflows/${workflow_id}/activate"
           echo "Workflow ${workflow_id} activated"
+
+      - name: Trigger workflow run after deploy
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          PHOTO_BRIEF_TRIGGER_PATH: ${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}
+        run: |
+          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
+          TRIGGER_URL="${BASE_URL}/webhook/${PHOTO_BRIEF_TRIGGER_PATH}"
+          PAYLOAD=$(python3 - <<'PY'
+          import json, os
+          print(json.dumps({
+              "triggerSource": "github-actions-deploy",
+              "reason": "post-deploy validation run",
+              "github": {
+                  "repository": os.environ.get("GITHUB_REPOSITORY"),
+                  "workflow": os.environ.get("GITHUB_WORKFLOW"),
+                  "runId": os.environ.get("GITHUB_RUN_ID"),
+                  "runNumber": os.environ.get("GITHUB_RUN_NUMBER"),
+                  "sha": os.environ.get("GITHUB_SHA"),
+              },
+          }))
+          PY
+          )
+
+          HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
+            -X POST \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${TRIGGER_URL}")
+
+          case "$HTTP_CODE" in
+            2*) ;;
+            *)
+              echo "::error::Trigger webhook returned HTTP ${HTTP_CODE}"
+              cat trigger-response.json
+              exit 1
+              ;;
+          esac
+
+          echo "Triggered post-deploy workflow execution"

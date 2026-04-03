@@ -62,6 +62,7 @@ function sessionScoreSummary(hour: DebugContext['hourlyScoring'][number]): strin
 export function formatDebugEmail(debugContext: DebugContext): string {
   const metadata = debugContext.metadata;
   const scores = debugContext.scores;
+  const payloadSnapshots = debugContext.payloadSnapshots || [];
   const hourlyRows = debugContext.hourlyScoring.map(hour => ([
     esc(hour.hour),
     esc(String(hour.final)),
@@ -150,6 +151,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['Lat / lon', metadata ? `${metadata.latitude}, ${metadata.longitude}` : null],
           ['Timezone', metadata?.timezone],
           ['Workflow version', metadata?.workflowVersion || null],
+          ['Trigger source', metadata?.triggerSource || null],
           ['Debug mode', metadata ? `${metadata.debugModeEnabled ? 'enabled' : 'disabled'}${metadata.debugModeSource ? ` (${metadata.debugModeSource})` : ''}` : null],
           ['Debug recipient', metadata?.debugRecipient || null],
         ]))}
@@ -207,6 +209,15 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             ['Gemini finish reason', aiTrace.geminiDiagnostics?.finishReason || null],
             ['Gemini candidates', aiTrace.geminiDiagnostics?.candidateCount ?? null],
             ['Gemini response bytes', aiTrace.geminiDiagnostics?.responseByteLength ?? null],
+            ['Gemini extraction path', aiTrace.geminiDiagnostics?.extractionPath || null],
+            ['Gemini top-level keys', aiTrace.geminiDiagnostics?.topLevelKeys?.join(', ') || null],
+            ['Gemini payload keys', aiTrace.geminiDiagnostics?.payloadKeys?.join(', ') || null],
+            ['Gemini part kinds', aiTrace.geminiDiagnostics?.partKinds?.join(', ') || null],
+            ['Gemini extracted text length', aiTrace.geminiDiagnostics?.extractedTextLength ?? null],
+            ['Gemini prompt tokens', aiTrace.geminiDiagnostics?.promptTokenCount ?? null],
+            ['Gemini candidate tokens', aiTrace.geminiDiagnostics?.candidatesTokenCount ?? null],
+            ['Gemini total tokens', aiTrace.geminiDiagnostics?.totalTokenCount ?? null],
+            ['Gemini thoughts tokens', aiTrace.geminiDiagnostics?.thoughtsTokenCount ?? null],
             ['Gemini truncation signal', aiTrace.geminiDiagnostics
               ? (aiTrace.geminiDiagnostics.truncated
                   ? `Yes (${aiTrace.geminiDiagnostics.finishReason || 'incomplete Gemini response'})`
@@ -239,6 +250,8 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>
           <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGroqResponse || '(empty)')}</pre>
+          ${aiTrace.rawGeminiPayload ? `<div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Gemini payload</div>
+          <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGeminiPayload)}</pre>` : ''}
           ${aiTrace.rawGeminiResponse ? `<div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Gemini response</div>
           <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};">${esc(aiTrace.rawGeminiResponse)}</pre>` : ''}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Normalized AI text</div>
@@ -294,6 +307,14 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             : '';
           return `${spacer(8)}${debugCard('Outdoor comfort window trace', `${debugTable(['Hour', 'Temp', 'Rain', 'Wind', 'Vis', 'Precip', 'Score', 'Label'], outdoorRows)}${windowLine}${driftLine}`)}`;
         })()}
+        ${spacer(8)}
+        ${debugCard('Payload snapshots', payloadSnapshots.length
+          ? payloadSnapshots.map(snapshot => `
+              <div style="Margin-top:${snapshot === payloadSnapshots[0] ? '0' : '12px'};font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">${esc(snapshot.label)} <span style="font-weight:400;color:${C.muted};">(${esc(String(snapshot.byteLength))} bytes)</span></div>
+              <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};max-height:none;">${esc(snapshot.json)}</pre>
+            `).join('')
+          : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No payload snapshots were captured for this run.</div>`
+        )}
       </td>
     </tr>
   </table>

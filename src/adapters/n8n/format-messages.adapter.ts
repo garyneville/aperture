@@ -6,6 +6,7 @@ import {
   emptyDebugContext,
   type DebugContext,
 } from '../../core/debug-context.js';
+import { serializeDebugPayload, upsertDebugPayloadSnapshot } from '../../core/debug-payload.js';
 import {
   getPhotoBriefEditorialPrimaryProvider,
   getPhotoWeatherLat,
@@ -45,18 +46,29 @@ export function run({ $input }: N8nRuntime) {
   const {
     choices,
     geminiResponse,
+    geminiRawPayload,
     geminiInspire,
     geminiStatusCode,
     geminiFinishReason,
     geminiCandidateCount,
     geminiResponseByteLength,
     geminiResponseTruncated,
+    geminiExtractionPath,
+    geminiTopLevelKeys,
+    geminiPayloadKeys,
+    geminiPartKinds,
+    geminiExtractedTextLength,
+    geminiPromptTokenCount,
+    geminiCandidatesTokenCount,
+    geminiTotalTokenCount,
+    geminiThoughtsTokenCount,
     ...ctx
   } = input;
   const rawContent = choices?.[0]?.message?.content?.trim() || '';
   const geminiRawContent = typeof geminiResponse === 'string' ? geminiResponse.trim() : '';
   const geminiDiagnostics = (
     geminiRawContent
+    || (typeof geminiRawPayload === 'string' && geminiRawPayload.trim().length > 0)
     || typeof geminiStatusCode === 'number'
     || (typeof geminiFinishReason === 'string' && geminiFinishReason.trim().length > 0)
     || typeof geminiCandidateCount === 'number'
@@ -69,6 +81,15 @@ export function run({ $input }: N8nRuntime) {
         candidateCount: typeof geminiCandidateCount === 'number' && Number.isFinite(geminiCandidateCount) ? geminiCandidateCount : null,
         responseByteLength: typeof geminiResponseByteLength === 'number' && Number.isFinite(geminiResponseByteLength) ? geminiResponseByteLength : null,
         truncated: geminiResponseTruncated === true,
+        extractionPath: typeof geminiExtractionPath === 'string' && geminiExtractionPath.trim().length > 0 ? geminiExtractionPath.trim() : null,
+        topLevelKeys: Array.isArray(geminiTopLevelKeys) ? geminiTopLevelKeys.filter((key): key is string => typeof key === 'string') : undefined,
+        payloadKeys: Array.isArray(geminiPayloadKeys) ? geminiPayloadKeys.filter((key): key is string => typeof key === 'string') : undefined,
+        partKinds: Array.isArray(geminiPartKinds) ? geminiPartKinds.filter((key): key is string => typeof key === 'string') : undefined,
+        extractedTextLength: typeof geminiExtractedTextLength === 'number' && Number.isFinite(geminiExtractedTextLength) ? geminiExtractedTextLength : null,
+        promptTokenCount: typeof geminiPromptTokenCount === 'number' && Number.isFinite(geminiPromptTokenCount) ? geminiPromptTokenCount : null,
+        candidatesTokenCount: typeof geminiCandidatesTokenCount === 'number' && Number.isFinite(geminiCandidatesTokenCount) ? geminiCandidatesTokenCount : null,
+        totalTokenCount: typeof geminiTotalTokenCount === 'number' && Number.isFinite(geminiTotalTokenCount) ? geminiTotalTokenCount : null,
+        thoughtsTokenCount: typeof geminiThoughtsTokenCount === 'number' && Number.isFinite(geminiThoughtsTokenCount) ? geminiThoughtsTokenCount : null,
       }
     : undefined;
   const longRangeDebugPool = Array.isArray(ctx.longRangeDebugCandidates)
@@ -87,6 +108,30 @@ export function run({ $input }: N8nRuntime) {
   const debugModeSource = typeof ctx.debugModeSource === 'string' && ctx.debugModeSource.trim().length > 0
     ? ctx.debugModeSource
     : (debugMode ? 'workflow toggle' : 'workflow default');
+  const triggerSource = typeof ctx.triggerSource === 'string' && ctx.triggerSource.trim().length > 0
+    ? ctx.triggerSource.trim()
+    : debugContext.metadata?.triggerSource || null;
+  const runtimePayloadSnapshot = serializeDebugPayload({
+    ...ctx,
+    choices,
+    geminiResponse,
+    geminiRawPayload,
+    geminiInspire,
+    geminiStatusCode,
+    geminiFinishReason,
+    geminiCandidateCount,
+    geminiResponseByteLength,
+    geminiResponseTruncated,
+    geminiExtractionPath,
+    geminiTopLevelKeys,
+    geminiPayloadKeys,
+    geminiPartKinds,
+    geminiExtractedTextLength,
+    geminiPromptTokenCount,
+    geminiCandidatesTokenCount,
+    geminiTotalTokenCount,
+    geminiThoughtsTokenCount,
+  });
 
   const { editorial, debugAiTrace } = resolveEditorial({
     preferredProvider: getPhotoBriefEditorialPrimaryProvider(),
@@ -100,6 +145,7 @@ export function run({ $input }: N8nRuntime) {
     geminiRawContent,
     geminiInspire: typeof geminiInspire === 'string' ? geminiInspire : undefined,
     geminiDiagnostics,
+    geminiRawPayload: typeof geminiRawPayload === 'string' && geminiRawPayload.trim().length > 0 ? geminiRawPayload : undefined,
     nearbyAltNames,
     longRangePool: longRangeDebugPool,
   });
@@ -112,6 +158,7 @@ export function run({ $input }: N8nRuntime) {
     longitude: debugContext.metadata?.longitude ?? getPhotoWeatherLon(),
     timezone: debugContext.metadata?.timezone || getPhotoWeatherTimezone(),
     workflowVersion: debugContext.metadata?.workflowVersion || null,
+    triggerSource,
     debugModeEnabled: debugMode,
     debugModeSource,
     debugRecipient: debugMode ? debugEmailTo : null,
@@ -123,6 +170,10 @@ export function run({ $input }: N8nRuntime) {
   }
 
   debugContext.ai = debugAiTrace;
+  upsertDebugPayloadSnapshot(debugContext, {
+    label: 'Final merged runtime payload',
+    ...runtimePayloadSnapshot,
+  });
 
   const briefJson = renderBriefAsJson({ ...(ctx as ScoredForecastContext), debugContext }, editorial);
   const telegramMsg = formatTelegram(briefJson);

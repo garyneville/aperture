@@ -2,6 +2,7 @@ import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from './site-darkness.js';
 import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from './utils.js';
 import { emptyDebugContext, type DebugContext } from './debug-context.js';
+import { serializeDebugPayload, upsertDebugPayloadSnapshot } from './debug-payload.js';
 import { evaluateBuiltInSessions, summarizeSessionRecommendations } from './session-scoring.js';
 import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
@@ -726,6 +727,10 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
   const todayDay = dailySummary.find(day => day.dateKey === todayKey) || dailySummary[0];
   const debugContext = emptyDebugContext();
+  upsertDebugPayloadSnapshot(debugContext, {
+    label: 'Score input payload',
+    ...serializeDebugPayload(input),
+  });
 
   if (todayDay) {
     debugContext.scores = {

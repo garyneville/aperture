@@ -54,6 +54,7 @@ export interface EditorialDecision {
   geminiInspire?: string;
   rawGroqResponse?: string;
   rawGeminiResponse?: string;
+  rawGeminiPayload?: string;
 }
 
 export interface RenderedOutputs {

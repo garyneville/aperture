@@ -7,6 +7,7 @@ export interface DebugRunMetadata {
   longitude: number;
   timezone: string;
   workflowVersion?: string | null;
+  triggerSource?: string | null;
   debugModeEnabled: boolean;
   debugModeSource?: string | null;
   debugRecipient?: string | null;
@@ -106,6 +107,15 @@ export interface DebugGeminiDiagnostics {
   candidateCount: number | null;
   responseByteLength: number | null;
   truncated: boolean;
+  extractionPath?: string | null;
+  topLevelKeys?: string[];
+  payloadKeys?: string[];
+  partKinds?: string[];
+  extractedTextLength?: number | null;
+  promptTokenCount?: number | null;
+  candidatesTokenCount?: number | null;
+  totalTokenCount?: number | null;
+  thoughtsTokenCount?: number | null;
 }
 
 export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
@@ -127,6 +137,7 @@ export interface DebugAiTrace {
   secondaryRejectionReason?: string | null;
   rawGroqResponse: string;
   rawGeminiResponse?: string;
+  rawGeminiPayload?: string;
   geminiDiagnostics?: DebugGeminiDiagnostics;
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
@@ -195,6 +206,12 @@ export interface DebugOutdoorComfort {
   hours: DebugOutdoorComfortHour[];
 }
 
+export interface DebugPayloadSnapshot {
+  label: string;
+  byteLength: number;
+  json: string;
+}
+
 export interface DebugContext {
   metadata?: DebugRunMetadata;
   scores?: DebugScores;
@@ -205,6 +222,7 @@ export interface DebugContext {
   kitAdvisory?: DebugKitAdvisory;
   outdoorComfort?: DebugOutdoorComfort;
   ai?: DebugAiTrace;
+  payloadSnapshots?: DebugPayloadSnapshot[];
 }
 
 export function emptyDebugContext(): DebugContext {

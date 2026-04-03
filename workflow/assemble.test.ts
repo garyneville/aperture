@@ -475,6 +475,18 @@ describe('workflow assembly', () => {
     writeWorkflow(workflowJson, outputPath);
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const webhookNode = data.nodes.find((item: { name: string }) => item.name === 'Webhook: Run Brief');
+    expect(webhookNode).toBeTruthy();
+    expect(webhookNode.parameters.path).toBe('__PHOTO_BRIEF_TRIGGER_PATH__');
+    expect(webhookNode.parameters.httpMethod).toBe('POST');
+
+    const webhookConnections = data.connections['Webhook: Run Brief']?.main?.[0] ?? [];
+    expect(webhookConnections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ node: 'Code: Debug Config', index: 0 }),
+      expect.objectContaining({ node: 'HTTP: Weather', index: 0 }),
+      expect.objectContaining({ node: 'HTTP: Kp Index', index: 0 }),
+    ]));
+
     const debugConfigConnection = data.connections['Code: Debug Config']?.main?.[0]?.[0];
     expect(debugConfigConnection?.node).toBe('Merge: Prompt + Debug Config');
 
@@ -491,6 +503,36 @@ describe('workflow assembly', () => {
         debugMode: false,
         debugModeSource: 'debug recipient missing',
         debugEmailTo: '',
+        triggerSource: 'schedule',
+        triggerRequest: null,
+      },
+    }]);
+
+    const webhookDebugConfig = debugConfigFn(
+      () => ({ first: () => ({ json: {} }), all: () => [] }),
+      {
+        first: () => ({
+          json: {
+            body: { triggerSource: 'github-actions-deploy', reason: 'post-deploy validation run' },
+            query: {},
+            params: {},
+            headers: { 'content-type': 'application/json' },
+          },
+        }),
+        all: () => [],
+      },
+    );
+    expect(webhookDebugConfig).toEqual([{
+      json: {
+        debugMode: false,
+        debugModeSource: 'debug recipient missing',
+        debugEmailTo: '',
+        triggerSource: 'github-actions-deploy',
+        triggerRequest: {
+          body: { triggerSource: 'github-actions-deploy', reason: 'post-deploy validation run' },
+          query: {},
+          params: {},
+        },
       },
     }]);
 
@@ -679,7 +721,7 @@ describe('workflow assembly', () => {
     }]);
   });
 
-  it('assembles Gemini fallback extraction that preserves full text and truncation diagnostics', async () => {
+  it('assembles Gemini fallback extraction that preserves payload diagnostics through wrapped response shapes', async () => {
     const workflowJson = await assembleWorkflow();
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
     tempDirs.push(tmpDir);
@@ -707,15 +749,23 @@ describe('workflow assembly', () => {
           json: {
             statusCode: 200,
             body: {
-              candidates: [{
-                finishReason: 'MAX_TOKENS',
-                content: {
-                  parts: [
-                    { text: '{"editorial":"The moon sets before ' },
-                    { text: 'the midnight astro window begins.","composition":["Face north"]}' },
-                  ],
+              data: {
+                candidates: [{
+                  finishReason: 'MAX_TOKENS',
+                  content: {
+                    parts: [
+                      { text: '{"editorial":"The moon sets before ', thoughtSignature: 'sig-1' },
+                      { text: 'the midnight astro window begins.","composition":["Face north"]}' },
+                    ],
+                  },
+                }],
+                usageMetadata: {
+                  promptTokenCount: 124,
+                  candidatesTokenCount: 178,
+                  totalTokenCount: 1006,
+                  thoughtsTokenCount: 704,
                 },
-              }],
+              },
             },
           },
         }),
@@ -731,6 +781,16 @@ describe('workflow assembly', () => {
         geminiCandidateCount: 1,
         geminiResponseByteLength: expect.any(Number),
         geminiResponseTruncated: true,
+        geminiRawPayload: expect.stringContaining('"thoughtsTokenCount":704'),
+        geminiExtractionPath: 'item.body.data',
+        geminiTopLevelKeys: ['statusCode', 'body'],
+        geminiPayloadKeys: ['candidates', 'usageMetadata'],
+        geminiPartKinds: ['text', 'thoughtSignature'],
+        geminiExtractedTextLength: expect.any(Number),
+        geminiPromptTokenCount: 124,
+        geminiCandidatesTokenCount: 178,
+        geminiTotalTokenCount: 1006,
+        geminiThoughtsTokenCount: 704,
       },
     }]);
   });

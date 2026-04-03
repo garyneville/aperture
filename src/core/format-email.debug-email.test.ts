@@ -12,6 +12,7 @@ describe('formatDebugEmail', () => {
         longitude: -1.57,
         timezone: 'Europe/London',
         workflowVersion: 'debug-trace-v1',
+        triggerSource: 'github-actions-deploy',
         debugModeEnabled: true,
         debugModeSource: 'workflow toggle',
         debugRecipient: 'debug@example.com',
@@ -85,12 +86,22 @@ describe('formatDebugEmail', () => {
         selectedProvider: 'gemini',
         rawGroqResponse: '{"editorial":"Good night."}',
         rawGeminiResponse: '{"editorial":"Good night.","composition":["Low northern horizon"]}',
+        rawGeminiPayload: '{"candidates":[{"content":{"parts":[{"text":"{\\"editorial\\":\\"Good night.\\"}","thoughtSignature":"sig"}]}}],"usageMetadata":{"thoughtsTokenCount":261}}',
         geminiDiagnostics: {
           statusCode: 200,
           finishReason: 'MAX_TOKENS',
           candidateCount: 1,
           responseByteLength: 812,
           truncated: true,
+          extractionPath: 'item.body.data',
+          topLevelKeys: ['statusCode', 'body'],
+          payloadKeys: ['candidates', 'usageMetadata'],
+          partKinds: ['text', 'thoughtSignature'],
+          extractedTextLength: 55,
+          promptTokenCount: 8,
+          candidatesTokenCount: 11,
+          totalTokenCount: 280,
+          thoughtsTokenCount: 261,
         },
         normalizedAiText: 'Good night.',
         factualCheck: { passed: true, rulesTriggered: [] },
@@ -114,6 +125,13 @@ describe('formatDebugEmail', () => {
         modelFallbackUsed: false,
         finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
       },
+      payloadSnapshots: [
+        {
+          label: 'Score input payload',
+          byteLength: 128,
+          json: '{"weather":{"hourly":{"time":["2026-03-16T04:00:00.000Z"]}}}',
+        },
+      ],
     });
 
     expect(html).toContain('Run metadata');
@@ -144,7 +162,12 @@ describe('formatDebugEmail', () => {
     expect(html).toContain('Gemini HTTP status');
     expect(html).toContain('MAX_TOKENS');
     expect(html).toContain('Gemini response bytes');
+    expect(html).toContain('Gemini extraction path');
+    expect(html).toContain('Gemini thoughts tokens');
+    expect(html).toContain('Raw Gemini payload');
     expect(html).toContain('Gemini truncation signal');
+    expect(html).toContain('Payload snapshots');
+    expect(html).toContain('Score input payload');
     expect(html).toContain('Astro 72/100 (high, vol 6)');
     expect(html).toContain('Mist 12/100 gated (low, vol 6)');
   });
@@ -159,6 +182,7 @@ describe('formatDebugEmail — new debug sections', () => {
       longitude: -1.57,
       timezone: 'Europe/London',
       workflowVersion: null,
+      triggerSource: 'schedule',
       debugModeEnabled: true,
       debugModeSource: 'workflow toggle',
       debugRecipient: 'debug@example.com',
@@ -203,12 +227,15 @@ describe('formatDebugEmail — new debug sections', () => {
         secondaryRejectionReason: null,
         rawGroqResponse: '{"editorial":"Conditions hold through the astro window.","composition":["Face north with a low tree line"]}',
         rawGeminiResponse: '{"editorial":"The moon sets before the midnight astro window begins at 00:',
+        rawGeminiPayload: '{"body":{"data":{"candidates":[{"content":{"parts":[{"text":"truncated"}]}}]}}}',
         geminiDiagnostics: {
           statusCode: 200,
           finishReason: 'MAX_TOKENS',
           candidateCount: 1,
           responseByteLength: 382,
           truncated: true,
+          extractionPath: 'item.body.data',
+          thoughtsTokenCount: 704,
         },
         normalizedAiText: 'Conditions hold through the astro window.',
         factualCheck: { passed: true, rulesTriggered: [] },

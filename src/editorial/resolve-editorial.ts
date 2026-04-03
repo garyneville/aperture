@@ -102,6 +102,7 @@ export type WindowLike = {
   start?: string;
   end?: string;
   peak?: number;
+  peakHour?: string | null;
   tops?: string[];
   hours?: Array<{
     hour?: string;
@@ -155,6 +156,7 @@ export type ResolveEditorialInput = {
   geminiRawContent: string;
   geminiInspire?: string;
   geminiDiagnostics?: DebugGeminiDiagnostics;
+  geminiRawPayload?: string;
   nearbyAltNames?: string[];
   longRangePool?: LongRangeSpurCandidate[];
 };
@@ -173,6 +175,9 @@ function clockToMinutes(value: string | null | undefined): number | null {
 function peakWindowHour(window: WindowLike | undefined): WindowHourLike | null {
   const hours = window?.hours;
   if (!hours?.length) return null;
+  if (window?.peakHour) {
+    return hours.find(hour => hour.hour === window.peakHour) || hours[0] || null;
+  }
   return hours.find(hour => hour.score === window?.peak) || hours[0] || null;
 }
 
@@ -556,9 +561,19 @@ function summarizeCandidateRejection(
   const reasons: string[] = [];
 
   if (!rawContent.trim()) {
-    // Truly empty body — no content at all.
-    if (provider === 'gemini' && geminiDiagnostics?.statusCode !== null && geminiDiagnostics?.statusCode !== undefined) {
-      reasons.push(`HTTP ${geminiDiagnostics.statusCode} but empty response body`);
+    if (provider === 'gemini') {
+      const statusCode = geminiDiagnostics?.statusCode;
+      const responseByteLength = geminiDiagnostics?.responseByteLength;
+      const extractionPath = geminiDiagnostics?.extractionPath;
+      if (typeof responseByteLength === 'number' && responseByteLength > 0) {
+        const statusLabel = statusCode !== null && statusCode !== undefined ? `HTTP ${statusCode}` : 'Gemini response';
+        const extractionLabel = extractionPath ? ` (${extractionPath})` : '';
+        reasons.push(`${statusLabel} — response received (${responseByteLength} bytes) but no Gemini text was extracted${extractionLabel}`);
+      } else if (statusCode !== null && statusCode !== undefined) {
+        reasons.push(`HTTP ${statusCode} but empty response body`);
+      } else {
+        reasons.push('empty response body');
+      }
     } else {
       reasons.push('empty response body');
     }
@@ -657,7 +672,8 @@ function fallbackCompositionBullets(ctx: BriefContext): string[] {
   const { referenceWindow: topWindow } = getValidationWindowContext(ctx);
   if (!topWindow) return [];
 
-  const peakHour = topWindow.hours?.find(hour => hour.score === topWindow.peak)?.hour
+  const peakHour = topWindow.peakHour
+    || peakWindowHour(topWindow)?.hour
     || topWindow.hours?.[topWindow.hours.length - 1]?.hour
     || topWindow.end
     || topWindow.start
@@ -911,6 +927,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     geminiRawContent,
     geminiInspire,
     geminiDiagnostics,
+    geminiRawPayload,
     nearbyAltNames = [],
     longRangePool = [],
   } = input;
@@ -992,6 +1009,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       geminiInspire: safeGeminiInspire,
       rawGroqResponse: groqRawContent || undefined,
       rawGeminiResponse: geminiRawContent || undefined,
+      rawGeminiPayload: geminiRawPayload,
     },
     debugAiTrace: {
       primaryProvider: editorialChoice.primaryProvider,
@@ -1000,6 +1018,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       secondaryRejectionReason,
       rawGroqResponse: groqRawContent,
       rawGeminiResponse: geminiRawContent || undefined,
+      rawGeminiPayload: geminiRawPayload,
       geminiDiagnostics,
       normalizedAiText: traceCandidate?.normalizedAiText || '',
       factualCheck: traceCandidate?.factualCheck || { passed: false, rulesTriggered: ['missing AI summary'] },
