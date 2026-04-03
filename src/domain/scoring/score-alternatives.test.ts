@@ -3,8 +3,8 @@ import {
   ALT_LOCATIONS,
   UPLAND_ELEVATION_THRESHOLD_M,
   prepareAltLocations,
-} from './prepare-alt-locations.js';
-import { emptyDebugContext } from './debug-context.js';
+} from '../../lib/prepare-alt-locations.js';
+import { emptyDebugContext } from '../../lib/debug-context.js';
 import { scoreAlternatives } from './score-alternatives.js';
 import type { AltWeatherData } from './score-alternatives.js';
 

@@ -1,6 +1,6 @@
 import { LONG_RANGE_LOCATIONS } from '../../../../lib/long-range-locations.js';
-import { explainAstroScoreGap } from '../../../../lib/astro-score-explanation.js';
-import type { Window, DailySummary } from '../../../../lib/best-windows.js';
+import { explainAstroScoreGap } from '../../astro-score-explanation.js';
+import type { Window, DailySummary } from '../../../windowing/best-windows.js';
 import type { AltLocationResult } from '../build-prompt.js';
 import type { SessionRecommendationSummary } from '../../../../types/session-score.js';
 import { alternativePromptSection } from './alternatives.js';

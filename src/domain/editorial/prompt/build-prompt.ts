@@ -1,7 +1,7 @@
-import type { Window, DailySummary, CarWash } from '../../../lib/best-windows.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../lib/aurora-visibility.js';
+import type { Window, DailySummary, CarWash } from '../../windowing/best-windows.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import { emptyDebugContext, type DebugContext } from '../../../lib/debug-context.js';
-import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../../lib/score-long-range.js';
+import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../scoring/score-long-range.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import {
   DEFAULT_BRIEF_WORKFLOW_VERSION,

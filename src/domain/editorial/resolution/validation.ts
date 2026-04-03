@@ -1,7 +1,7 @@
 import {
   isSingleSentenceCardRestatement,
   splitAiSentences,
-} from '../../../lib/ai-briefing.js';
+} from '../ai-briefing.js';
 import {
   buildWindowDisplayPlan,
   clockToMinutes,

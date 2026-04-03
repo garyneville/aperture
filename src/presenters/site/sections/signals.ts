@@ -1,6 +1,6 @@
 import { esc } from '../../../lib/utils.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../lib/aurora-visibility.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../domain/editorial/aurora-visibility.js';
 import { C } from '../../shared/brief-primitives.js';
 import { resolveHomeLatitude, resolveHomeLocationName } from '../../../types/home-location.js';
 

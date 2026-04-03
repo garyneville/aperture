@@ -1,6 +1,6 @@
-import { HOME_SITE_DARKNESS } from './site-darkness.js';
-import { emptyDebugContext, type DebugContext } from './debug-context.js';
-import { DEFAULT_HOME_LOCATION } from '../types/home-location.js';
+import { HOME_SITE_DARKNESS } from '../../lib/site-darkness.js';
+import { emptyDebugContext, type DebugContext } from '../../lib/debug-context.js';
+import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';
 
 // Import from submodules
 import type {
@@ -51,7 +51,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
     if (!loc || !wData?.hourly) return null;
     const days = scoreLocation(wData, loc, timezone);
     return { loc, days };
-  }).filter((x): x is { loc: import('./prepare-alt-locations.js').AltLocation; days: LocDayScore[] } => x !== null);
+  }).filter((x): x is { loc: import('../../lib/prepare-alt-locations.js').AltLocation; days: LocDayScore[] } => x !== null);
 
   // Use the same local headline score that is shown to the user in the hero
   const homeHeadlineFromContext = typeof homeContext.todayBestScore === 'number'
@@ -66,7 +66,7 @@ export function scoreAlternatives(input: ScoreAlternativesInput): ScoreAlternati
   const selectedWindowPeak = debugContext.windows.find(w => w.selected)?.peak ?? null;
 
   // Build the close contender checker with captured parameters
-  const closeContenderChecker = (today: LocDayScore, loc: import('./prepare-alt-locations.js').AltLocation) =>
+  const closeContenderChecker = (today: LocDayScore, loc: import('../../lib/prepare-alt-locations.js').AltLocation) =>
     qualifiesAsCloseContender(today, loc, homeHeadline, selectedWindowPeak);
 
   // Filter and rank today's alternatives

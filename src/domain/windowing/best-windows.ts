@@ -1,5 +1,5 @@
-import { emptyDebugContext, type DebugContext } from './debug-context.js';
-import type { SessionRecommendationSummary } from '../types/session-score.js';
+import { emptyDebugContext, type DebugContext } from '../../lib/debug-context.js';
+import type { SessionRecommendationSummary } from '../../types/session-score.js';
 
 // Re-export types from submodules for backward compatibility
 export type {

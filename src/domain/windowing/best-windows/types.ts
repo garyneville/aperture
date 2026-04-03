@@ -2,9 +2,9 @@
  * Shared types for best-windows modules.
  */
 
-import type { SessionId, SessionRecommendationSummary } from '../../types/session-score.js';
-import type { DebugContext } from '../debug-context.js';
-import type { AltLocation } from '../../types/brief.js';
+import type { SessionId, SessionRecommendationSummary } from '../../../types/session-score.js';
+import type { DebugContext } from '../../../lib/debug-context.js';
+import type { AltLocation } from '../../../types/brief.js';
 
 export interface ScoredHour {
   ts: string;

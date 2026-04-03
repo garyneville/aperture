@@ -5,7 +5,7 @@
  * either from generic session analysis or session recommendations.
  */
 
-import type { SessionId, SessionRecommendationSummary } from '../../types/session-score.js';
+import type { SessionId, SessionRecommendationSummary } from '../../../types/session-score.js';
 import type { ScoredHour, WindowCandidate } from './types.js';
 import { STRONG_SESSION_FALLBACK_SCORE } from './types.js';
 

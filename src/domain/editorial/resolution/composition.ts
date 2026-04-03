@@ -1,4 +1,4 @@
-import { isAuroraLikelyVisibleAtLat } from '../../../lib/aurora-visibility.js';
+import { isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import { LONG_RANGE_LOCATIONS } from '../../../lib/long-range-locations.js';
 import { resolveHomeLatitude } from '../../../types/home-location.js';
 import type {

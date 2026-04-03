@@ -4,7 +4,7 @@
  * Adds the best alternative location to each day's summary for display.
  */
 
-import type { AltLocation } from '../prepare-alt-locations.js';
+import type { AltLocation } from '../../../lib/prepare-alt-locations.js';
 import type { LocDayScore, DaySummary, BestAltCandidate } from './types.js';
 
 /**

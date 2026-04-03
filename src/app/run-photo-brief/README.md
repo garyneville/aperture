@@ -61,18 +61,57 @@ This folder contains the canonical orchestration spine for the photo brief appli
 
 ## Non-n8n Runtime (CLI)
 
-The `finalize-brief-cli.ts` script demonstrates that the core application logic can run independently of n8n:
+The `finalize-brief-cli.ts` script demonstrates that the core application logic can run independently of n8n. This proves the architecture goal: **n8n is a delivery mechanism, not the place where the workflow lives.**
 
+### CLI Usage Options
+
+**Option 1 — npm scripts (recommended):**
 ```bash
-# Run against a fixture file
+# Run with any fixture file
+npm run cli:finalize-brief -- ./fixtures/sample-forecast.json
+
+# Run with the example fixture
+npm run cli:example
+```
+
+**Option 2 — Direct ts-node execution:**
+```bash
 npx ts-node src/app/run-photo-brief/finalize-brief-cli.ts ./fixtures/sample-forecast.json
 ```
 
-This proves the architecture goal: **n8n is a delivery mechanism, not the place where the workflow lives.** The core logic lives in `src/app/run-photo-brief/` and can be invoked from:
-- n8n (via adapter)
-- CLI (direct)
-- Future HTTP API (direct)
-- Test harness (direct)
+**Option 3 — Via bin entry (after `npm link`):**
+```bash
+# Install globally
+npm link
+
+# Run from anywhere
+aperture-finalize-brief ./fixtures/sample-forecast.json
+```
+
+### Fixture Format
+
+Create a JSON file with this structure:
+```json
+{
+  "context": { /* BriefContext with windows, dailySummary, etc. */ },
+  "groqChoices": [{ "message": { "content": "..." } }],
+  "geminiResponse": "...",
+  "geminiInspire": "...",
+  "homeLocation": { "name": "Leeds", "lat": 53.8, "lon": -1.5, "timezone": "Europe/London" },
+  "debug": { "enabled": true, "emailTo": "debug@example.com" },
+  "preferredProvider": "groq"
+}
+```
+
+See [`fixtures/sample-forecast.json`](../../fixtures/sample-forecast.json) for a complete example.
+
+### Runtime Flexibility
+
+The core logic in `src/app/run-photo-brief/` can be invoked from:
+- **n8n** — via adapter (`src/adapters/n8n/format-messages.adapter.ts`)
+- **CLI** — direct execution (shown above)
+- **Future HTTP API** — direct import of `finalizeBrief()`
+- **Test harness** — direct function calls with fixtures
 
 ## Data In / Data Out
 

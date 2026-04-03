@@ -1,6 +1,6 @@
-import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from './astro.js';
-import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from './site-darkness.js';
-import { clamp } from './utils.js';
+import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from '../../lib/astro.js';
+import { HOME_SITE_DARKNESS, astroDarknessBonus, type SiteDarkness } from '../../lib/site-darkness.js';
+import { clamp } from '../../lib/utils.js';
 import type { AltWeatherData } from './score-alternatives.js';
 
 /* ------------------------------------------------------------------ */

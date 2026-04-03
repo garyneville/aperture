@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { scoreLongRange, type ScoreLongRangeInput, type LongRangeMeta } from './score-long-range.js';
-import { haversineKm, estimatedDriveMins, isWithinDriveLimit, LONG_RANGE_LOCATIONS, type LongRangeLocation } from './long-range-locations.js';
+import { haversineKm, estimatedDriveMins, isWithinDriveLimit, LONG_RANGE_LOCATIONS, type LongRangeLocation } from '../../lib/long-range-locations.js';
 import type { AltWeatherData } from './score-alternatives.js';
-import { siteDarknessFromBortle } from './site-darkness.js';
+import { siteDarknessFromBortle } from '../../lib/site-darkness.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

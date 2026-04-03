@@ -1,4 +1,4 @@
-import { scoreLongRange } from '../../lib/score-long-range.js';
+import { scoreLongRange } from '../../domain/scoring/score-long-range.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {

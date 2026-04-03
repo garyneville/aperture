@@ -5,7 +5,7 @@
  * based on their scores relative to the home location and selected window.
  */
 
-import type { AltLocation } from '../prepare-alt-locations.js';
+import type { AltLocation } from '../../../lib/prepare-alt-locations.js';
 import type { LocDayScore, TodayAlt } from './types.js';
 import { toTodayAlt } from './per-location.js';
 import { BEAT_HOME_MARGIN } from './types.js';

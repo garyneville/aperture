@@ -12,8 +12,8 @@ import {
 import type { AltWeatherData } from './score-alternatives.js';
 import { scoreAlternatives } from './score-alternatives.js';
 import { scoreLongRange, type LongRangeMeta, type ScoreLongRangeInput } from './score-long-range.js';
-import { ALT_LOCATIONS } from './prepare-alt-locations.js';
-import { siteDarknessFromBortle } from './site-darkness.js';
+import { ALT_LOCATIONS } from '../../lib/prepare-alt-locations.js';
+import { siteDarknessFromBortle } from '../../lib/site-darkness.js';
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */

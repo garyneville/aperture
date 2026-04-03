@@ -5,8 +5,8 @@
  * extracting the best daylight and astro scores.
  */
 
-import { HOME_SITE_DARKNESS } from '../site-darkness.js';
-import type { AltLocation } from '../prepare-alt-locations.js';
+import { HOME_SITE_DARKNESS } from '../../../lib/site-darkness.js';
+import type { AltLocation } from '../../../lib/prepare-alt-locations.js';
 import { evaluateDay } from '../shared-scoring.js';
 import type { AltWeatherData, LocDayScore } from './types.js';
 import { DAY_THRESHOLD, ASTRO_THRESHOLD } from './types.js';

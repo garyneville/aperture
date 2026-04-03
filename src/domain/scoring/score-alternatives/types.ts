@@ -2,9 +2,9 @@
  * Shared types for score-alternatives modules.
  */
 
-import type { SiteDarkness } from '../site-darkness.js';
-import type { AltLocation } from '../prepare-alt-locations.js';
-import type { DebugContext } from '../debug-context.js';
+import type { SiteDarkness } from '../../../lib/site-darkness.js';
+import type { AltLocation } from '../../../lib/prepare-alt-locations.js';
+import type { DebugContext } from '../../../lib/debug-context.js';
 
 /** Open-Meteo hourly + daily response shape (fields we use). */
 export interface AltWeatherData {

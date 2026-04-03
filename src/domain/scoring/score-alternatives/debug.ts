@@ -4,8 +4,8 @@
  * Builds the nearbyAlternatives debug entries with discard reasons.
  */
 
-import { HOME_SITE_DARKNESS } from '../site-darkness.js';
-import type { AltLocation } from '../prepare-alt-locations.js';
+import { HOME_SITE_DARKNESS } from '../../../lib/site-darkness.js';
+import type { AltLocation } from '../../../lib/prepare-alt-locations.js';
 import type { LocDayScore } from './types.js';
 import { DAY_THRESHOLD, ASTRO_THRESHOLD, BEAT_HOME_MARGIN } from './types.js';
 
