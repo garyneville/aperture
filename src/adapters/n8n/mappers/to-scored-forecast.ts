@@ -6,10 +6,14 @@
  * This avoids unsafe casting and makes the adapter boundary explicit.
  */
 
-import type { ScoredForecastContext } from '../../../types/scored-forecast.js';
+import type {
+  ScoredForecastContext,
+  AltLocation,
+  LongRangeCard,
+  DarkSkyAlertCard,
+  SessionRecommendationSummary,
+} from '../../../contracts/index.js';
 import type { RenderableRuntimeContext } from '../contracts/final-runtime-payload.js';
-import type { AltLocation, LongRangeCard, DarkSkyAlertCard } from '../../../types/brief.js';
-import type { SessionRecommendationSummary } from '../../../types/session-score.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 
 /**

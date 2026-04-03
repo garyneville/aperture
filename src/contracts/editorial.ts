@@ -1,3 +1,10 @@
+/**
+ * Public contract surface for editorial resolution types.
+ *
+ * This module exports types shared across app, domain, presenters, and adapters.
+ * Import from here rather than from internal implementation paths.
+ */
+
 export type {
   BriefContext,
   LongRangeSpurCandidate,
