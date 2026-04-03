@@ -3,8 +3,8 @@ import {
   type DebugAiTrace,
   type DebugContext,
   type DebugPayloadSnapshot,
-} from '../../core/debug-context.js';
-import { upsertDebugPayloadSnapshot } from '../../core/debug-payload.js';
+} from '../../lib/debug-context.js';
+import { upsertDebugPayloadSnapshot } from '../../lib/debug-payload.js';
 import type {
   LongRangeCandidateLike,
 } from './contracts/final-runtime-payload.js';

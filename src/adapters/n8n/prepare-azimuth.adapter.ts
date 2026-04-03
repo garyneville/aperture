@@ -1,4 +1,4 @@
-import { prepareAzimuthSamples } from '../../core/prepare-azimuth.js';
+import { prepareAzimuthSamples } from '../../lib/prepare-azimuth.js';
 import { getPhotoWeatherLat, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 

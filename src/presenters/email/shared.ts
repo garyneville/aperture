@@ -4,7 +4,7 @@ import {
   renderEmailHeroCard,
   renderEmailSectionTitle,
 } from './email-layout.js';
-import { C, FONT, scoreState, type SummaryStat } from '../../renderers/shared/brief-primitives.js';
+import { C, FONT, scoreState, type SummaryStat } from '../shared/brief-primitives.js';
 
 export {
   BRAND_LOGO,
@@ -22,7 +22,7 @@ export {
   scoreState,
   weatherIconForHour,
   type SummaryStat,
-} from '../../renderers/shared/brief-primitives.js';
+} from '../shared/brief-primitives.js';
 
 export function htmlText(text: string): string {
   const safe = esc(text || '');

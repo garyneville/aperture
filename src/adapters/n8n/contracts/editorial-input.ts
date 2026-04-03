@@ -1,8 +1,8 @@
-import type { DebugGeminiDiagnostics } from '../../../core/debug-context.js';
+import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
 import type {
   BriefContext,
   LongRangeSpurCandidate,
-} from '../../../editorial/resolve-editorial.js';
+} from '../../../domain/editorial/resolution/resolve-editorial.js';
 
 export type GroqChoice = {
   message?: {

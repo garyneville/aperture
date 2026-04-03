@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { formatEmail, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './format-email.js';
-import { todayWindowSection } from './format-email/time-aware.js';
-import type { RunTimeContext } from './format-email/types.js';
+import { formatEmail, type FormatEmailInput, type SpurOfTheMomentSuggestion, type Window } from './index.js';
+import { todayWindowSection } from './time-aware.js';
+import type { RunTimeContext } from './types.js';
 
 describe('formatEmail hero summary', () => {
   it('renders a structured today summary with separated facts, score mix, and alternative', () => {

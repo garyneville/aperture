@@ -1,4 +1,4 @@
-import { scoreAllDays } from '../../core/score-hours.js';
+import { scoreAllDays } from '../../domain/scoring/score-all-days.js';
 import { getPhotoWeatherLat, getPhotoWeatherLon, getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 

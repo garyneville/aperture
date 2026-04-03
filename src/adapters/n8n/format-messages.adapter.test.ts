@@ -9,11 +9,11 @@ import {
   parseGroqResponse,
   resolveSpurSuggestion,
   shouldReplaceAiText,
-} from '../../editorial/resolve-editorial.js';
+} from '../../domain/editorial/resolution/resolve-editorial.js';
 import {
   run,
 } from './format-messages.adapter.js';
-import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../core/long-range-locations.js';
+import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../lib/long-range-locations.js';
 
 describe('format-messages adapter editorial fallback', () => {
   const ctx = {

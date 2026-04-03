@@ -1,4 +1,4 @@
-import { prepareAltLocations } from '../../core/prepare-alt-locations.js';
+import { prepareAltLocations } from '../../lib/prepare-alt-locations.js';
 import { getPhotoWeatherTimezone } from '../../config.js';
 import type { N8nRuntime } from './types.js';
 

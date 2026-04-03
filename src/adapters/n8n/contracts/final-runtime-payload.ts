@@ -1,4 +1,4 @@
-import type { DebugContext } from '../../../core/debug-context.js';
+import type { DebugContext } from '../../../lib/debug-context.js';
 import type { BriefJson } from '../../../types/brief.js';
 import type { EditorialBoundaryPayload } from './editorial-input.js';
 

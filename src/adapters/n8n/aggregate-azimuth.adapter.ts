@@ -1,4 +1,4 @@
-import { aggregateAzimuth } from '../../core/aggregate-azimuth.js';
+import { aggregateAzimuth } from '../../lib/aggregate-azimuth.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $, $input }: N8nRuntime) {

@@ -14,7 +14,7 @@ import {
   moonIconForPct,
   scoreState,
   weatherIconForHour,
-} from '../../renderers/shared/brief-primitives.js';
+} from '../shared/brief-primitives.js';
 import {
   bestDaySessionLabel,
   bestTimeLabel,
