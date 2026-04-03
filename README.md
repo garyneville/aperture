@@ -33,6 +33,30 @@ Aperture fetches weather forecast data from multiple providers (Open-Meteo, Open
 - `npm run typecheck`
 - `npm run build`
 
+## Development Setup
+
+**⚠️ Important: You must run `npm run build` before `npm run typecheck`**
+
+Some TypeScript files are auto-generated (compiled email templates and workflow JSON). These are **not committed** to git — they are built fresh in CI and locally on demand.
+
+### First time setup:
+```bash
+npm ci
+npm run build      # Generates required files
+npm run typecheck  # Now works
+npm test
+```
+
+### After pulling changes that might affect adapters or templates:
+```bash
+npm run build      # Rebuild if generated files are stale/missing
+npm test
+```
+
+### What gets generated?
+- `src/presenters/email/compiled-layout.generated.ts` — Compiled MJML email templates
+- `generated/workflow/photography-weather-brief.json` — Assembled n8n workflow (for deployment only)
+
 ## Where to Make Changes
 
 | If you want to... | Look in... |
