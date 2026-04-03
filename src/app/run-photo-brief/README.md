@@ -12,15 +12,21 @@ This folder contains the canonical orchestration spine for the photo brief appli
 ## Public Entry Points
 
 - [`use-case.ts`](./use-case.ts)
-  `runPhotoBrief(deps)` — Main entry point. Accepts injected dependencies for all stages, times execution, and returns the complete run artifact.
+  `runPhotoBrief(deps)` — Main entry point for the full pipeline. Accepts injected dependencies for all stages, times execution, and returns the complete run artifact.
+
+- [`finalize-brief.ts`](./finalize-brief.ts)
+  `finalizeBrief(input, config)` — Assembles the final brief from scored forecast data and AI provider responses. This is the use case that bridges domain logic (editorial resolution) with presentation (rendering outputs). Called by the n8n adapter and the CLI runner.
 
 - [`contracts.ts`](./contracts.ts)
-  Type definitions for the use case: `StandaloneRunnerDependencies`, `StandaloneBriefRun`, `ForecastBundle`, `EditorialRequest`, `EditorialDecision`, `RenderedOutputs`, and stage types.
+  Type definitions for the main use case: `StandaloneRunnerDependencies`, `StandaloneBriefRun`, `ForecastBundle`, `EditorialRequest`, `EditorialDecision`, `RenderedOutputs`, and stage types.
+
+- [`finalize-brief-contracts.ts`](./finalize-brief-contracts.ts)
+  Type definitions for the finalize-brief use case: `RawEditorialInput`, `FinalizeConfig`, `FinalizedBrief`.
 
 ## Main Files / Module Map
 
 - `use-case.ts`
-  The orchestration logic. Implements a 6-stage pipeline:
+  The main orchestration logic. Implements a 6-stage pipeline:
   1. **acquire** — Fetch forecast payloads from providers
   2. **score** — Score hourly and daily conditions
   3. **buildEditorialRequest** — Build the editorial prompt
@@ -28,14 +34,45 @@ This folder contains the canonical orchestration spine for the photo brief appli
   5. **render** — Render all presentation outputs
   6. **persist/deliver** — Optional persistence and delivery
 
+- `finalize-brief.ts`
+  The "finalize brief" use case. Orchestrates the final assembly of the brief:
+  1. **normalize** — Parse AI provider responses
+  2. **prepare** — Set up debug context
+  3. **resolve** — Resolve editorial with fallbacks
+  4. **hydrate** — Add debug trace information
+  5. **render** — Generate all output formats (email, Telegram, site, JSON)
+  
+  This use case is called by the n8n adapter and can be called directly for CLI/testing.
+
+- `finalize-brief-contracts.ts`
+  Type contracts for the finalize-brief use case.
+
+- `finalize-brief-cli.ts`
+  CLI runner that demonstrates running the finalize-brief use case without n8n. Loads a fixture file and runs the use case.
+
 - `contracts.ts`
-  Stable contracts for the use case. These are the types that external callers should depend on.
+  Stable contracts for the main use case.
 
 - `deliver-site.ts`
   Helper for site output delivery.
 
 - `use-case.test.ts`
-  Unit tests demonstrating how to inject test doubles for each stage.
+  Unit tests for the main use case.
+
+## Non-n8n Runtime (CLI)
+
+The `finalize-brief-cli.ts` script demonstrates that the core application logic can run independently of n8n:
+
+```bash
+# Run against a fixture file
+npx ts-node src/app/run-photo-brief/finalize-brief-cli.ts ./fixtures/sample-forecast.json
+```
+
+This proves the architecture goal: **n8n is a delivery mechanism, not the place where the workflow lives.** The core logic lives in `src/app/run-photo-brief/` and can be invoked from:
+- n8n (via adapter)
+- CLI (direct)
+- Future HTTP API (direct)
+- Test harness (direct)
 
 ## Data In / Data Out
 
