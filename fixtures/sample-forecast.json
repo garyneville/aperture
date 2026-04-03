@@ -45,7 +45,17 @@
     "sunriseStr": "06:15",
     "sunsetStr": "19:45",
     "moonPct": 25,
-    "metarNote": ""
+    "metarNote": "",
+    "todayCarWash": {
+      "rating": "Good",
+      "label": "Good conditions",
+      "score": 75,
+      "start": "09:00",
+      "end": "18:00",
+      "wind": 12,
+      "pp": 10,
+      "tmp": 15
+    }
   },
   "groqChoices": [
     {
