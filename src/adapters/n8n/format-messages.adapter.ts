@@ -20,6 +20,7 @@ import {
   getPhotoWeatherTimezone,
 } from '../../config.js';
 import { finalizeBrief, extractGeminiDiagnostics } from '../../app/run-photo-brief/finalize-brief.js';
+import type { DebugGeminiDiagnostics } from '../../contracts/index.js';
 import type { FinalRuntimePayload } from './contracts/final-runtime-payload.js';
 import { firstInputJson } from './input.js';
 import type { N8nRuntime } from './types.js';
@@ -60,7 +61,7 @@ export function run({ $input }: N8nRuntime) {
   };
 
   // Extract Gemini diagnostics from loose fields or use provided structured diagnostics
-  const geminiDiagnostics = input.geminiDiagnostics as import('../../lib/debug-context.js').DebugGeminiDiagnostics | undefined
+  const geminiDiagnostics = input.geminiDiagnostics as DebugGeminiDiagnostics | undefined
     ?? extractGeminiDiagnostics({
       geminiStatusCode: input.geminiStatusCode,
       geminiFinishReason: input.geminiFinishReason,

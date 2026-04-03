@@ -13,12 +13,29 @@ import type { EditorialDecision } from './contracts.js';
 
 // Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
 import type {
-  BriefContext,
   BriefJson,
   DebugContext,
   DebugGeminiDiagnostics,
+  ScoredForecastContext,
   LongRangeSpurCandidate,
 } from '../../contracts/index.js';
+
+/**
+ * Final runtime context consumed by finalizeBrief.
+ *
+ * This use case runs after scoring and before rendering, so it needs the
+ * scored-forecast payload that presenters expect, plus a few runtime/debug
+ * flags that are not part of the presenter contract.
+ */
+export type FinalizeRuntimeContext = Omit<ScoredForecastContext, 'debugContext'> & {
+  debugContext?: DebugContext;
+  homeLatitude?: number | null;
+  homeLocationName?: string | null;
+  debugMode?: boolean;
+  debugModeSource?: string;
+  debugEmailTo?: string;
+  triggerSource?: string | null;
+};
 
 /**
  * Raw editorial inputs from AI providers.
@@ -26,8 +43,8 @@ import type {
  * into the application layer.
  */
 export type RawEditorialInput = {
-  /** Scored forecast context with windows, alternatives, etc. */
-  context: BriefContext;
+  /** Scored runtime context used for both editorial resolution and rendering. */
+  context: FinalizeRuntimeContext;
 
   /** Groq API response choices */
   groqChoices?: Array<{ message?: { content?: string } }>;
@@ -55,8 +72,8 @@ export type RawEditorialInput = {
  * Normalized editorial inputs after parsing and validation.
  */
 export type NormalizedEditorialInput = {
-  /** The brief context (minus diagnostic fields) */
-  context: BriefContext;
+  /** The final runtime context (minus diagnostic fields) */
+  context: FinalizeRuntimeContext;
 
   /** Raw Groq response content */
   groqRawContent: string;

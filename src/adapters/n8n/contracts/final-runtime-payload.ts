@@ -1,6 +1,5 @@
-import type { DebugContext } from '../../../lib/debug-context.js';
-import type { BriefJson } from '../../../contracts/index.js';
-import type { BriefContext } from '../../../domain/editorial/resolution/resolve-editorial.js';
+import type { BriefJson, DebugContext } from '../../../contracts/index.js';
+import type { FinalizeRuntimeContext } from '../../../app/run-photo-brief/finalize-brief-contracts.js';
 
 export type GroqChoice = {
   message?: {
@@ -28,34 +27,11 @@ export type GeminiDiagnosticsFields = {
   geminiThoughtsTokenCount?: unknown;
 };
 
-export type EditorialBoundaryPayload = BriefContext & GeminiDiagnosticsFields & {
+export type EditorialBoundaryPayload = FinalizeRuntimeContext & GeminiDiagnosticsFields & {
   choices?: GroqChoice[];
 };
 
-export type LongRangeCandidateLike = {
-  name?: string;
-  region?: string;
-  tags?: string[];
-  bestScore?: number;
-  dayScore?: number;
-  astroScore?: number;
-  driveMins?: number;
-  darkSky?: boolean;
-  deltaVsHome?: number;
-  shown?: boolean;
-  discardedReason?: string;
-};
-
-export type FinalRuntimePayload = EditorialBoundaryPayload & Record<string, unknown> & {
-  debugContext?: DebugContext;
-  debugMode?: boolean;
-  debugEmailTo?: string;
-  debugModeSource?: string;
-  triggerSource?: string | null;
-  today?: string;
-  longRangeCandidates?: LongRangeCandidateLike[];
-  longRangeDebugCandidates?: LongRangeCandidateLike[];
-};
+export type FinalRuntimePayload = EditorialBoundaryPayload & Record<string, unknown>;
 
 export type RenderableRuntimeContext = FinalRuntimePayload & {
   debugContext: DebugContext;

@@ -25,6 +25,7 @@ import type { EditorialDecision } from './contracts.js';
 import type {
   FinalizeConfig,
   FinalizedBrief,
+  FinalizeRuntimeContext,
   NormalizedEditorialInput,
   PreparedDebugContext,
   RawEditorialInput,
@@ -32,7 +33,6 @@ import type {
 
 // Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
 import type {
-  BriefContext,
   DebugContext,
   DebugGeminiDiagnostics,
   DebugPayloadSnapshot,
@@ -43,6 +43,7 @@ import type {
 export type {
   FinalizeConfig,
   FinalizedBrief,
+  FinalizeRuntimeContext,
   NormalizedEditorialInput,
   RawEditorialInput,
 } from './finalize-brief-contracts.js';
@@ -347,7 +348,7 @@ function hydrateDebugContext(
  * Render all output formats from the finalized brief data.
  */
 function renderAllOutputs(
-  context: BriefContext,
+  context: FinalizeRuntimeContext,
   editorial: EditorialDecision,
   debugContext: DebugContext,
   debugMode: boolean,
@@ -375,7 +376,7 @@ function renderAllOutputs(
 
   // Render debug email if enabled
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
-  const today = (context as unknown as { today?: string }).today;
+  const today = context.today;
   const debugEmailSubject = debugContext.metadata?.location
     ? `Photo Brief Debug - ${debugContext.metadata.location} - ${today || 'today'}`
     : `Photo Brief Debug - ${today || 'today'}`;

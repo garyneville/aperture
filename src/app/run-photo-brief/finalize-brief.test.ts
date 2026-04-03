@@ -12,17 +12,13 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import { finalizeBrief, extractGeminiDiagnostics } from './finalize-brief.js';
-import type { RawEditorialInput, FinalizeConfig } from './finalize-brief-contracts.js';
-import type { BriefContext } from '../../contracts/index.js';
+import type { FinalizeConfig, FinalizeRuntimeContext, RawEditorialInput } from './finalize-brief-contracts.js';
 
-// Minimal valid BriefContext for testing
-function createMinimalBriefContext(): BriefContext {
+// Minimal valid FinalizeRuntimeContext for testing
+function createMinimalBriefContext(): FinalizeRuntimeContext {
   return {
-    location: 'Test Location',
-    latitude: 53.8,
-    longitude: -1.5,
-    timezone: 'Europe/London',
     today: '2026-04-03',
+    dontBother: false,
     windows: [],
     dailySummary: [
       {
@@ -38,6 +34,16 @@ function createMinimalBriefContext(): BriefContext {
         bestPhotoHour: '14:00',
         bestAstroHour: '22:00',
         bestTags: 'clear',
+        carWash: {
+          rating: 'good',
+          label: 'Good conditions',
+          score: 70,
+          start: '14:00',
+          end: '16:00',
+          wind: 10,
+          pp: 5,
+          tmp: 15,
+        },
       },
     ],
     todayCarWash: {
@@ -52,6 +58,17 @@ function createMinimalBriefContext(): BriefContext {
     },
     altLocations: [],
     closeContenders: [],
+    noAltsMsg: null,
+    sunriseStr: '06:18',
+    sunsetStr: '18:11',
+    moonPct: 15,
+    metarNote: '',
+    todayBestScore: 50,
+    shSunsetQ: null,
+    shSunriseQ: null,
+    shSunsetText: null,
+    sunDir: null,
+    crepPeak: 0,
     longRangeDebugCandidates: [],
     debugContext: {
       hourlyScoring: [],
