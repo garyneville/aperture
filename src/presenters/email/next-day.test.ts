@@ -11,78 +11,14 @@ import {
 } from './index.js';
 import type { DebugContext } from '../../lib/debug-context.js';
 
-describe('outdoorComfortScore', () => {
-  it('returns 100 for ideal conditions', () => {
-    expect(outdoorComfortScore({ tmp: 15, pp: 0, wind: 5, visK: 25, pr: 0 })).toBe(100);
-  });
-
-  it('deducts heavily for heavy rain probability', () => {
-    const score = outdoorComfortScore({ tmp: 15, pp: 80, wind: 5, visK: 25, pr: 0 });
-    expect(score).toBeLessThanOrEqual(50);
-  });
-
-  it('deducts for high wind', () => {
-    const calm = outdoorComfortScore({ tmp: 15, pp: 0, wind: 5, visK: 25, pr: 0 });
-    const windy = outdoorComfortScore({ tmp: 15, pp: 0, wind: 50, visK: 25, pr: 0 });
-    expect(windy).toBeLessThan(calm);
-  });
-
-  it('deducts for freezing temperature', () => {
-    const mild = outdoorComfortScore({ tmp: 15, pp: 0, wind: 5, visK: 25, pr: 0 });
-    const freezing = outdoorComfortScore({ tmp: -3, pp: 0, wind: 5, visK: 25, pr: 0 });
-    expect(freezing).toBeLessThan(mild);
-  });
-
-  it('deducts for poor visibility', () => {
-    const clear = outdoorComfortScore({ tmp: 15, pp: 0, wind: 5, visK: 20, pr: 0 });
-    const foggy = outdoorComfortScore({ tmp: 15, pp: 0, wind: 5, visK: 0.3, pr: 0 });
-    expect(foggy).toBeLessThan(clear);
-  });
-
-  it('deducts for actual precipitation', () => {
-    const dry = outdoorComfortScore({ tmp: 15, pp: 5, wind: 5, visK: 20, pr: 0 });
-    const raining = outdoorComfortScore({ tmp: 15, pp: 5, wind: 5, visK: 20, pr: 4 });
-    expect(raining).toBeLessThan(dry);
-  });
-
-  it('clamps at 0 for truly awful conditions', () => {
-    const score = outdoorComfortScore({ tmp: -5, pp: 90, wind: 60, visK: 0.2, pr: 5 });
-    expect(score).toBe(0);
-  });
-});
-
-describe('outdoorComfortLabel', () => {
-  it('returns "Best for a run" for high score with calm, mild, dry conditions', () => {
-    const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 });
-    expect(label.text).toBe('Best for a run');
-    expect(label.highlight).toBe(true);
-  });
-
-  it('returns "Best for a walk" for high score with moderate wind or extreme temperature', () => {
-    const windyLabel = outdoorComfortLabel(80, { wind: 28, tmp: 15, pp: 5 });
-    expect(windyLabel.text).toBe('Best for a walk');
-    const hotLabel = outdoorComfortLabel(80, { wind: 10, tmp: 28, pp: 5 });
-    expect(hotLabel.text).toBe('Best for a walk');
-  });
-
-  it('returns "Pleasant" for moderate-good score', () => {
-    const label = outdoorComfortLabel(60, { wind: 15, tmp: 12, pp: 15 });
-    expect(label.text).toBe('Pleasant');
-    expect(label.highlight).toBe(true);
-  });
-
-  it('returns "Acceptable" for marginal score', () => {
-    const label = outdoorComfortLabel(40, { wind: 20, tmp: 8, pp: 25 });
-    expect(label.text).toBe('Acceptable');
-    expect(label.highlight).toBe(false);
-  });
-
-  it('returns "Poor conditions" for low score', () => {
-    const label = outdoorComfortLabel(20, { wind: 40, tmp: 2, pp: 70 });
-    expect(label.text).toBe('Poor conditions');
-    expect(label.highlight).toBe(false);
-  });
-});
+/**
+ * This file contains INTEGRATION tests for the next-day facade.
+ *
+ * For focused unit tests of the extracted modules, see:
+ * - outdoor-comfort.test.ts - Tests for scoring, labels, and reasons
+ * - outdoor-outlook-model.test.ts - Tests for window selection and model building
+ * - render-outdoor-outlook.test.ts - Tests for HTML rendering
+ */
 
 function makeTomorrowDay(hours: Partial<NextDayHour>[]): DaySummary {
   const defaultHour: NextDayHour = {
