@@ -1,6 +1,6 @@
-import { esc } from '../../core/utils.js';
-import { renderSiteDocument } from '../../core/site-layout.js';
-import type { AuroraSignal } from '../../core/aurora-providers.js';
+import { esc } from '../../lib/utils.js';
+import { renderSiteDocument } from './site-layout.js';
+import type { AuroraSignal } from '../../lib/aurora-providers.js';
 import {
   BRAND_LOGO,
   C,
@@ -44,8 +44,8 @@ import { buildKitTips } from '../email/kit-advisory.js';
 import {
   buildOutdoorOutlookModel,
 } from '../email/next-day.js';
-import { renderAiBriefingText } from '../../core/ai-briefing.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../core/aurora-visibility.js';
+import { renderAiBriefingText } from '../../lib/ai-briefing.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../lib/aurora-visibility.js';
 import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
 import type {
   AltLocation,

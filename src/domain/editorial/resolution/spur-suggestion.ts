@@ -1,4 +1,4 @@
-import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../../core/long-range-locations.js';
+import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../../lib/long-range-locations.js';
 import type { SpurSuggestion } from '../../../app/run-photo-brief/contracts.js';
 import type {
   LongRangeSpurCandidate,

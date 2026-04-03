@@ -1,4 +1,4 @@
-import type { DebugContext, DebugLongRangeCandidate } from '../core/debug-context.js';
+import type { DebugContext, DebugLongRangeCandidate } from '../lib/debug-context.js';
 import type { AltLocation, BriefRenderInput, LongRangeCard } from './brief.js';
 import type { SessionRecommendationSummary } from './session-score.js';
 

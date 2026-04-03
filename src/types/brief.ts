@@ -1,5 +1,5 @@
-import type { DebugContext } from '../core/debug-context.js';
-import type { AuroraSignal } from '../core/aurora-providers.js';
+import type { DebugContext } from '../lib/debug-context.js';
+import type { AuroraSignal } from '../lib/aurora-providers.js';
 import type { SessionRecommendationSummary } from './session-score.js';
 
 export const BRIEF_JSON_SCHEMA_VERSION = 'aperture-brief/v1' as const;

@@ -1,6 +1,6 @@
-import { esc } from '../../core/utils.js';
+import { esc } from '../../lib/utils.js';
 import { renderMainEmailDocument } from './email-layout.js';
-import type { AuroraSignal } from '../../core/aurora-providers.js';
+import type { AuroraSignal } from '../../lib/aurora-providers.js';
 import {
   BRAND_LOGO,
   C,
@@ -41,7 +41,7 @@ import {
   todayWindowSection,
   windowRange,
 } from './time-aware.js';
-import { auroraVisibleKpThresholdForLat } from '../../core/aurora-visibility.js';
+import { auroraVisibleKpThresholdForLat } from '../../lib/aurora-visibility.js';
 import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
 import {
   buildKitTips,

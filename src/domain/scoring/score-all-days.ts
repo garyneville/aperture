@@ -1,8 +1,8 @@
-import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment, moonState } from '../../core/astro.js';
-import { HOME_SITE_DARKNESS, astroDarknessBonus } from '../../core/site-darkness.js';
-import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from '../../core/utils.js';
-import { emptyDebugContext, type DebugContext } from '../../core/debug-context.js';
-import { serializeDebugPayload, upsertDebugPayloadSnapshot } from '../../core/debug-payload.js';
+import { findDarkSkyStart, getMoonMetrics, getSolarAltitude, moonScoreAdjustment, moonState } from '../../lib/astro.js';
+import { HOME_SITE_DARKNESS, astroDarknessBonus } from '../../lib/site-darkness.js';
+import { clamp, avg, solarElevation, aodClarity, astroAodPenalty } from '../../lib/utils.js';
+import { emptyDebugContext, type DebugContext } from '../../lib/debug-context.js';
+import { serializeDebugPayload, upsertDebugPayloadSnapshot } from '../../lib/debug-payload.js';
 import { evaluateBuiltInSessions, summarizeSessionRecommendations } from './sessions/index.js';
 import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';

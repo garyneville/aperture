@@ -1,5 +1,5 @@
-import { bar, pad, rpad } from '../../core/utils.js';
-import { auroraVisibleKpThresholdForLat } from '../../core/aurora-visibility.js';
+import { bar, pad, rpad } from '../../lib/utils.js';
+import { auroraVisibleKpThresholdForLat } from '../../lib/aurora-visibility.js';
 import type {
   AltLocation,
   BriefRenderInput,

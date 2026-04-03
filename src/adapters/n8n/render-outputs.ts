@@ -1,9 +1,9 @@
-import { formatSite } from '../../core/format-site.js';
-import { formatTelegram } from '../../core/format-telegram.js';
-import { formatDebugEmail, formatEmail } from '../../core/format-email.js';
-import type { EditorialDecision } from '../../core/standalone/contracts.js';
+import { formatSite } from '../../presenters/site/format-site.js';
+import { formatTelegram } from '../../presenters/telegram/format-telegram.js';
+import { formatDebugEmail, formatEmail } from '../../presenters/email/index.js';
+import type { EditorialDecision } from '../../app/run-photo-brief/contracts.js';
 import type { ScoredForecastContext } from '../../types/scored-forecast.js';
-import { renderBriefAsJson } from '../../renderers/brief-json.js';
+import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
 import type {
   FormatMessagesOutput,
   RenderableRuntimeContext,

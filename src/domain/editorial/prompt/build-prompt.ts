@@ -1,11 +1,11 @@
-import type { Window, DailySummary, CarWash } from '../../../core/best-windows.js';
-import { explainAstroScoreGap } from '../../../core/astro-score-explanation.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../core/aurora-visibility.js';
-import { LONG_RANGE_LOCATIONS } from '../../../core/long-range-locations.js';
-import { emptyDebugContext, type DebugContext } from '../../../core/debug-context.js';
-import { HOME_SITE_DARKNESS } from '../../../core/site-darkness.js';
-import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../../core/score-long-range.js';
-import type { AuroraSignal } from '../../../core/aurora-providers.js';
+import type { Window, DailySummary, CarWash } from '../../../lib/best-windows.js';
+import { explainAstroScoreGap } from '../../../lib/astro-score-explanation.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../lib/aurora-visibility.js';
+import { LONG_RANGE_LOCATIONS } from '../../../lib/long-range-locations.js';
+import { emptyDebugContext, type DebugContext } from '../../../lib/debug-context.js';
+import { HOME_SITE_DARKNESS } from '../../../lib/site-darkness.js';
+import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../../lib/score-long-range.js';
+import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import {
   DEFAULT_BRIEF_WORKFLOW_VERSION,
   DEFAULT_HOME_LOCATION,

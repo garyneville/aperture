@@ -4,7 +4,7 @@ import type {
   DebugGeminiDiagnostics,
   WeekStandoutDecision,
   WeekStandoutParseStatus,
-} from '../../../core/debug-context.js';
+} from '../../../lib/debug-context.js';
 import type {
   EditorialDecision,
   EditorialProvider,

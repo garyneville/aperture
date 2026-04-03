@@ -1,4 +1,4 @@
-import { clamp } from '../../../core/utils.js';
+import { clamp } from '../../../lib/utils.js';
 import type { ScoringCapability } from '../../../types/capabilities.js';
 import type {
   DerivedHourFeatures,

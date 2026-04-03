@@ -1,4 +1,4 @@
-import { splitAiSentences } from '../../../core/ai-briefing.js';
+import { splitAiSentences } from '../../../lib/ai-briefing.js';
 import type {
   ParsedEditorialResponse,
   SpurRaw,
