@@ -1,5 +1,5 @@
 import { esc } from '../../../lib/utils.js';
-import { bestDaySessionLabel } from '../../email/time-aware.js';
+import { bestDaySessionLabel } from '../../shared/window-helpers.js';
 import type { AltLocation } from '../../../types/brief.js';
 import { sCard, sChip, sScorePill } from './shared.js';
 import { scoreState, C } from '../../shared/brief-primitives.js';

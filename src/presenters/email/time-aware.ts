@@ -49,10 +49,17 @@ export {
   displayBestTags,
   displaySessionName,
   displayTag,
+  forecastBestLine,
   isAstroWindow,
   localSummaryLines,
+  moonAstroContext,
   moonDescriptor,
   peakHourForWindow,
+  sessionConfidenceLabel,
+  sessionRecommendationBody,
+  sessionRecommendationHeadline,
+  sessionRunnerUpLine,
+  sessionVolatilityLabel,
   timeAwareLocalSummary,
 } from '../shared/window-helpers.js';
 
@@ -78,63 +85,6 @@ import {
   isAstroWindow,
   peakHourForWindow,
 } from '../shared/window-helpers.js';
-
-export function moonAstroContext(moonPct: number): string {
-  const icon = moonIconForPct(moonPct);
-  if (moonPct <= 15) return `${icon} Dark skies — excellent for astrophotography`;
-  if (moonPct <= 40) return `${icon} Low moon glow — good for astrophotography`;
-  if (moonPct <= 70) return `${icon} Moderate moon — astrophotography compromised`;
-  if (moonPct <= 90) return `${icon} Bright moon — poor for astrophotography`;
-  return `${icon} Full moon — avoid astrophotography`;
-}
-
-export function sessionConfidenceLabel(confidence: SessionConfidence): string {
-  switch (confidence) {
-    case 'high':
-      return 'High confidence';
-    case 'medium':
-      return 'Fair confidence';
-    case 'low':
-      return 'Low confidence';
-  }
-}
-
-export function sessionVolatilityLabel(primary: SessionRecommendation): string | null {
-  if (primary.volatility === null || primary.volatility === undefined) return null;
-  if (primary.session === 'storm') {
-    return primary.volatility >= 20
-      ? `Volatile opportunity · spread ${primary.volatility} pts`
-      : `Changeable setup · spread ${primary.volatility} pts`;
-  }
-  return `Spread ${primary.volatility} pts`;
-}
-
-export function sessionRecommendationHeadline(primary: SessionRecommendation): string {
-  return `${displaySessionName(primary.session)} at ${primary.hourLabel}`;
-}
-
-export function sessionRecommendationBody(primary: SessionRecommendation): string {
-  const reasons = primary.reasons.slice(0, 2).join(' ');
-  const warning = primary.warnings[0] || '';
-  return [reasons, warning].filter(Boolean).join(' ')
-    || `${displaySessionName(primary.session)} is the strongest specialist setup in the current forecast.`;
-}
-
-export function sessionRunnerUpLine(summary: SessionRecommendationSummary | undefined): string | null {
-  const primary = summary?.primary;
-  const runnerUp = summary?.runnerUps?.[0];
-  if (!primary || !runnerUp) return null;
-  if (primary.confidence !== 'low' && (primary.volatility ?? 0) < 20) return null;
-  return `Runner-up: ${displaySessionName(runnerUp.session)} at ${runnerUp.hourLabel} (${runnerUp.score}/100).`;
-}
-
-export function forecastBestLine(day: DaySummary): string {
-  const isAstroLed = (day.astroScore ?? 0) > (day.photoScore ?? 0);
-  if (isAstroLed) {
-    return `Best local astro around ${day.bestAstroHour || 'nightfall'}`;
-  }
-  return `Best at ${day.bestPhotoHour || '-'} - ${displayBestTags(day.bestTags)}`;
-}
 
 function windowCard(
   window: Window,

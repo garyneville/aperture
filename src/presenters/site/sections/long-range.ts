@@ -4,7 +4,7 @@ import type { DarkSkyAlertCard, LongRangeCard, RunTimeContext } from '../../../t
 import { C } from '../../shared/brief-primitives.js';
 import { sCard, sChip, sScorePill, sPill } from './shared.js';
 import { scoreState } from '../../shared/brief-primitives.js';
-import { displayTag } from '../../email/time-aware.js';
+import { displayTag } from '../../shared/window-helpers.js';
 
 function departByTime(targetTime: string | null | undefined, driveMins: number): string | null {
   if (!targetTime || !/^\d{2}:\d{2}$/.test(targetTime)) return null;

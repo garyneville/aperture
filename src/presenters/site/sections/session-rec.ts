@@ -5,14 +5,14 @@ import {
   sessionRecommendationHeadline,
   sessionRunnerUpLine,
   sessionVolatilityLabel,
-} from '../../email/time-aware.js';
-import type { FormatEmailInput } from '../../email/types.js';
+} from '../../shared/window-helpers.js';
+import type { BriefRenderInput } from '../../../types/brief.js';
 import { C } from '../../shared/brief-primitives.js';
 import { sCard, sChip, sScorePill } from './shared.js';
 import { scoreState } from '../../shared/brief-primitives.js';
 
 export interface SessionRecInput {
-  sessionRecommendation: FormatEmailInput['sessionRecommendation'];
+  sessionRecommendation: BriefRenderInput['sessionRecommendation'];
 }
 
 export function sSessionRecommendationCard(input: SessionRecInput): string {

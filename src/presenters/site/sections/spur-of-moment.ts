@@ -1,5 +1,5 @@
 import { esc } from '../../../lib/utils.js';
-import { displayTag } from '../../email/time-aware.js';
+import { displayTag } from '../../shared/window-helpers.js';
 import type { SpurOfTheMomentSuggestion } from '../../../types/brief.js';
 import { sCard, sChip } from './shared.js';
 import { C } from '../../shared/brief-primitives.js';
