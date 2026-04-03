@@ -5,7 +5,7 @@ import {
   type OutdoorOutlookModel,
   type OutdoorOutlookOptions,
 } from './outdoor-outlook-model.js';
-import type { DaySummary, NextDayHour, Window } from './types.js';
+import type { DaySummary, NextDayHour, Window } from '../../types/brief.js';
 
 function makeDaySummary(hours: Partial<NextDayHour>[]): DaySummary {
   const defaultHour: NextDayHour = {

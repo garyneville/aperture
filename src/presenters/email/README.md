@@ -27,10 +27,10 @@ The public entrypoint is [`index.ts`](./index.ts).
   Facade module that re-exports from the split outdoor outlook modules. Also contains photo forecast cards and daylight utility card (separate concerns that may move in future refactoring).
 
 - [`outdoor-comfort.ts`](./outdoor-comfort.ts)
-  Pure functions for outdoor comfort scoring (0-100), labels, and reason codes. Input: weather metrics. Output: comfort score, label with styling, and reason strings. This is the "tuning seam" for outdoor comfort algorithm adjustments.
+  **Re-export compatibility layer.** The implementation has moved to [`../shared/outdoor-comfort.ts`](../shared/outdoor-comfort.ts). This file re-exports for backwards compatibility. Pure functions for outdoor comfort scoring (0-100), labels, and reason codes.
 
 - [`outdoor-outlook-model.ts`](./outdoor-outlook-model.ts)
-  Data model building for outdoor outlook displays. Handles hour filtering, contiguous window selection, best window detection, and summary generation. Pure algorithmic logic with no HTML rendering.
+  **Re-export compatibility layer.** The implementation has moved to [`../shared/outdoor-outlook-model.ts`](../shared/outdoor-outlook-model.ts). This file re-exports for backwards compatibility. Data model building for outdoor outlook displays.
 
 - [`render-outdoor-outlook.ts`](./render-outdoor-outlook.ts)
   HTML rendering for outdoor outlook sections. Pure presentation logic - no scoring or algorithmic decisions. Renders tables, rows, and debug context updates.
@@ -55,8 +55,8 @@ The public entrypoint is [`index.ts`](./index.ts).
 - [`debug-email.test.ts`](./debug-email.test.ts) — debug email coverage.
 - [`kit-advisory.test.ts`](./kit-advisory.test.ts) — kit advisory coverage and debug trace population checks.
 - [`next-day.test.ts`](./next-day.test.ts) — integration tests for the outdoor outlook facade (re-exports).
-- [`outdoor-comfort.test.ts`](./outdoor-comfort.test.ts) — focused unit tests for comfort scoring, labels, and reason codes.
-- [`outdoor-outlook-model.test.ts`](./outdoor-outlook-model.test.ts) — focused unit tests for window selection, model building, and summary generation.
+- [`outdoor-comfort.test.ts`](../shared/outdoor-comfort.test.ts) — focused unit tests for comfort scoring, labels, and reason codes (in shared/).
+- [`outdoor-outlook-model.test.ts`](../shared/outdoor-outlook-model.test.ts) — focused unit tests for window selection, model building, and summary generation (in shared/).
 - [`render-outdoor-outlook.test.ts`](./render-outdoor-outlook.test.ts) — focused unit tests for HTML rendering of outdoor outlook tables.
 
 ## Working rule
