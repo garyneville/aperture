@@ -17,8 +17,6 @@ export interface AltLocation {
   elevationM: number;
   /** True when elevationM >= UPLAND_ELEVATION_THRESHOLD_M. */
   isUpland: boolean;
-  /** MWIS area key for Phase 2 advisory text integration (null = not covered). */
-  mwisArea: 'dales_peak' | 'lakes' | 'snowdonia' | null;
 }
 
 export interface AltLocationWithUrl extends AltLocation {
@@ -37,21 +35,20 @@ function defineAltLocation(
     types: raw.types,
     elevationM: raw.elevationM,
     isUpland: raw.elevationM >= UPLAND_ELEVATION_THRESHOLD_M,
-    mwisArea: raw.mwisArea,
     siteDarkness,
     darkSky: isDarkSkySite(siteDarkness),
   };
 }
 
 export const ALT_LOCATIONS: AltLocation[] = [
-  defineAltLocation({ name: 'Bolton Abbey',         lat: 53.984, lon: -1.878, driveMins: 35, types: ['mist', 'atmospheric'], bortle: 5, elevationM: 130, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Brimham Rocks',        lat: 54.085, lon: -1.681, driveMins: 40, types: ['landscape', 'mist'],   bortle: 4, elevationM: 320, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Ribblehead Viaduct',   lat: 54.201, lon: -2.368, driveMins: 55, types: ['landscape', 'drama'],  bortle: 4, elevationM: 355, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Malham Cove',          lat: 54.069, lon: -2.158, driveMins: 55, types: ['landscape', 'astro'],  bortle: 3, elevationM: 386, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Mam Tor',              lat: 53.352, lon: -1.804, driveMins: 60, types: ['landscape', 'mist'],   bortle: 5, elevationM: 517, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Stanage Edge',         lat: 53.367, lon: -1.628, driveMins: 65, types: ['landscape'],           bortle: 5, elevationM: 457, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Ladybower Reservoir',  lat: 53.394, lon: -1.712, driveMins: 65, types: ['reflections', 'clarity'], bortle: 5, elevationM: 280, mwisArea: 'dales_peak' }),
-  defineAltLocation({ name: 'Sutton Bank',          lat: 54.241, lon: -1.218, driveMins: 75, types: ['astro', 'landscape'],  bortle: 3, elevationM: 299, mwisArea: null }),
+  defineAltLocation({ name: 'Bolton Abbey',         lat: 53.984, lon: -1.878, driveMins: 35, types: ['mist', 'atmospheric'], bortle: 5, elevationM: 130 }),
+  defineAltLocation({ name: 'Brimham Rocks',        lat: 54.085, lon: -1.681, driveMins: 40, types: ['landscape', 'mist'],   bortle: 4, elevationM: 320 }),
+  defineAltLocation({ name: 'Ribblehead Viaduct',   lat: 54.201, lon: -2.368, driveMins: 55, types: ['landscape', 'drama'],  bortle: 4, elevationM: 355 }),
+  defineAltLocation({ name: 'Malham Cove',          lat: 54.069, lon: -2.158, driveMins: 55, types: ['landscape', 'astro'],  bortle: 3, elevationM: 386 }),
+  defineAltLocation({ name: 'Mam Tor',              lat: 53.352, lon: -1.804, driveMins: 60, types: ['landscape', 'mist'],   bortle: 5, elevationM: 517 }),
+  defineAltLocation({ name: 'Stanage Edge',         lat: 53.367, lon: -1.628, driveMins: 65, types: ['landscape'],           bortle: 5, elevationM: 457 }),
+  defineAltLocation({ name: 'Ladybower Reservoir',  lat: 53.394, lon: -1.712, driveMins: 65, types: ['reflections', 'clarity'], bortle: 5, elevationM: 280 }),
+  defineAltLocation({ name: 'Sutton Bank',          lat: 54.241, lon: -1.218, driveMins: 75, types: ['astro', 'landscape'],  bortle: 3, elevationM: 299 }),
 ];
 
 const HOURLY_FIELDS = [
