@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { runPhotoBrief } from './run-photo-brief.js';
-import { renderBriefAsJson } from '../../renderers/brief-json.js';
+import { runPhotoBrief } from './use-case.js';
+import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
 import { BRIEF_JSON_SCHEMA_VERSION } from '../../types/brief.js';
 import type {
   EditorialDecision,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveHourFeatures, type DerivedHourFeatureInput } from './features/derive-hour-features.js';
+import { deriveHourFeatures, type DerivedHourFeatureInput } from '../features/derive-hour-features.js';
 import {
   evaluateBuiltInSessions,
   evaluateSessionFeatures,
@@ -7,7 +7,7 @@ import {
   selectBestBuiltInSession,
   selectBestSessionAcrossHours,
   summarizeSessionRecommendations,
-} from './session-scoring.js';
+} from './index.js';
 
 function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHourFeatureInput {
   return {

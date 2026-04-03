@@ -2,7 +2,7 @@
 
 This folder holds the high-churn parts of the photo brief email formatter.
 
-The public entrypoint is still [`../format-email.ts`](../format-email.ts). That file remains the compatibility shim and orchestrator used by the n8n adapter and existing tests. It imports the modules below, assembles the full email, and re-exports the public helper functions and types.
+The public entrypoints are [`index.ts`](./index.ts) and the compatibility shim [`../../core/format-email.ts`](../../core/format-email.ts). The shim remains in place for adapters and tests that still import the legacy path.
 
 ## Module map
 
@@ -29,21 +29,24 @@ The public entrypoint is still [`../format-email.ts`](../format-email.ts). That 
 - [`../../types/brief.ts`](../../types/brief.ts)
   Canonical shared render contract: windows, day summaries, alternatives, and the renderer input payload used across email/site/Telegram.
 
-- [`../format-email.ts`](../format-email.ts)
-  Public API and top-level composition. Keep this stable unless the external import path is intentionally changing.
+- [`index.ts`](./index.ts)
+  Public API and top-level composition for the presenter slice.
 
-- [`../format-email.test.ts`](../format-email.test.ts)
+- [`../../core/format-email.ts`](../../core/format-email.ts)
+  Compatibility re-export for existing callers and tests.
+
+- [`../../core/format-email.test.ts`](../../core/format-email.test.ts)
   Integration-heavy formatter tests: hero, window summary, alternatives, long-range section, and spur-of-the-moment behavior.
 
-- [`../format-email.debug-email.test.ts`](../format-email.debug-email.test.ts)
+- [`../../core/format-email.debug-email.test.ts`](../../core/format-email.debug-email.test.ts)
   Debug email coverage.
 
-- [`../format-email.kit-advisory.test.ts`](../format-email.kit-advisory.test.ts)
+- [`../../core/format-email.kit-advisory.test.ts`](../../core/format-email.kit-advisory.test.ts)
   Kit advisory coverage and debug trace population checks.
 
-- [`../format-email.next-day.test.ts`](../format-email.next-day.test.ts)
+- [`../../core/format-email.next-day.test.ts`](../../core/format-email.next-day.test.ts)
   Outdoor-comfort scoring and hourly outlook coverage.
 
 ## Working rule
 
-If a change affects a specific vertical slice, prefer editing the slice module and its matching test file first. Only touch [`../format-email.ts`](../format-email.ts) when the public assembly order, export surface, or cross-section composition actually changes.
+If a change affects a specific vertical slice, prefer editing the slice module and its matching test file first. Only touch [`index.ts`](./index.ts) or [`../../core/format-email.ts`](../../core/format-email.ts) when the public assembly order or export surface actually changes.

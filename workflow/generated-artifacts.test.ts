@@ -18,13 +18,13 @@ describe('generated artifacts', () => {
     const committed = readFileSync(EMAIL_LAYOUT_OUTPUT_PATH, 'utf-8');
     const generated = buildGeneratedModule();
 
-    expectArtifactToBeCurrent('src/core/email-layout.generated.ts', committed, generated);
+    expectArtifactToBeCurrent('src/presenters/email/compiled-layout.generated.ts', committed, generated);
   });
 
   it('keeps the committed workflow JSON up to date', async () => {
     const committed = readFileSync(WORKFLOW_OUTPUT_PATH, 'utf-8');
     const generated = await assembleWorkflow();
 
-    expectArtifactToBeCurrent('workflow/photography-weather-brief.json', committed, generated);
+    expectArtifactToBeCurrent('generated/workflow/photography-weather-brief.json', committed, generated);
   });
 });

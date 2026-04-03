@@ -1,0 +1,34 @@
+# n8n Adapter Primer
+
+This folder is the runtime boundary between the application and n8n code nodes.
+
+## Purpose
+
+- normalize n8n input payloads
+- read runtime config
+- call one focused app or domain function per adapter
+- shape outputs for downstream workflow nodes
+
+## Entry patterns
+
+- thin data-wrapping nodes such as [`wrap-weather.adapter.ts`](./wrap-weather.adapter.ts)
+- scoring/editorial adapters such as [`score-hours.adapter.ts`](./score-hours.adapter.ts) and [`format-messages.adapter.ts`](./format-messages.adapter.ts)
+- contract helpers under [`contracts/`](./contracts)
+
+## What not to edit casually
+
+- compatibility helpers in [`input.ts`](./input.ts) and [`types.ts`](./types.ts)
+- editorial boundary payload contracts under [`contracts/`](./contracts)
+- generated workflow placeholder names expected by [`../../../workflow/build/assemble.ts`](../../../workflow/build/assemble.ts)
+
+## Tests
+
+- [`format-messages.adapter.test.ts`](./format-messages.adapter.test.ts)
+- [`wrap-mwis.adapter.test.ts`](./wrap-mwis.adapter.test.ts)
+- [`extract-gemini-fallback.adapter.test.ts`](./extract-gemini-fallback.adapter.test.ts)
+- [`extract-gemini-inspire.adapter.test.ts`](./extract-gemini-inspire.adapter.test.ts)
+- [`build-inspire-prompt.adapter.test.ts`](./build-inspire-prompt.adapter.test.ts)
+
+## Working rule
+
+If business logic starts to dominate an adapter, extract it into `src/app`, `src/domain`, or `src/presenters` and keep the adapter as plumbing.

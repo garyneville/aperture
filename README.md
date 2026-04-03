@@ -13,10 +13,12 @@ Branch layout:
 - `gh-pages`: published static site output for `https://garyneville.github.io/aperture/`
 
 Key paths:
-- `src/core`: app logic
+- `src/app/run-photo-brief`: orchestration entrypoint
+- `src/domain`: scoring and editorial domain logic
+- `src/presenters`: email, site, Telegram, and brief JSON presenters
 - `src/adapters/n8n`: n8n runtime adapters
-- `workflow/skeleton.json`: workflow source
-- `workflow/photography-weather-brief.json`: generated n8n workflow artifact
+- `workflow/source/skeleton.json`: workflow source
+- `generated/workflow/photography-weather-brief.json`: generated n8n workflow artifact
 
 Common commands:
 - `npm test`

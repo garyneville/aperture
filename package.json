@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "build:tokens": "style-dictionary build --config style-dictionary.config.json",
-    "build": "npm run build:tokens && node --loader ts-node/esm workflow/compile-email.ts && node --loader ts-node/esm workflow/assemble.ts",
-    "build:email-templates": "node --loader ts-node/esm workflow/compile-email.ts",
+    "build": "npm run build:tokens && node --loader ts-node/esm workflow/build/compile-email.ts && node --loader ts-node/esm workflow/build/assemble.ts",
+    "build:email-templates": "node --loader ts-node/esm workflow/build/compile-email.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:generated": "npm run build && git diff --exit-code -- workflow/photography-weather-brief.json src/core/email-layout.generated.ts",
+    "verify:generated": "npm run build && git diff --exit-code -- generated/workflow/photography-weather-brief.json src/presenters/email/compiled-layout.generated.ts",
     "verify:workflow": "npm run verify:generated"
   },
   "devDependencies": {

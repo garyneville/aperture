@@ -1,0 +1,43 @@
+import type { DebugContext } from '../../../core/debug-context.js';
+import type { BriefJson } from '../../../types/brief.js';
+import type { EditorialBoundaryPayload } from './editorial-input.js';
+
+export type LongRangeCandidateLike = {
+  name?: string;
+  region?: string;
+  tags?: string[];
+  bestScore?: number;
+  dayScore?: number;
+  astroScore?: number;
+  driveMins?: number;
+  darkSky?: boolean;
+  deltaVsHome?: number;
+  shown?: boolean;
+  discardedReason?: string;
+};
+
+export type FinalRuntimePayload = EditorialBoundaryPayload & Record<string, unknown> & {
+  debugContext?: DebugContext;
+  debugMode?: boolean;
+  debugEmailTo?: string;
+  debugModeSource?: string;
+  triggerSource?: string | null;
+  today?: string;
+  longRangeCandidates?: LongRangeCandidateLike[];
+  longRangeDebugCandidates?: LongRangeCandidateLike[];
+};
+
+export type RenderableRuntimeContext = FinalRuntimePayload & {
+  debugContext: DebugContext;
+};
+
+export type FormatMessagesOutput = {
+  briefJson: BriefJson;
+  telegramMsg: string;
+  emailHtml: string;
+  siteHtml: string;
+  debugMode: boolean;
+  debugEmailTo: string;
+  debugEmailHtml: string;
+  debugEmailSubject: string;
+};

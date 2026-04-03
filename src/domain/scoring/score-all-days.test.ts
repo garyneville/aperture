@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scoreAllDays, type ScoreHoursInput } from './score-hours.js';
+import { scoreAllDays, type ScoreHoursInput } from './score-all-days.js';
 
 const BASE_WEATHER_HOURLY = {
   cloudcover: [0, 0],
