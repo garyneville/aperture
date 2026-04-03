@@ -1,5 +1,5 @@
-import type { Window } from '../../../../lib/best-windows.js';
-import type { DailySummary } from '../../../../lib/best-windows.js';
+import type { Window } from '../../../windowing/best-windows.js';
+import type { DailySummary } from '../../../windowing/best-windows.js';
 
 export function extractLocalHHMM(iso: string): string {
   const m = iso.match(/T(\d{2}:\d{2})/);

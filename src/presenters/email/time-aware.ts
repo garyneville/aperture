@@ -1,6 +1,6 @@
-import { explainAstroScoreGap } from '../../lib/astro-score-explanation.js';
-import { renderAiBriefingText } from '../../lib/ai-briefing.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../lib/aurora-visibility.js';
+import { explainAstroScoreGap } from '../../domain/editorial/astro-score-explanation.js';
+import { renderAiBriefingText } from '../../domain/editorial/ai-briefing.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../domain/editorial/aurora-visibility.js';
 import { esc } from '../../lib/utils.js';
 import type {
   SessionConfidence,

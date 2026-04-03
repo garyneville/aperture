@@ -1,4 +1,4 @@
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../../lib/aurora-visibility.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../aurora-visibility.js';
 import type { AuroraSignal } from '../../../../lib/aurora-providers.js';
 import type { HomeLocation } from '../../../../types/home-location.js';
 import type { KpEntry } from '../build-prompt.js';

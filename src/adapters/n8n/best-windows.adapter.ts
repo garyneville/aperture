@@ -1,4 +1,4 @@
-import { bestWindows } from '../../lib/best-windows.js';
+import { bestWindows } from '../../domain/windowing/best-windows.js';
 import type { N8nRuntime } from './types.js';
 
 export function run({ $input }: N8nRuntime) {

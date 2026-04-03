@@ -21,7 +21,7 @@ import {
   timeAwareLocalSummary,
   todayWindowSection,
 } from './time-aware.js';
-import { auroraVisibleKpThresholdForLat } from '../../lib/aurora-visibility.js';
+import { auroraVisibleKpThresholdForLat } from '../../domain/editorial/aurora-visibility.js';
 import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
 import {
   buildKitTips,

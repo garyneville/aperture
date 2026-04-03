@@ -1,6 +1,6 @@
 import { LONG_RANGE_LOCATIONS } from '../../../../lib/long-range-locations.js';
 import type { AltLocationResult } from '../build-prompt.js';
-import type { DailySummary } from '../../../../lib/best-windows.js';
+import type { DailySummary } from '../../../windowing/best-windows.js';
 import { topAlternativeLine } from './alternatives.js';
 import { weekStandoutSchemaHint, weekStandoutInstructionBlock } from './week-standout.js';
 

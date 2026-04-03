@@ -8,7 +8,7 @@ import {
   metricChip,
   pill,
 } from '../shared.js';
-import { auroraVisibleKpThresholdForLat } from '../../../lib/aurora-visibility.js';
+import { auroraVisibleKpThresholdForLat } from '../../../domain/editorial/aurora-visibility.js';
 
 const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; border: string }> = {
   yellow: { label: 'Minor activity', fg: C.warning, bg: C.warningContainer, border: '#EDD17B' },

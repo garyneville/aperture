@@ -15,7 +15,9 @@ function createMockLocation(name: string = 'Glasgow'): BriefJsonLocation {
 function createMockDebugContext(location: string = 'Glasgow'): DebugContext {
   return {
     metadata: {
-      generatedAt: new Date().toISOString(),
+      // Keep the mock window in the future so the site renderer uses the
+      // provided editorial copy instead of the time-aware fallback path.
+      generatedAt: '2026-04-03T12:00:00Z',
       location,
       latitude: 55.86,
       longitude: -4.25,
