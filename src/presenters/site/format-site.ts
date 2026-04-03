@@ -2,7 +2,6 @@ import { esc } from '../../lib/utils.js';
 import { renderSiteDocument } from './site-layout.js';
 import type { AuroraSignal } from '../../lib/aurora-providers.js';
 import {
-  BRAND_LOGO,
   C,
   SCORE_THRESHOLDS,
   UTILITY_GLYPHS,
@@ -59,6 +58,11 @@ import type {
   WindowHour,
 } from '../../types/brief.js';
 
+// Extracted sections
+import { sHeroCard, type HeroCardProps } from './sections/hero.js';
+import { sSignalCards, type SignalCardsProps } from './sections/signals.js';
+import { sWindowSection, buildWindowSection, sWindowCard } from './sections/window.js';
+
 // ── Score state using CSS classes rather than inline hex ──────────────────────
 
 function siteScoreClass(score: number): string {
@@ -95,145 +99,8 @@ function sCard(
   return `<div class="card${accentClass}${extraClass ? ` ${extraClass}` : ''}"${accentStyle}>${inner}</div>`;
 }
 
-function sStatGrid(items: SummaryStat[], variant: 'dark' | 'light' = 'dark'): string {
-  const lightClass = variant === 'light' ? ' stat-grid--light' : '';
-  const cells = items.map(item => {
-    const style = item.tone ? ` style="color:${item.tone};"` : '';
-    return `<div class="stat-cell">
-      <div class="stat-label">${esc(item.label)}</div>
-      <div class="stat-value"${style}>${esc(item.value)}</div>
-    </div>`;
-  }).join('');
-  return `<div class="stat-grid${lightClass}">${cells}</div>`;
-}
-
 function sSection(title: string): string {
   return `<h2 class="section-heading">${esc(title)}</h2>`;
-}
-
-function sMetricRun(items: Array<{ label: string; value: string | number; tone?: string }>): string {
-  return items.map((item, index) => {
-    const color = item.tone || C.primary;
-    const sep = index < items.length - 1 ? `<span class="metric-run-sep">&middot;</span>` : '';
-    return `<span><span style="font-weight:600;color:${color};">${esc(item.label)}</span> ${esc(String(item.value))}</span>${sep}`;
-  }).join('');
-}
-
-function sHtmlText(text: string): string {
-  const safe = esc(text || '');
-  return `<div class="ai-body">${
-    safe
-      .split(/\n{2,}/)
-      .map(chunk => `<p>${chunk.replace(/\n/g, '<br>')}</p>`)
-      .join('')
-  }</div>`;
-}
-
-// ── AWUK signal cards ─────────────────────────────────────────────────────────
-
-const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; border: string }> = {
-  yellow: { label: 'Minor activity',    fg: C.warning, bg: C.warningContainer, border: '#EDD17B' },
-  amber:  { label: 'Moderate activity', fg: C.warning, bg: C.warningContainer, border: '#DBA544' },
-  red:    { label: 'Storm conditions',  fg: C.success, bg: C.successContainer, border: '#A3D9B1' },
-};
-
-function awukLevelDescription(level: string, locationName: string, homeLatitude: number): string {
-  if (level === 'yellow') {
-    return `Minor geomagnetic activity detected by UK magnetometers. Aurora may be visible from farther north; conditions at ${homeLatitude.toFixed(1)}°N (${locationName}) are marginal.`;
-  }
-  if (level === 'amber') {
-    return `Moderate geomagnetic activity. Aurora may be visible from ${locationName} if skies stay clear.`;
-  }
-  if (level === 'red') {
-    return `Storm-level geomagnetic activity. Aurora is plausible across much of the UK, including ${locationName}, on clear nights.`;
-  }
-  return `AuroraWatch UK status: ${level}.`;
-}
-
-function sSignalCards(
-  shSunriseQ: number | null,
-  shSunsetQ: number | null,
-  shSunsetText: string | undefined,
-  sunDir: number | null,
-  crepPeak: number,
-  metarNote: string | undefined,
-  peakKpTonight?: number | null,
-  auroraSignal?: AuroraSignal | null,
-  locationName = resolveHomeLocationName(),
-  homeLatitude = resolveHomeLatitude(),
-): string {
-  const cards: string[] = [];
-  const awukLevel = auroraSignal?.nearTerm?.level;
-  const awukFresh = auroraSignal?.nearTerm && !auroraSignal.nearTerm.isStale;
-  const upcomingCmeCount = auroraSignal?.upcomingCmeCount ?? 0;
-  const nextCmeArrival = auroraSignal?.nextCmeArrival;
-
-  if (awukFresh && awukLevel && awukLevel !== 'green') {
-    const meta = AWUK_LEVEL_META[awukLevel] ?? { label: awukLevel, fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
-    const desc = awukLevelDescription(awukLevel, locationName, homeLatitude);
-    cards.push(sCard(`
-      <div class="card-overline">Space weather</div>
-      <div class="card-headline">Aurora signal tonight</div>
-      <div style="margin-top:10px;">${sPill(`AuroraWatch UK — ${meta.label}`, meta.fg, meta.bg, meta.border)}</div>
-      <p class="card-body" style="margin-top:10px;">${esc(desc)}</p>
-    `));
-  } else if (peakKpTonight !== null && peakKpTonight !== undefined && peakKpTonight >= 5) {
-    const kpDisplay = peakKpTonight.toFixed(1);
-    const threshold = auroraVisibleKpThresholdForLat(homeLatitude);
-    const visible = peakKpTonight >= threshold;
-    const fg = visible ? C.success : C.warning;
-    const bg = visible ? C.successContainer : C.warningContainer;
-    const border = visible ? '#A3D9B1' : '#EDD17B';
-    cards.push(sCard(`
-      <div class="card-overline">Space weather</div>
-      <div class="card-headline">Aurora signal tonight</div>
-      <div style="margin-top:10px;">${sPill(`Kp ${kpDisplay}${visible ? ' — clears local threshold' : ' — watch threshold'}`, fg, bg, border)}</div>
-      <p class="card-body" style="margin-top:10px;">${visible
-        ? `Kp ${kpDisplay} exceeds the visibility threshold for ${locationName}. Best combined with a good astro window.`
-        : `Kp ${kpDisplay} is approaching the local visibility threshold (~Kp ${threshold} at ${homeLatitude.toFixed(1)}°N). Worth watching overnight.`
-      }</p>
-    `));
-  }
-
-  if (upcomingCmeCount > 0 && nextCmeArrival) {
-    const arrivalDate = new Date(nextCmeArrival);
-    const arrivalStr = Number.isNaN(arrivalDate.getTime())
-      ? nextCmeArrival
-      : arrivalDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-    const cmeLabel = upcomingCmeCount === 1 ? 'Earth-directed CME' : `${upcomingCmeCount} Earth-directed CMEs`;
-    cards.push(sCard(`
-      <div class="card-overline">Aurora prediction</div>
-      <div class="card-headline">CME forecast: ${esc(arrivalStr)}</div>
-      <div style="margin-top:10px;">${sPill(`${cmeLabel} — NASA DONKI`, C.warning, C.warningContainer, '#EDD17B')}</div>
-      <p class="card-body" style="margin-top:10px;">
-        Elevated aurora probability around ${esc(arrivalStr)}. Monitor AuroraWatch UK as arrival approaches.
-        Confidence is moderate — CME trajectory models carry uncertainty.
-      </p>
-    `));
-  }
-
-  if (shSunriseQ !== null || shSunsetQ !== null) {
-    cards.push(sCard(`
-      <div class="card-overline">Twilight signal</div>
-      <div class="card-headline">SunsetHue outlook</div>
-      <div class="chip-row" style="margin-top:10px;">
-        ${sChip('Sunrise', `${shSunriseQ ?? '—'}%`, C.tertiary)}
-        ${sChip('Sunset', `${shSunsetQ ?? '—'}%`, C.tertiary)}
-      </div>
-      <p class="card-body" style="margin-top:10px;">${esc(shSunsetText || 'No extra sky-texture note today.')}${sunDir !== null ? ` Sun direction ${Math.round(sunDir)}&deg;.` : ''}${crepPeak > 45 ? ` Rays ${crepPeak}/100.` : ''}</p>
-    `));
-  }
-
-  if (metarNote) {
-    cards.push(sCard(`
-      <div class="card-overline">Live sky check</div>
-      <div class="card-headline">Current METAR signal</div>
-      <p class="card-body" style="margin-top:10px;">${esc(metarNote)}</p>
-    `));
-  }
-
-  if (!cards.length) return '';
-  return `<div class="section-stack">${cards.join('')}</div>`;
 }
 
 // ── Daylight utility bar ──────────────────────────────────────────────────────
@@ -277,131 +144,7 @@ function sDaylightUtilityBar(
   </div>`;
 }
 
-// ── Window section ────────────────────────────────────────────────────────────
-
-function sWindowCard(
-  window: Window,
-  index: number,
-  allWindows: Window[],
-  sectionLabel: string,
-  peakKpTonight?: number | null,
-  homeLatitude?: number | null,
-): string {
-  const hour: WindowHour = window.hours?.find(e => e.score === window.peak) || window.hours?.[0] || {} as WindowHour;
-  const notes: string[] = [];
-  const resolvedHomeLatitude = resolveHomeLatitude({ homeLatitude });
-
-  if (window.fallback) notes.push('Most promising narrow stretch rather than a clean standout window.');
-  if ((hour.crepuscular || 0) > 45) notes.push(`Crepuscular ray potential: ${hour.crepuscular}/100 (light shafts through broken cloud).`);
-  if (window.darkPhaseStart && window.postMoonsetScore !== null && window.postMoonsetScore !== undefined) {
-    notes.push(`Dark from ${window.darkPhaseStart} — peak after moonset ${window.postMoonsetScore}/100.`);
-  }
-  if (index === 0 && isAstroWindow(window) && isAuroraLikelyVisibleAtLat(resolvedHomeLatitude, peakKpTonight)) {
-    const threshold = auroraVisibleKpThresholdForLat(resolvedHomeLatitude);
-    notes.push(`Coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local threshold Kp ${threshold}) — favour a clean northern horizon.`);
-  }
-  if (index > 0 && isAstroWindow(allWindows[0]) && isAstroWindow(window) && allWindows[0]?.label !== window.label) {
-    notes.push('Later, darker backup if you miss the first astro slot.');
-  }
-
-  const metricLine = sMetricRun([
-    { label: 'Cloud high',  value: `${hour.ch ?? '—'}%`,    tone: C.primary },
-    { label: 'Visibility',  value: `${hour.visK ?? '—'}km`, tone: C.secondary },
-    { label: 'Wind',        value: `${hour.wind ?? '—'}km/h`, tone: C.tertiary },
-    { label: 'Rain',        value: `${hour.pp ?? '—'}%`,    tone: C.error },
-    ...dewRiskEntry(hour.tpw, hour.tmp),
-  ]);
-
-  const tagChips = (window.tops || []).length
-    ? `<div class="chip-row" style="margin-top:10px;">${(window.tops || []).map(tag => sChip(displayTag(tag), '', C.primary)).join('')}</div>`
-    : '';
-
-  const noteBlock = notes.length
-    ? `<div class="card-body" style="margin-top:10px;padding-top:12px;border-top:1px solid var(--c-outline);">${esc(notes.join(' '))}</div>`
-    : '';
-
-  return sCard(`
-    <div class="card-overline">${esc(sectionLabel)}</div>
-    <div class="card-headline">${esc(window.label)}</div>
-    <div class="card-body" style="margin-top:4px;">${esc(windowRange(window))}</div>
-    <div style="margin-top:10px;">${sScorePill(window.peak)}</div>
-    <div class="metric-run" style="margin-top:10px;">${metricLine}</div>
-    ${tagChips}
-    ${noteBlock}
-  `, { accentSide: index === 0 ? 'top' : undefined, accentColor: index === 0 ? scoreState(window.peak).fg : undefined });
-}
-
-function sWindowSection(
-  dontBother: boolean,
-  todayBestScore: number,
-  aiText: string,
-  windows: Window[] | undefined,
-  dailySummary: DaySummary[],
-  altLocations: AltLocation[] | undefined,
-  runTime: RunTimeContext,
-  peakKpTonight: number | null | undefined,
-  compositionBullets?: string[],
-  homeLatitude?: number | null,
-  homeLocationName?: string | null,
-): string {
-  const hasLocalWindow = (windows?.length || 0) > 0;
-  const effectiveDontBother = dontBother || !hasLocalWindow;
-  const displayPlan = buildWindowDisplayPlan(windows, runTime.nowMinutes);
-
-  if (effectiveDontBother) {
-    const headline = hasLocalWindow ? 'Not worth shooting locally' : 'No clear local window';
-    const fallbackWindow = windows?.[0];
-    const peakHour = fallbackWindow
-      ? peakHourForWindow(fallbackWindow) || fallbackWindow.end || fallbackWindow.start
-      : null;
-    const fallbackLine = fallbackWindow
-      ? `If you still go: ${fallbackWindow.label.toLowerCase()} around ${peakHour || 'time TBD'} at ${fallbackWindow.peak}/100.`
-      : 'If you still go: no clear local fallback window.';
-    return sCard(`
-      <div class="card-overline" style="color:${C.error};">Today&apos;s call</div>
-      <div class="card-headline">${headline}</div>
-      <div style="margin-top:10px;">${sScorePill(todayBestScore)}</div>
-      <p class="card-body" style="margin-top:10px;">${esc(fallbackLine)}</p>
-    `, { accentSide: 'top', accentColor: C.error });
-  }
-
-  const fallbackAiText = timeAwareBriefingFallback(displayPlan);
-  const renderedAi = fallbackAiText
-    ? { text: fallbackAiText }
-    : renderAiBriefingText(aiText, { dontBother, windows, dailySummary, altLocations, peakKpTonight, homeLatitude, homeLocationName });
-  const trimmedAiText = renderedAi.text || aiText;
-
-  const windowCards: string[] = [];
-  if (!displayPlan.allPast && displayPlan.primary) {
-    const primaryLabel = displayPlan.promotedFromPast
-      ? 'Next window'
-      : classifyWindowTiming(displayPlan.primary, runTime.nowMinutes) === 'current'
-        ? 'Live now'
-        : 'Best window';
-    const allDisplayWindows = [displayPlan.primary, ...displayPlan.remaining.filter(w => w !== displayPlan.primary)];
-    windowCards.push(sWindowCard(displayPlan.primary, 0, allDisplayWindows, primaryLabel, peakKpTonight, homeLatitude));
-    displayPlan.remaining
-      .filter(w => w !== displayPlan.primary)
-      .forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.remaining, 'Later today', peakKpTonight, homeLatitude)));
-  }
-  displayPlan.past.forEach((w, i) => windowCards.push(sWindowCard(w, i + 1, displayPlan.past, 'Earlier today', peakKpTonight, homeLatitude)));
-
-  const aiCard = sCard(`
-    <div class="ai-overline">AI briefing</div>
-    ${sHtmlText(trimmedAiText)}
-  `);
-
-  const compCard = !fallbackAiText && compositionBullets?.length
-    ? sCard(`
-        <div class="card-overline">Shot ideas</div>
-        <ul class="bullet-list" style="margin-top:4px;">
-          ${compositionBullets.map(b => `<li>${esc(b)}</li>`).join('')}
-        </ul>
-      `, { accentSide: 'left', accentColor: C.secondary })
-    : '';
-
-  return `<div class="section-stack">${[...windowCards, aiCard, compCard].filter(Boolean).join('')}</div>`;
-}
+// ── Session recommendation ────────────────────────────────────────────────────
 
 function sSessionRecommendationCard(sessionRecommendation: FormatEmailInput['sessionRecommendation']): string {
   const primary = sessionRecommendation?.primary;
@@ -746,62 +489,6 @@ function sSpurCard(spur: SpurOfTheMomentSuggestion): string {
   `, { accentSide: 'left', accentColor: C.brand });
 }
 
-// ── Hero card ─────────────────────────────────────────────────────────────────
-
-function sHeroCard(
-  heroScore: number,
-  gradeLabel: string,
-  locationName: string,
-  topWindow: Window | null,
-  allPast: boolean,
-  today: string,
-  factStats: SummaryStat[],
-  scoreStats: SummaryStat[],
-  moonPct: number,
-  localSummary: string,
-  alternativeSummary: string,
-  altSummaryTitle: string,
-): string {
-  let windowHtml = '';
-  if (topWindow) {
-    const pastLabel = allPast
-      ? `<span style="font-weight:400;color:rgba(255,255,255,0.40);">Earlier today:</span><br>`
-      : '';
-    windowHtml = `<div class="hero-window-label">${pastLabel}${esc(topWindow.label)}<br><span class="hero-window-range">${esc(windowRange(topWindow))}</span></div>`;
-  } else {
-    windowHtml = `<div class="hero-window-label" style="color:rgba(255,255,255,0.40);">No clear window today</div>`;
-  }
-
-  return `<div class="card card--hero">
-    <div class="hero-brand">
-      <div class="hero-brand-left">
-        <span style="color:${C.brand};">${BRAND_LOGO}</span>
-        <span class="hero-brand-name">Aperture</span>
-      </div>
-      <span class="hero-location">${esc(locationName)}</span>
-    </div>
-    <hr class="hero-divider">
-    <div class="hero-score-row">
-      <div class="hero-score-block">
-        <div class="hero-score-number">${heroScore}</div>
-        <div class="hero-score-denom">/ 100</div>
-      </div>
-      <div class="hero-detail">
-        <div class="hero-grade">${esc(gradeLabel)}</div>
-        ${windowHtml}
-        <div class="hero-date">${esc(today)}</div>
-      </div>
-    </div>
-    <hr class="hero-divider">
-    ${sStatGrid(factStats, 'dark')}
-    <div class="moon-context">${moonAstroContext(moonPct)}</div>
-    ${sStatGrid(scoreStats, 'dark')}
-    ${localSummary || alternativeSummary ? '<hr class="hero-divider" style="margin:12px 0 8px;">' : ''}
-    ${localSummary ? `<div style="font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(localSummary.replace(/\n/g, ' · '))}</div>` : ''}
-    ${alternativeSummary ? `<div style="font-size:11px;line-height:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">${esc(altSummaryTitle)}: ${esc(alternativeSummary)}</div>` : ''}
-  </div>`;
-}
-
 // ── Footer key ────────────────────────────────────────────────────────────────
 
 function sFooterKey(): string {
@@ -956,12 +643,12 @@ export function formatSite(input: FormatEmailInput): string {
   // Assemble page
   const sections: string[] = [];
 
-  sections.push(sHeroCard(
+  sections.push(sHeroCard({
     heroScore,
-    todayScoreState.label,
+    gradeLabel: todayScoreState.label,
     locationName,
     topWindow,
-    displayPlan.allPast,
+    allPast: displayPlan.allPast,
     today,
     factStats,
     scoreStats,
@@ -969,7 +656,7 @@ export function formatSite(input: FormatEmailInput): string {
     localSummary,
     alternativeSummary,
     altSummaryTitle,
-  ));
+  }));
 
   const utilityBar = sDaylightUtilityBar(todayCarWashData, runTime);
   if (utilityBar) sections.push(utilityBar);
@@ -977,13 +664,36 @@ export function formatSite(input: FormatEmailInput): string {
   const sessionCard = sSessionRecommendationCard(sessionRecommendation);
   if (sessionCard) sections.push(sessionCard);
 
-  const signals = sSignalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);
+  const signals = sSignalCards({
+    shSunriseQ,
+    shSunsetQ,
+    shSunsetText,
+    sunDir,
+    crepPeak,
+    metarNote,
+    peakKpTonight,
+    auroraSignal,
+    locationName,
+    homeLatitude,
+  });
   if (signals) sections.push(signals);
 
   if (!effectiveDontBother) {
     sections.push(`<div class="section-group">
       ${sSection("Today's window")}
-      ${sWindowSection(effectiveDontBother, todayBestScore, aiText, windows, dailySummary, altLocations, runTime, peakKpTonight, compositionBullets, homeLatitude, locationName)}
+      ${sWindowSection({
+        dontBother: effectiveDontBother,
+        todayBestScore,
+        aiText,
+        windows,
+        dailySummary,
+        altLocations,
+        runTime,
+        peakKpTonight,
+        compositionBullets,
+        homeLatitude,
+        homeLocationName: locationName,
+      })}
     </div>`);
   }
 
