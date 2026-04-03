@@ -53,7 +53,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: workflow-json
-          path: workflow/photography-weather-brief.json
+          path: generated/workflow/photography-weather-brief.json
+          if-no-files-found: error
           retention-days: 5
 
   deploy:
