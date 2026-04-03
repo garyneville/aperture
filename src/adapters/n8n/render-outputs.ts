@@ -2,12 +2,12 @@ import { formatSite } from '../../presenters/site/format-site.js';
 import { formatTelegram } from '../../presenters/telegram/format-telegram.js';
 import { formatDebugEmail, formatEmail } from '../../presenters/email/index.js';
 import type { EditorialDecision } from '../../app/run-photo-brief/contracts.js';
-import type { ScoredForecastContext } from '../../types/scored-forecast.js';
 import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
 import type {
   FormatMessagesOutput,
   RenderableRuntimeContext,
 } from './contracts/final-runtime-payload.js';
+import { toScoredForecastContext } from './mappers/to-scored-forecast.js';
 
 export function renderOutputs(
   ctx: RenderableRuntimeContext,
@@ -15,7 +15,10 @@ export function renderOutputs(
   debugMode: boolean,
   debugEmailTo: string,
 ): FormatMessagesOutput {
-  const briefJson = renderBriefAsJson(ctx as unknown as ScoredForecastContext, editorial);
+  // Explicitly map from n8n runtime context to strict internal shape
+  const scoredContext = toScoredForecastContext(ctx);
+
+  const briefJson = renderBriefAsJson(scoredContext, editorial);
   const telegramMsg = formatTelegram(briefJson);
   const emailHtml = formatEmail(briefJson);
   const siteHtml = formatSite(briefJson);
