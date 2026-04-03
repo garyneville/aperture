@@ -59,6 +59,33 @@ This folder contains the canonical orchestration spine for the photo brief appli
 - `use-case.test.ts`
   Unit tests for the main use case.
 
+- `finalize-brief.test.ts`
+  Unit tests for the finalize-brief use case. Tests the runtime-independent seam including:
+  - Input normalization from AI providers
+  - Debug context preparation and hydration
+  - Output rendering orchestration
+  - Gemini diagnostics extraction
+
+## Dependency Rules
+
+This module follows strict dependency rules:
+
+- **Cross-layer types** are imported from `src/contracts`, not internal paths:
+  ```typescript
+  // Good
+  import type { BriefContext, DebugContext } from '../../contracts/index.js';
+  
+  // Avoid
+  import type { BriefContext } from '../../domain/editorial/resolution/resolve-editorial.js';
+  import type { DebugContext } from '../../lib/debug-context.js';
+  ```
+
+- **Domain logic** is delegated to the domain layer — this module only orchestrates
+- **Presenter formatting** is delegated to the presenters layer
+- **Implementation details** (like `emptyDebugContext()`) can be imported from internal paths
+
+`finalize-brief.ts` is the reference implementation for "how the app layer should look."
+
 ## Non-n8n Runtime (CLI)
 
 The `finalize-brief-cli.ts` script demonstrates that the core application logic can run independently of n8n. This proves the architecture goal: **n8n is a delivery mechanism, not the place where the workflow lives.**

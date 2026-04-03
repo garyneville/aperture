@@ -53,6 +53,7 @@ import { heroSection } from './sections/hero.js';
 
 export { formatDebugEmail } from './debug-email.js';
 export { buildKitTips, evaluateKitRules, type KitTip } from './kit-advisory.js';
+export { windowCard, compositionCard, poorDayFallbackLine } from './window-cards.js';
 export {
   nextDayHourlyOutlookSection,
   outdoorComfortLabel,

@@ -24,6 +24,7 @@ export type {
   DaySummary,
   LongRangeCard,
   NextDayHour,
+  RunTimeContext,
   SpurOfTheMomentSuggestion,
   Window,
   WindowDisplayPlan,
@@ -38,6 +39,7 @@ export type {
   SessionConfidence,
   SessionEvaluator,
   SessionId,
+  SessionRecommendation,
   SessionRecommendationSummary,
   SessionScore,
 } from './session-score.js';
@@ -55,3 +57,26 @@ export type {
 export type {
   EditorialDecision,
 } from './run-photo-brief.js';
+
+// Debug context types (for diagnostics and tracing)
+export type {
+  DebugContext,
+  DebugGeminiDiagnostics,
+  DebugPayloadSnapshot,
+  DebugRunMetadata,
+  DebugScores,
+  DebugHourlyScore,
+  DebugHourlySessionScore,
+  DebugWindowTrace,
+  DebugNearbyAlternative,
+  DebugAiCheck,
+  DebugWeekStandoutTrace,
+  DebugAiTrace,
+  DebugLongRangeCandidate,
+  DebugKitAdvisory,
+  DebugKitAdvisoryRule,
+  DebugOutdoorComfort,
+  DebugOutdoorComfortHour,
+  WeekStandoutParseStatus,
+  WeekStandoutDecision,
+} from './debug.js';

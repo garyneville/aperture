@@ -47,6 +47,15 @@ Editorial resolution types.
 Main use case contracts.
 - `EditorialDecision`
 
+### Debug (`debug.ts`)
+Debug context and diagnostics types for tracing and observability.
+- `DebugContext`, `DebugPayloadSnapshot`
+- `DebugGeminiDiagnostics`, `DebugRunMetadata`
+- `DebugScores`, `DebugHourlyScore`, `DebugWindowTrace`
+- `DebugAiTrace`, `DebugWeekStandoutTrace`
+- `DebugLongRangeCandidate`, `DebugNearbyAlternative`
+- `DebugKitAdvisory`, `DebugOutdoorComfort`
+
 ## Structure
 
 Each contract module:

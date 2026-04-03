@@ -1,0 +1,256 @@
+/**
+ * Unit tests for finalizeBrief use case.
+ *
+ * These tests verify the runtime-independent seam of the finalize-brief
+ * use case, ensuring proper orchestration of:
+ * - Input normalization
+ * - Debug context preparation
+ * - Editorial resolution
+ * - Debug context hydration
+ * - Output rendering
+ */
+
+import { describe, expect, it, vi } from 'vitest';
+import { finalizeBrief, extractGeminiDiagnostics } from './finalize-brief.js';
+import type { RawEditorialInput, FinalizeConfig } from './finalize-brief-contracts.js';
+import type { BriefContext } from '../../contracts/index.js';
+
+// Minimal valid BriefContext for testing
+function createMinimalBriefContext(): BriefContext {
+  return {
+    location: 'Test Location',
+    latitude: 53.8,
+    longitude: -1.5,
+    timezone: 'Europe/London',
+    today: '2026-04-03',
+    windows: [],
+    dailySummary: [
+      {
+        dayLabel: 'Today',
+        dateKey: '2026-04-03',
+        dayIdx: 0,
+        photoScore: 50,
+        headlineScore: 50,
+        photoEmoji: '🟡',
+        amScore: 40,
+        pmScore: 60,
+        astroScore: 30,
+        bestPhotoHour: '14:00',
+        bestAstroHour: '22:00',
+        bestTags: 'clear',
+      },
+    ],
+    todayCarWash: {
+      rating: 'good',
+      label: 'Good conditions',
+      score: 70,
+      start: '14:00',
+      end: '16:00',
+      wind: 10,
+      pp: 5,
+      tmp: 15,
+    },
+    altLocations: [],
+    closeContenders: [],
+    longRangeDebugCandidates: [],
+    debugContext: {
+      hourlyScoring: [],
+      windows: [],
+      nearbyAlternatives: [],
+    },
+  };
+}
+
+// Minimal valid FinalizeConfig for testing
+function createMinimalConfig(): FinalizeConfig {
+  return {
+    preferredProvider: 'groq',
+    homeLocation: {
+      name: 'Test Location',
+      lat: 53.8,
+      lon: -1.5,
+      timezone: 'Europe/London',
+    },
+    debug: {
+      enabled: false,
+      emailTo: '',
+      source: '',
+    },
+    triggerSource: 'test',
+  };
+}
+
+describe('finalizeBrief', () => {
+  it('should return a finalized brief with all required outputs', () => {
+    const input: RawEditorialInput = {
+      context: createMinimalBriefContext(),
+      groqChoices: [{ message: { content: 'Test AI response' } }],
+      geminiResponse: '',
+    };
+    const config = createMinimalConfig();
+
+    const result = finalizeBrief(input, config);
+
+    // Verify all required outputs are present
+    expect(result.briefJson).toBeDefined();
+    expect(result.telegramMsg).toBeDefined();
+    expect(result.emailHtml).toBeDefined();
+    expect(result.siteHtml).toBeDefined();
+    expect(result.editorial).toBeDefined();
+    expect(result.debugMode).toBe(false);
+    expect(result.debugContext).toBeDefined();
+  });
+
+  it('should handle groq-only input', () => {
+    const input: RawEditorialInput = {
+      context: createMinimalBriefContext(),
+      groqChoices: [{ message: { content: 'Groq only response' } }],
+    };
+    const config = createMinimalConfig();
+
+    const result = finalizeBrief(input, config);
+
+    expect(result.editorial.primaryProvider).toBe('groq');
+    expect(result.editorial.aiText).toBeDefined();
+  });
+
+  it('should handle gemini-only input', () => {
+    const input: RawEditorialInput = {
+      context: createMinimalBriefContext(),
+      geminiResponse: 'Gemini only response',
+    };
+    const config = { ...createMinimalConfig(), preferredProvider: 'gemini' as const };
+
+    const result = finalizeBrief(input, config);
+
+    expect(result.editorial.primaryProvider).toBe('gemini');
+    expect(result.editorial.aiText).toBeDefined();
+  });
+
+  it('should enable debug mode when configured', () => {
+    const input: RawEditorialInput = {
+      context: createMinimalBriefContext(),
+      groqChoices: [{ message: { content: 'Test response' } }],
+    };
+    const config: FinalizeConfig = {
+      ...createMinimalConfig(),
+      debug: {
+        enabled: true,
+        emailTo: 'debug@example.com',
+        source: 'test',
+      },
+    };
+
+    const result = finalizeBrief(input, config);
+
+    expect(result.debugMode).toBe(true);
+    expect(result.debugEmailTo).toBe('debug@example.com');
+    expect(result.debugEmailHtml).toBeDefined();
+    expect(result.debugEmailSubject).toContain('Photo Brief Debug');
+  });
+
+  it('should populate metadata in debug context', () => {
+    const input: RawEditorialInput = {
+      context: createMinimalBriefContext(),
+      groqChoices: [{ message: { content: 'Test response' } }],
+    };
+    const config = createMinimalConfig();
+
+    const result = finalizeBrief(input, config);
+
+    expect(result.debugContext.metadata).toBeDefined();
+    expect(result.debugContext.metadata?.location).toBe('Test Location');
+    expect(result.debugContext.metadata?.latitude).toBe(53.8);
+    expect(result.debugContext.metadata?.longitude).toBe(-1.5);
+    expect(result.debugContext.metadata?.timezone).toBe('Europe/London');
+    expect(result.debugContext.metadata?.triggerSource).toBe('test');
+  });
+
+  it('should preserve existing debug context data', () => {
+    const existingDebugContext = {
+      hourlyScoring: [{ hour: '14:00', timestamp: '2026-04-03T14:00:00Z', final: 50, cloud: 20, visK: 20, aod: 0.1, moonAdjustment: 0, moonState: 'up', aodPenalty: 0, astroScore: 30, drama: 40, clarity: 60, mist: 10, moon: { altitudeDeg: 45, illuminationPct: 50, azimuthDeg: 180, isUp: true }, tags: ['clear'] }],
+      windows: [{ label: 'Test', start: '14:00', end: '15:00', peak: 50, rank: 1, selected: true, fallback: false, selectionReason: 'test' }],
+      nearbyAlternatives: [],
+    };
+
+    const input: RawEditorialInput = {
+      context: {
+        ...createMinimalBriefContext(),
+        debugContext: existingDebugContext,
+      },
+      groqChoices: [{ message: { content: 'Test response' } }],
+    };
+    const config = createMinimalConfig();
+
+    const result = finalizeBrief(input, config);
+
+    expect(result.debugContext.hourlyScoring).toHaveLength(1);
+    expect(result.debugContext.windows).toHaveLength(1);
+  });
+});
+
+describe('extractGeminiDiagnostics', () => {
+  it('should return undefined when no diagnostics provided', () => {
+    const result = extractGeminiDiagnostics({});
+    expect(result).toBeUndefined();
+  });
+
+  it('should extract status code', () => {
+    const result = extractGeminiDiagnostics({ geminiStatusCode: 200 });
+    expect(result?.statusCode).toBe(200);
+  });
+
+  it('should extract finish reason', () => {
+    const result = extractGeminiDiagnostics({ geminiFinishReason: 'STOP' });
+    expect(result?.finishReason).toBe('STOP');
+  });
+
+  it('should extract all diagnostic fields', () => {
+    const input = {
+      geminiStatusCode: 200,
+      geminiFinishReason: 'STOP',
+      geminiCandidateCount: 1,
+      geminiResponseByteLength: 1024,
+      geminiResponseTruncated: false,
+      geminiExtractionPath: 'candidates[0].content.parts[0].text',
+      geminiTopLevelKeys: ['candidates'],
+      geminiPayloadKeys: ['content', 'parts'],
+      geminiPartKinds: ['text'],
+      geminiExtractedTextLength: 500,
+      geminiPromptTokenCount: 1000,
+      geminiCandidatesTokenCount: 100,
+      geminiTotalTokenCount: 1100,
+      geminiThoughtsTokenCount: 50,
+    };
+
+    const result = extractGeminiDiagnostics(input);
+
+    expect(result).toEqual({
+      statusCode: 200,
+      finishReason: 'STOP',
+      candidateCount: 1,
+      responseByteLength: 1024,
+      truncated: false,
+      extractionPath: 'candidates[0].content.parts[0].text',
+      topLevelKeys: ['candidates'],
+      payloadKeys: ['content', 'parts'],
+      partKinds: ['text'],
+      extractedTextLength: 500,
+      promptTokenCount: 1000,
+      candidatesTokenCount: 100,
+      totalTokenCount: 1100,
+      thoughtsTokenCount: 50,
+    });
+  });
+
+  it('should handle partial diagnostics', () => {
+    const result = extractGeminiDiagnostics({
+      geminiStatusCode: 500,
+      geminiFinishReason: 'ERROR',
+    });
+
+    expect(result?.statusCode).toBe(500);
+    expect(result?.finishReason).toBe('ERROR');
+    expect(result?.candidateCount).toBeNull();
+  });
+});
