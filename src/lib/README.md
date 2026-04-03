@@ -36,7 +36,7 @@ This folder is the canonical infrastructure layer: shared utilities, astronomy h
 ### Debug and AI
 
 - [`debug-context.ts`](./debug-context.ts) — DebugContext type and empty-context factory.
-- [`debug-payload.ts`](./debug-payload.ts) — debug payload snapshot serialization.
+- [`debug-payload.ts`](./debug-payload.ts) — debug payload snapshot serialization with intelligent summarization. Reduces verbose API responses (e.g., 120-item hourly arrays) to compact statistics (min/max/mean/count), collapses null arrays, and truncates large objects to keep debug output readable.
 - [`ai-briefing.ts`](./ai-briefing.ts) — renders the AI briefing text block for email and site output.
 
 ### Assets
