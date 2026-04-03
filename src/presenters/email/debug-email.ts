@@ -321,11 +321,16 @@ export function formatDebugEmail(debugContext: DebugContext): string {
         })()}
         ${spacer(8)}
         ${debugCard('Payload snapshots', payloadSnapshots.length
-          ? payloadSnapshots.map(snapshot => `
+          ? payloadSnapshots.map(snapshot => {
+              const rawContent = snapshot.summary || snapshot.json || '(no data)';
+              // Hard truncate to 10KB to prevent email bloat (safety net)
+              const maxLen = 10000;
+              const truncated = rawContent.length > maxLen ? rawContent.slice(0, maxLen) + '\n\n[... truncated ' + (rawContent.length - maxLen) + ' chars ...]' : rawContent;
+              return `
               <div style="Margin-top:${snapshot === payloadSnapshots[0] ? '0' : '12px'};font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">${esc(snapshot.label)} <span style="font-weight:400;color:${C.muted};">(${esc(String(snapshot.byteLength))} bytes)</span></div>
-              <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};max-height:400px;overflow:auto;">${esc(snapshot.summary || snapshot.json || '(no data)')}</pre>
+              <pre style="Margin:6px 0 0;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;white-space:pre-wrap;font-family:${MONO};font-size:11px;line-height:1.45;color:${C.ink};max-height:400px;overflow:auto;">${esc(truncated)}</pre>
               ${snapshot.json && snapshot.json.length > 100 ? `<div style="Margin-top:4px;font-family:${FONT};font-size:11px;line-height:1.4;color:${C.muted};">Full payload available in system logs if needed.</div>` : ''}
-            `).join('')
+            `;}).join('')
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No payload snapshots were captured for this run.</div>`
         )}
       </td>
