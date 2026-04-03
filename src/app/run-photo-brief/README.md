@@ -43,6 +43,8 @@ This folder contains the canonical orchestration spine for the photo brief appli
   5. **render** — Generate all output formats (email, Telegram, site, JSON)
   
   This use case is called by the n8n adapter and can be called directly for CLI/testing.
+  It is the only live finalization orchestration path; adapter-side helper copies
+  of these steps have been removed.
 
 - `finalize-brief-contracts.ts`
   Type contracts for the finalize-brief use case.
@@ -139,6 +141,10 @@ The core logic in `src/app/run-photo-brief/` can be invoked from:
 - **CLI** — direct execution (shown above)
 - **Future HTTP API** — direct import of `finalizeBrief()`
 - **Test harness** — direct function calls with fixtures
+
+Both the n8n adapter and the CLI use the same `finalizeBrief()` seam. That keeps
+debug-context hydration, AI normalization, and rendering orchestration in one
+place instead of duplicating those steps across runtimes.
 
 ## Data In / Data Out
 
