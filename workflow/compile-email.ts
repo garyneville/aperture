@@ -11,7 +11,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const OUTPUT_PATH = resolve(ROOT, 'src', 'core', 'email-layout.generated.ts');
+export const OUTPUT_PATH = resolve(ROOT, 'src', 'core', 'email-layout.generated.ts');
 
 const FRAGMENT_START = '<!--FRAGMENT_START-->';
 const FRAGMENT_END = '<!--FRAGMENT_END-->';
@@ -42,7 +42,7 @@ function extractFragment(name: string, html: string): string {
   return html.slice(start + FRAGMENT_START.length, end).trim();
 }
 
-function buildGeneratedModule() {
+export function buildGeneratedModule() {
   let mainDocument = compileTemplate('main-document', MAIN_EMAIL_MJML);
   // WCAG 2.2: MJML defaults the HTML lang attribute to "und" (undetermined).
   // Replace with "en" so screen readers announce the correct language.
