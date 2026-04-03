@@ -98,7 +98,9 @@ function isMalformedJsonText(text: string | null): boolean {
 
 function extractRetryAfter(item: Record<string, unknown>): number | null {
   // Check common header locations for retry-after
-  const headers = item.headers || item.error?.headers || item.error?.response?.headers;
+  const itemError = isRecord(item.error) ? item.error : null;
+  const errorResponse = itemError && isRecord(itemError.response) ? itemError.response : null;
+  const headers = item.headers || itemError?.headers || errorResponse?.headers;
   if (!isRecord(headers)) return null;
   
   const retryAfter = headers['retry-after'] || headers['Retry-After'];

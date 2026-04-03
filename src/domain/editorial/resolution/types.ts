@@ -1,7 +1,9 @@
 import type {
   DebugAiCheck,
   DebugAiTrace,
+  DebugApiCallStatus,
   DebugGeminiDiagnostics,
+  DebugGroqDiagnostics,
   WeekStandoutDecision,
   WeekStandoutParseStatus,
 } from '../../../lib/debug-context.js';
