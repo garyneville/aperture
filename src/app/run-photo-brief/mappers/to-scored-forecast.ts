@@ -13,7 +13,7 @@ import type {
   DarkSkyAlertCard,
   SessionRecommendationSummary,
 } from '../../../contracts/index.js';
-import type { RenderableRuntimeContext } from '../contracts/final-runtime-payload.js';
+import type { RenderableRuntimeContext } from '../../../adapters/n8n/contracts/final-runtime-payload.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 
 /**
