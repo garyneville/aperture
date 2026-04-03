@@ -7,7 +7,7 @@
  */
 
 import { buildWindowDisplayPlan, getRunTimeContext } from '../../domain/windowing/index.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../../lib/home-location.js';
 import type {
   AltLocation,
   BriefRenderInput,
@@ -15,7 +15,7 @@ import type {
   RunTimeContext,
   Window,
   WindowDisplayPlan,
-} from '../../types/brief.js';
+} from '../../contracts/index.js';
 import { buildKitTips, type KitTip } from './kit-advisory.js';
 import { confidenceDetail, effectiveConf, scoreState } from './brief-primitives.js';
 import {

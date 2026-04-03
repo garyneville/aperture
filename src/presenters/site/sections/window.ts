@@ -19,7 +19,7 @@ import type {
   RunTimeContext,
   Window,
   WindowHour,
-} from '../../../types/brief.js';
+} from '../../../contracts/index.js';
 
 function sPill(text: string, fg: string, bg: string, border: string): string {
   return `<span class="pill" style="color:${fg};background:${bg};border-color:${border};">${esc(text)}</span>`;

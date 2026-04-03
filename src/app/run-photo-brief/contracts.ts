@@ -1,6 +1,5 @@
-import type { BriefJson } from '../../types/brief.js';
-export type { ScoredForecastContext } from '../../types/scored-forecast.js';
-import type { ScoredForecastContext } from '../../types/scored-forecast.js';
+import type { BriefJson, ScoredForecastContext } from '../../contracts/index.js';
+export type { ScoredForecastContext } from '../../contracts/index.js';
 
 export type EditorialProvider = 'groq' | 'gemini';
 

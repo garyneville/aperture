@@ -6,7 +6,7 @@ import {
 } from '../../shared/brief-primitives.js';
 import { windowRange } from '../../../domain/windowing/index.js';
 import { moonAstroContext } from '../../shared/window-helpers.js';
-import type { Window } from '../../../types/brief.js';
+import type { Window } from '../../../contracts/index.js';
 
 function sStatGrid(items: SummaryStat[], variant: 'dark' | 'light' = 'dark'): string {
   const lightClass = variant === 'light' ? ' stat-grid--light' : '';

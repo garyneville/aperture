@@ -80,7 +80,7 @@ This folder contains all output formatting logic. Presenters transform structure
 ## Data In / Data Out
 
 **Input:**
-All presenters receive `BriefRenderInput` (from [`../types/brief.ts`](../types/brief.ts)), which includes:
+All presenters receive `BriefRenderInput` (from [`../contracts/brief.ts`](../contracts/brief.ts)), which includes:
 - Scored windows and daily summaries
 - AI-generated editorial content
 - Session recommendations
@@ -130,4 +130,4 @@ Presenters should be pure functions from data to formatted output. They should n
 - [`./brief-json/README.md`](./brief-json/README.md) — Brief JSON details
 - [`./shared/README.md`](./shared/README.md) — Shared primitives details
 - [`../domain/README.md`](../domain/README.md) — Domain layer that feeds presenters
-- [`../types/brief.ts`](../types/brief.ts) — Input type for all presenters
+- [`../contracts/brief.ts`](../contracts/brief.ts) — Input type for all presenters

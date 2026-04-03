@@ -174,6 +174,7 @@ These are the stable seams that external callers and generated workflows should 
 - [`src/app/run-photo-brief/contracts.ts`](../src/app/run-photo-brief/contracts.ts)
 - [`src/contracts/run-photo-brief.ts`](../src/contracts/run-photo-brief.ts)
 - [`src/contracts/brief.ts`](../src/contracts/brief.ts)
+- [`src/contracts/home-location.ts`](../src/contracts/home-location.ts)
 - [`src/contracts/scored-forecast.ts`](../src/contracts/scored-forecast.ts)
 - [`src/presenters/email/index.ts`](../src/presenters/email/index.ts)
 
@@ -192,6 +193,11 @@ Everything else is internal and free to evolve without a migration period.
 - May change without notice
 - Don't import across layer boundaries
 - Import only within the same layer
+
+**Shared runtime helpers (`src/lib/`)** hold behavior and defaults:
+- Runtime helpers like `resolveHomeLocationName()`
+- Runtime defaults like `DEFAULT_HOME_LOCATION`
+- Import these from `src/lib/`, not `src/types/`
 
 When adding a new shared type:
 1. Start in the layer that owns it (e.g., `src/domain/scoring/`)

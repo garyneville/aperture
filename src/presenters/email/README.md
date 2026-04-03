@@ -11,7 +11,7 @@ assembling email-specific markup.
 ## Module map
 
 - [`types.ts`](./types.ts)
-  Local re-export of the canonical brief render contracts from [`../../types/brief.ts`](../../types/brief.ts).
+  Local re-export of the canonical brief render contracts from [`../../contracts/index.ts`](../../contracts/index.ts).
 
 - [`shared.ts`](./shared.ts)
   Cross-cutting render helpers and shared presentation primitives: colors, typography, cards, pills, stat grids, weather/moon icons, and a few general formatting helpers.
@@ -37,7 +37,7 @@ assembling email-specific markup.
 
 ## Supporting files outside this folder
 
-- [`../../types/brief.ts`](../../types/brief.ts)
+- [`../../contracts/brief.ts`](../../contracts/brief.ts)
   Canonical shared render contract: windows, day summaries, alternatives, and the renderer input payload used across email/site/Telegram.
 
 - [`../../lib/debug-context.ts`](../../lib/debug-context.ts)

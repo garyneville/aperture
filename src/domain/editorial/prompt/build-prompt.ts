@@ -6,10 +6,12 @@ import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import {
   DEFAULT_BRIEF_WORKFLOW_VERSION,
   DEFAULT_HOME_LOCATION,
-  type HomeLocation,
-} from '../../../types/home-location.js';
-import type { ScoredForecastContext } from '../../../types/scored-forecast.js';
-import type { SessionRecommendationSummary } from '../../../types/session-score.js';
+} from '../../../lib/home-location.js';
+import type {
+  HomeLocation,
+  ScoredForecastContext,
+  SessionRecommendationSummary,
+} from '../../../contracts/index.js';
 import { getSeasonalNote } from './sections/seasonal-context.js';
 import { peakKpForNight, buildAuroraNote } from './sections/aurora-note.js';
 import {

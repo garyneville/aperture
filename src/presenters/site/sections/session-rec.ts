@@ -6,7 +6,7 @@ import {
   sessionRunnerUpLine,
   sessionVolatilityLabel,
 } from '../../shared/window-helpers.js';
-import type { BriefRenderInput } from '../../../types/brief.js';
+import type { BriefRenderInput } from '../../../contracts/index.js';
 import { C } from '../../shared/brief-primitives.js';
 import { sCard, sChip, sScorePill } from './shared.js';
 import { scoreState } from '../../shared/brief-primitives.js';

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { runPhotoBrief } from './use-case.js';
 import { renderBriefAsJson } from '../../presenters/brief-json/render-brief-json.js';
-import { BRIEF_JSON_SCHEMA_VERSION } from '../../types/brief.js';
+import { BRIEF_JSON_SCHEMA_VERSION } from '../../contracts/index.js';
 import type {
   EditorialDecision,
   EditorialRequest,

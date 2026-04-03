@@ -14,9 +14,9 @@ import {
   moonAstroContext,
   moonDescriptor,
 } from '../../shared/window-helpers.js';
+import type { WindowDisplayPlan } from '../../../contracts/index.js';
 import { windowRange } from '../../../domain/windowing/index.js';
 import type { DaySummary, Window } from '../types.js';
-import type { WindowDisplayPlan } from '../../../types/brief.js';
 import { alternativeSummaryTitle, alternativeTimingSummary } from './alternatives.js';
 import type { AltLocation, SpurOfTheMomentSuggestion } from '../types.js';
 

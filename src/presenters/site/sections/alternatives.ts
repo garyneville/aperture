@@ -1,6 +1,6 @@
 import { esc } from '../../../lib/utils.js';
 import { bestDaySessionLabel } from '../../shared/window-helpers.js';
-import type { AltLocation } from '../../../types/brief.js';
+import type { AltLocation } from '../../../contracts/index.js';
 import { sCard, sChip, sScorePill } from './shared.js';
 import { scoreState, C } from '../../shared/brief-primitives.js';
 

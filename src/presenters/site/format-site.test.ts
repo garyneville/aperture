@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { formatSite } from './format-site.js';
-import type { BriefRenderInput, BriefJsonLocation, DaySummary, Window, AltLocation, CarWash } from '../../types/brief.js';
+import type { AltLocation, BriefJsonLocation, BriefRenderInput, CarWash, DaySummary, Window } from '../../contracts/index.js';
 import type { DebugContext } from '../../lib/debug-context.js';
 
 function createMockLocation(name: string = 'Glasgow'): BriefJsonLocation {

@@ -1,6 +1,6 @@
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../aurora-visibility.js';
 import type { AuroraSignal } from '../../../../lib/aurora-providers.js';
-import type { HomeLocation } from '../../../../types/home-location.js';
+import type { HomeLocation } from '../../../../contracts/index.js';
 import type { KpEntry } from '../build-prompt.js';
 
 export function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | null {

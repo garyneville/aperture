@@ -1,7 +1,7 @@
 import { esc } from '../../../lib/utils.js';
 import { buildOutdoorOutlookModel } from '../../shared/outdoor-outlook-model.js';
 import { weatherIconForHour } from '../../shared/brief-primitives.js';
-import type { DaySummary, Window } from '../../../types/brief.js';
+import type { DaySummary, Window } from '../../../contracts/index.js';
 import { sCard } from './shared.js';
 
 export interface HourlyOutlookInput {

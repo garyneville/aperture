@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BRIEF_JSON_SCHEMA_VERSION } from '../../types/brief.js';
+import { BRIEF_JSON_SCHEMA_VERSION } from '../../contracts/index.js';
 import {
   buildFallbackAiText,
   chooseEditorialCandidate,

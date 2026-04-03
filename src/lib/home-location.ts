@@ -1,10 +1,4 @@
-export interface HomeLocation {
-  name: string;
-  lat: number;
-  lon: number;
-  timezone: string;
-  icao?: string;
-}
+import type { HomeLocation } from '../contracts/home-location.js';
 
 export const DEFAULT_HOME_LOCATION: HomeLocation = {
   name: 'Leeds',

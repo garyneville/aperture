@@ -7,7 +7,7 @@
 
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../domain/editorial/aurora-visibility.js';
 import { esc } from '../../lib/utils.js';
-import { resolveHomeLatitude } from '../../types/home-location.js';
+import { resolveHomeLatitude } from '../../lib/home-location.js';
 import {
   bestTimeLabel,
   displayTag,

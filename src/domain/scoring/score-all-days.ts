@@ -1,4 +1,4 @@
-import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';
+import { DEFAULT_HOME_LOCATION } from '../../lib/home-location.js';
 import { summarizeSessionRecommendations } from './sessions/index.js';
 import { summarizeDay } from './daily/summarize-day.js';
 import { buildMetarNote } from './daily/metar-note.js';

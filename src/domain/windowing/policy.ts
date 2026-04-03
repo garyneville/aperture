@@ -9,8 +9,8 @@
  */
 
 import type { DebugContext } from '../../lib/debug-context.js';
-import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';
-import type { RunTimeContext, Window, WindowDisplayPlan } from '../../types/brief.js';
+import type { RunTimeContext, Window, WindowDisplayPlan } from '../../contracts/index.js';
+import { DEFAULT_HOME_LOCATION } from '../../lib/home-location.js';
 import { clockToMinutes } from './time.js';
 
 /**

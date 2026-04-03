@@ -1,6 +1,6 @@
 import { isAuroraLikelyVisibleAtLat } from '../aurora-visibility.js';
 import { LONG_RANGE_LOCATIONS } from '../../../lib/long-range-locations.js';
-import { resolveHomeLatitude } from '../../../types/home-location.js';
+import { resolveHomeLatitude } from '../../../lib/home-location.js';
 import type {
   BriefContext,
   WindowLike,

@@ -12,7 +12,7 @@
  */
 
 import { clockToMinutes, windowRange } from '../../domain/windowing/index.js';
-import type { NextDayHour, Window, DaySummary } from '../../types/brief.js';
+import type { DaySummary, NextDayHour, Window } from '../../contracts/index.js';
 import {
   outdoorComfortScore,
   outdoorComfortLabel,

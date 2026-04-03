@@ -33,6 +33,10 @@ Payloads, render inputs, window definitions.
 Runtime context for rendering.
 - `ScoredForecastContext`
 
+### Home Location (`home-location.ts`)
+Shared home-location configuration shape.
+- `HomeLocation`
+
 ### Session Score (`session-score.ts`)
 Session scoring types.
 - `SessionId`, `SessionRecommendationSummary`, `SessionScore`

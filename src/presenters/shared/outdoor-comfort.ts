@@ -12,7 +12,7 @@
  */
 
 import { C } from './brief-primitives.js';
-import type { NextDayHour } from '../../types/brief.js';
+import type { NextDayHour } from '../../contracts/index.js';
 
 /**
  * Configuration for outdoor comfort scoring thresholds.

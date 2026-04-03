@@ -7,8 +7,8 @@ import type {
   DaySummary,
   LongRangeCard,
   Window,
-} from '../../types/brief.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
+} from '../../contracts/index.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../../lib/home-location.js';
 
 export type {
   AltLocation,
@@ -18,7 +18,7 @@ export type {
   LongRangeCard,
   Window,
   WindowHour,
-} from '../../types/brief.js';
+} from '../../contracts/index.js';
 
 export type FormatTelegramInput = BriefRenderInput;
 

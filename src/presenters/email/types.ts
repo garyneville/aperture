@@ -1,5 +1,5 @@
 // Compatibility shim: the canonical brief render contracts now live in
-// src/types/brief.ts so non-email renderers can depend on them directly.
+// src/contracts/ so presenter entrypoints can share the same public surface.
 export type {
   AltLocation,
   CarWash,
@@ -12,6 +12,6 @@ export type {
   Window,
   WindowDisplayPlan,
   WindowHour,
-} from '../../types/brief.js';
+} from '../../contracts/index.js';
 
-export type { BriefRenderInput as FormatEmailInput } from '../../types/brief.js';
+export type { BriefRenderInput as FormatEmailInput } from '../../contracts/index.js';

@@ -1,4 +1,4 @@
-import type { SessionConfidence, SessionId } from '../types/session-score.js';
+import type { SessionConfidence, SessionId } from '../contracts/session-score.js';
 
 export interface DebugRunMetadata {
   generatedAt: string;
