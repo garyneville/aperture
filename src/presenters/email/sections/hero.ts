@@ -11,11 +11,10 @@ import {
 import { confidenceDetail, effectiveConf } from '../shared.js';
 import {
   bestTimeLabel,
-  isAstroWindow,
   moonAstroContext,
   moonDescriptor,
-  windowRange,
-} from '../time-aware.js';
+} from '../../shared/window-helpers.js';
+import { windowRange } from '../../../domain/windowing/index.js';
 import type { DaySummary, Window } from '../types.js';
 import type { WindowDisplayPlan } from '../../../types/brief.js';
 import { alternativeSummaryTitle, alternativeTimingSummary } from './alternatives.js';

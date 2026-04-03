@@ -32,9 +32,10 @@ This folder contains all output formatting logic. Presenters transform structure
 
 - `index.ts` — Public entry point for email rendering
 - `shared.ts` — Cross-cutting render helpers
-- `time-aware.ts` — Rerun-aware window display logic
-- `kit-advisory.ts` — Rule-based kit recommendation logic
-- `next-day.ts` — Outdoor comfort scoring and forecast tables
+- `time-aware.ts` — Email-only "today's window" section orchestration
+- `kit-advisory.ts` — Email-only kit advisory card renderer
+- `next-day.ts` — Email-only forecast summary cards
+- `render-outdoor-outlook.ts` — Canonical hourly outdoor outlook renderer
 - `debug-email.ts` — Internal debug email rendering
 - `format-email.test.ts`, `debug-email.test.ts`, etc. — Tests
 
@@ -73,6 +74,8 @@ This folder contains all output formatting logic. Presenters transform structure
 - `window-helpers.ts` — Cross-presenter window and session display utilities (session names, window labels, summaries)
 - `kit-advisory.ts` — Cross-presenter kit recommendation logic
 - `presenter-context.ts` — Shared derived presenter context for the email and site renderers
+- `outdoor-comfort.ts` — Cross-presenter outdoor comfort scoring and labels
+- `outdoor-outlook-model.ts` — Cross-presenter outdoor outlook model builder
 
 ## Data In / Data Out
 

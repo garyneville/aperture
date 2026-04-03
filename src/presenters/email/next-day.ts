@@ -1,17 +1,10 @@
 /**
- * Next Day Outdoor Outlook
- *
- * This file is now a compatibility layer that re-exports from the split modules:
- * - outdoor-comfort.ts: Pure scoring/labels/reasons
- * - outdoor-outlook-model.ts: Filtering, contiguous windows, summary building
- * - render-outdoor-outlook.ts: HTML rendering
- *
- * The remaining functions in this file (photoForecastCards, daylightUtilityTodayCard)
- * are separate concerns that may be moved in future refactoring.
+ * Forecast summary cards used by the email presenter.
  */
 
 import { esc } from '../../lib/utils.js';
 import { clockToMinutes, minutesToClock } from '../../domain/windowing/index.js';
+import { bestDaySessionLabel, forecastBestLine } from '../shared/window-helpers.js';
 import {
   C,
   FONT,
@@ -26,57 +19,9 @@ import {
   pill,
   scoreState,
 } from './shared.js';
-import { bestDaySessionLabel, forecastBestLine } from './time-aware.js';
-import type { CarWash, DaySummary, NextDayHour, RunTimeContext, Window } from './types.js';
-import { renderNextDayHourlyOutlook, renderRemainingTodayOutlook } from './render-outdoor-outlook.js';
+import type { CarWash, DaySummary, NextDayHour, RunTimeContext } from './types.js';
 
-// Re-export from shared presenter layer for backwards compatibility
-export {
-  outdoorComfortScore,
-  outdoorComfortLabel,
-  outdoorComfortReason,
-  outdoorComfortReasonCodes,
-  COMFORT_SCORE_CONFIG,
-  RUN_FRIENDLY_THRESHOLDS,
-  COMFORT_REASON_THRESHOLDS,
-  type ComfortLabel,
-  type ComfortReasonCode,
-} from '../shared/outdoor-comfort.js';
-
-export {
-  buildOutdoorOutlookModel,
-  formatPhotoWindowList,
-  type OutdoorOutlookRow,
-  type OutdoorOutlookOptions,
-  type OutdoorOutlookModel,
-} from '../shared/outdoor-outlook-model.js';
-
-/**
- * @deprecated Use renderNextDayHourlyOutlook from './render-outdoor-outlook.js'
- */
-export function nextDayHourlyOutlookSection(
-  tomorrow: DaySummary | undefined,
-  debugContext?: import('../../lib/debug-context.js').DebugContext,
-  options: Partial<import('./outdoor-outlook-model.js').OutdoorOutlookOptions> & { title?: string; caption?: string } = {},
-): string {
-  return renderNextDayHourlyOutlook(tomorrow, debugContext, options);
-}
-
-/**
- * @deprecated Use renderRemainingTodayOutlook from './render-outdoor-outlook.js'
- */
-export function remainingTodayHourlyOutlookSection(
-  today: DaySummary | undefined,
-  runTime: RunTimeContext,
-  photoWindows: Window[],
-  debugContext?: import('../../lib/debug-context.js').DebugContext,
-): string {
-  return renderRemainingTodayOutlook(today, runTime, photoWindows, debugContext);
-}
-
-// =============================================================================
-// Photo Forecast Cards (separate concern - may move to own module in future)
-// =============================================================================
+// Photo forecast cards remain here because they are email-specific summaries.
 
 function forecastMoonPct(day: DaySummary): number | null {
   const hours = day.hours || [];
@@ -145,10 +90,6 @@ export function photoForecastCards(dailySummary: DaySummary[]): string {
     })
     .join('<div style="height:6px;line-height:6px;font-size:6px;">&nbsp;</div>');
 }
-
-// =============================================================================
-// Daylight Utility Card (separate concern - may move to own module in future)
-// =============================================================================
 
 export function daylightUtilityTodayCard(todayCarWash: CarWash, runTime: RunTimeContext): string {
   const startMinutes = clockToMinutes(todayCarWash.start);
