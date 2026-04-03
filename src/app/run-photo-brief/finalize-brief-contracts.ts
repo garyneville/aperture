@@ -16,6 +16,7 @@ import type {
   BriefJson,
   DebugContext,
   DebugGeminiDiagnostics,
+  DebugGroqDiagnostics,
   ScoredForecastContext,
   LongRangeSpurCandidate,
 } from '../../contracts/index.js';
@@ -61,6 +62,9 @@ export type RawEditorialInput = {
   /** Gemini diagnostics for debug tracing */
   geminiDiagnostics?: DebugGeminiDiagnostics;
 
+  /** Groq diagnostics for debug tracing */
+  groqDiagnostics?: DebugGroqDiagnostics;
+
   /** Nearby alternative location names for spur suggestion filtering */
   nearbyAltNames?: string[];
 
@@ -89,6 +93,9 @@ export type NormalizedEditorialInput = {
 
   /** Optional Gemini diagnostics */
   geminiDiagnostics?: DebugGeminiDiagnostics;
+
+  /** Optional Groq diagnostics */
+  groqDiagnostics?: DebugGroqDiagnostics;
 
   /** Nearby alternative names for spur filtering */
   nearbyAltNames: string[];

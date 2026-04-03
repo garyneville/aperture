@@ -116,6 +116,23 @@ export interface DebugGeminiDiagnostics {
   candidatesTokenCount?: number | null;
   totalTokenCount?: number | null;
   thoughtsTokenCount?: number | null;
+  /** Rate limit retry-after header value in seconds, if applicable */
+  retryAfter?: number | null;
+}
+
+export interface DebugGroqDiagnostics {
+  statusCode: number | null;
+  responseByteLength: number | null;
+  /** Rate limit retry-after header value in seconds, if applicable */
+  retryAfter?: number | null;
+}
+
+export interface DebugApiCallStatus {
+  provider: 'gemini' | 'groq';
+  status: 'success' | 'rate-limited' | 'error';
+  httpStatus: number | null;
+  message: string;
+  retryAfter?: number | null;
 }
 
 export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
@@ -139,6 +156,9 @@ export interface DebugAiTrace {
   rawGeminiResponse?: string;
   rawGeminiPayload?: string;
   geminiDiagnostics?: DebugGeminiDiagnostics;
+  groqDiagnostics?: DebugGroqDiagnostics;
+  /** High-level API call status for both providers */
+  apiCallStatuses?: DebugApiCallStatus[];
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;

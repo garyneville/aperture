@@ -43,6 +43,7 @@ describe('extractGeminiFallback', () => {
       geminiCandidatesTokenCount: 178,
       geminiTotalTokenCount: 1006,
       geminiThoughtsTokenCount: 704,
+      geminiRetryAfter: null,
     });
   });
 
@@ -97,6 +98,7 @@ describe('extractGeminiFallback', () => {
       geminiCandidatesTokenCount: 42,
       geminiTotalTokenCount: 130,
       geminiThoughtsTokenCount: 19,
+      geminiRetryAfter: null,
     });
   });
 });

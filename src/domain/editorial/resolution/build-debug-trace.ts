@@ -5,7 +5,7 @@
  * Captures provider responses, validation results, and component resolution.
  */
 
-import type { DebugAiTrace, DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
+import type { DebugAiTrace, DebugGeminiDiagnostics, DebugGroqDiagnostics } from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
 import type { WeekStandoutResolution } from './types.js';
 import type { CandidateSelectionResult } from './candidate-selection.js';
@@ -103,6 +103,8 @@ export interface BuildDebugTraceInput {
   geminiRawPayload?: string;
   /** Gemini diagnostics */
   geminiDiagnostics?: DebugGeminiDiagnostics;
+  /** Groq diagnostics */
+  groqDiagnostics?: DebugGroqDiagnostics;
   /** Primary rejection reason or null */
   primaryRejectionReason: string | null;
   /** Secondary rejection reason or null */
@@ -121,6 +123,8 @@ export interface BuildDebugTraceInput {
   weekStandout: WeekStandoutResolution;
   /** Component candidate for parse status */
   componentCandidate: { weekStandoutParseStatus?: string; weekStandoutRawValue?: string | null } | null;
+  /** API call statuses for both providers */
+  apiCallStatuses?: DebugAiTrace['apiCallStatuses'];
 }
 
 /**
@@ -178,6 +182,8 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     rawGeminiResponse: input.geminiRawContent || undefined,
     rawGeminiPayload: input.geminiRawPayload,
     geminiDiagnostics: input.geminiDiagnostics,
+    groqDiagnostics: input.groqDiagnostics,
+    apiCallStatuses: input.apiCallStatuses,
     normalizedAiText: traceCandidate?.normalizedAiText || '',
     factualCheck: traceCandidate?.factualCheck || {
       passed: false,

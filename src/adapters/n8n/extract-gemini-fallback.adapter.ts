@@ -49,6 +49,7 @@ type GeminiFallbackExtraction = {
   geminiCandidatesTokenCount: number | null;
   geminiTotalTokenCount: number | null;
   geminiThoughtsTokenCount: number | null;
+  geminiRetryAfter: number | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -95,6 +96,20 @@ function isMalformedJsonText(text: string | null): boolean {
   }
 }
 
+function extractRetryAfter(item: Record<string, unknown>): number | null {
+  // Check common header locations for retry-after
+  const headers = item.headers || item.error?.headers || item.error?.response?.headers;
+  if (!isRecord(headers)) return null;
+  
+  const retryAfter = headers['retry-after'] || headers['Retry-After'];
+  if (typeof retryAfter === 'number') return retryAfter;
+  if (typeof retryAfter === 'string') {
+    const parsed = parseInt(retryAfter, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 export function extractGeminiFallback(item: Record<string, unknown>): GeminiFallbackExtraction {
   const responseSource = getHttpResponseBodySource(item);
   const payloadInfo = unwrapHttpPayload(
@@ -139,6 +154,7 @@ export function extractGeminiFallback(item: Record<string, unknown>): GeminiFall
     geminiCandidatesTokenCount: numberOrNull(usageMetadata?.candidatesTokenCount),
     geminiTotalTokenCount: numberOrNull(usageMetadata?.totalTokenCount),
     geminiThoughtsTokenCount: numberOrNull(usageMetadata?.thoughtsTokenCount),
+    geminiRetryAfter: extractRetryAfter(item),
   };
 }
 
