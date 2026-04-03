@@ -112,6 +112,56 @@ function estimateTransparencyScore(input: DerivedHourFeatureInput): number {
   return clamp(visibilityScore - humidityPenalty - aerosolPenalty - cloudPenalty - trappedHazePenalty);
 }
 
+/**
+ * Estimates astronomical seeing quality (0-100, higher = steadier atmosphere)
+ * from available meteorological proxies.
+ *
+ * Seeing is driven by atmospheric turbulence through the optical column.
+ * Key drivers per operational astronomy forecasters:
+ *   - Surface wind gustiness (gust spread indicates boundary-layer turbulence)
+ *   - Boundary-layer height (deeper BLH = more convective mixing = worse seeing)
+ *   - CAPE (convective instability drives thermal cells that degrade seeing)
+ *   - Vertical wind shear (strong shear produces turbulent layers)
+ *
+ * Returns null when no usable proxy data is available (all inputs absent).
+ * When an external seeingScore is already provided, this function is not called.
+ */
+function estimateSeeingProxy(input: DerivedHourFeatureInput): number | null {
+  const hasAnyProxy = input.boundaryLayerHeightM != null
+    || input.capeJkg != null
+    || input.verticalShearKts != null;
+  if (!hasAnyProxy && input.gustKph <= input.windKph) return null;
+
+  // Boundary-layer turbulence risk: gustiness + wind speed + BLH
+  const gustSpread = Math.max(0, input.gustKph - input.windKph);
+  const gustRisk = clamp(Math.round((gustSpread - 4) * 4), 0, 100);
+  const windRisk = clamp(Math.round((input.windKph - 6) * 3), 0, 100);
+  const blhRisk = input.boundaryLayerHeightM != null
+    ? clamp(Math.round((input.boundaryLayerHeightM - 300) * 0.07), 0, 100)
+    : 50; // moderate assumption when unknown
+
+  // Convective risk: CAPE drives thermal bubbles that degrade seeing
+  const capeRisk = input.capeJkg != null
+    ? clamp(Math.round((input.capeJkg - 50) * 0.06), 0, 100)
+    : 0;
+
+  // Upper-air shear risk: strong shear → turbulent layers
+  const shearRisk = input.verticalShearKts != null
+    ? clamp(Math.round((input.verticalShearKts - 12) * 2.5), 0, 100)
+    : 0;
+
+  // Weighted combination — boundary-layer turbulence dominates for ground-based seeing
+  const totalRisk = Math.round(
+    (gustRisk * 0.30)
+    + (windRisk * 0.15)
+    + (blhRisk * 0.20)
+    + (capeRisk * 0.20)
+    + (shearRisk * 0.15),
+  );
+
+  return clamp(100 - totalRisk);
+}
+
 export function deriveHourFeatures(input: DerivedHourFeatureInput): DerivedHourFeatures {
   const boundaryLayerTrapScore = estimateBoundaryLayerTrapScore(input);
   const hazeTrapRisk = estimateHazeTrapRisk(input, boundaryLayerTrapScore);
@@ -119,8 +169,14 @@ export function deriveHourFeatures(input: DerivedHourFeatureInput): DerivedHourF
   const highCloudTranslucencyScore = estimateHighCloudTranslucencyScore(input, cloudOpticalThicknessPct);
   const lowCloudBlockingScore = estimateLowCloudBlockingScore(input, cloudOpticalThicknessPct);
 
+  // Populate seeingScore from proxy when no external value is provided
+  const seeingScore = input.seeingScore != null
+    ? input.seeingScore
+    : estimateSeeingProxy(input);
+
   return {
     ...input,
+    seeingScore,
     dewPointSpreadC: Math.max(0, input.temperatureC - input.dewPointC),
     boundaryLayerTrapScore,
     hazeTrapRisk,

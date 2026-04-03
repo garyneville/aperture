@@ -43,6 +43,8 @@ export interface DerivedHourFeatures {
   highCloudTranslucencyScore: number;
   lowCloudBlockingScore: number;
   moonIlluminationPct: number;
+  moonAltitudeDeg?: number | null;
+  solarAltitudeDeg?: number | null;
   isNight: boolean;
   isGolden: boolean;
   isBlue: boolean;
