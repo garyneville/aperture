@@ -1,5 +1,5 @@
-import { esc } from '../../core/utils.js';
-import type { DebugKitAdvisoryRule } from '../../core/debug-context.js';
+import { esc } from '../../lib/utils.js';
+import type { DebugKitAdvisoryRule } from '../../lib/debug-context.js';
 import { C, FONT, card } from './shared.js';
 import { clockToMinutes, isAstroWindow, windowRange } from './time-aware.js';
 import type { CarWash, Window, WindowHour } from './types.js';

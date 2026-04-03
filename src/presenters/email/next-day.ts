@@ -1,5 +1,5 @@
-import { esc } from '../../core/utils.js';
-import type { DebugContext, DebugOutdoorComfortHour } from '../../core/debug-context.js';
+import { esc } from '../../lib/utils.js';
+import type { DebugContext, DebugOutdoorComfortHour } from '../../lib/debug-context.js';
 import {
   C,
   FONT,

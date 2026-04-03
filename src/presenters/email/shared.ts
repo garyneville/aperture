@@ -1,4 +1,4 @@
-import { esc } from '../../core/utils.js';
+import { esc } from '../../lib/utils.js';
 import {
   renderEmailCard,
   renderEmailHeroCard,

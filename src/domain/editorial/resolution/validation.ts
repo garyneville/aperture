@@ -1,13 +1,13 @@
 import {
   isSingleSentenceCardRestatement,
   splitAiSentences,
-} from '../../../core/ai-briefing.js';
+} from '../../../lib/ai-briefing.js';
 import {
   buildWindowDisplayPlan,
   getRunTimeContext,
   windowRange,
-} from '../../../core/format-email/time-aware.js';
-import type { DebugAiCheck } from '../../../core/debug-context.js';
+} from '../../../presenters/email/time-aware.js';
+import type { DebugAiCheck } from '../../../lib/debug-context.js';
 import type {
   BriefContext,
   ValidationWindowContext,

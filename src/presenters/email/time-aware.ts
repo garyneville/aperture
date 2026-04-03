@@ -1,8 +1,8 @@
-import { explainAstroScoreGap } from '../../core/astro-score-explanation.js';
-import { renderAiBriefingText } from '../../core/ai-briefing.js';
-import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../core/aurora-visibility.js';
-import type { DebugContext } from '../../core/debug-context.js';
-import { esc } from '../../core/utils.js';
+import { explainAstroScoreGap } from '../../lib/astro-score-explanation.js';
+import { renderAiBriefingText } from '../../lib/ai-briefing.js';
+import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../lib/aurora-visibility.js';
+import type { DebugContext } from '../../lib/debug-context.js';
+import { esc } from '../../lib/utils.js';
 import { DEFAULT_HOME_LOCATION, resolveHomeLatitude } from '../../types/home-location.js';
 import type {
   SessionConfidence,

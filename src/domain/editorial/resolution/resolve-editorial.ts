@@ -1,10 +1,10 @@
-import { buildFallbackAiText as buildSharedFallbackAiText } from '../../../core/ai-briefing.js';
+import { buildFallbackAiText as buildSharedFallbackAiText } from '../../../lib/ai-briefing.js';
 import {
   buildWindowDisplayPlan,
   getRunTimeContext,
   timeAwareBriefingFallback,
-} from '../../../core/format-email/time-aware.js';
-import type { DebugGeminiDiagnostics } from '../../../core/debug-context.js';
+} from '../../../presenters/email/time-aware.js';
+import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
 import { filterCompositionBullets } from './composition.js';
 import {

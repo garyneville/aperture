@@ -1,5 +1,5 @@
-import { esc } from '../../core/utils.js';
-import type { DebugContext } from '../../core/debug-context.js';
+import { esc } from '../../lib/utils.js';
+import type { DebugContext } from '../../lib/debug-context.js';
 import { C, FONT, MONO, card, spacer } from './shared.js';
 
 function debugCard(title: string, body: string): string {
