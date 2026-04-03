@@ -20,6 +20,12 @@ This folder contains cross-cutting render primitives used by multiple presenters
 - [`kit-advisory.ts`](./kit-advisory.ts)
   Rule-based kit recommendation logic shared across presenters. Builds photography equipment tips based on weather conditions.
 
+- [`outdoor-comfort.ts`](./outdoor-comfort.ts)
+  Pure functions for outdoor comfort scoring (0-100), labels, and reason codes. Input: weather metrics. Output: comfort score, label with styling, and reason strings. This is the "tuning seam" for outdoor comfort algorithm adjustments. Moved from `../email/` to enable sharing across presenters.
+
+- [`outdoor-outlook-model.ts`](./outdoor-outlook-model.ts)
+  Data model building for outdoor outlook displays. Handles hour filtering, contiguous window selection, best window detection, and summary generation. Pure algorithmic logic with no HTML rendering. Moved from `../email/` to enable sharing across presenters.
+
 ## Main Files / Module Map
 
 - `brief-primitives.ts`
@@ -44,6 +50,20 @@ This folder contains cross-cutting render primitives used by multiple presenters
   Kit recommendation logic:
   - **Tip Building** — `buildKitTips()` generates equipment recommendations
   - **Rule Evaluation** — `evaluateKitRules()` for debug trace output
+
+- `outdoor-comfort.ts`
+  Outdoor comfort scoring logic:
+  - **Scoring** — `outdoorComfortScore()` calculates 0-100 comfort score from weather metrics
+  - **Labels** — `outdoorComfortLabel()` returns styled labels ("Best for a run/walk", "Pleasant", etc.)
+  - **Reasons** — `outdoorComfortReason()` and `outdoorComfortReasonCodes()` explain suboptimal scores
+  - **Configuration** — `COMFORT_SCORE_CONFIG`, `RUN_FRIENDLY_THRESHOLDS`, `COMFORT_REASON_THRESHOLDS` for tuning
+
+- `outdoor-outlook-model.ts`
+  Outdoor outlook model building:
+  - **Model Building** — `buildOutdoorOutlookModel()` creates the complete outlook model from day data
+  - **Window Detection** — Finds best outdoor windows using contiguous run analysis
+  - **Summary Generation** — Builds human-readable summary lines for outdoor conditions
+  - **Utilities** — `formatPhotoWindowList()` for formatting photo window lists
 
 ## Exported Primitives
 
@@ -95,6 +115,8 @@ MONO  // Monospace font family
 - Typography constants
 - Shared CSS-in-JS patterns
 - General formatting utilities that multiple presenters need
+- Cross-presenter algorithmic logic (outdoor comfort scoring, outlook model building)
+- Data models shared by multiple output channels
 
 ## What Does Not Belong Here
 

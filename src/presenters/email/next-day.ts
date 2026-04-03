@@ -30,7 +30,7 @@ import { bestDaySessionLabel, forecastBestLine } from './time-aware.js';
 import type { CarWash, DaySummary, NextDayHour, RunTimeContext, Window } from './types.js';
 import { renderNextDayHourlyOutlook, renderRemainingTodayOutlook } from './render-outdoor-outlook.js';
 
-// Re-export from split modules for backwards compatibility
+// Re-export from shared presenter layer for backwards compatibility
 export {
   outdoorComfortScore,
   outdoorComfortLabel,
@@ -41,7 +41,7 @@ export {
   COMFORT_REASON_THRESHOLDS,
   type ComfortLabel,
   type ComfortReasonCode,
-} from './outdoor-comfort.js';
+} from '../shared/outdoor-comfort.js';
 
 export {
   buildOutdoorOutlookModel,
@@ -49,7 +49,7 @@ export {
   type OutdoorOutlookRow,
   type OutdoorOutlookOptions,
   type OutdoorOutlookModel,
-} from './outdoor-outlook-model.js';
+} from '../shared/outdoor-outlook-model.js';
 
 /**
  * @deprecated Use renderNextDayHourlyOutlook from './render-outdoor-outlook.js'

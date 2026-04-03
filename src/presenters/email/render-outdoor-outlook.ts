@@ -10,8 +10,8 @@ import { esc } from '../../lib/utils.js';
 import { clockToMinutes, minutesToClock } from '../../domain/windowing/index.js';
 import { C, FONT, card, weatherIconForHour } from './shared.js';
 import type { DaySummary, RunTimeContext, Window } from './types.js';
-import type { OutdoorOutlookModel, OutdoorOutlookOptions } from './outdoor-outlook-model.js';
-import { buildOutdoorOutlookModel, formatPhotoWindowList } from './outdoor-outlook-model.js';
+import type { OutdoorOutlookModel, OutdoorOutlookOptions } from '../shared/outdoor-outlook-model.js';
+import { buildOutdoorOutlookModel, formatPhotoWindowList } from '../shared/outdoor-outlook-model.js';
 
 /**
  * Options for rendering the hourly outlook section.
