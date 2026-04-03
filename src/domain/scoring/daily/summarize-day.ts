@@ -13,9 +13,11 @@ import type {
 } from '../contracts.js';
 import { scoreHour } from '../hourly/score-hour.js';
 import type { DerivedHourFeatureInput } from '../features/derive-hour-features.js';
+import { computeConfidence, type EnsEntry } from './confidence.js';
+import { computeCarWash } from './car-wash.js';
+import { computeTwilightBoundaries } from './twilight.js';
 
 interface DateEntry { ts: string; i: number }
-interface EnsEntry { mean: number; stdDev: number }
 
 export interface SummarizeDayParams {
   dateKey: string;
@@ -45,66 +47,23 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
   const sunriseD = new Date(w.daily!.sunrise[dayIdx]);
   const sunsetD  = new Date(w.daily!.sunset[dayIdx]);
 
-  const shSunrise = shByDay[`${dateKey}_sunrise`];
-  const shSunset  = shByDay[`${dateKey}_sunset`];
-  const shSunriseQ = shSunrise?.quality ?? null;
-  const shSunsetQ  = shSunset?.quality  ?? null;
+  // Compute twilight session boundaries and metadata
+  const twilight = computeTwilightBoundaries({ dateKey, sunriseD, sunsetD, shByDay });
+  const {
+    goldAmS, goldAmE, goldPmS, goldPmE, blueAmS, bluePmE,
+    shSunriseQ, shSunsetQ, shSunsetText, sunDirection,
+    goldAmMins, goldPmMins, durationBonus,
+  } = twilight;
 
-  const goldAmS = shSunrise?.magics?.golden_hour?.[0] ? new Date(shSunrise.magics.golden_hour[0]) : new Date(+sunriseD - 10 * 60000);
-  const goldAmE = shSunrise?.magics?.golden_hour?.[1] ? new Date(shSunrise.magics.golden_hour[1]) : new Date(+sunriseD + 65 * 60000);
-  const goldPmS = shSunset?.magics?.golden_hour?.[0]  ? new Date(shSunset.magics.golden_hour[0])  : new Date(+sunsetD  - 65 * 60000);
-  const goldPmE = shSunset?.magics?.golden_hour?.[1]  ? new Date(shSunset.magics.golden_hour[1])  : new Date(+sunsetD  + 5  * 60000);
-  const blueAmS = shSunrise?.magics?.blue_hour?.[0]   ? new Date(shSunrise.magics.blue_hour[0])   : new Date(+sunriseD - 30 * 60000);
-  const bluePmE = shSunset?.magics?.blue_hour?.[1]    ? new Date(shSunset.magics.blue_hour[1])    : new Date(+sunsetD  + 30 * 60000);
-  const nightS  = new Date(+sunsetD + 90 * 60000);
-  void nightS; // referenced for completeness; not used in scoring
-  const sunDirection = shSunset?.direction != null
-    ? (parseFloat(String(shSunset.direction)) || null)
-    : null;
+  // Compute ensemble confidence for all sessions
+  const confidenceResult = computeConfidence({
+    dateKey,
+    byDate,
+    ensIdx,
+    boundaries: { goldAmS, goldAmE, goldPmS, goldPmE, blueAmS, bluePmE },
+  });
 
-  // Golden-hour duration bonus — longer twilight = more opportunity
-  // Baseline 90 min total; +1pt per 8 min above that, capped at +8
-  const goldAmMins = (+goldAmE - +goldAmS) / 60000;
-  const goldPmMins = (+goldPmE - +goldPmS) / 60000;
-  const totalGoldMins = goldAmMins + goldPmMins;
-  const durationBonus = Math.min(8, Math.round(Math.max(0, (totalGoldMins - 90) / 8)));
-
-  // Ensemble confidence — per-session and overall
-  function computeConf(timestamps: string[]): { confidence: string; confidenceStdDev: number | null } {
-    const ens = timestamps.map(ts => ensIdx[ts]).filter(Boolean);
-    if (!ens.length) return { confidence: 'unknown', confidenceStdDev: null };
-    const avgStdDev = ens.reduce((s, e) => s + e.stdDev, 0) / ens.length;
-    return {
-      confidence: avgStdDev < 12 ? 'high' : avgStdDev < 25 ? 'medium' : 'low',
-      confidenceStdDev: Math.round(avgStdDev),
-    };
-  }
-  const amTimesEns = (byDate[dateKey] || []).filter(({ ts }) => {
-    const t = new Date(ts); return t >= goldAmS && t <= goldAmE;
-  }).map(({ ts }) => ts);
-  const pmTimesEns = (byDate[dateKey] || []).filter(({ ts }) => {
-    const t = new Date(ts); return t >= goldPmS && t <= goldPmE;
-  }).map(({ ts }) => ts);
-  const amConf = computeConf(amTimesEns);
-  const pmConf = computeConf(pmTimesEns);
-  // Night-hour ensemble confidence (drives astro recommendation quality)
-  const nightTimesEns = (byDate[dateKey] || []).filter(({ ts }) => {
-    const t = new Date(ts);
-    return t < blueAmS || t > bluePmE;
-  }).map(({ ts }) => ts);
-  const astroConf = computeConf(nightTimesEns);
-  // Overall confidence (backward compat)
-  const goldTimes = [...amTimesEns, ...pmTimesEns];
-  const goldEns = goldTimes.map(ts => ensIdx[ts]).filter(Boolean);
-  let confidence = 'unknown';
-  let confidenceStdDev: number | null = null;
-  if (goldEns.length) {
-    const avgStdDev = goldEns.reduce((s, e) => s + e.stdDev, 0) / goldEns.length;
-    confidenceStdDev = Math.round(avgStdDev);
-    confidence = avgStdDev < 12 ? 'high' : avgStdDev < 25 ? 'medium' : 'low';
-  }
-
-  const hours: ScoredHour[] = [];
+  // Night timestamps for dark sky calculation
   const nightTimestamps = (byDate[dateKey] || [])
     .map(({ ts }) => ts)
     .filter(ts => {
@@ -116,6 +75,8 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     ? new Date(darkSkyStartTs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
     : null;
 
+  // Score each hour
+  const hours: ScoredHour[] = [];
   (byDate[dateKey] || []).forEach(({ ts, i }) => {
     const t = new Date(ts);
 
@@ -185,7 +146,7 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     hours.push(scoredHour);
   });
 
-  // Best photo score — apply duration bonus at the day level
+  // Best photo score - apply duration bonus at the day level
   const goldenHours = hours.filter(h => h.isGolden || h.isBlue);
   const photoHours  = goldenHours.length ? goldenHours : hours.filter(h => !h.isNight);
   const bestPhotoRaw = photoHours.reduce((b, h) => h.score > b ? h.score : b, 0);
@@ -224,27 +185,8 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
   else if (headlineScore >= 42) { photoEmoji = '\uD83D\uDFE1'; photoRating = 'Marginal'; }
   else                      { photoEmoji = '\u274C'; photoRating = "Poor \u2014 don't bother"; }
 
-  // Car wash
-  const dayH = hours.filter(h => !h.isNight);
-  let cw: CarWash = { score: 0, rating: '\u274C', label: 'No good window', start: '\u2014', end: '\u2014', wind: 0, pp: 0, tmp: 0 };
-  for (let j = 0; j <= dayH.length - 3; j++) {
-    const sl = dayH.slice(j, j + 3);
-    const avgWind = sl.reduce((s, h) => s + h.wind, 0) / sl.length;
-    const maxPP   = Math.max(...sl.map(h => h.pp));
-    const avgTmp  = sl.reduce((s, h) => s + h.tmp,  0) / sl.length;
-    let sc = 100;
-    if (avgWind > 25) sc -= 40; else if (avgWind > 15) sc -= 20; else if (avgWind > 10) sc -= 5;
-    if (maxPP > 60)   sc -= 50; else if (maxPP > 30)   sc -= 25; else if (maxPP > 10)   sc -= 10;
-    if (avgTmp < 5)   sc -= 20; else if (avgTmp > 25)  sc -= 10;
-    // clamp inline — avoid importing clamp for a trivial operation
-    sc = Math.min(100, Math.max(0, sc));
-    if (sc > cw.score) cw = {
-      score: sc, rating: sc >= 75 ? '\u2705' : sc >= 50 ? '\uD83D\uDFE1' : '\uD83D\uDD34',
-      label: sc >= 75 ? 'Great' : sc >= 50 ? 'OK' : 'Poor',
-      start: sl[0].hour, end: sl[sl.length - 1].hour,
-      wind: Math.round(avgWind), pp: maxPP, tmp: Math.round(avgTmp),
-    };
-  }
+  // Car wash scoring
+  const cw = computeCarWash(hours);
 
   return {
     dateKey, dayLabel, dayIdx, hours,
@@ -254,16 +196,21 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     carWash: cw,
     sunrise: w.daily!.sunrise[dayIdx],
     sunset:  w.daily!.sunset[dayIdx],
-    shSunsetQuality:  shSunset  ? Math.round((shSunset.quality  || 0) * 100) : null,
-    shSunriseQuality: shSunrise ? Math.round((shSunrise.quality || 0) * 100) : null,
-    shSunsetText: shSunset?.quality_text || null,
+    shSunsetQuality:  shSunsetQ !== null ? Math.round(shSunsetQ * 100) : null,
+    shSunriseQuality: shSunriseQ !== null ? Math.round(shSunriseQ * 100) : null,
+    shSunsetText,
     sunDirection,
     crepRayPeak: Math.max(...hours.map(h => h.crepuscular || 0)),
-    confidence, confidenceStdDev, durationBonus,
-    amConfidence: amConf.confidence, amConfidenceStdDev: amConf.confidenceStdDev,
-    pmConfidence: pmConf.confidence, pmConfidenceStdDev: pmConf.confidenceStdDev,
-    astroConfidence: astroConf.confidence, astroConfidenceStdDev: astroConf.confidenceStdDev,
-    goldAmMins: Math.round(goldAmMins), goldPmMins: Math.round(goldPmMins),
+    confidence: confidenceResult.overall.confidence,
+    confidenceStdDev: confidenceResult.overall.confidenceStdDev,
+    durationBonus,
+    amConfidence: confidenceResult.am.confidence,
+    amConfidenceStdDev: confidenceResult.am.confidenceStdDev,
+    pmConfidence: confidenceResult.pm.confidence,
+    pmConfidenceStdDev: confidenceResult.pm.confidenceStdDev,
+    astroConfidence: confidenceResult.astro.confidence,
+    astroConfidenceStdDev: confidenceResult.astro.confidenceStdDev,
+    goldAmMins, goldPmMins,
     amScore, pmScore, astroScore, bestAstroHour: bestNightH?.hour || null, darkSkyStartsAt,
     bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
     sunriseOcclusionRisk: sunriseOcclusionRisk !== null ? Math.round(sunriseOcclusionRisk) : null,
