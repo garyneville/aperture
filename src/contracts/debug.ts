@@ -9,6 +9,8 @@
 export type {
   DebugContext,
   DebugGeminiDiagnostics,
+  DebugGroqDiagnostics,
+  DebugApiCallStatus,
   DebugPayloadSnapshot,
   DebugRunMetadata,
   DebugScores,

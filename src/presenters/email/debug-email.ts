@@ -196,6 +196,18 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           : `<div style="font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};">No long-range candidates met the threshold this run.</div>`
         )}
         ${aiTrace ? `${spacer(8)}${debugCard('AI editorial trace', `
+          ${aiTrace.apiCallStatuses?.length ? `
+          <div style="Margin-bottom:12px;padding:10px;background:${C.surfaceVariant};border:1px solid ${C.outline};border-radius:8px;">
+            <div style="font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};Margin-bottom:6px;">API Call Status</div>
+            ${aiTrace.apiCallStatuses.map(status => {
+              const icon = status.status === 'success' ? '✅' : status.status === 'rate-limited' ? '⏱️' : '❌';
+              const color = status.status === 'success' ? C.success : status.status === 'rate-limited' ? '#F59E0B' : '#DC2626';
+              return `<div style="font-family:${FONT};font-size:12px;line-height:1.6;color:${C.ink};">
+                <span style="font-weight:600;color:${color};">${icon} ${esc(status.provider)}:</span> ${esc(status.message)}
+              </div>`;
+            }).join('')}
+          </div>
+          ` : ''}
           ${debugKeyValueLines([
             ['Primary provider', aiTrace.primaryProvider || null],
             ['Selected provider', aiTrace.selectedProvider || null],

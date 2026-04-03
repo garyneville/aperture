@@ -151,9 +151,11 @@ export type ResolveEditorialInput = {
   geminiRawContent: string;
   geminiInspire?: string;
   geminiDiagnostics?: DebugGeminiDiagnostics;
+  groqDiagnostics?: DebugGroqDiagnostics;
   geminiRawPayload?: string;
   nearbyAltNames?: string[];
   longRangePool?: LongRangeSpurCandidate[];
+  apiCallStatuses?: DebugApiCallStatus[];
 };
 
 export type ResolveEditorialOutput = {

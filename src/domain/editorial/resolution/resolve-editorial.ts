@@ -11,7 +11,7 @@
  * Heavy logic has been extracted to focused modules.
  */
 
-import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
+import type { DebugGeminiDiagnostics, DebugGroqDiagnostics, DebugApiCallStatus } from '../../../lib/debug-context.js';
 import { normalizeAiText, parseGroqResponse } from './parse.js';
 import type {
   BriefContext,
@@ -76,9 +76,11 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     geminiRawContent,
     geminiInspire,
     geminiDiagnostics,
+    groqDiagnostics,
     geminiRawPayload,
     nearbyAltNames = [],
     longRangePool = [],
+    apiCallStatuses,
   } = input;
 
   // Step 1: Select best candidate from provider responses
@@ -145,6 +147,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     geminiRawContent,
     geminiRawPayload,
     geminiDiagnostics,
+    groqDiagnostics,
     primaryRejectionReason,
     secondaryRejectionReason,
     bestSpurRaw: resolvedComponents.bestSpurRaw,
@@ -154,6 +157,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     resolvedCompositionBullets: resolvedComponents.compositionBullets,
     weekStandout: resolvedComponents.weekStandout,
     componentCandidate,
+    apiCallStatuses,
   });
 
   // Return final editorial decision

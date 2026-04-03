@@ -35,6 +35,8 @@ import type {
 import type {
   DebugContext,
   DebugGeminiDiagnostics,
+  DebugGroqDiagnostics,
+  DebugApiCallStatus,
   DebugPayloadSnapshot,
   LongRangeSpurCandidate,
 } from '../../contracts/index.js';
@@ -107,6 +109,7 @@ function normalizeEditorialInput(
     geminiInspire: typeof geminiInspire === 'string' ? geminiInspire : undefined,
     geminiRawPayload: normalizedGeminiRawPayload,
     geminiDiagnostics: providedGeminiDiagnostics,
+    groqDiagnostics: input.groqDiagnostics,
     nearbyAltNames: normalizedNearbyAltNames,
     longRangePool: normalizedLongRangePool,
   };
@@ -194,6 +197,102 @@ export function extractGeminiDiagnostics(input: {
     totalTokenCount: finiteNumberOrNull(geminiTotalTokenCount),
     thoughtsTokenCount: finiteNumberOrNull(geminiThoughtsTokenCount),
   };
+}
+
+/**
+ * Extract Groq diagnostics from raw input fields.
+ */
+export function extractGroqDiagnostics(input: {
+  groqStatusCode?: unknown;
+  groqResponseByteLength?: unknown;
+  groqRetryAfter?: unknown;
+}): DebugGroqDiagnostics | undefined {
+  const { groqStatusCode, groqResponseByteLength, groqRetryAfter } = input;
+
+  const hasAnyDiagnostic =
+    typeof groqStatusCode === 'number' || typeof groqResponseByteLength === 'number';
+
+  if (!hasAnyDiagnostic) {
+    return undefined;
+  }
+
+  return {
+    statusCode: finiteNumberOrNull(groqStatusCode),
+    responseByteLength: finiteNumberOrNull(groqResponseByteLength),
+    retryAfter: finiteNumberOrNull(groqRetryAfter),
+  };
+}
+
+/**
+ * Build API call status summaries for both providers.
+ */
+export function buildApiCallStatuses(
+  geminiDiagnostics?: DebugGeminiDiagnostics,
+  groqDiagnostics?: DebugGroqDiagnostics,
+): DebugApiCallStatus[] {
+  const statuses: DebugApiCallStatus[] = [];
+
+  // Gemini status
+  if (geminiDiagnostics?.statusCode !== undefined && geminiDiagnostics?.statusCode !== null) {
+    const statusCode = geminiDiagnostics.statusCode;
+    let status: DebugApiCallStatus['status'] = 'success';
+    let message = `HTTP ${statusCode}`;
+
+    if (statusCode === 429) {
+      status = 'rate-limited';
+      message = geminiDiagnostics.retryAfter
+        ? `Rate limited — retry after ${geminiDiagnostics.retryAfter}s`
+        : 'Rate limited';
+    } else if (statusCode >= 400) {
+      status = 'error';
+      message = `Error ${statusCode}`;
+    } else if (statusCode === 200) {
+      const bytes = geminiDiagnostics.responseByteLength ?? 0;
+      const tokens = geminiDiagnostics.candidatesTokenCount ?? 0;
+      message = `Success — ${bytes} bytes, ${tokens} tokens`;
+      if (geminiDiagnostics.truncated) {
+        message += `, truncated (${geminiDiagnostics.finishReason})`;
+      }
+    }
+
+    statuses.push({
+      provider: 'gemini',
+      status,
+      httpStatus: statusCode,
+      message,
+      retryAfter: geminiDiagnostics.retryAfter ?? null,
+    });
+  }
+
+  // Groq status
+  if (groqDiagnostics?.statusCode !== undefined && groqDiagnostics?.statusCode !== null) {
+    const statusCode = groqDiagnostics.statusCode;
+    let status: DebugApiCallStatus['status'] = 'success';
+    let message = `HTTP ${statusCode}`;
+
+    if (statusCode === 429) {
+      status = 'rate-limited';
+      message = groqDiagnostics.retryAfter
+        ? `Rate limited — retry after ${groqDiagnostics.retryAfter}s`
+        : 'Rate limited';
+    } else if (statusCode >= 400) {
+      status = 'error';
+      message = `Error ${statusCode}`;
+    } else if (statusCode === 200) {
+      const bytes = groqDiagnostics.responseByteLength ?? 0;
+      message = `Success — ${bytes} bytes`;
+    }
+
+    statuses.push({
+      provider: 'groq',
+      status,
+      httpStatus: statusCode,
+      message,
+      retryAfter: groqDiagnostics.retryAfter ?? null,
+    });
+  }
+
+  return statuses;
 }
 
 /**

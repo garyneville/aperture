@@ -54,8 +54,8 @@ Main use case contracts.
 ### Debug (`debug.ts`)
 Debug context and diagnostics types for tracing and observability.
 - `DebugContext`, `DebugPayloadSnapshot`
-- `DebugGeminiDiagnostics`, `DebugRunMetadata`
-- `DebugScores`, `DebugHourlyScore`, `DebugWindowTrace`
+- `DebugGeminiDiagnostics`, `DebugGroqDiagnostics`, `DebugApiCallStatus`
+- `DebugRunMetadata`, `DebugScores`, `DebugHourlyScore`, `DebugWindowTrace`
 - `DebugAiTrace`, `DebugWeekStandoutTrace`
 - `DebugLongRangeCandidate`, `DebugNearbyAlternative`
 - `DebugKitAdvisory`, `DebugOutdoorComfort`
