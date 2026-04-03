@@ -1,0 +1,69 @@
+{
+  "_comment": "Sample forecast fixture for CLI testing",
+  "context": {
+    "dontBother": false,
+    "windows": [
+      {
+        "label": "Evening golden hour",
+        "start": "18:30",
+        "end": "19:30",
+        "peak": 78,
+        "tops": ["golden hour", "clear light path"],
+        "hours": [
+          { "hour": "18:30", "score": 75, "ct": 15, "visK": 10, "aod": 0.1 },
+          { "hour": "19:00", "score": 78, "ct": 10, "visK": 12, "aod": 0.08 }
+        ]
+      }
+    ],
+    "dailySummary": [
+      {
+        "dayLabel": "Today",
+        "dayIdx": 0,
+        "headlineScore": 78,
+        "photoScore": 78,
+        "confidence": "high",
+        "confidenceStdDev": 5,
+        "bestPhotoHour": "19:00",
+        "astroScore": 45,
+        "bestAstroHour": null,
+        "darkSkyStartsAt": null
+      }
+    ],
+    "altLocations": [
+      {
+        "name": "Ilkley Moor",
+        "bestScore": 82,
+        "bestAstroHour": null,
+        "darkSky": false,
+        "driveMins": 25
+      }
+    ],
+    "today": "Friday 3 April",
+    "todayBestScore": 78,
+    "peakKpTonight": 3.5,
+    "auroraSignal": null,
+    "sunriseStr": "06:15",
+    "sunsetStr": "19:45",
+    "moonPct": 25,
+    "metarNote": ""
+  },
+  "groqChoices": [
+    {
+      "message": {
+        "content": "{\"editorial\": \"The evening golden hour offers excellent conditions with clear skies and good visibility. The 19:00 peak scores 78/100 with minimal cloud cover.\", \"composition\": [\"Position yourself facing west for the best sunset light\", \"Use a polarizer to enhance sky colors\"], \"weekStandout\": \"Today stands out for its clear evening conditions.\"}"
+      }
+    }
+  ],
+  "geminiResponse": "",
+  "homeLocation": {
+    "name": "Leeds",
+    "lat": 53.8008,
+    "lon": -1.5491,
+    "timezone": "Europe/London"
+  },
+  "debug": {
+    "enabled": true,
+    "emailTo": "debug@example.com"
+  },
+  "preferredProvider": "groq"
+}
