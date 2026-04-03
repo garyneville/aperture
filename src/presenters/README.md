@@ -70,6 +70,8 @@ This folder contains all output formatting logic. Presenters transform structure
 ### Shared (`shared/`)
 
 - `brief-primitives.ts` — Cross-presenter primitives: colors, typography, icons, stat grids, weather/moon icons
+- `window-helpers.ts` — Cross-presenter window and session display utilities (session names, window labels, summaries)
+- `kit-advisory.ts` — Cross-presenter kit recommendation logic
 
 ## Data In / Data Out
 

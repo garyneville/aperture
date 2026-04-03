@@ -40,39 +40,21 @@ import {
   windowRange,
 } from '../../domain/windowing/index.js';
 
-export function moonDescriptor(moonPct: number): string {
-  if (moonPct <= 5) return 'New-ish';
-  if (moonPct <= 35) return 'Crescent';
-  if (moonPct <= 65) return 'Half moon';
-  if (moonPct <= 90) return 'Gibbous';
-  return 'Full-ish';
-}
-
-export function moonAstroContext(moonPct: number): string {
-  const icon = moonIconForPct(moonPct);
-  if (moonPct <= 15) return `${icon} Dark skies — excellent for astrophotography`;
-  if (moonPct <= 40) return `${icon} Low moon glow — good for astrophotography`;
-  if (moonPct <= 70) return `${icon} Moderate moon — astrophotography compromised`;
-  if (moonPct <= 90) return `${icon} Bright moon — poor for astrophotography`;
-  return `${icon} Full moon — avoid astrophotography`;
-}
-
-export function isAstroWindow(window: Window | undefined): boolean {
-  if (!window) return false;
-  return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
-}
-
-export function peakHourForWindow(window: Window | undefined): string | null {
-  if (!window?.hours?.length) return null;
-  // Prefer the explicit peakHour field populated by the scoring pipeline.
-  // Falling back to score-matching is unreliable: window.peak holds the session
-  // score (e.g. 100 for long-exposure) while hour.score holds the daily final
-  // score (e.g. 14), so the equality check never fires and we'd silently take
-  // the last hour in the array instead of the actual peak hour.
-  if (window.peakHour) return window.peakHour;
-  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
-  return peakHour?.hour || null;
-}
+// Re-export shared window helpers for backwards compatibility.
+// These are implemented in ../shared/window-helpers.ts and re-exported here
+// so existing imports continue to work.
+export {
+  bestDaySessionLabel,
+  bestTimeLabel,
+  displayBestTags,
+  displaySessionName,
+  displayTag,
+  isAstroWindow,
+  localSummaryLines,
+  moonDescriptor,
+  peakHourForWindow,
+  timeAwareLocalSummary,
+} from '../shared/window-helpers.js';
 
 // Re-export windowing functions for backwards compatibility.
 // These are implemented in src/domain/windowing/ and re-exported here
@@ -87,88 +69,23 @@ export {
   windowRange,
 } from '../../domain/windowing/index.js';
 
-export function timeAwareLocalSummary(
-  plan: WindowDisplayPlan,
-  primary: Window | null,
-  lines: string[],
-): string {
-  const referencesWindow = (line: string, window: Window | null): boolean => {
-    if (!line || !window) return false;
-    const lower = line.toLowerCase();
-    return lower.includes(window.label.toLowerCase()) && lower.includes(windowRange(window).toLowerCase());
-  };
-  const dedupedLines = lines.filter(line => {
-    if (!line) return false;
-    if (plan.promotedFromPast && referencesWindow(line, primary)) return false;
-    if (plan.promotedFromPast && referencesWindow(line, plan.past[0] || null)) return false;
-    return true;
-  });
+// Import from shared for internal use
+import {
+  bestTimeLabel,
+  displayBestTags,
+  displaySessionName,
+  displayTag,
+  isAstroWindow,
+  peakHourForWindow,
+} from '../shared/window-helpers.js';
 
-  if (plan.promotedFromPast && primary && plan.past[0]) {
-    const earlier = plan.past[0];
-    return [
-      `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 earlier today.`,
-      `${primary.label}: ${windowRange(primary)} at ${primary.peak}/100 is the best remaining local option.`,
-      ...dedupedLines,
-    ].filter(Boolean).join('\n');
-  }
-  if (plan.allPast && plan.past[0]) {
-    const earlier = plan.past[0];
-    return `${earlier.label}: ${windowRange(earlier)} at ${earlier.peak}/100 was the strongest local window earlier today. No local photo window remains today.`;
-  }
-  return dedupedLines.join('\n');
-}
-
-export function displayTag(tag: string): string {
-  const normalized = tag.trim().toLowerCase();
-  const tagMap: Record<string, string> = {
-    astrophotography: 'astro',
-    'clear light path': 'clear horizon',
-    'misty / atmospheric': 'atmospheric',
-  };
-  return tagMap[normalized] || tag.trim();
-}
-
-export function bestTimeLabel(window: Window | null | undefined, promotedFromPast = false): string {
-  if (promotedFromPast) return 'Next window';
-  if (isAstroWindow(window ?? undefined)) return 'Best astro';
-  if (window && !window.fallback) return 'Best light';
-  return 'Best time';
-}
-
-export function displayBestTags(bestTags: string | undefined, fallback = 'mixed conditions'): string {
-  if (!bestTags) return fallback;
-  const visibleTags = bestTags
-    .split(',')
-    .map(tag => tag.trim())
-    .map(tag => displayTag(tag))
-    .filter(tag => tag && tag !== 'general' && tag !== 'poor');
-  return visibleTags.join(', ') || fallback;
-}
-
-export function displaySessionName(session: SessionId): string {
-  switch (session) {
-    case 'golden-hour':
-      return 'Golden hour';
-    case 'astro':
-      return 'Astro';
-    case 'mist':
-      return 'Mist';
-    case 'storm':
-      return 'Storm';
-    case 'urban':
-      return 'Urban';
-    case 'long-exposure':
-      return 'Long exposure';
-    case 'street':
-      return 'Street';
-    case 'wildlife':
-      return 'Wildlife';
-    case 'waterfall':
-      return 'Waterfall';
-    case 'seascape':
-      return 'Seascape';
-  }
+export function moonAstroContext(moonPct: number): string {
+  const icon = moonIconForPct(moonPct);
+  if (moonPct <= 15) return `${icon} Dark skies — excellent for astrophotography`;
+  if (moonPct <= 40) return `${icon} Low moon glow — good for astrophotography`;
+  if (moonPct <= 70) return `${icon} Moderate moon — astrophotography compromised`;
+  if (moonPct <= 90) return `${icon} Bright moon — poor for astrophotography`;
+  return `${icon} Full moon — avoid astrophotography`;
 }
 
 export function sessionConfidenceLabel(confidence: SessionConfidence): string {
@@ -209,13 +126,6 @@ export function sessionRunnerUpLine(summary: SessionRecommendationSummary | unde
   if (!primary || !runnerUp) return null;
   if (primary.confidence !== 'low' && (primary.volatility ?? 0) < 20) return null;
   return `Runner-up: ${displaySessionName(runnerUp.session)} at ${runnerUp.hourLabel} (${runnerUp.score}/100).`;
-}
-
-export function bestDaySessionLabel(bestDayHour: string | null | undefined): string {
-  if (!bestDayHour) return 'Golden hour';
-  const hour = Number.parseInt(bestDayHour.slice(0, 2), 10);
-  if (!Number.isFinite(hour)) return 'Golden hour';
-  return hour < 12 ? 'Morning golden hour' : 'Evening golden hour';
 }
 
 export function forecastBestLine(day: DaySummary): string {
@@ -362,29 +272,4 @@ export function todayWindowSection(
     `),
     ...(compCard ? [compCard] : []),
   ]);
-}
-
-export function localSummaryLines(
-  plan: WindowDisplayPlan,
-  topWindow: Window | null,
-  todayDay: DaySummary,
-): string[] {
-  const astroGap = topWindow
-    ? explainAstroScoreGap({ window: topWindow, today: todayDay })
-    : null;
-  const nextWindow = plan.remaining.find(window => window !== topWindow) || null;
-
-  return [
-    topWindow
-      ? `${topWindow.label}: ${windowRange(topWindow)} at ${topWindow.peak}/100.`
-      : todayDay.bestTags
-        ? `Best local setup: ${todayDay.bestPhotoHour || 'time TBD'} for ${displayBestTags(todayDay.bestTags)}.`
-        : todayDay.bestPhotoHour
-          ? `Best local setup: ${todayDay.bestPhotoHour}.`
-          : '',
-    astroGap && !plan.promotedFromPast ? astroGap.text : '',
-    nextWindow && isAstroWindow(topWindow || undefined) && isAstroWindow(nextWindow)
-      ? `${nextWindow.label}: ${nextWindow.start}-${nextWindow.end} at ${nextWindow.peak}/100 if you miss the first slot.`
-      : '',
-  ];
 }

@@ -84,6 +84,8 @@ Complete HTML document string ready for:
 
 - **Business logic** — belongs in `src/domain`
 - **Shared icons/colors** — belongs in `../shared/brief-primitives.ts`
+- **Shared window/session helpers** — belongs in `../shared/window-helpers.ts`
+- **Shared kit advisory logic** — belongs in `../shared/kit-advisory.ts`
 - **Email-specific formatting** — belongs in `../email/`
 - **Telegram formatting** — belongs in `../telegram/`
 
