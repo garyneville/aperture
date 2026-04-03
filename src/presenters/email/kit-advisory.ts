@@ -1,7 +1,8 @@
 import { esc } from '../../lib/utils.js';
 import type { DebugKitAdvisoryRule } from '../../lib/debug-context.js';
 import { C, FONT, card } from './shared.js';
-import { clockToMinutes, isAstroWindow, windowRange } from './time-aware.js';
+import { clockToMinutes, windowRange } from '../../domain/windowing/index.js';
+import { isAstroWindow } from './time-aware.js';
 import type { CarWash, Window, WindowHour } from './types.js';
 
 export interface KitTip {

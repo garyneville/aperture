@@ -7,14 +7,16 @@ import {
   scoreState,
 } from '../shared/brief-primitives.js';
 import {
+  buildWindowDisplayPlan,
+  getRunTimeContext,
+  minutesToClock,
+} from '../../domain/windowing/index.js';
+import {
   bestDaySessionLabel,
   bestTimeLabel,
-  buildWindowDisplayPlan,
   displaySessionName,
-  getRunTimeContext,
   isAstroWindow,
   localSummaryLines,
-  minutesToClock,
   moonDescriptor,
   peakHourForWindow,
   timeAwareLocalSummary,

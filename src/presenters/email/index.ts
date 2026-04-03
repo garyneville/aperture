@@ -11,8 +11,10 @@ import {
 } from './shared.js';
 import {
   buildWindowDisplayPlan,
-  displaySessionName,
   getRunTimeContext,
+} from '../../domain/windowing/index.js';
+import {
+  displaySessionName,
   isAstroWindow,
   localSummaryLines,
   peakHourForWindow,

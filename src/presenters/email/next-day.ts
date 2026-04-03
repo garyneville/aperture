@@ -15,12 +15,10 @@ import {
   scoreState,
   weatherIconForHour,
 } from './shared.js';
+import { clockToMinutes, minutesToClock, windowRange } from '../../domain/windowing/index.js';
 import {
   bestDaySessionLabel,
-  clockToMinutes,
   forecastBestLine,
-  minutesToClock,
-  windowRange,
 } from './time-aware.js';
 import type { CarWash, DaySummary, NextDayHour, RunTimeContext, Window } from './types.js';
 

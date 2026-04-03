@@ -5,11 +5,13 @@ import { C, scoreState, type SummaryStat } from '../../shared/brief-primitives.j
 import {
   buildWindowDisplayPlan,
   classifyWindowTiming,
+  timeAwareBriefingFallback,
+  windowRange,
+} from '../../../domain/windowing/index.js';
+import {
   displayTag,
   isAstroWindow,
   peakHourForWindow,
-  timeAwareBriefingFallback,
-  windowRange,
 } from '../../email/time-aware.js';
 import type {
   AltLocation,
