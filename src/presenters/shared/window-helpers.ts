@@ -6,8 +6,15 @@
  * logic for displaying photography windows, sessions, and related metadata.
  */
 
-import type { SessionId, SessionRecommendation, SessionRecommendationSummary } from '../../types/session-score.js';
-import type { DaySummary, Window, WindowDisplayPlan } from '../../types/brief.js';
+import type {
+  DaySummary,
+  SessionConfidence,
+  SessionId,
+  SessionRecommendation,
+  SessionRecommendationSummary,
+  Window,
+  WindowDisplayPlan,
+} from '../../contracts/index.js';
 import { explainAstroScoreGap } from '../../domain/editorial/astro-score-explanation.js';
 import { windowRange } from '../../domain/windowing/index.js';
 import { moonIconForPct } from './brief-primitives.js';
@@ -209,7 +216,7 @@ export function forecastBestLine(day: DaySummary): string {
 /**
  * Returns a label for session confidence.
  */
-export function sessionConfidenceLabel(confidence: import('../../types/session-score.js').SessionConfidence): string {
+export function sessionConfidenceLabel(confidence: SessionConfidence): string {
   switch (confidence) {
     case 'high':
       return 'High confidence';

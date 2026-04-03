@@ -12,6 +12,7 @@ export {
 export type {
   AltLocation,
   BriefJson,
+  BriefJsonLocation,
   BriefRenderInput,
   CarWash,
   DarkSkyAlertCard,

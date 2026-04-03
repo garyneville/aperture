@@ -1,6 +1,6 @@
 import { explainAstroScoreGap } from './astro-score-explanation.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from './aurora-visibility.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../types/home-location.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../../lib/home-location.js';
 
 export interface AiBriefingWindowHour {
   hour?: string;

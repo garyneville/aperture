@@ -1,4 +1,5 @@
-import { DEFAULT_HOME_LOCATION, type HomeLocation } from '../types/home-location.js';
+import type { HomeLocation } from '../contracts/home-location.js';
+import { DEFAULT_HOME_LOCATION } from './home-location.js';
 import { isDarkSkySite, siteDarknessFromBortle, type SiteDarkness } from './site-darkness.js';
 
 export interface LongRangeLocation {

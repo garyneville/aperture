@@ -10,7 +10,7 @@ import {
   bestTimeLabel,
   moonDescriptor,
 } from '../shared/window-helpers.js';
-import type { BriefRenderInput as FormatEmailInput } from '../../types/brief.js';
+import type { BriefRenderInput as FormatEmailInput } from '../../contracts/index.js';
 
 // Extracted sections
 import { sHeroCard } from './sections/hero.js';

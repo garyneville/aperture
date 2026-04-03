@@ -1,7 +1,7 @@
 import { type SiteDarkness } from '../../lib/site-darkness.js';
 import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from '../../lib/long-range-locations.js';
-import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';
+import { DEFAULT_HOME_LOCATION } from '../../lib/home-location.js';
 import { evaluateDay } from './shared-scoring.js';
 
 /* ------------------------------------------------------------------ */

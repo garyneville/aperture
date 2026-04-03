@@ -1,5 +1,5 @@
 import type { DebugContext } from '../../../lib/debug-context.js';
-import type { BriefJson } from '../../../types/brief.js';
+import type { BriefJson } from '../../../contracts/index.js';
 import type { BriefContext } from '../../../domain/editorial/resolution/resolve-editorial.js';
 
 export type GroqChoice = {

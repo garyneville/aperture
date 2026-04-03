@@ -1,6 +1,6 @@
 import { HOME_SITE_DARKNESS } from '../../lib/site-darkness.js';
 import { emptyDebugContext, type DebugContext } from '../../lib/debug-context.js';
-import { DEFAULT_HOME_LOCATION } from '../../types/home-location.js';
+import { DEFAULT_HOME_LOCATION } from '../../lib/home-location.js';
 
 // Import from submodules
 import type {

@@ -18,6 +18,7 @@ export {
 export type {
   AltLocation,
   BriefJson,
+  BriefJsonLocation,
   BriefRenderInput,
   CarWash,
   DarkSkyAlertCard,
@@ -33,6 +34,9 @@ export type {
 
 // Scored forecast context (runtime context for rendering)
 export type { ScoredForecastContext } from './scored-forecast.js';
+
+// Home location contract
+export type { HomeLocation } from './home-location.js';
 
 // Session scoring types
 export type {

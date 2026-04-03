@@ -19,7 +19,7 @@ Exported types (re-exports from brief types):
 export type {
   AltLocation, CarWash, DarkSkyAlertCard, DaySummary,
   LongRangeCard, Window, WindowHour,
-} from '../../types/brief.js';
+} from '../../contracts/index.js';
 
 export type FormatTelegramInput = BriefRenderInput;
 ```
@@ -54,7 +54,7 @@ export type FormatTelegramInput = BriefRenderInput;
   moonPct: number
   peakKpTonight: number | null
   longRangeTop: LongRangeCard | null
-  // ... (see ../../types/brief.ts for complete type)
+  // ... (see ../../contracts/brief.ts for complete type)
 }
 ```
 

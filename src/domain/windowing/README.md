@@ -72,4 +72,4 @@ This module must remain pure — no side effects, no I/O, no HTML generation. It
 
 - [`../editorial/README.md`](../editorial/README.md) — Editorial resolution (uses this module)
 - [`../../presenters/email/README.md`](../../presenters/email/README.md) — Email presenter (uses this module)
-- [`../../types/brief.ts`](../../types/brief.ts) — Window and RunTimeContext types
+- [`../../contracts/brief.ts`](../../contracts/brief.ts) — Window and RunTimeContext contract types

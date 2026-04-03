@@ -31,7 +31,7 @@ import {
   TypographyFontFamilyBase,
   TypographyFontFamilyMono,
 } from '../../tokens/tokens.js';
-import type { CarWash, DaySummary, NextDayHour } from '../../types/brief.js';
+import type { CarWash, DaySummary, NextDayHour } from '../../contracts/index.js';
 
 export const C = {
   page: ColorPage,

@@ -2,7 +2,7 @@ import { esc } from '../../../lib/utils.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../domain/editorial/aurora-visibility.js';
 import { C } from '../../shared/brief-primitives.js';
-import { resolveHomeLatitude, resolveHomeLocationName } from '../../../types/home-location.js';
+import { resolveHomeLatitude, resolveHomeLocationName } from '../../../lib/home-location.js';
 
 const AWUK_LEVEL_META: Record<string, { label: string; fg: string; bg: string; border: string }> = {
   yellow: { label: 'Minor activity',    fg: C.warning, bg: C.warningContainer, border: '#EDD17B' },

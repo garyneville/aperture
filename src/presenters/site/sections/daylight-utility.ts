@@ -1,6 +1,6 @@
 import { esc } from '../../../lib/utils.js';
 import { clockToMinutes, minutesToClock } from '../../../domain/windowing/index.js';
-import type { RunTimeContext, CarWash } from '../../../types/brief.js';
+import type { CarWash, RunTimeContext } from '../../../contracts/index.js';
 import { C, UTILITY_GLYPHS } from '../../shared/brief-primitives.js';
 import { sPill, sChip } from './shared.js';
 

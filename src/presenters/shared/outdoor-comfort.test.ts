@@ -9,7 +9,7 @@ import {
   COMFORT_REASON_THRESHOLDS,
   type ComfortReasonCode,
 } from './outdoor-comfort.js';
-import type { NextDayHour } from '../../types/brief.js';
+import type { NextDayHour } from '../../contracts/index.js';
 
 describe('outdoorComfortScore', () => {
   it('returns 100 for ideal conditions', () => {

@@ -10,11 +10,11 @@
  */
 
 import type { EditorialDecision } from './contracts.js';
-import type { BriefJson } from '../../types/brief.js';
 
 // Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
 import type {
   BriefContext,
+  BriefJson,
   DebugContext,
   DebugGeminiDiagnostics,
   LongRangeSpurCandidate,

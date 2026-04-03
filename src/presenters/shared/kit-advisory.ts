@@ -6,7 +6,7 @@
  * output channel.
  */
 
-import type { CarWash, Window, WindowHour } from '../../types/brief.js';
+import type { CarWash, Window, WindowHour } from '../../contracts/index.js';
 import type { DebugKitAdvisoryRule } from '../../lib/debug-context.js';
 import { clockToMinutes, windowRange } from '../../domain/windowing/index.js';
 import { isAstroWindow } from './window-helpers.js';

@@ -1,7 +1,7 @@
 import { esc } from '../../../lib/utils.js';
 import { dayHeading, effectiveConf, moonIconForPct, confidenceDetail } from '../../shared/brief-primitives.js';
 import { forecastBestLine } from '../../shared/window-helpers.js';
-import type { DaySummary } from '../../../types/brief.js';
+import type { DaySummary } from '../../../contracts/index.js';
 import { sCard, sChip } from './shared.js';
 import { scoreState, C } from '../../shared/brief-primitives.js';
 

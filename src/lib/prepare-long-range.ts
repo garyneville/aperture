@@ -7,7 +7,8 @@ import {
   type Region,
 } from './long-range-locations.js';
 import type { SiteDarkness } from './site-darkness.js';
-import { DEFAULT_HOME_LOCATION, type HomeLocation } from '../types/home-location.js';
+import type { HomeLocation } from '../contracts/home-location.js';
+import { DEFAULT_HOME_LOCATION } from './home-location.js';
 
 export interface LongRangeLocationWithUrl {
   name: string;

@@ -62,7 +62,7 @@ Each section is a self-contained module that renders one visual area of the page
   compositionBullets: string[]
   weekInsight: string
   sessionRecommendation: SessionRecommendationSummary
-  // ... (see ../../types/brief.ts for complete type)
+  // ... (see ../../contracts/brief.ts for complete type)
 }
 ```
 
@@ -109,5 +109,5 @@ Keep `format-site.ts` focused on orchestration: gathering data, calling sections
 
 - [`../email/README.md`](../email/README.md) — Email presenter (shares content structure)
 - [`../shared/README.md`](../shared/README.md) — Shared primitives (colors, icons)
-- [`../../types/brief.ts`](../../types/brief.ts) — Input type definition
+- [`../../contracts/brief.ts`](../../contracts/brief.ts) — Input type definition
 - [`../../app/run-photo-brief/README.md`](../../app/run-photo-brief/README.md) — How site rendering fits into the pipeline
