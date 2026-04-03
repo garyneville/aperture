@@ -134,14 +134,6 @@ describe('ALT_LOCATIONS config', () => {
     expect(boltonAbbey?.isUpland).toBe(false);
   });
 
-  it('mwisArea is set to dales_peak for Peak District and Dales locations', () => {
-    const uplandLocations = ALT_LOCATIONS.filter(l =>
-      ['Mam Tor', 'Stanage Edge', 'Ribblehead Viaduct', 'Malham Cove'].includes(l.name),
-    );
-    for (const loc of uplandLocations) {
-      expect(loc.mwisArea, `${loc.name} should have mwisArea set`).toBe('dales_peak');
-    }
-  });
 });
 
 describe('prepareAltLocations URL building', () => {

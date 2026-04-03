@@ -29,7 +29,6 @@ adapter-only helper modules anymore.
 ## Tests
 
 - [`format-messages.adapter.test.ts`](./format-messages.adapter.test.ts)
-- [`wrap-mwis.adapter.test.ts`](./wrap-mwis.adapter.test.ts)
 - [`extract-gemini-fallback.adapter.test.ts`](./extract-gemini-fallback.adapter.test.ts)
 - [`extract-gemini-inspire.adapter.test.ts`](./extract-gemini-inspire.adapter.test.ts)
 - [`build-inspire-prompt.adapter.test.ts`](./build-inspire-prompt.adapter.test.ts)
