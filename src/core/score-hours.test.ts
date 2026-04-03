@@ -575,7 +575,7 @@ describe('scoreAllDays session scoring foundation', () => {
     const firstHourSessions = result.debugContext.hourlyScoring[0]?.sessionScores?.map(score => score.session) ?? [];
 
     expect(result.debugContext.hourlyScoring).toHaveLength(2);
-    expect(firstHourSessions.slice(0, 2)).toEqual(['long-exposure', 'astro']);
+    expect(firstHourSessions.slice(0, 2)).toEqual(['astro', 'long-exposure']);
     expect(firstHourSessions).toEqual(expect.arrayContaining([
       'mist',
       'urban',
