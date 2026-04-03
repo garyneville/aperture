@@ -794,4 +794,83 @@ describe('workflow assembly', () => {
       },
     }]);
   });
+
+  it('assembles Gemini fallback extraction that decodes buffered full-response bodies', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Fallback');
+    expect(extractNode).toBeTruthy();
+
+    const fn = new Function('$', '$input', extractNode.parameters.jsCode);
+    const rawGeminiBody = JSON.stringify({
+      candidates: [{
+        finishReason: 'STOP',
+        content: {
+          parts: [
+            { text: '{"editorial":"Golden light breaks cleanly through the last clear band.","composition":["Face west across the ridge"],"weekStandout":"Tonight is the cleanest shot this week."}', thoughtSignature: 'sig-2' },
+          ],
+        },
+      }],
+      usageMetadata: {
+        promptTokenCount: 88,
+        candidatesTokenCount: 42,
+        totalTokenCount: 130,
+        thoughtsTokenCount: 19,
+      },
+    });
+    const splitIndex = Math.floor(rawGeminiBody.length / 2);
+    const bufferedBody = {
+      _readableState: {
+        buffer: [
+          { type: 'Buffer', data: Array.from(Buffer.from(rawGeminiBody.slice(0, splitIndex), 'utf8')) },
+          { type: 'Buffer', data: Array.from(Buffer.from(rawGeminiBody.slice(splitIndex), 'utf8')) },
+        ],
+      },
+    };
+
+    const result = fn(
+      () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            body: bufferedBody,
+            headers: { 'content-type': 'application/json' },
+            statusCode: 200,
+            statusMessage: 'OK',
+          },
+        }),
+        all: () => [],
+      },
+    );
+
+    expect(result).toEqual([{
+      json: {
+        geminiResponse: '{"editorial":"Golden light breaks cleanly through the last clear band.","composition":["Face west across the ridge"],"weekStandout":"Tonight is the cleanest shot this week."}',
+        geminiStatusCode: 200,
+        geminiFinishReason: 'STOP',
+        geminiCandidateCount: 1,
+        geminiResponseByteLength: Buffer.byteLength(rawGeminiBody, 'utf8'),
+        geminiResponseTruncated: false,
+        geminiRawPayload: rawGeminiBody,
+        geminiExtractionPath: 'item.body._readableState.buffer (decoded) (parsed)',
+        geminiTopLevelKeys: ['body', 'headers', 'statusCode', 'statusMessage'],
+        geminiPayloadKeys: ['candidates', 'usageMetadata'],
+        geminiPartKinds: ['text', 'thoughtSignature'],
+        geminiExtractedTextLength: expect.any(Number),
+        geminiPromptTokenCount: 88,
+        geminiCandidatesTokenCount: 42,
+        geminiTotalTokenCount: 130,
+        geminiThoughtsTokenCount: 19,
+      },
+    }]);
+  });
 });
