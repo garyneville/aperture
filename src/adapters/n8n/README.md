@@ -15,10 +15,15 @@ This folder is the runtime boundary between the application and n8n code nodes.
 - scoring/editorial adapters such as [`score-hours.adapter.ts`](./score-hours.adapter.ts) and [`format-messages.adapter.ts`](./format-messages.adapter.ts)
 - contract helpers under [`contracts/`](./contracts)
 
+`format-messages.adapter.ts` is the single live finalization bridge. It maps n8n
+payload/config into `finalizeBrief(...)` and returns the rendered outputs for
+downstream workflow nodes. Finalization orchestration does not live in
+adapter-only helper modules anymore.
+
 ## What not to edit casually
 
 - compatibility helpers in [`input.ts`](./input.ts) and [`types.ts`](./types.ts)
-- editorial boundary payload contracts under [`contracts/`](./contracts)
+- runtime payload contracts under [`contracts/`](./contracts)
 - generated workflow placeholder names expected by [`../../../workflow/build/assemble.ts`](../../../workflow/build/assemble.ts)
 
 ## Tests
