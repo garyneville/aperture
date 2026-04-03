@@ -1,9 +1,6 @@
 import type { Window, DailySummary, CarWash } from '../../../lib/best-windows.js';
-import { explainAstroScoreGap } from '../../../lib/astro-score-explanation.js';
 import { auroraVisibleKpThresholdForLat, isAuroraLikelyVisibleAtLat } from '../../../lib/aurora-visibility.js';
-import { LONG_RANGE_LOCATIONS } from '../../../lib/long-range-locations.js';
 import { emptyDebugContext, type DebugContext } from '../../../lib/debug-context.js';
-import { HOME_SITE_DARKNESS } from '../../../lib/site-darkness.js';
 import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../../lib/score-long-range.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import {
@@ -13,34 +10,18 @@ import {
 } from '../../../types/home-location.js';
 import type { ScoredForecastContext } from '../../../types/scored-forecast.js';
 import type { SessionRecommendationSummary } from '../../../types/session-score.js';
-
-const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
-
-/**
- * Extract HH:MM from an ISO-8601 date-time string that is already localised.
- * Open-Meteo returns sunrise/sunset adjusted to the requested timezone, so
- * parsing through `new Date()` + `toLocaleTimeString(…, { timeZone })` would
- * apply the UTC→local offset a second time during DST.
- */
-function extractLocalHHMM(iso: string): string {
-  const m = iso.match(/T(\d{2}:\d{2})/);
-  return m ? m[1] : '--:--';
-}
-
-const SEASONAL_CONTEXT: Record<number, string> = {
-  1:  'January — frost and snow possible on high ground; bare trees; frozen reservoirs.',
-  2:  'February — snowdrops in woodland; low sun angle throughout the day.',
-  3:  'March — early spring; blossom building; frost on clear nights still likely.',
-  4:  'April — bluebells peak late month; lambs in the Dales; dramatic cloud building.',
-  5:  'May — full canopy; bluebells finishing; long golden hour windows.',
-  6:  'June — longest days; very late sunsets (~21:30); short nights limit astro.',
-  7:  'July — summer haze; heather not yet out; long blue hours.',
-  8:  'August — heather on the moors; Perseid meteor shower mid-month.',
-  9:  'September — golden light returns; mist in valleys from temperature swings.',
-  10: 'October — autumn colour; low sun, long shadows; morning frosts returning.',
-  11: 'November — bare trees re-emerging; dramatic skies; short days.',
-  12: 'December — winter light; snow possible on Pennines; very short days.',
-};
+import { getSeasonalNote } from './sections/seasonal-context.js';
+import { peakKpForNight, buildAuroraNote } from './sections/aurora-note.js';
+import {
+  extractLocalHHMM,
+  isAstroWindow,
+  weekSummaryLine,
+  moonTimingNote,
+  confidenceLabel,
+  getMonthOneIndexed,
+} from './sections/shared.js';
+import { buildDontBotherPrompt } from './sections/dont-bother-prompt.js';
+import { buildLocalWindowPrompt } from './sections/local-window-prompt.js';
 
 export interface KpEntry {
   time: string;
@@ -89,266 +70,6 @@ export interface BuildPromptOutput extends ScoredForecastContext {
   prompt: string;
 }
 
-
-function confidenceLabel(confidence: string): string {
-  if (confidence === 'high') return 'high';
-  if (confidence === 'medium') return 'fair';
-  if (confidence === 'low') return 'low';
-  return 'unknown';
-}
-
-function topAlternativeLine(altLocations?: AltLocationResult[]): string {
-  const alt = altLocations?.[0];
-  if (!alt) return '';
-
-  const timing = alt.isAstroWin
-    ? `best astro at ${alt.bestAstroHour || 'nightfall'}`
-    : `best at ${alt.bestDayHour || 'time TBD'}`;
-
-  return `${alt.name} (${alt.driveMins}min, ${alt.bestScore}/100, ${timing}${alt.darkSky ? ', dark sky' : ''})`;
-}
-
-function dayAlternativeTiming(bestDayHour: string | null): string {
-  if (!bestDayHour) return 'golden hour';
-  const hour = Number.parseInt(bestDayHour.slice(0, 2), 10);
-  if (!Number.isFinite(hour)) return `best at ${bestDayHour}`;
-  return hour < 12 ? `morning golden hour around ${bestDayHour}` : `evening golden hour around ${bestDayHour}`;
-}
-
-function alternativePromptSection(title: string, alts: AltLocationResult[]): string {
-  if (!alts.length) return '';
-  return `${title}:\n${alts.slice(0, 3).map(l =>
-    `- ${l.name} (${l.driveMins}min): ${l.bestScore}/100` +
-    (l.isAstroWin
-      ? ` best astro ${l.bestAstroHour || 'evening'}${l.darkSky ? ' (dark sky)' : ''}`
-      : ` ${dayAlternativeTiming(l.bestDayHour)}`)
-  ).join('\n')}`;
-}
-
-function weekStandoutSchemaHint(): string {
-  return '<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>';
-}
-
-function weekStandoutInstructionBlock(): string {
-  return `WEEK STANDOUT (1 sentence, max 30 words):
-If one day scores clearly higher than others, call it the "standout" day.
-If today wins only on certainty (lower spread) while another day scores higher, call today the "most reliable" day and briefly name the higher-scoring day with its uncertainty (e.g. "Today is the most reliable forecast; Wednesday may score higher but with much lower certainty").
-Use only the supplied 5-day outlook labels, scores, and spreads. Do not invent a different higher-scoring day.`;
-}
-
-function isAstroWindow(window: Window | undefined): boolean {
-  if (!window) return false;
-  return window.label.toLowerCase().includes('astro') || (window.tops || []).includes('astrophotography');
-}
-
-function peakHourForWindow(window: Window | undefined): string | null {
-  if (!window?.hours?.length) return null;
-  const peakHour = window.hours.find(hour => hour.score === window.peak) || window.hours[window.hours.length - 1];
-  return peakHour?.hour || null;
-}
-
-function windowRange(w: { start: string; end: string }): string {
-  return w.start === w.end ? w.start : `${w.start}-${w.end}`;
-}
-
-function windowTrendInsight(window: Window | undefined): string {
-  if (!window?.hours?.length) return '';
-  const peakHour = peakHourForWindow(window);
-  if (!peakHour) return '';
-
-  if (window.start === window.end) return '';
-
-  const firstHour = window.hours[0];
-  const lastHour = window.hours[window.hours.length - 1];
-  const firstScore = typeof firstHour?.score === 'number' ? firstHour.score : null;
-  const lastScore = typeof lastHour?.score === 'number' ? lastHour.score : null;
-
-  if (peakHour === window.end && firstScore !== null && lastScore !== null && lastScore - firstScore >= 6) {
-    return `- Peak local time is around ${peakHour}, with conditions improving through the window.`;
-  }
-
-  if (peakHour === window.start && firstScore !== null && lastScore !== null && firstScore - lastScore >= 6) {
-    return `- Peak local time is around ${peakHour}, right as the window opens.`;
-  }
-
-  if (peakHour === window.end) return `- Peak local time is around ${peakHour}, near the end of the window.`;
-  if (peakHour === window.start) return `- Peak local time is around ${peakHour}, right at the start of the window.`;
-  return `- Peak local time is around ${peakHour}, within the ${window.label.toLowerCase()}.`;
-}
-
-function peakKpForNight(kpForecast: KpEntry[] | undefined, now: Date): number | null {
-  if (!kpForecast || !kpForecast.length) return null;
-  const tonightStart = new Date(now);
-  tonightStart.setHours(18, 0, 0, 0);
-  const tonightEnd = new Date(now);
-  tonightEnd.setDate(tonightEnd.getDate() + 1);
-  tonightEnd.setHours(6, 0, 0, 0);
-  let peak: number | null = null;
-  for (const entry of kpForecast) {
-    const t = new Date(entry.time);
-    if (t >= tonightStart && t <= tonightEnd) {
-      if (peak === null || entry.kp > peak) peak = entry.kp;
-    }
-  }
-  return peak;
-}
-
-function buildAuroraNote(
-  peakKpTonight: number | null,
-  homeLocation: HomeLocation,
-  auroraSignal?: AuroraSignal | null,
-): string {
-  const parts: string[] = [];
-  const localLat = homeLocation.lat;
-  const localThreshold = auroraVisibleKpThresholdForLat(localLat);
-
-  // Near-term: AuroraWatch UK takes priority over Kp when available and active.
-  // Only fall back to the NOAA Kp index when AuroraWatch UK is not available.
-  const nearTerm = auroraSignal?.nearTerm;
-  const awukActive = nearTerm && !nearTerm.isStale && nearTerm.level !== 'green';
-
-  if (awukActive) {
-    const levelLabel: Record<string, string> = {
-      yellow: 'Minor geomagnetic activity',
-      amber: 'Moderate geomagnetic activity',
-      red: 'Storm-level activity',
-    };
-    const label = levelLabel[nearTerm.level] ?? nearTerm.level;
-    parts.push(`Aurora (AuroraWatch UK): ${label} — watch conditions tonight for ${homeLocation.name}.`);
-  } else if (peakKpTonight !== null && peakKpTonight >= 5) {
-    // Fall back to NOAA Kp when AuroraWatch UK is unavailable or green
-    const localVisible = isAuroraLikelyVisibleAtLat(localLat, peakKpTonight);
-    parts.push(
-      localVisible
-        ? `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — this clears the local visibility threshold of Kp ${localThreshold} for ${homeLocation.name}.`
-        : `Aurora alert: Kp ${peakKpTonight.toFixed(1)} forecast tonight — local visibility usually needs about Kp ${localThreshold} at ${homeLocation.name} latitude.`,
-    );
-  }
-
-  // Long-range: NASA DONKI CME (always shown when upcoming, independent of near-term)
-  const upcomingCmeCount = auroraSignal?.upcomingCmeCount ?? 0;
-  const nextArrival = auroraSignal?.nextCmeArrival;
-  if (upcomingCmeCount > 0 && nextArrival) {
-    const arrivalDate = new Date(nextArrival);
-    const arrivalStr = isNaN(arrivalDate.getTime())
-      ? nextArrival
-      : arrivalDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-    const cmeLabel = upcomingCmeCount === 1 ? 'Earth-directed CME' : `${upcomingCmeCount} Earth-directed CMEs`;
-    parts.push(`Aurora prediction: ${cmeLabel} expected ~${arrivalStr} (NASA DONKI) — elevated aurora probability 1–3 days ahead.`);
-  }
-
-  return parts.join(' ');
-}
-
-function weekSummaryLine(dailySummary: DailySummary[]): string {
-  return dailySummary.slice(0, 5).map(d => {
-    const score = d.headlineScore ?? d.photoScore;
-    if (!d.confidence || d.confidence === 'unknown') return `${d.dayLabel}: ${score}/100`;
-    const spreadPart = d.confidenceStdDev != null
-      ? ` spread ${d.confidenceStdDev}`
-      : '';
-    return `${d.dayLabel}: ${score}/100 (${d.confidence} confidence${spreadPart})`;
-  }).join(' | ');
-}
-
-function moonTimingNote(todayDay: DailySummary | undefined): string {
-  if (!todayDay?.darkSkyStartsAt || (todayDay.astroScore ?? 0) <= 0) return '';
-  if (todayDay.darkSkyStartsAt === '00:00') {
-    return '\nMoon is already down by 00:00, so dark-sky conditions are in place from the start of the usable night.';
-  }
-  return `\nDark-sky conditions improve from ${todayDay.darkSkyStartsAt} once the moon is down.`;
-}
-
-/** Milky Way galactic core is usefully above the horizon from UK latitudes roughly April–September. */
-function isMilkyWaySeason(month: number): boolean {
-  return month >= 4 && month <= 9;
-}
-
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function getMonthOneIndexed(date: Date, timezone: string): number {
-  return Number.parseInt(
-    new Intl.DateTimeFormat('en-GB', { month: 'numeric', timeZone: timezone }).format(date),
-    10,
-  );
-}
-
-/**
- * Generates sky-quality constraints for the COMPOSITION prompt section.
- * Conditions local shot ideas on Bortle class, season, moon phase, and whether
- * a dark-sky alternative exists, without letting the composition drift away
- * from the named local window.
- */
-function skyQualityConstraints(
-  homeLocationName: string,
-  month: number,
-  moonPct: number,
-  topAlt: AltLocationResult | undefined,
-  isAstroWin: boolean,
-  auroraVisibleLocally: boolean,
-  auroraThreshold: number,
-  peakKpTonight: number | null,
-): string {
-  if (!isAstroWin) return '';
-
-  const milkyWaySeason = isMilkyWaySeason(month);
-  const homeBortle = HOME_SITE_DARKNESS.bortle;
-  const parts: string[] = [
-    'Composition bullets must stay focused on the named local window and local conditions. Do not turn them into travel or remote-location shot plans.',
-  ];
-
-  parts.push(
-    `Home location (${homeLocationName}) is Bortle ${homeBortle} — significant light pollution. ` +
-    `Do NOT suggest Milky Way core shots for the home session; bias toward: star trails with a ` +
-    `silhouetted landmark foreground, wide-field constellation framing, moonlit architecture, or light-painting.`,
-  );
-
-  if (!milkyWaySeason) {
-    parts.push(
-      `Milky Way core is NOT seasonally visible from UK in ${MONTH_NAMES[month - 1]} ` +
-      `(core only viable roughly April–September from UK latitudes). ` +
-      `Do not suggest Milky Way photography at any location this month. ` +
-      `Instead consider: star trails, aurora potential (if Kp elevated), constellation framing, ` +
-      `or moonlit architecture.`,
-    );
-  }
-
-  if (moonPct > 60) {
-    parts.push(
-      `Moon is ${moonPct}% illuminated — prioritise moonlit architecture or illuminated landscape silhouettes ` +
-      `over faint-star or deep-sky work.`,
-    );
-  } else if (moonPct < 20 && milkyWaySeason) {
-    parts.push(
-      `Moon is ${moonPct}% — dark enough for wide-field star work or Milky Way if at a dark-sky site.`,
-    );
-  }
-
-  if (topAlt?.darkSky) {
-    if (milkyWaySeason) {
-      parts.push(
-        `${topAlt.name} is a genuine dark-sky alternative where Milky Way work may be viable, ` +
-        `but keep the composition bullets about the local session rather than the remote alternative.`,
-      );
-    } else {
-      parts.push(
-        `${topAlt.name} is a dark-sky alternative but Milky Way core is out of season — ` +
-        `suggest wide-field star trails or aurora if Kp permits rather than Milky Way, and keep composition bullets local.`,
-      );
-    }
-  }
-
-  if (auroraVisibleLocally) {
-    parts.push(
-      `Aurora is realistically visible from ${homeLocationName} tonight (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} meets the local threshold of Kp ${auroraThreshold}). ` +
-      `Make the first bullet aurora-led: face north, leave a low horizon, and avoid generic star-trail-only bullets as the primary idea.`,
-    );
-  }
-
-
-  return `Sky quality constraints for shot ideas:\n${parts.map(p => `- ${p}`).join('\n')}`;
-}
-
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     homeLocation = DEFAULT_HOME_LOCATION,
@@ -372,7 +93,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   });
 
   const currentMonth = getMonthOneIndexed(now, homeLocation.timezone);
-  const seasonalNote = SEASONAL_CONTEXT[currentMonth] || '';
+  const seasonalNote = getSeasonalNote(currentMonth);
   const peakKpTonight = peakKpForNight(kpForecast, now);
   const auroraNote = buildAuroraNote(peakKpTonight, homeLocation, auroraSignal);
   const auroraThreshold = auroraVisibleKpThresholdForLat(homeLocation.lat);
@@ -419,136 +140,53 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     : '';
   const moonNote = moonTimingNote(todayDay);
 
-  const astroAlternatives = (altLocations || []).filter(location => location.isAstroWin);
-  const goldenHourAlternatives = (altLocations || []).filter(location => !location.isAstroWin);
-  const altText = altLocations && altLocations.length
-    ? `\nNearby alternatives worth considering:\n${[
-      alternativePromptSection('Nearby astro options', astroAlternatives),
-      alternativePromptSection('Nearby landscape options', goldenHourAlternatives),
-    ].filter(Boolean).join('\n')}`
-    : '';
-
   let prompt: string;
 
   if (effectiveDontBother) {
-    const topAlt = topAlternativeLine(altLocations);
-    const lhStr = topAlt
-      ? ` The nearest meaningful alternative is ${topAlt}.`
-      : '';
-    const noWindowNote = !hasLocalWindow && (todayDay?.astroScore ?? 0) > 0
-      ? ` ${homeLocationName} may show some theoretical astro potential (${todayDay?.astroScore}/100 raw), but no local window cleared the full weighted threshold.`
-      : '';
-    prompt = `Photography assistant for ${homeLocationName}. Today is poor (score: ${todayBestScore}/100).
-Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<exactly 2 sentences, max 45 words — sentence 1: why ${homeLocationName} is not worth it today; sentence 2: best nearby alternative if provided>","composition":[],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
-
-Do not include camera tips, composition advice, filler, hype, or emojis in the editorial.
-${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${confNote}${lhStr}${noWindowNote}
-5-day outlook: ${weekLine}
-
-${weekStandoutInstructionBlock()}
-
-SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "${homeLocationName}". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
-Locations: ${SPUR_LOCATION_NAMES}`;
+    prompt = buildDontBotherPrompt({
+      homeLocationName,
+      todayBestScore,
+      seasonalNote,
+      auroraNote,
+      shInfo,
+      moonNote,
+      confNote,
+      altLocations,
+      weekLine,
+      todayDay,
+      hasLocalWindow,
+    });
   } else {
     const nowTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone });
     const nowMinutes = (() => {
       const [h, m] = nowTimeStr.split(':').map(Number);
       return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
     })();
-    const clockToMinsLocal = (t: string | undefined): number | null => {
-      if (!t) return null;
-      const [h, m] = t.split(':').map(Number);
-      return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
-    };
-    const upcomingWindows = windows.filter(w => {
-      const end = clockToMinsLocal(w.end);
-      return end === null || end >= nowMinutes;
-    });
-    const primaryWindowIsPast = upcomingWindows.length < windows.length && upcomingWindows[0] !== windows[0];
-    const bestWin = upcomingWindows[0] ?? windows[0];
-    const bestHour = bestWin?.hours?.find(h => h.score === bestWin.peak) || bestWin?.hours?.[0];
-    const nextWin = upcomingWindows[1] ?? null;
-    const temporalContext = primaryWindowIsPast
-      ? `TEMPORAL CONTEXT: It is now ${nowTimeStr}. The original primary window (${windows[0].label} ${windowRange(windows[0])}) has already passed. ${bestWin && bestWin !== windows[0] ? `Your editorial must focus on the next upcoming window: ${bestWin.label} (${windowRange(bestWin)}). Do not advise preparing for the past window.` : 'No further local windows remain today. Note this in your editorial.'}\n`
-      : '';
-    const topAlt = altLocations?.[0];
-    const bestAltDelta = topAlt ? topAlt.bestScore - (bestWin?.peak || 0) : 0;
-    const astroGap = todayDay && bestWin
-      ? explainAstroScoreGap({ window: bestWin, today: todayDay })
-      : null;
-    const fallbackNote = bestWin?.fallback
-      ? `\nTiming note: this is the most promising narrow stretch rather than a clean standout window.`
-      : '';
 
-    const crepNote = (bestHour?.crepuscular || 0) > 45
-      ? `\nCrepuscular ray potential at best window: ${bestHour!.crepuscular}/100 — broken low cloud + low sun angle suggest shafts of light are possible.`
-      : '';
-    const shQNote = bestHour?.shQ !== null && bestHour?.shQ !== undefined
-      ? `\nSunsetHue quality for this session: ${Math.round(bestHour!.shQ! * 100)}%`
-      : '';
-    const editorialInsights = [
-      windowTrendInsight(bestWin),
-      astroGap
-        ? `- ${astroGap.text}`
-        : '',
-      auroraVisibleLocally && isAstroWindow(bestWin)
-        ? `- This window coincides with an active aurora signal (Kp ${peakKpTonight?.toFixed(1) ?? 'unknown'} vs local visibility threshold Kp ${auroraThreshold}), so a clean northern horizon matters.`
-        : '',
-      nextWin && bestWin && isAstroWindow(bestWin) && isAstroWindow(nextWin)
-        ? `- If you miss the first slot, ${nextWin.label.toLowerCase()} is the later, darker fallback from ${nextWin.start}\u2013${nextWin.end}.`
-        : '',
-    ].filter(Boolean).join('\n');
-
-    const shotConstraints = skyQualityConstraints(
+    prompt = buildLocalWindowPrompt({
       homeLocationName,
-      currentMonth,
+      windows,
+      nowTimeStr,
+      nowMinutes,
+      today,
+      sunriseStr,
+      sunsetStr,
       moonPct,
-      topAlt,
-      isAstroWindow(bestWin),
+      seasonalNote,
+      auroraNote,
+      shInfo,
+      moonNote,
+      confNote,
+      metarNote,
+      weekLine,
+      altLocations,
+      todayDay,
       auroraVisibleLocally,
       auroraThreshold,
       peakKpTonight,
-    );
-
-    const windowsText = windows.map((w, i) => {
-      const h = w.hours?.find(x => x.score === w.peak) || w.hours?.[0];
-      const aodLine = typeof h?.aod === 'number' && h.aod >= 0.12 ? ` | AOD ${h.aod.toFixed(2)}` : '';
-      return `${i + 1}. ${w.label} (${windowRange(w)}) \u2014 ${w.peak}/100${w.fallback ? ' [narrow best chance]' : ''}
-   Cloud: lo${h?.cl}% mid${h?.cm}% hi${h?.ch}% | Vis ${Math.round(h?.visK ?? 0)}km${aodLine} | Wind ${h?.wind}km/h | Rain ${h?.pp}%${(h?.crepuscular ?? 0) > 30 ? ' | Ray potential: ' + h!.crepuscular + '/100' : ''}
-   Tags: ${(w.tops || []).join(', ')}`;
-    }).join('\n\n');
-
-    prompt = `You are an expert landscape and astrophotography assistant giving a daily photography briefing for ${homeLocationName}.
-Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
-
-EDITORIAL (exactly 2 sentences, max 55 words total):
-Selected primary window: ${bestWin.label} (${windowRange(bestWin)}). Your editorial must reference this window by name or time range. Do not describe conditions outside this window unless making a direct comparison.
-Sentence 1: explain why the best local window is worth attention using one supplied fact about timing, change, darkness, or trend.
-Sentence 2: use one editorial insight line below with light paraphrase. Do not invent a different second sentence.
-The window card already shows the label, time range, score, and headline metrics. Do not open by repeating the visible window name, time, score, or visibility line.
-Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
-Do not blame cloud unless the supplied peak-hour cloud cover supports it. If the score gap is explained by visibility or AOD, say that instead.
-The editorial must describe ${homeLocationName} conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
-
-COMPOSITION (2 short bullet items):
-Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
-Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing" unless the supplied constraints explicitly support them.
-${shotConstraints ? `\n${shotConstraints}\n` : ''}
-${weekStandoutInstructionBlock()}
-
-SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "${homeLocationName}". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
-Locations: ${SPUR_LOCATION_NAMES}
-
-Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${temporalContext}${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
-${metarNote ? 'METAR: ' + metarNote : ''}
-${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
-
-${homeLocationName} shooting windows:
-${windowsText}${altText}
-5-day outlook: ${weekLine}`;
+      currentMonth,
+      sessionRecommendation,
+    });
   }
 
   return {
