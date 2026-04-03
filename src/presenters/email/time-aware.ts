@@ -8,12 +8,6 @@
 
 import { renderAiBriefingText } from '../../domain/editorial/ai-briefing.js';
 import { esc } from '../../lib/utils.js';
-import type {
-  SessionConfidence,
-  SessionId,
-  SessionRecommendation,
-  SessionRecommendationSummary,
-} from '../../contracts/index.js';
 import {
   C,
   FONT,
@@ -27,7 +21,6 @@ import type {
   DaySummary,
   RunTimeContext,
   Window,
-  WindowDisplayPlan,
 } from '../../contracts/index.js';
 import {
   buildWindowDisplayPlan,
@@ -35,48 +28,6 @@ import {
   timeAwareBriefingFallback,
 } from '../../domain/windowing/index.js';
 import { windowCard, compositionCard, poorDayFallbackLine } from './window-cards.js';
-import {
-  bestTimeLabel,
-  displayBestTags,
-  displaySessionName,
-  displayTag,
-  isAstroWindow,
-  peakHourForWindow,
-} from '../shared/window-helpers.js';
-
-// Re-export shared window helpers for backwards compatibility.
-// TODO: Remove these re-exports once all imports are updated to use window-helpers directly.
-export {
-  bestDaySessionLabel,
-  bestTimeLabel,
-  displayBestTags,
-  displaySessionName,
-  displayTag,
-  forecastBestLine,
-  isAstroWindow,
-  localSummaryLines,
-  moonAstroContext,
-  moonDescriptor,
-  peakHourForWindow,
-  sessionConfidenceLabel,
-  sessionRecommendationBody,
-  sessionRecommendationHeadline,
-  sessionRunnerUpLine,
-  sessionVolatilityLabel,
-  timeAwareLocalSummary,
-} from '../shared/window-helpers.js';
-
-// Re-export windowing functions for backwards compatibility.
-// TODO: Remove these re-exports once all imports are updated to use domain/windowing directly.
-export {
-  buildWindowDisplayPlan,
-  classifyWindowTiming,
-  clockToMinutes,
-  getRunTimeContext,
-  minutesToClock,
-  timeAwareBriefingFallback,
-  windowRange,
-} from '../../domain/windowing/index.js';
 
 export function todayWindowSection(
   dontBother: boolean,

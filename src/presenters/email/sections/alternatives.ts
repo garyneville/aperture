@@ -3,12 +3,11 @@ import {
   C,
   FONT,
   card,
-  listRows,
   metricChip,
   scorePill,
   scoreState,
 } from '../shared.js';
-import { bestDaySessionLabel, displayTag } from '../time-aware.js';
+import { bestDaySessionLabel, displayTag } from '../../shared/window-helpers.js';
 import type { AltLocation } from '../types.js';
 
 function buildSnowNote(snowDepthCm: number | null, snowfallCm: number | null): string {

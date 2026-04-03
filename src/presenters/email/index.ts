@@ -10,15 +10,13 @@ import {
 } from './shared.js';
 import { todayWindowSection } from './time-aware.js';
 import {
-  evaluateKitRules,
   kitAdvisoryCard,
 } from './kit-advisory.js';
 import {
   daylightUtilityTodayCard,
-  nextDayHourlyOutlookSection,
   photoForecastCards,
-  remainingTodayHourlyOutlookSection,
 } from './next-day.js';
+import { renderNextDayHourlyOutlook, renderRemainingTodayOutlook } from './render-outdoor-outlook.js';
 import type {
   AltLocation,
   DarkSkyAlertCard,
@@ -33,16 +31,16 @@ import { longRangeSection } from './sections/long-range.js';
 import { sessionRecommendationCard } from './sections/session-recommendation.js';
 import { footerKey } from './sections/footer.js';
 import { heroSection } from './sections/hero.js';
+import { evaluateKitRules } from '../shared/kit-advisory.js';
 import { buildSharedPresentationContext } from '../shared/presenter-context.js';
 
 export { formatDebugEmail } from './debug-email.js';
-export { buildKitTips, evaluateKitRules, type KitTip } from './kit-advisory.js';
+export { buildKitTips, evaluateKitRules, type KitTip } from '../shared/kit-advisory.js';
 export { windowCard, compositionCard, poorDayFallbackLine } from './window-cards.js';
 export {
-  nextDayHourlyOutlookSection,
-  outdoorComfortLabel,
-  outdoorComfortScore,
-} from './next-day.js';
+  renderNextDayHourlyOutlook as nextDayHourlyOutlookSection,
+} from './render-outdoor-outlook.js';
+export { outdoorComfortLabel, outdoorComfortScore } from '../shared/outdoor-comfort.js';
 export type {
   AltLocation,
   CarWash,
@@ -141,7 +139,7 @@ export function formatEmail(input: FormatEmailInput): string {
     debugContext.kitAdvisory = { rules: trace, tipsShown };
   }
 
-  const todayOutlookHtml = remainingTodayHourlyOutlookSection(
+  const todayOutlookHtml = renderRemainingTodayOutlook(
     todayDay,
     runTime,
     photoWindowsForTodayOutlook,
@@ -149,7 +147,7 @@ export function formatEmail(input: FormatEmailInput): string {
   );
   const tomorrowOutlookHtml = todayOutlookHtml
     ? ''
-    : nextDayHourlyOutlookSection(tomorrow, debugContext);
+    : renderNextDayHourlyOutlook(tomorrow, debugContext);
   const outlookHtml = todayOutlookHtml || tomorrowOutlookHtml;
   const outlookSectionTitle = todayOutlookHtml ? 'Remaining today' : 'Tomorrow\'s weather';
   const longRangeHtml = longRangeSection(longRangeTop, longRangeCardLabel, darkSkyAlert, runTime);

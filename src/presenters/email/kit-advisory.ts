@@ -1,22 +1,9 @@
 /**
  * Kit advisory - Email-specific rendering for kit recommendations.
- *
- * The core kit recommendation logic has been moved to ../shared/kit-advisory.ts
- * for cross-presenter use. This module re-exports those functions for backwards
- * compatibility and provides email-specific rendering (kitAdvisoryCard).
  */
 
 import { esc } from '../../lib/utils.js';
 import { C, FONT, card } from './shared.js';
-
-// Re-export shared kit advisory functions for backwards compatibility
-export {
-  buildKitTips,
-  evaluateKitRules,
-  type KitTip,
-} from '../shared/kit-advisory.js';
-
-// Import from shared for internal use
 import { type KitTip } from '../shared/kit-advisory.js';
 
 /**

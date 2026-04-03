@@ -113,7 +113,7 @@ function updateDebugContext(
  */
 export function renderNextDayHourlyOutlook(
   tomorrow: DaySummary | undefined,
-  debugContext: DebugContext | undefined,
+  debugContext?: DebugContext,
   options: Partial<HourlyOutlookSectionOptions> = {},
 ): string {
   const config: HourlyOutlookSectionOptions = {

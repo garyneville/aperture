@@ -17,27 +17,20 @@ assembling email-specific markup.
   Cross-cutting render helpers and shared presentation primitives: colors, typography, cards, pills, stat grids, weather/moon icons, and a few general formatting helpers.
 
 - [`time-aware.ts`](./time-aware.ts)
-  Rerun-aware window display logic. This is where local windows are classified as past/current/future, where the "next window" promotion happens, and where the today-window section is assembled.
-  
-  **Note:** This module is now focused on email-specific rendering orchestration. Card rendering has moved to [`window-cards.ts`](./window-cards.ts) and general-purpose window helpers have moved to [`../shared/window-helpers.ts`](../shared/window-helpers.ts). Both are re-exported for backwards compatibility.
+  Email-only orchestration for the "today's window" card. It classifies local windows as past/current/future, applies the "next window" promotion, and assembles the rendered section.
+  Card rendering lives in [`window-cards.ts`](./window-cards.ts) and general-purpose window/session helpers live in [`../shared/window-helpers.ts`](../shared/window-helpers.ts).
 
 - [`window-cards.ts`](./window-cards.ts)
   Email-specific window card rendering. Contains `windowCard()` for rendering individual photography windows, `compositionCard()` for shot ideas, and `poorDayFallbackLine()` for marginal conditions. This is pure presentation logic with no time-aware orchestration.
 
 - [`kit-advisory.ts`](./kit-advisory.ts)
-  Email-specific kit advisory rendering (`kitAdvisoryCard`). The core recommendation logic has been moved to [`../shared/kit-advisory.ts`](../shared/kit-advisory.ts) for cross-presenter use. This module re-exports `buildKitTips` and `evaluateKitRules` for backwards compatibility.
+  Email-specific kit advisory rendering (`kitAdvisoryCard`). The shared recommendation logic lives in [`../shared/kit-advisory.ts`](../shared/kit-advisory.ts), and [`index.ts`](./index.ts) re-exports that shared API.
 
 - [`next-day.ts`](./next-day.ts)
-  Facade module that re-exports from the split outdoor outlook modules. Also contains photo forecast cards and daylight utility card (separate concerns that may move in future refactoring).
-
-- [`outdoor-comfort.ts`](./outdoor-comfort.ts)
-  **Re-export compatibility layer.** The implementation has moved to [`../shared/outdoor-comfort.ts`](../shared/outdoor-comfort.ts). This file re-exports for backwards compatibility. Pure functions for outdoor comfort scoring (0-100), labels, and reason codes.
-
-- [`outdoor-outlook-model.ts`](./outdoor-outlook-model.ts)
-  **Re-export compatibility layer.** The implementation has moved to [`../shared/outdoor-outlook-model.ts`](../shared/outdoor-outlook-model.ts). This file re-exports for backwards compatibility. Data model building for outdoor outlook displays.
+  Email-specific summary cards for the days-ahead forecast and the daylight-utility strip.
 
 - [`render-outdoor-outlook.ts`](./render-outdoor-outlook.ts)
-  HTML rendering for outdoor outlook sections. Pure presentation logic - no scoring or algorithmic decisions. Renders tables, rows, and debug context updates.
+  Canonical HTML renderer for hourly outdoor outlook sections. Pure presentation logic with no scoring decisions. Renders tables, rows, and debug context updates.
 
 - [`debug-email.ts`](./debug-email.ts)
   Renders the internal debug email from `DebugContext`, including the AI trace, long-range candidate table, kit advisory trace, and outdoor-comfort trace.
@@ -62,7 +55,7 @@ assembling email-specific markup.
 - [`format-email.test.ts`](./format-email.test.ts) — hero, window summary, alternatives, long-range section, and spur-of-the-moment behavior.
 - [`debug-email.test.ts`](./debug-email.test.ts) — debug email coverage.
 - [`kit-advisory.test.ts`](./kit-advisory.test.ts) — kit advisory coverage and debug trace population checks.
-- [`next-day.test.ts`](./next-day.test.ts) — integration tests for the outdoor outlook facade (re-exports).
+- [`next-day.test.ts`](./next-day.test.ts) — integration tests for the email entrypoint's outdoor outlook exports and forecast cards.
 - [`outdoor-comfort.test.ts`](../shared/outdoor-comfort.test.ts) — focused unit tests for comfort scoring, labels, and reason codes (in shared/).
 - [`outdoor-outlook-model.test.ts`](../shared/outdoor-outlook-model.test.ts) — focused unit tests for window selection, model building, and summary generation (in shared/).
 - [`render-outdoor-outlook.test.ts`](./render-outdoor-outlook.test.ts) — focused unit tests for HTML rendering of outdoor outlook tables.

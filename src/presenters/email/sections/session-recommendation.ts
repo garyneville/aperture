@@ -13,7 +13,7 @@ import {
   sessionRecommendationHeadline,
   sessionRunnerUpLine,
   sessionVolatilityLabel,
-} from '../time-aware.js';
+} from '../../shared/window-helpers.js';
 import type { FormatEmailInput } from '../types.js';
 
 export function sessionRecommendationCard(sessionRecommendation: FormatEmailInput['sessionRecommendation']): string {
