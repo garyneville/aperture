@@ -21,7 +21,16 @@ The public entrypoint is [`index.ts`](./index.ts).
   Email-specific kit advisory rendering (`kitAdvisoryCard`). The core recommendation logic has been moved to [`../shared/kit-advisory.ts`](../shared/kit-advisory.ts) for cross-presenter use. This module re-exports `buildKitTips` and `evaluateKitRules` for backwards compatibility.
 
 - [`next-day.ts`](./next-day.ts)
-  Outdoor-comfort scoring plus the "remaining today" / "tomorrow at a glance" weather tables and the days-ahead forecast cards.
+  Facade module that re-exports from the split outdoor outlook modules. Also contains photo forecast cards and daylight utility card (separate concerns that may move in future refactoring).
+
+- [`outdoor-comfort.ts`](./outdoor-comfort.ts)
+  Pure functions for outdoor comfort scoring (0-100), labels, and reason codes. Input: weather metrics. Output: comfort score, label with styling, and reason strings. This is the "tuning seam" for outdoor comfort algorithm adjustments.
+
+- [`outdoor-outlook-model.ts`](./outdoor-outlook-model.ts)
+  Data model building for outdoor outlook displays. Handles hour filtering, contiguous window selection, best window detection, and summary generation. Pure algorithmic logic with no HTML rendering.
+
+- [`render-outdoor-outlook.ts`](./render-outdoor-outlook.ts)
+  HTML rendering for outdoor outlook sections. Pure presentation logic - no scoring or algorithmic decisions. Renders tables, rows, and debug context updates.
 
 - [`debug-email.ts`](./debug-email.ts)
   Renders the internal debug email from `DebugContext`, including the AI trace, long-range candidate table, kit advisory trace, and outdoor-comfort trace.
@@ -42,7 +51,10 @@ The public entrypoint is [`index.ts`](./index.ts).
 - [`format-email.test.ts`](./format-email.test.ts) — hero, window summary, alternatives, long-range section, and spur-of-the-moment behavior.
 - [`debug-email.test.ts`](./debug-email.test.ts) — debug email coverage.
 - [`kit-advisory.test.ts`](./kit-advisory.test.ts) — kit advisory coverage and debug trace population checks.
-- [`next-day.test.ts`](./next-day.test.ts) — outdoor-comfort scoring and hourly outlook coverage.
+- [`next-day.test.ts`](./next-day.test.ts) — integration tests for the outdoor outlook facade (re-exports).
+- [`outdoor-comfort.test.ts`](./outdoor-comfort.test.ts) — focused unit tests for comfort scoring, labels, and reason codes.
+- [`outdoor-outlook-model.test.ts`](./outdoor-outlook-model.test.ts) — focused unit tests for window selection, model building, and summary generation.
+- [`render-outdoor-outlook.test.ts`](./render-outdoor-outlook.test.ts) — focused unit tests for HTML rendering of outdoor outlook tables.
 
 ## Working rule
 
