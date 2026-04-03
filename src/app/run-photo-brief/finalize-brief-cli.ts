@@ -19,7 +19,7 @@ import { finalizeBrief } from './finalize-brief.js';
 import type { RawEditorialInput, FinalizeConfig } from './finalize-brief-contracts.js';
 
 interface FixtureFile {
-  /** Scored forecast context */
+  /** Finalize runtime context */
   context: RawEditorialInput['context'];
 
   /** Groq response choices */
@@ -76,7 +76,7 @@ Example:
 
 Fixture format:
   {
-    "context": { /* BriefContext */ },
+    "context": { /* FinalizeRuntimeContext */ },
     "groqChoices": [ { "message": { "content": "..." } } ],
     "geminiResponse": "...",
     "homeLocation": { "name": "Leeds", "lat": 53.8, "lon": -1.5, "timezone": "Europe/London" },

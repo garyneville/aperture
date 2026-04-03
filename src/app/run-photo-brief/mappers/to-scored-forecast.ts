@@ -1,9 +1,9 @@
 /**
- * Mapper from n8n RenderableRuntimeContext to ScoredForecastContext.
+ * Mapper from finalize runtime context to ScoredForecastContext.
  *
- * This module provides an explicit, type-safe mapping from the loose n8n
- * runtime payload shape to the strict internal ScoredForecastContext shape.
- * This avoids unsafe casting and makes the adapter boundary explicit.
+ * This module provides an explicit, type-safe mapping from the loose
+ * finalize-brief runtime payload shape to the strict internal
+ * ScoredForecastContext shape.
  */
 
 import type {
@@ -13,7 +13,7 @@ import type {
   DarkSkyAlertCard,
   SessionRecommendationSummary,
 } from '../../../contracts/index.js';
-import type { RenderableRuntimeContext } from '../../../adapters/n8n/contracts/final-runtime-payload.js';
+import type { FinalizeRuntimeContext } from '../finalize-brief-contracts.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 
 /**
@@ -49,17 +49,17 @@ function safeBoolean(value: unknown): boolean | undefined {
 }
 
 /**
- * Map RenderableRuntimeContext to ScoredForecastContext.
+ * Map FinalizeRuntimeContext to ScoredForecastContext.
  *
  * This function explicitly extracts and validates fields from the loose
  * n8n runtime payload, creating a strict ScoredForecastContext for use
  * by presenters and domain logic.
  *
- * @param ctx - The n8n runtime context
+ * @param ctx - The finalize-brief runtime context
  * @returns A strictly typed ScoredForecastContext
  */
 export function toScoredForecastContext(
-  ctx: RenderableRuntimeContext,
+  ctx: FinalizeRuntimeContext & { debugContext: ScoredForecastContext['debugContext'] },
 ): ScoredForecastContext {
   // Extract altLocations with runtime validation
   const altLocations = safeArray<AltLocation>(ctx.altLocations);
@@ -116,7 +116,7 @@ export function toScoredForecastContext(
     auroraSignal,
     darkSkyAlert,
 
-    // Debug context is guaranteed by RenderableRuntimeContext type
+    // Debug context is guaranteed by the caller at render time
     debugContext: ctx.debugContext,
   };
 }

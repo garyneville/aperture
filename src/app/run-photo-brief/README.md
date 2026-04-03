@@ -122,7 +122,7 @@ aperture-finalize-brief ./fixtures/sample-forecast.json
 Create a JSON file with this structure:
 ```json
 {
-  "context": { /* BriefContext with windows, dailySummary, etc. */ },
+  "context": { /* FinalizeRuntimeContext with scored forecast fields, debug context, etc. */ },
   "groqChoices": [{ "message": { "content": "..." } }],
   "geminiResponse": "...",
   "geminiInspire": "...",
@@ -131,6 +131,10 @@ Create a JSON file with this structure:
   "preferredProvider": "groq"
 }
 ```
+
+`BriefContext` is still the narrower editorial-domain contract. The
+`finalizeBrief()` seam expects `FinalizeRuntimeContext`, because it renders the
+final brief as well as resolving editorial.
 
 See [`fixtures/sample-forecast.json`](../../fixtures/sample-forecast.json) for a complete example.
 
