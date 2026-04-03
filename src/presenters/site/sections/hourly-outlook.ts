@@ -1,5 +1,5 @@
 import { esc } from '../../../lib/utils.js';
-import { buildOutdoorOutlookModel } from '../../email/next-day.js';
+import { buildOutdoorOutlookModel } from '../../email/outdoor-outlook-model.js';
 import { weatherIconForHour } from '../../shared/brief-primitives.js';
 import type { DaySummary, Window } from '../../../types/brief.js';
 import { sCard } from './shared.js';

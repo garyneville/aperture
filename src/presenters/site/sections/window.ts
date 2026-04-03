@@ -12,7 +12,7 @@ import {
   displayTag,
   isAstroWindow,
   peakHourForWindow,
-} from '../../email/time-aware.js';
+} from '../../shared/window-helpers.js';
 import type {
   AltLocation,
   DaySummary,
