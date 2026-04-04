@@ -12,6 +12,7 @@ describe('buildInspirePrompt', () => {
       }],
       altLocations: [{ name: 'Sutton Bank' }, { name: 'Malham Cove' }],
       peakKpTonight: 6.2,
+      locationName: 'Leeds',
     });
 
     expect(prompt).toContain("Today's best window is evening astro window from 21:00–23:00, scoring 68/100.");
@@ -23,6 +24,7 @@ describe('buildInspirePrompt', () => {
     const prompt = buildInspirePrompt({
       dontBother: true,
       altLocations: [{ name: 'Aysgarth Falls' }],
+      locationName: 'Leeds',
     });
 
     expect(prompt).toContain('Today the conditions are genuinely poor for photography in Leeds.');

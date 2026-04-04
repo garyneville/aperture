@@ -534,7 +534,7 @@
         "language": "javaScript",
         "jsCode": "__ADAPTER_prepare-long-range__"
       },
-      "id": "a1b2c3d4-0045-0045-0045-000000000045",
+      "id": "a1b2c3d4-0070-0070-0070-000000000070",
       "name": "Code: Prepare Long Range",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

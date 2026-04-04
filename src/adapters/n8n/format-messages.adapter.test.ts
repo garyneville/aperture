@@ -1316,12 +1316,12 @@ describe('run — weekStandout validation', () => {
 
 describe('run — model fallback reporting (#74)', () => {
   it('reports model fallback when primary fails and secondary succeeds', () => {
-    // Gemini (primary) gives a truncated/bad response; Groq (secondary) passes
-    const groqContent = JSON.stringify({
+    // Groq (primary) gives a truncated/bad response; Gemini (secondary) passes
+    const groqContent = '{"editorial": "The moon sets before the Midnight astro window begins at 00:';  // truncated
+    const geminiContent = JSON.stringify({
       editorial: 'Conditions stay clean through the midnight astro window. The 03:00 peak sits under the darkest patch of sky tonight.',
       composition: ['Face north with a low tree line for any aurora glow'],
     });
-    const geminiContent = '{"editorial": "The moon sets before the Midnight astro window begins at 00:';  // truncated
 
     const result = run({
       $input: {
@@ -1330,10 +1330,10 @@ describe('run — model fallback reporting (#74)', () => {
             choices: [{ message: { content: groqContent } }],
             geminiResponse: geminiContent,
             geminiStatusCode: 200,
-            geminiFinishReason: 'MAX_TOKENS',
+            geminiFinishReason: 'STOP',
             geminiCandidateCount: 1,
             geminiResponseByteLength: 382,
-            geminiResponseTruncated: true,
+            geminiResponseTruncated: false,
             dontBother: false,
             debugMode: true,
             debugModeSource: 'debug recipient configured',
@@ -1393,13 +1393,12 @@ describe('run — model fallback reporting (#74)', () => {
 
     expect(result.debugEmailHtml).toContain('Model fallback');
     expect(result.debugEmailHtml).toContain('Primary rejection');
-    expect(result.debugEmailHtml).toContain('Yes — gemini rejected:');
-    expect(result.debugEmailHtml).toContain('response truncated (MAX_TOKENS)');
-    expect(result.debugEmailHtml).toContain('used groq');
-    expect(result.debugEmailHtml).not.toContain('gemini failed, used groq');
+    expect(result.debugEmailHtml).toContain('Yes — groq rejected:');
+    expect(result.debugEmailHtml).toContain('editorial field absent or unparseable');
+    expect(result.debugEmailHtml).toContain('used gemini');
+    expect(result.debugEmailHtml).not.toContain('groq failed, used gemini');
     expect(result.debugEmailHtml).toContain('Hardcoded fallback');
     expect(result.debugEmailHtml).toContain('Gemini HTTP status');
-    expect(result.debugEmailHtml).toContain('MAX_TOKENS');
     expect(result.debugEmailHtml).toContain('Gemini truncation signal');
   });
 });
