@@ -68,40 +68,77 @@ jobs:
         with:
           name: workflow-json
 
+      - name: Normalise base URL once
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+        run: |
+          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
+          echo "N8N_BASE_URL_NORM=${BASE_URL}" >> "$GITHUB_ENV"
+          HOSTNAME=$(python3 -c "from urllib.parse import urlparse; import os; print(urlparse(os.environ['N8N_BASE_URL'].strip()).hostname or '(invalid)')")
+          echo "Using n8n host: ${HOSTNAME}"
+
       - name: Substitute secrets into workflow JSON
         env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          PHOTO_WEATHER_EMAIL_TO: ${{ secrets.PHOTO_WEATHER_EMAIL_TO }}
+          PHOTO_WEATHER_EMAIL_TO_2: ${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}
+          PHOTO_WEATHER_DEBUG_EMAIL_TO: ${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}
           PHOTO_BRIEF_TRIGGER_PATH: ${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}
+          PHOTO_WEATHER_LAT: ${{ secrets.PHOTO_WEATHER_LAT }}
+          PHOTO_WEATHER_LON: ${{ secrets.PHOTO_WEATHER_LON }}
+          PHOTO_WEATHER_LOCATION: ${{ secrets.PHOTO_WEATHER_LOCATION }}
+          PHOTO_WEATHER_TIMEZONE: ${{ secrets.PHOTO_WEATHER_TIMEZONE }}
+          PHOTO_WEATHER_ICAO: ${{ secrets.PHOTO_WEATHER_ICAO }}
+          PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER: ${{ secrets.PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER }}
+          PHOTO_BRIEF_EDITORIAL_PROMPT_MODE: ${{ secrets.PHOTO_BRIEF_EDITORIAL_PROMPT_MODE }}
+          SUNSETHUE_API_KEY: ${{ secrets.SUNSETHUE_API_KEY }}
+          NASA_API_KEY: ${{ secrets.NASA_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          APERTURE_GITHUB_PAT: ${{ secrets.APERTURE_GITHUB_PAT }}
         run: |
-          NORMALIZED_TRIGGER_PATH=$(python3 -c "import os; print(os.environ['PHOTO_BRIEF_TRIGGER_PATH'].strip().strip('/'))")
-          if [ -z "$NORMALIZED_TRIGGER_PATH" ]; then
-            echo "::error::PHOTO_BRIEF_TRIGGER_PATH is empty after normalization"
-            exit 1
-          fi
-          ESCAPED_TRIGGER_PATH=$(printf '%s' "$NORMALIZED_TRIGGER_PATH" | sed -e 's/[\\/&]/\\&/g')
-          echo "PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED=${NORMALIZED_TRIGGER_PATH}" >> "$GITHUB_ENV"
+          python3 - <<'PY'
+          import json, os
 
-          sed -i \
-            -e 's|__GROQ_API_KEY__|${{ secrets.GROQ_API_KEY }}|g' \
-            -e 's|__TELEGRAM_BOT_TOKEN__|${{ secrets.TELEGRAM_BOT_TOKEN }}|g' \
-            -e 's|__TELEGRAM_CHAT_ID__|${{ secrets.TELEGRAM_CHAT_ID }}|g' \
-            -e 's|__SENDGRID_API_KEY__|${{ secrets.SENDGRID_API_KEY }}|g' \
-            -e 's|__EMAIL_FROM__|${{ secrets.EMAIL_FROM }}|g' \
-            -e 's|__PHOTO_WEATHER_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_EMAIL_TO }}|g' \
-            -e 's|__PHOTO_WEATHER_EMAIL_TO_2__|${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}|g' \
-            -e 's|__PHOTO_WEATHER_DEBUG_EMAIL_TO__|${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}|g' \
-            -e "s|__PHOTO_BRIEF_TRIGGER_PATH__|${ESCAPED_TRIGGER_PATH}|g" \
-            -e 's|__PHOTO_WEATHER_LAT__|${{ secrets.PHOTO_WEATHER_LAT }}|g' \
-            -e 's|__PHOTO_WEATHER_LON__|${{ secrets.PHOTO_WEATHER_LON }}|g' \
-            -e 's|__PHOTO_WEATHER_LOCATION__|${{ secrets.PHOTO_WEATHER_LOCATION }}|g' \
-            -e 's|__PHOTO_WEATHER_TIMEZONE__|${{ secrets.PHOTO_WEATHER_TIMEZONE }}|g' \
-            -e 's|__PHOTO_WEATHER_ICAO__|${{ secrets.PHOTO_WEATHER_ICAO }}|g' \
-            -e 's|__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__|${{ secrets.PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER }}|g' \
-            -e 's|__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__|${{ secrets.PHOTO_BRIEF_EDITORIAL_PROMPT_MODE }}|g' \
-            -e 's|__SUNSETHUE_API_KEY__|${{ secrets.SUNSETHUE_API_KEY }}|g' \
-            -e 's|__NASA_API_KEY__|${{ secrets.NASA_API_KEY }}|g' \
-            -e 's|__GEMINI_API_KEY__|${{ secrets.GEMINI_API_KEY }}|g' \
-            -e 's|__APERTURE_GITHUB_PAT__|${{ secrets.APERTURE_GITHUB_PAT }}|g' \
-            photography-weather-brief.json
+          trigger = os.environ['PHOTO_BRIEF_TRIGGER_PATH'].strip().strip('/')
+          if not trigger:
+              raise SystemExit("::error::PHOTO_BRIEF_TRIGGER_PATH is empty after normalization")
+
+          # Write normalised trigger path for later steps
+          with open(os.environ['GITHUB_ENV'], 'a') as f:
+              f.write(f"PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED={trigger}\n")
+
+          substitutions = {
+              '__GROQ_API_KEY__': os.environ['GROQ_API_KEY'],
+              '__TELEGRAM_BOT_TOKEN__': os.environ['TELEGRAM_BOT_TOKEN'],
+              '__TELEGRAM_CHAT_ID__': os.environ['TELEGRAM_CHAT_ID'],
+              '__SENDGRID_API_KEY__': os.environ['SENDGRID_API_KEY'],
+              '__EMAIL_FROM__': os.environ['EMAIL_FROM'],
+              '__PHOTO_WEATHER_EMAIL_TO__': os.environ['PHOTO_WEATHER_EMAIL_TO'],
+              '__PHOTO_WEATHER_EMAIL_TO_2__': os.environ['PHOTO_WEATHER_EMAIL_TO_2'],
+              '__PHOTO_WEATHER_DEBUG_EMAIL_TO__': os.environ['PHOTO_WEATHER_DEBUG_EMAIL_TO'],
+              '__PHOTO_BRIEF_TRIGGER_PATH__': trigger,
+              '__PHOTO_WEATHER_LAT__': os.environ['PHOTO_WEATHER_LAT'],
+              '__PHOTO_WEATHER_LON__': os.environ['PHOTO_WEATHER_LON'],
+              '__PHOTO_WEATHER_LOCATION__': os.environ['PHOTO_WEATHER_LOCATION'],
+              '__PHOTO_WEATHER_TIMEZONE__': os.environ['PHOTO_WEATHER_TIMEZONE'],
+              '__PHOTO_WEATHER_ICAO__': os.environ['PHOTO_WEATHER_ICAO'],
+              '__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__': os.environ['PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER'],
+              '__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__': os.environ['PHOTO_BRIEF_EDITORIAL_PROMPT_MODE'],
+              '__SUNSETHUE_API_KEY__': os.environ['SUNSETHUE_API_KEY'],
+              '__NASA_API_KEY__': os.environ['NASA_API_KEY'],
+              '__GEMINI_API_KEY__': os.environ['GEMINI_API_KEY'],
+              '__APERTURE_GITHUB_PAT__': os.environ['APERTURE_GITHUB_PAT'],
+          }
+
+          text = open('photography-weather-brief.json').read()
+          for placeholder, value in substitutions.items():
+              text = text.replace(placeholder, value)
+          open('photography-weather-brief.json', 'w').write(text)
+          PY
 
       - name: Verify no unsubstituted placeholders remain
         run: |
@@ -159,23 +196,19 @@ jobs:
       - name: Look up existing workflow by name
         id: lookup
         env:
-          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          WORKFLOW_NAME_FILE: workflow_name.txt
         run: |
-          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
-          HOSTNAME=$(python3 -c "import os; from urllib.parse import urlparse; print(urlparse(os.environ['N8N_BASE_URL'].strip()).hostname or '(invalid)')")
-          echo "Using n8n host: ${HOSTNAME}"
-          WORKFLOW_NAME=$(cat workflow_name.txt)
-          RESPONSE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf \
+          RESPONSE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${BASE_URL}/api/v1/workflows?limit=100")
+            "${N8N_BASE_URL_NORM}/api/v1/workflows?limit=100")
 
-          # Find workflow ID by name
-          WORKFLOW_ID=$(echo "$RESPONSE" | python3 -c "
-          import json, sys
+          # Find workflow ID by name (reads name from env to avoid shell injection)
+          WORKFLOW_ID=$(echo "$RESPONSE" | WORKFLOW_NAME="$(cat "$WORKFLOW_NAME_FILE")" python3 -c "
+          import json, sys, os
           data = json.load(sys.stdin)
-          name = '${WORKFLOW_NAME}'
+          name = os.environ['WORKFLOW_NAME']
           matches = [w['id'] for w in data['data'] if w['name'] == name]
           print(matches[0] if matches else '')
           ")
@@ -189,32 +222,30 @@ jobs:
 
       - name: Create or update workflow
         env:
-          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
           WORKFLOW_ID: ${{ steps.lookup.outputs.workflow_id }}
         run: |
-          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
           if [ -n "$WORKFLOW_ID" ]; then
             echo "Updating workflow ${WORKFLOW_ID}..."
-            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf -o response.json -w '%{http_code}' \
+            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o response.json -w '%{http_code}' \
               -X PUT \
               -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -d @workflow-body.json \
-              "${BASE_URL}/api/v1/workflows/${WORKFLOW_ID}")
+              "${N8N_BASE_URL_NORM}/api/v1/workflows/${WORKFLOW_ID}")
           else
             echo "Creating new workflow..."
-            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf -o response.json -w '%{http_code}' \
+            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o response.json -w '%{http_code}' \
               -X POST \
               -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
               -d @workflow-body.json \
-              "${BASE_URL}/api/v1/workflows")
+              "${N8N_BASE_URL_NORM}/api/v1/workflows")
           fi
 
-          if [ "$HTTP_CODE" != "200" ]; then
+          if [[ "$HTTP_CODE" != 2* ]]; then
             echo "::error::n8n API returned HTTP ${HTTP_CODE}"
             cat response.json
             exit 1
@@ -227,18 +258,15 @@ jobs:
 
       - name: Activate workflow
         env:
-          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
-          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
-
           # Deactivate first to tear down stale webhook registrations
           echo "Deactivating workflow ${workflow_id} to clear webhooks..."
           curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -s \
             -X POST \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${BASE_URL}/api/v1/workflows/${workflow_id}/deactivate" \
+            "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}/deactivate" \
             -o /dev/null || true
 
           # Activate to force fresh webhook registration
@@ -248,7 +276,7 @@ jobs:
             -X POST \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${BASE_URL}/api/v1/workflows/${workflow_id}/activate")
+            "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}/activate")
 
           if [[ "$HTTP_CODE" != 2* ]]; then
             echo "::error::Activate returned HTTP ${HTTP_CODE}"
@@ -267,20 +295,17 @@ jobs:
           echo "Workflow ${workflow_id} activated successfully"
 
       - name: Trigger workflow run after deploy
-        env:
-          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
         run: |
           # Give n8n time to register webhooks after activation
           echo "Waiting 10s for webhook registration..."
           sleep 10
 
-          BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
-          TRIGGER_PATH=$(python3 -c "import os; print(os.environ['PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED'].strip().strip('/'))")
+          TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
           if [ -z "$TRIGGER_PATH" ]; then
             echo "::error::PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED is empty"
             exit 1
           fi
-          TRIGGER_URL="${BASE_URL}/webhook/${TRIGGER_PATH}"
+          TRIGGER_URL="${N8N_BASE_URL_NORM}/webhook/${TRIGGER_PATH}"
           PAYLOAD=$(python3 - <<'PY'
           import json, os
           print(json.dumps({
