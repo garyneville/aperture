@@ -224,8 +224,10 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
       expect(result.debugContext.ai?.modelFallbackUsed).toBe(true);
     });
 
-    it('should have week insight from Gemini response', () => {
-      expect(result.editorial.weekInsight).toContain('Monday morning');
+    it('should have deterministic week insight (AI text replaced by deterministic fallback)', () => {
+      // The week standout logic always returns deterministic text, not AI text
+      // See issue #190 - the AI text "Monday morning..." is evaluated but replaced
+      expect(result.editorial.weekInsight).toContain('Today');
     });
 
     it('should have composition bullets from Gemini', () => {
