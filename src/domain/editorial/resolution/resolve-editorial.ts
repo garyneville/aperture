@@ -14,8 +14,6 @@
 import {
   normalizeAiText,
   parseEditorialResponse,
-  parseGroqResponse,
-  parseEditorialResponseWithCompat,
 } from './parse.js';
 import type {
   BriefContext,
@@ -42,7 +40,6 @@ export type {
   EditorialGatewayPayload,
   EditorialGatewayResult,
   EditorialCandidatePayload,
-  EditorialCandidatePayloadWithCompat,
   EditorialModelResponse,
   EditorialParseResult,
   // Slot role based types (preferred)
@@ -60,8 +57,6 @@ export type {
 export {
   normalizeAiText,
   parseEditorialResponse,
-  parseGroqResponse,
-  parseEditorialResponseWithCompat,
 } from './parse.js';
 export {
   isFactuallyIncoherentEditorial,

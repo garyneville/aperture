@@ -117,7 +117,7 @@ describe('formatDebugEmail', () => {
           dropReason: 'confidence below threshold (0.65)',
         },
         weekStandout: {
-          parseStatus: 'absent',
+          parseResult: 'raw-text-only',
           rawValue: null,
           used: true,
           decision: 'deterministic-used',
@@ -254,7 +254,7 @@ describe('formatDebugEmail — new debug sections', () => {
           dropped: false,
         },
         weekStandout: {
-          parseStatus: 'absent',
+          parseResult: 'raw-text-only',
           rawValue: null,
           used: true,
           decision: 'deterministic-used',

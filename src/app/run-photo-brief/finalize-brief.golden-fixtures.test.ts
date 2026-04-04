@@ -321,7 +321,7 @@ describe('Golden Fixtures - Debug Output Invariants', () => {
     it('should have weekStandout debug info', () => {
       const weekStandout = result.debugContext.ai?.weekStandout;
       expect(weekStandout).toBeDefined();
-      expect(weekStandout?.parseStatus).toMatch(/^(present|absent|parse-failure)$/);
+      expect(weekStandout?.parseResult).toMatch(/^(valid-structured|raw-text-only|malformed-structured)$/);
       expect(typeof weekStandout?.used).toBe('boolean');
     });
 
@@ -341,7 +341,7 @@ describe('Golden Fixtures - Debug Output Invariants', () => {
       const result = finalizeBrief(fixture, config);
 
       expect(result.editorial.weekInsight).toBeTruthy();
-      expect(result.debugContext.ai?.weekStandout?.parseStatus).toBe('present');
+      expect(result.debugContext.ai?.weekStandout?.parseResult).toBe('valid-structured');
       expect(result.debugContext.ai?.weekStandout?.used).toBe(true);
     });
 

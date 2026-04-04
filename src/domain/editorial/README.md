@@ -17,7 +17,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 - [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts)
   Canonical resolver for provider choice, validation, fallback text, and debug trace output. Consumes the stable `EditorialGatewayPayload` rather than raw transport shapes.
 - [`resolution/parse.ts`](./resolution/parse.ts)
-  Provider-neutral response parsing. Use `parseEditorialResponse()` for new code; `parseGroqResponse()` is kept for backward compatibility.
+  Provider-neutral response parsing. Use `parseEditorialResponse()`.
 - [`resolution/week-standout.ts`](./resolution/week-standout.ts)
   Canonical deterministic week-standout resolver. Provider `weekStandout` text is debug/hint input only; final week-standout wording is derived from forecast data.
 - [`../../contracts/editorial.ts`](../../contracts/editorial.ts)
