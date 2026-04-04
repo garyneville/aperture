@@ -35,6 +35,10 @@ This folder owns prompt assembly and editorial resolution for the photography br
    Week-standout correctness is code-owned; provider hints are retained only for diagnostics/debug trace output.
 8. [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts) orchestrates those pieces and produces the final editorial decision.
 
+## Tie-break behaviour
+
+`resolution/week-standout.ts` sorts tied days by **lower** `confidenceStdDev` (preferring the more reliable forecast). This was inverted in #196 — previously higher spread (less reliable) won tie-breaks.
+
 ## What not to edit casually
 
 - Provider fallback rules in [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts)

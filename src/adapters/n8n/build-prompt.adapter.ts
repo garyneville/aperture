@@ -37,6 +37,10 @@ function resolveEditorialPromptMode(input: Record<string, unknown>): EditorialPr
 export function run({ $input }: N8nRuntime) {
   const input = $input.first().json;
 
+  if (!Array.isArray(input.dailySummary)) {
+    console.warn('[build-prompt] input.dailySummary is not an array — prompt quality may be degraded');
+  }
+
   const result = buildPrompt({
     homeLocation: {
       name: getPhotoWeatherLocation(),

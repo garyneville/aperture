@@ -26,7 +26,8 @@ export function run({ $input }: N8nRuntime) {
       }));
 
     return [{ json: { kpForecast } }];
-  } catch {
-    return [{ json: { kpForecast: [] } }];
+  } catch (err) {
+    console.warn('[wrap-kp-index] failed to process Kp-index data:', err instanceof Error ? err.message : err);
+    return [{ json: { kpForecast: [], kpError: true } }];
   }
 }

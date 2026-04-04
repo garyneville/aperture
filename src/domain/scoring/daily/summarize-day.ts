@@ -200,7 +200,7 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     shSunriseQuality: shSunriseQ !== null ? Math.round(shSunriseQ * 100) : null,
     shSunsetText,
     sunDirection,
-    crepRayPeak: Math.max(...hours.map(h => h.crepuscular || 0)),
+    crepRayPeak: Math.max(0, ...hours.map(h => h.crepuscular || 0)),
     confidence: confidenceResult.overall.confidence,
     confidenceStdDev: confidenceResult.overall.confidenceStdDev,
     durationBonus,

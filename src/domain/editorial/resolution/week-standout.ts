@@ -44,7 +44,10 @@ function sortByScoreThenSpread(days: WeekSummaryDay[]): WeekSummaryDay[] {
     const scoreDelta = displayScore(b) - displayScore(a);
     if (scoreDelta !== 0) return scoreDelta;
 
-    const spreadDelta = (spreadScore(b) ?? Number.NEGATIVE_INFINITY) - (spreadScore(a) ?? Number.NEGATIVE_INFINITY);
+    // Prefer lower spread (more reliable forecast) when scores tie
+    const spreadA = spreadScore(a) ?? Number.POSITIVE_INFINITY;
+    const spreadB = spreadScore(b) ?? Number.POSITIVE_INFINITY;
+    const spreadDelta = spreadA - spreadB;
     if (spreadDelta !== 0) return spreadDelta;
 
     return (a.dayIdx ?? Number.MAX_SAFE_INTEGER) - (b.dayIdx ?? Number.MAX_SAFE_INTEGER);
