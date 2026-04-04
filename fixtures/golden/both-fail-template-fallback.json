@@ -1,0 +1,83 @@
+{
+  "_comment": "Golden fixture: Both providers fail - template fallback used",
+  "scenario": "both-fail-template-fallback",
+  "description": "Both Groq and Gemini return empty/invalid - should use deterministic template fallback",
+  "context": {
+    "dontBother": false,
+    "windows": [
+      {
+        "label": "Evening session",
+        "start": "17:00",
+        "end": "19:00",
+        "peak": 58,
+        "peakHour": "18:00",
+        "tops": ["mixed clouds"],
+        "hours": [
+          { "hour": "17:00", "score": 52, "ct": 40, "visK": 10, "aod": 0.18 },
+          { "hour": "18:00", "score": 58, "ct": 35, "visK": 12, "aod": 0.15 },
+          { "hour": "19:00", "score": 55, "ct": 38, "visK": 11, "aod": 0.16 }
+        ]
+      }
+    ],
+    "dailySummary": [
+      {
+        "dayLabel": "Today",
+        "dayIdx": 0,
+        "headlineScore": 58,
+        "photoScore": 58,
+        "confidence": "low",
+        "confidenceStdDev": 10,
+        "bestPhotoHour": "18:00",
+        "astroScore": 30,
+        "bestAstroHour": null,
+        "darkSkyStartsAt": "21:30"
+      }
+    ],
+    "altLocations": [
+      {
+        "name": "Yorkshire Dales",
+        "bestScore": 72,
+        "bestAstroHour": null,
+        "darkSky": true,
+        "driveMins": 60
+      }
+    ],
+    "today": "Tuesday 7 April",
+    "todayBestScore": 58,
+    "peakKpTonight": 4.0,
+    "auroraSignal": null,
+    "sunriseStr": "06:05",
+    "sunsetStr": "19:55",
+    "moonPct": 65,
+    "metarNote": "",
+    "todayCarWash": {
+      "rating": "Fair",
+      "label": "Fair conditions",
+      "score": 55,
+      "start": "12:00",
+      "end": "18:00",
+      "wind": 18,
+      "pp": 30,
+      "tmp": 13
+    }
+  },
+  "groqChoices": [
+    {
+      "message": {
+        "content": ""
+      }
+    }
+  ],
+  "geminiResponse": "",
+  "homeLocation": {
+    "name": "Leeds",
+    "lat": 53.8008,
+    "lon": -1.5491,
+    "timezone": "Europe/London"
+  },
+  "debug": {
+    "enabled": false,
+    "emailTo": ""
+  },
+  "preferredProvider": "groq"
+}

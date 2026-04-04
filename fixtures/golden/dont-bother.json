@@ -1,0 +1,76 @@
+{
+  "_comment": "Golden fixture: Dont-bother day - poor conditions with low scores",
+  "scenario": "dont-bother",
+  "description": "Conditions are poor (dontBother=true) with no good local windows",
+  "context": {
+    "dontBother": true,
+    "windows": [],
+    "dailySummary": [
+      {
+        "dayLabel": "Today",
+        "dayIdx": 0,
+        "headlineScore": 32,
+        "photoScore": 32,
+        "confidence": "low",
+        "confidenceStdDev": 12,
+        "bestPhotoHour": "14:00",
+        "astroScore": 25,
+        "bestAstroHour": null,
+        "darkSkyStartsAt": null
+      }
+    ],
+    "altLocations": [
+      {
+        "name": "Sutton Bank",
+        "bestScore": 68,
+        "bestAstroHour": null,
+        "darkSky": true,
+        "driveMins": 75
+      },
+      {
+        "name": "Malham Cove",
+        "bestScore": 62,
+        "bestAstroHour": null,
+        "darkSky": true,
+        "driveMins": 55
+      }
+    ],
+    "today": "Saturday 4 April",
+    "todayBestScore": 32,
+    "peakKpTonight": 2.0,
+    "auroraSignal": null,
+    "sunriseStr": "06:12",
+    "sunsetStr": "19:47",
+    "moonPct": 35,
+    "metarNote": "Low cloud base, intermittent rain",
+    "todayCarWash": {
+      "rating": "Poor",
+      "label": "Poor conditions - wait for better weather",
+      "score": 25,
+      "start": null,
+      "end": null,
+      "wind": 25,
+      "pp": 80,
+      "tmp": 12
+    }
+  },
+  "groqChoices": [
+    {
+      "message": {
+        "content": "{\"editorial\": \"Leeds looks poor for photography today with overcast skies and intermittent rain. Conditions remain marginal throughout the day.\", \"composition\": [], \"weekStandout\": \"\"}"
+      }
+    }
+  ],
+  "geminiResponse": "",
+  "homeLocation": {
+    "name": "Leeds",
+    "lat": 53.8008,
+    "lon": -1.5491,
+    "timezone": "Europe/London"
+  },
+  "debug": {
+    "enabled": false,
+    "emailTo": ""
+  },
+  "preferredProvider": "groq"
+}
