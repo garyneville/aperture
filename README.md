@@ -33,6 +33,24 @@ Aperture fetches weather forecast data from multiple providers (Open-Meteo, Open
 - `npm run typecheck`
 - `npm run build`
 
+## Testing
+
+### Golden Fixtures
+
+The project uses **golden fixtures** for deterministic testing of AI-dependent components:
+
+```bash
+# Run golden fixture tests for finalizeBrief
+npm test -- finalize-brief.golden-fixtures.test.ts
+```
+
+Golden fixtures are located in `fixtures/golden/` and provide:
+- Deterministic test data (no external API calls)
+- Coverage of happy paths, edge cases, and failure modes
+- Baseline assertions for AI provider selection and fallback behavior
+
+See [`fixtures/golden/README.md`](./fixtures/golden/README.md) for details on available fixtures and when to update them.
+
 ## Development Setup
 
 **⚠️ Important: You must run `npm run build` before `npm run typecheck`**

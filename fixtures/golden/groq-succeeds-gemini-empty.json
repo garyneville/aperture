@@ -1,0 +1,75 @@
+{
+  "_comment": "Golden fixture: Groq succeeds, Gemini empty - preferred provider works",
+  "scenario": "groq-succeeds-gemini-empty",
+  "description": "Groq returns valid JSON content, Gemini response is empty string",
+  "context": {
+    "dontBother": false,
+    "windows": [
+      {
+        "label": "Late afternoon",
+        "start": "15:00",
+        "end": "17:00",
+        "peak": 65,
+        "peakHour": "16:00",
+        "tops": ["partly cloudy", "good visibility"],
+        "hours": [
+          { "hour": "15:00", "score": 58, "ct": 25, "visK": 15, "aod": 0.15 },
+          { "hour": "16:00", "score": 65, "ct": 20, "visK": 18, "aod": 0.12 },
+          { "hour": "17:00", "score": 62, "ct": 22, "visK": 16, "aod": 0.14 }
+        ]
+      }
+    ],
+    "dailySummary": [
+      {
+        "dayLabel": "Today",
+        "dayIdx": 0,
+        "headlineScore": 65,
+        "photoScore": 65,
+        "confidence": "medium",
+        "confidenceStdDev": 8,
+        "bestPhotoHour": "16:00",
+        "astroScore": 35,
+        "bestAstroHour": null,
+        "darkSkyStartsAt": null
+      }
+    ],
+    "altLocations": [],
+    "today": "Sunday 5 April",
+    "todayBestScore": 65,
+    "peakKpTonight": 3.0,
+    "auroraSignal": null,
+    "sunriseStr": "06:10",
+    "sunsetStr": "19:50",
+    "moonPct": 45,
+    "metarNote": "",
+    "todayCarWash": {
+      "rating": "Fair",
+      "label": "Fair conditions",
+      "score": 60,
+      "start": "10:00",
+      "end": "17:00",
+      "wind": 15,
+      "pp": 20,
+      "tmp": 14
+    }
+  },
+  "groqChoices": [
+    {
+      "message": {
+        "content": "{\"editorial\": \"The late afternoon offers decent conditions with partly cloudy skies and 16km visibility. The 16:00 hour peaks at 65/100.\", \"composition\": [\"Look for breaks in the cloud for interesting light\"], \"weekStandout\": \"\"}"
+      }
+    }
+  ],
+  "geminiResponse": "",
+  "homeLocation": {
+    "name": "Leeds",
+    "lat": 53.8008,
+    "lon": -1.5491,
+    "timezone": "Europe/London"
+  },
+  "debug": {
+    "enabled": false,
+    "emailTo": ""
+  },
+  "preferredProvider": "groq"
+}

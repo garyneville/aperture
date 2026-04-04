@@ -1,0 +1,75 @@
+{
+  "_comment": "Golden fixture: Groq malformed, Gemini usable - fallback to secondary provider",
+  "scenario": "groq-malformed-gemini-usable",
+  "description": "Groq returns malformed JSON, Gemini returns valid content - should use Gemini",
+  "context": {
+    "dontBother": false,
+    "windows": [
+      {
+        "label": "Morning golden hour",
+        "start": "06:30",
+        "end": "08:00",
+        "peak": 72,
+        "peakHour": "07:00",
+        "tops": ["golden hour", "mist clearing"],
+        "hours": [
+          { "hour": "06:30", "score": 65, "ct": 30, "visK": 8, "aod": 0.2 },
+          { "hour": "07:00", "score": 72, "ct": 20, "visK": 12, "aod": 0.15 },
+          { "hour": "07:30", "score": 68, "ct": 25, "visK": 10, "aod": 0.18 }
+        ]
+      }
+    ],
+    "dailySummary": [
+      {
+        "dayLabel": "Today",
+        "dayIdx": 0,
+        "headlineScore": 72,
+        "photoScore": 72,
+        "confidence": "medium",
+        "confidenceStdDev": 7,
+        "bestPhotoHour": "07:00",
+        "astroScore": 40,
+        "bestAstroHour": null,
+        "darkSkyStartsAt": null
+      }
+    ],
+    "altLocations": [],
+    "today": "Monday 6 April",
+    "todayBestScore": 72,
+    "peakKpTonight": 2.5,
+    "auroraSignal": null,
+    "sunriseStr": "06:08",
+    "sunsetStr": "19:52",
+    "moonPct": 55,
+    "metarNote": "Early mist clearing",
+    "todayCarWash": {
+      "rating": "Good",
+      "label": "Good morning conditions",
+      "score": 70,
+      "start": "07:00",
+      "end": "10:00",
+      "wind": 10,
+      "pp": 15,
+      "tmp": 11
+    }
+  },
+  "groqChoices": [
+    {
+      "message": {
+        "content": "This is not valid JSON { broken: response, missing quotes, trailing comma, }"
+      }
+    }
+  ],
+  "geminiResponse": "{\"editorial\": \"The morning golden hour brings the best conditions today. Mist clears by 07:00 revealing excellent light with 12km visibility and a peak score of 72/100.\", \"composition\": [\"Capture the mist while it lasts in the early hour\", \"Position east-facing for golden sunrise light\"], \"weekStandout\": \"Monday morning offers the clearest window this week.\"}",
+  "homeLocation": {
+    "name": "Leeds",
+    "lat": 53.8008,
+    "lon": -1.5491,
+    "timezone": "Europe/London"
+  },
+  "debug": {
+    "enabled": false,
+    "emailTo": ""
+  },
+  "preferredProvider": "groq"
+}
