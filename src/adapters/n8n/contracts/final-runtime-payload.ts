@@ -25,6 +25,7 @@ export type GeminiDiagnosticsFields = {
   geminiCandidatesTokenCount?: unknown;
   geminiTotalTokenCount?: unknown;
   geminiThoughtsTokenCount?: unknown;
+  geminiRetryAfter?: unknown;
   groqStatusCode?: unknown;
   groqResponseByteLength?: unknown;
   groqRetryAfter?: unknown;

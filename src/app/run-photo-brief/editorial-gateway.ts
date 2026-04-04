@@ -223,6 +223,7 @@ export function extractGeminiDiagnostics(input: {
   geminiCandidatesTokenCount?: unknown;
   geminiTotalTokenCount?: unknown;
   geminiThoughtsTokenCount?: unknown;
+  geminiRetryAfter?: unknown;
 }): DebugGeminiDiagnostics | undefined {
   const {
     geminiStatusCode,
@@ -239,6 +240,7 @@ export function extractGeminiDiagnostics(input: {
     geminiCandidatesTokenCount,
     geminiTotalTokenCount,
     geminiThoughtsTokenCount,
+    geminiRetryAfter,
   } = input;
 
   const hasAnyDiagnostic =
@@ -273,6 +275,7 @@ export function extractGeminiDiagnostics(input: {
     candidatesTokenCount: finiteNumberOrNull(geminiCandidatesTokenCount),
     totalTokenCount: finiteNumberOrNull(geminiTotalTokenCount),
     thoughtsTokenCount: finiteNumberOrNull(geminiThoughtsTokenCount),
+    retryAfter: finiteNumberOrNull(geminiRetryAfter),
   };
 }
 

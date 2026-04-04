@@ -54,6 +54,9 @@ This folder contains the canonical orchestration spine for the photo brief appli
 
 - `editorial-gateway.ts`
   Runtime-edge seam for turning provider transport output into a stable payload with raw text, normalized editorial text, parse/outcome state, raw payload, diagnostics, and API status metadata.
+  The workflow may now skip the Gemini fallback call on healthy Groq runs, but
+  `finalizeBrief()` still treats the app-layer template fallback as the final
+  protection when no provider result is usable.
 
 - `finalize-brief-cli.ts`
   CLI runner that demonstrates running the finalize-brief use case without n8n. Loads a fixture file and runs the use case.

@@ -395,8 +395,8 @@ describe('workflow assembly', () => {
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
     const groqConnection = data.connections['HTTP: Groq']?.main?.[0]?.[0];
-    expect(groqConnection?.node).toBe('Merge: Prompt + Groq');
-    expect(groqConnection?.index).toBe(1);
+    expect(groqConnection?.node).toBe('Code: Inspect Groq Primary');
+    expect(groqConnection?.index).toBe(0);
 
     const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Format Messages');
     expect(node).toBeTruthy();
@@ -873,6 +873,109 @@ describe('workflow assembly', () => {
         geminiThoughtsTokenCount: 19,
         geminiRetryAfter: null,
       },
+    }]);
+  });
+
+  it('assembles conditional editorial fallback routing after Groq inspection', async () => {
+    const workflowJson = await assembleWorkflow();
+    const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
+    tempDirs.push(tmpDir);
+
+    const outputPath = join(tmpDir, 'workflow.json');
+    writeWorkflow(workflowJson, outputPath);
+
+    const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
+    const groqNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Groq');
+    const inspectNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Inspect Groq Primary');
+    const ifNode = data.nodes.find((item: { name: string }) => item.name === 'If: Need Gemini Fallback');
+    const routeNode = data.nodes.find((item: { name: string }) => item.name === 'Merge: Editorial Route');
+
+    expect(groqNode).toBeTruthy();
+    expect(groqNode.parameters.options.response.response.fullResponse).toBe(true);
+    expect(groqNode.parameters.options.response.response.responseFormat).toBe('json');
+    expect(inspectNode).toBeTruthy();
+    expect(ifNode).toBeTruthy();
+    expect(routeNode).toBeTruthy();
+    expect(routeNode.parameters.mode).toBe('append');
+
+    const buildPromptConnections = data.connections['Code: Build Prompt']?.main?.[0] ?? [];
+    expect(buildPromptConnections).toEqual(expect.arrayContaining([
+      expect.objectContaining({ node: 'HTTP: Groq', index: 0 }),
+      expect.objectContaining({ node: 'Merge: Prompt + Groq', index: 0 }),
+      expect.objectContaining({ node: 'Code: Build Inspire Prompt', index: 0 }),
+    ]));
+    expect(buildPromptConnections).not.toEqual(expect.arrayContaining([
+      expect.objectContaining({ node: 'HTTP: Gemini Fallback' }),
+    ]));
+
+    const groqConnections = data.connections['HTTP: Groq']?.main?.[0] ?? [];
+    expect(groqConnections).toEqual([
+      expect.objectContaining({ node: 'Code: Inspect Groq Primary', index: 0 }),
+    ]);
+
+    const mergeConnections = data.connections['Merge: Prompt + Groq']?.main?.[0] ?? [];
+    expect(mergeConnections).toEqual([
+      expect.objectContaining({ node: 'If: Need Gemini Fallback', index: 0 }),
+    ]);
+
+    const ifConnections = data.connections['If: Need Gemini Fallback']?.main ?? [];
+    expect(ifConnections[0]).toEqual([
+      expect.objectContaining({ node: 'HTTP: Gemini Fallback', index: 0 }),
+    ]);
+    expect(ifConnections[1]).toEqual([
+      expect.objectContaining({ node: 'Merge: Editorial Route', index: 0 }),
+    ]);
+
+    const inspectFn = new Function('$', '$input', inspectNode.parameters.jsCode);
+    const goodResult = inspectFn(
+      () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            statusCode: 200,
+            body: {
+              choices: [{ message: { content: JSON.stringify({ editorial: 'Good window.', composition: [] }) } }],
+            },
+          },
+        }),
+        all: () => [],
+      },
+    );
+
+    expect(goodResult).toEqual([{
+      json: expect.objectContaining({
+        groqFallbackRequired: false,
+        groqFallbackReason: null,
+        groqStatusCode: 200,
+      }),
+    }]);
+
+    const malformedResult = inspectFn(
+      () => ({
+        first: () => ({ json: {} }),
+        all: () => [],
+      }),
+      {
+        first: () => ({
+          json: {
+            statusCode: 200,
+            body: {
+              choices: [{ message: { content: '{"editorial":' } }],
+            },
+          },
+        }),
+        all: () => [],
+      },
+    );
+
+    expect(malformedResult).toEqual([{
+      json: expect.objectContaining({
+        groqFallbackRequired: true,
+        groqFallbackReason: 'malformed-structured-output',
+      }),
     }]);
   });
 });
