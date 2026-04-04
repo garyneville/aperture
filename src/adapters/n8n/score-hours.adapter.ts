@@ -5,7 +5,7 @@ import type { N8nRuntime } from './types.js';
 const EMPTY_WEATHER = { hourly: { time: [] }, daily: { sunrise: [], sunset: [], moonrise: [], moonset: [] } };
 const EMPTY_HOURLY = { hourly: { time: [] } };
 
-function hasHourlyTime(obj: unknown): obj is { hourly: { time: unknown[] } } {
+function hasHourlyTime(obj: unknown): obj is { hourly: { time: string[] } } {
   return obj != null
     && typeof obj === 'object'
     && 'hourly' in obj
