@@ -28,6 +28,11 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `score-all-days.ts`
   Orchestrates hourly scoring, day summaries, debug payload assembly, and session recommendation attachment.
 
+## Defensive guards
+
+- `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
+- `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
+
 ## What not to edit casually
 
 - the scoring math in [`score-all-days.ts`](./score-all-days.ts) without corresponding fixture or unit coverage

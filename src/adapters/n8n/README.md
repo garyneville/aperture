@@ -41,6 +41,12 @@ The workflow chooses between them with `editorialPromptMode` (`legacy-json` or `
 
 The inspire chain is gated by `inspireEnabled`. When `false`, the workflow skips `HTTP: Gemini Inspire` entirely, avoiding API cost and latency.
 
+## Input validation
+
+The three critical adapters (`format-messages`, `build-prompt`, `score-hours`) include lightweight boundary guards that `console.warn` when the incoming n8n payload is missing expected fields. These guards do **not** throw — they log and let the pipeline continue with safe fallbacks — but the warnings make shape mismatches observable in n8n execution logs.
+
+The `wrap-kp-index` adapter logs processing failures via `console.warn` and returns a `kpError: true` flag alongside the empty `kpForecast` array so downstream consumers can distinguish "no data" from "processing failed."
+
 ## What not to edit casually
 
 - compatibility helpers in [`input.ts`](./input.ts) and [`types.ts`](./types.ts)

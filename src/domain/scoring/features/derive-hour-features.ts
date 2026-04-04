@@ -22,8 +22,10 @@ function sweetSpotScore(
   if (value <= hardMin || value >= hardMax) return 0;
   if (value >= idealMin && value <= idealMax) return 100;
   if (value < idealMin) {
+    if (idealMin === hardMin) return 0;
     return clamp(Math.round(((value - hardMin) / (idealMin - hardMin)) * 100));
   }
+  if (idealMax === hardMax) return 0;
   return clamp(Math.round(((hardMax - value) / (hardMax - idealMax)) * 100));
 }
 

@@ -37,6 +37,13 @@ export function run({ $input }: N8nRuntime) {
   const input = firstInputJson($input, {} as FinalRuntimePayload);
   const looseInput = input as Record<string, unknown>;
 
+  if (!input || typeof input !== 'object') {
+    console.warn('[format-messages] received non-object input — finalization will use fallback defaults');
+  }
+  if (!Array.isArray((input as Record<string, unknown>).dailySummary)) {
+    console.warn('[format-messages] input.dailySummary is not an array — brief output may be incomplete');
+  }
+
   // Build config from n8n environment
   const config = {
     preferredProvider: getPhotoBriefEditorialPrimaryProvider(),

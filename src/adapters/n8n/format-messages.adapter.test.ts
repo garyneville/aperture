@@ -1014,10 +1014,11 @@ describe('run — weekStandout validation', () => {
 
   it('accepts weekStandout naming an equally-scored day with lower certainty (#223)', () => {
     // Reproduces the scenario: Tomorrow and Saturday both score 63,
-    // but Saturday has much lower certainty. The AI correctly names
-    // Saturday even though sort-order would pick Tomorrow.
+    // but Tomorrow has lower stdDev (more reliable). After #196,
+    // tie-break prefers Tomorrow (lower spread) as the standout,
+    // so the reliable-lead comparison day is Tomorrow, not Saturday.
     const result = makeRuntimeOutput(
-      'Today is the most reliable forecast; Saturday may score higher but with much lower certainty',
+      'Today is the most reliable forecast; Tomorrow may score higher but with much lower certainty',
       [
         makeDay('Today', 0, 55, 'high', 5),
         makeDay('Tomorrow', 1, 63, 'medium', 19),
@@ -1027,7 +1028,7 @@ describe('run — weekStandout validation', () => {
       ],
     );
 
-    expect(result.emailHtml).toContain('Today is the most reliable forecast; Saturday may score higher but with much lower certainty');
+    expect(result.emailHtml).toContain('Today is the most reliable forecast; Tomorrow may score higher but with much lower certainty');
     expect(result.debugEmailHtml).toContain('present in raw response → matched deterministic result');
   });
 
