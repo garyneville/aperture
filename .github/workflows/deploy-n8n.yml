@@ -220,6 +220,24 @@ jobs:
             echo "No existing workflow found — will create"
           fi
 
+      - name: Deactivate existing workflow before update
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          WORKFLOW_ID: ${{ steps.lookup.outputs.workflow_id }}
+        run: |
+          if [ -n "$WORKFLOW_ID" ]; then
+            echo "Deactivating workflow ${WORKFLOW_ID} before update..."
+            curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -s \
+              -X POST \
+              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+              -H "Accept: application/json" \
+              "${N8N_BASE_URL_NORM}/api/v1/workflows/${WORKFLOW_ID}/deactivate" \
+              -o /dev/null || true
+            echo "Deactivated — webhooks torn down"
+          else
+            echo "No existing workflow — skipping deactivation"
+          fi
+
       - name: Create or update workflow
         env:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
@@ -260,16 +278,6 @@ jobs:
         env:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
-          # Deactivate first to tear down stale webhook registrations
-          echo "Deactivating workflow ${workflow_id} to clear webhooks..."
-          curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -s \
-            -X POST \
-            -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
-            -H "Accept: application/json" \
-            "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}/deactivate" \
-            -o /dev/null || true
-
-          # Activate to force fresh webhook registration
           echo "Activating workflow ${workflow_id}..."
           HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -s \
             -o activate-response.json -w '%{http_code}' \
@@ -294,12 +302,43 @@ jobs:
 
           echo "Workflow ${workflow_id} activated successfully"
 
+      - name: Verify webhook is registered
+        env:
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+        run: |
+          TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
+          echo "Waiting for webhook registration (path: ${TRIGGER_PATH})..."
+
+          # n8n registers webhooks asynchronously after activation.
+          # Poll by sending HEAD requests to the webhook URL —
+          # HEAD won't trigger the workflow but returns 200 if registered.
+          for attempt in $(seq 1 24); do
+            HEAD_CODE=$(curl --ipv4 -sS -o /dev/null -w '%{http_code}' \
+              --head \
+              "${N8N_BASE_URL_NORM}/webhook/${TRIGGER_PATH}" 2>/dev/null || echo "000")
+
+            if [[ "$HEAD_CODE" == 2* ]]; then
+              echo "Webhook registered (HTTP ${HEAD_CODE}) after ${attempt} check(s)"
+              break
+            fi
+
+            if [ "$attempt" -eq 24 ]; then
+              echo "::error::Webhook not registered after 24 attempts (~120s). HEAD returned ${HEAD_CODE}"
+              # Dump workflow state for debugging
+              curl --ipv4 -sS \
+                -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+                -H "Accept: application/json" \
+                "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}" \
+                | python3 -c "import json,sys; wf=json.load(sys.stdin); print(f\"active={wf.get('active')}, nodes={len(wf.get('nodes',[]))}\")"
+              exit 1
+            fi
+
+            echo "Webhook not ready yet (attempt ${attempt}/24, HTTP ${HEAD_CODE}); waiting 5s..."
+            sleep 5
+          done
+
       - name: Trigger workflow run after deploy
         run: |
-          # Give n8n time to register webhooks after activation
-          echo "Waiting 10s for webhook registration..."
-          sleep 10
-
           TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
           if [ -z "$TRIGGER_PATH" ]; then
             echo "::error::PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED is empty"
