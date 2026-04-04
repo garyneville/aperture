@@ -5,7 +5,6 @@ import type {
   DebugPrimaryDiagnostics,
   DebugFallbackDiagnostics,
   WeekStandoutDecision,
-  WeekStandoutParseStatus,
 } from '../../../lib/debug-context.js';
 import type {
   EditorialDecision,
@@ -155,15 +154,7 @@ export type EditorialCandidatePayload = {
   weekStandoutRawValue: string | null;
 };
 
-/**
- * Extended payload with compatibility fields for boundary adapters.
- * This type is used only at adapter boundaries where backward compatibility
- * with legacy parse status fields is required.
- */
-export type EditorialCandidatePayloadWithCompat = EditorialCandidatePayload & {
-  /** @deprecated Use parseResult instead. Kept for backward compatibility at boundaries. */
-  weekStandoutParseStatus: WeekStandoutParseStatus;
-};
+
 
 export type EditorialGatewayParseState = EditorialParseResult | 'empty';
 
@@ -217,11 +208,6 @@ export type EditorialGatewayPayload = {
   /** @deprecated Access via slot role instead of direct property */
   gemini: PrimaryEditorialGatewayResult;
 };
-
-/**
- * @deprecated Use EditorialCandidatePayload instead. This type will be removed in a future release.
- */
-export type ParsedEditorialResponse = EditorialCandidatePayload;
 
 export type EditorialCandidate = {
   provider: EditorialProvider;

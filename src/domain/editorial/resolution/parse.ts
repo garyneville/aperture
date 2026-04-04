@@ -1,31 +1,9 @@
 import { splitAiSentences } from '../ai-briefing.js';
-import type { WeekStandoutParseStatus } from '../../../lib/debug-context.js';
 import type {
   EditorialCandidatePayload,
-  EditorialCandidatePayloadWithCompat,
-  EditorialModelResponse,
   EditorialParseResult,
   SpurRaw,
 } from './types.js';
-
-/**
- * Convert provider-neutral parse result to legacy weekStandoutParseStatus.
- * @deprecated This is for backward compatibility only. Use parseResult directly.
- */
-function toWeekStandoutParseStatus(
-  parseResult: EditorialParseResult,
-  hasWeekStandout: boolean,
-): WeekStandoutParseStatus {
-  switch (parseResult) {
-    case 'valid-structured':
-      return hasWeekStandout ? 'present' : 'absent';
-    case 'malformed-structured':
-    case 'raw-text-only':
-    default:
-      // For backward compatibility: any non-valid parse result is 'parse-failure'
-      return 'parse-failure';
-  }
-}
 
 export function stripMarkdownFences(content: string): string {
   return content.replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/, '$1').trim();
@@ -141,30 +119,4 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
   };
 }
 
-/**
- * Parse an editorial response with backward compatibility fields.
- * Use this at adapter boundaries where legacy code expects weekStandoutParseStatus.
- *
- * @deprecated Use parseEditorialResponse for new code. This is for boundary compatibility only.
- */
-export function parseEditorialResponseWithCompat(rawContent: string): EditorialCandidatePayloadWithCompat {
-  const base = parseEditorialResponse(rawContent);
 
-  return {
-    ...base,
-    weekStandoutParseStatus: toWeekStandoutParseStatus(
-      base.parseResult,
-      base.weekStandoutRawValue !== null,
-    ),
-  };
-}
-
-/**
- * @deprecated Use parseEditorialResponse instead. This function is kept for backward compatibility.
- */
-export const parseGroqResponse = parseEditorialResponse;
-
-/**
- * @deprecated Use parseEditorialResponseWithCompat instead. This function is kept for backward compatibility.
- */
-export const parseGroqResponseWithCompat = parseEditorialResponseWithCompat;

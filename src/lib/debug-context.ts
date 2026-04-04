@@ -165,11 +165,10 @@ export interface DebugApiCallStatus {
   retryAfter?: number | null;
 }
 
-export type WeekStandoutParseStatus = 'present' | 'absent' | 'parse-failure';
 export type WeekStandoutDecision = 'deterministic-used' | 'omitted';
 
 export interface DebugWeekStandoutTrace {
-  parseStatus: WeekStandoutParseStatus;
+  parseResult: 'valid-structured' | 'raw-text-only' | 'malformed-structured';
   rawValue: string | null;
   used: boolean;
   decision?: WeekStandoutDecision;

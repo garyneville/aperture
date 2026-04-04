@@ -85,14 +85,8 @@ function buildWeekStandoutDebugInfo(
   rawValue: string | null | undefined,
   resolved: WeekStandoutResolution,
 ): DebugAiTrace['weekStandout'] {
-  const parseStatus = parseResult === 'malformed-structured'
-    ? 'parse-failure'
-    : rawValue
-      ? 'present'
-      : 'absent';
-
   return {
-    parseStatus,
+    parseResult: parseResult ?? 'raw-text-only',
     rawValue: rawValue ?? null,
     used: resolved.used,
     decision: resolved.decision,

@@ -34,7 +34,6 @@ export type {
   DebugKitAdvisoryRule,
   DebugOutdoorComfort,
   DebugOutdoorComfortHour,
-  WeekStandoutParseStatus,
   WeekStandoutDecision,
   // Provider slot types
   ProviderSlot,

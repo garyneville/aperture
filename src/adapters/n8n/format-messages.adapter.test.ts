@@ -7,11 +7,9 @@ import {
   isFactuallyIncoherentEditorial,
   normalizeAiText,
   parseEditorialResponse,
-  parseGroqResponse,
   resolveSpurSuggestion,
   shouldReplaceAiText,
 } from '../../domain/editorial/resolution/resolve-editorial.js';
-import { parseEditorialResponseWithCompat } from '../../domain/editorial/resolution/parse.js';
 import {
   run,
 } from './format-messages.adapter.js';
@@ -642,45 +640,6 @@ describe('parseEditorialResponse — provider-neutral parsing', () => {
     const result = parseEditorialResponse(fenced);
     expect(result.parseResult).toBe('valid-structured');
     expect(result.editorial).toBe('Good.');
-  });
-});
-
-describe('parseGroqResponse — backward compatibility (deprecated)', () => {
-  it('still works as an alias for parseEditorialResponse', () => {
-    const raw = JSON.stringify({ editorial: 'Test.', composition: [] });
-    const result = parseGroqResponse(raw);
-    expect(result.editorial).toBe('Test.');
-    expect(result.parseResult).toBe('valid-structured');
-  });
-
-  it('reports present status and raw value when weekStandout is in the response', () => {
-    const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Wednesday is the standout day.' });
-    const result = parseEditorialResponseWithCompat(raw);
-    expect(result.weekStandoutParseStatus).toBe('present');
-    expect(result.weekStandoutRawValue).toBe('Wednesday is the standout day.');
-    expect(result.weekInsight).toBe('Wednesday is the standout day.');
-  });
-
-  it('reports absent status when weekStandout is missing from a valid JSON response', () => {
-    const raw = JSON.stringify({ editorial: 'Good.', composition: [] });
-    const result = parseEditorialResponseWithCompat(raw);
-    expect(result.weekStandoutParseStatus).toBe('absent');
-    expect(result.weekStandoutRawValue).toBeNull();
-    expect(result.weekInsight).toBe('');
-  });
-
-  it('reports absent status when weekStandout is not a string', () => {
-    const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 42 });
-    const result = parseEditorialResponseWithCompat(raw);
-    expect(result.weekStandoutParseStatus).toBe('absent');
-    expect(result.weekStandoutRawValue).toBeNull();
-  });
-
-  it('reports parse-failure status when the response is not valid JSON', () => {
-    const result = parseEditorialResponseWithCompat('Not JSON at all.');
-    expect(result.weekStandoutParseStatus).toBe('parse-failure');
-    expect(result.weekStandoutRawValue).toBeNull();
-    expect(result.weekInsight).toBe('');
   });
 });
 

@@ -91,6 +91,5 @@ export type {
   DebugKitAdvisoryRule,
   DebugOutdoorComfort,
   DebugOutdoorComfortHour,
-  WeekStandoutParseStatus,
   WeekStandoutDecision,
 } from './debug.js';

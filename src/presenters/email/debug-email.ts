@@ -251,10 +251,10 @@ export function formatDebugEmail(debugContext: DebugContext): string {
               if (weekStandout.decision === 'omitted') {
                 return weekStandout.note || 'omitted — no forecast data available';
               }
-              if (weekStandout.parseStatus === 'parse-failure') {
+              if (weekStandout.parseResult === 'malformed-structured') {
                 return `⚠️ parse failure (fenced/malformed JSON) → deterministic result: "${weekStandout.finalValue || ''}"${weekStandout.note ? ` (${weekStandout.note})` : ''}`;
               }
-              if (weekStandout.parseStatus === 'absent') {
+              if (weekStandout.parseResult === 'raw-text-only' || !weekStandout.rawValue) {
                 return `absent from raw response → deterministic result: "${weekStandout.finalValue || ''}"${weekStandout.note ? ` (${weekStandout.note})` : ''}`;
               }
               if (weekStandout.hintAligned === true) {
