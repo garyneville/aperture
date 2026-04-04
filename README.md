@@ -51,6 +51,15 @@ Golden fixtures are located in `fixtures/golden/` and provide:
 
 See [`fixtures/golden/README.md`](./fixtures/golden/README.md) for details on available fixtures and when to update them.
 
+## Editorial Prompt Rollout
+
+The primary editorial request now supports two workflow modes:
+
+- `legacy-json` - existing single-prompt path with JSON-in-prompt instructions
+- `structured-output` - split `system` + `user` prompts plus Groq JSON Schema response enforcement
+
+The deployed workflow selects the mode via the `PHOTO_BRIEF_EDITORIAL_PROMPT_MODE` secret. Keep `legacy-json` as the rollback-safe default while trialing the structured path, or override per webhook run with `editorialPromptMode=structured-output`.
+
 ## Development Setup
 
 **⚠️ Important: You must run `npm run build` before `npm run typecheck`**

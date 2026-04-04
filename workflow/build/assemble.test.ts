@@ -893,6 +893,11 @@ describe('workflow assembly', () => {
     expect(groqNode).toBeTruthy();
     expect(groqNode.parameters.options.response.response.fullResponse).toBe(true);
     expect(groqNode.parameters.options.response.response.responseFormat).toBe('json');
+    expect(groqNode.parameters.body).toContain("$json.editorialPromptMode === 'structured-output'");
+    expect(groqNode.parameters.body).toContain("response_format: { type: 'json_schema'");
+    expect(groqNode.parameters.body).toContain("content: $json.systemPrompt");
+    expect(groqNode.parameters.body).toContain("content: $json.userPrompt");
+    expect(groqNode.parameters.body).toContain('schema: $json.responseSchema');
     expect(inspectNode).toBeTruthy();
     expect(ifNode).toBeTruthy();
     expect(routeNode).toBeTruthy();

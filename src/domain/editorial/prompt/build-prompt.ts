@@ -22,8 +22,18 @@ import {
   confidenceLabel,
   getMonthOneIndexed,
 } from './sections/shared.js';
-import { buildDontBotherPrompt } from './sections/dont-bother-prompt.js';
-import { buildLocalWindowPrompt } from './sections/local-window-prompt.js';
+import {
+  buildDontBotherPrompt,
+  buildStructuredDontBotherPrompt,
+} from './sections/dont-bother-prompt.js';
+import {
+  buildLocalWindowPrompt,
+  buildStructuredLocalWindowPrompt,
+} from './sections/local-window-prompt.js';
+import {
+  buildEditorialResponseSchema,
+  EDITORIAL_RESPONSE_SCHEMA_NAME,
+} from './sections/prompt-blocks.js';
 
 export interface KpEntry {
   time: string;
@@ -70,6 +80,10 @@ export interface AltLocationResult {
 
 export interface BuildPromptOutput extends ScoredForecastContext {
   prompt: string;
+  systemPrompt: string;
+  userPrompt: string;
+  responseSchemaName: string;
+  responseSchema: Record<string, unknown>;
 }
 
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
@@ -143,6 +157,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const moonNote = moonTimingNote(todayDay);
 
   let prompt: string;
+  let systemPrompt: string;
+  let userPrompt: string;
 
   if (effectiveDontBother) {
     prompt = buildDontBotherPrompt({
@@ -158,6 +174,19 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       todayDay,
       hasLocalWindow,
     });
+    ({ systemPrompt, userPrompt } = buildStructuredDontBotherPrompt({
+      homeLocationName,
+      todayBestScore,
+      seasonalNote,
+      auroraNote,
+      shInfo,
+      moonNote,
+      confNote,
+      altLocations,
+      weekLine,
+      todayDay,
+      hasLocalWindow,
+    }));
   } else {
     const nowTimeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: homeLocation.timezone });
     const nowMinutes = (() => {
@@ -189,10 +218,38 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       currentMonth,
       sessionRecommendation,
     });
+    ({ systemPrompt, userPrompt } = buildStructuredLocalWindowPrompt({
+      homeLocationName,
+      windows,
+      nowTimeStr,
+      nowMinutes,
+      today,
+      sunriseStr,
+      sunsetStr,
+      moonPct,
+      seasonalNote,
+      auroraNote,
+      shInfo,
+      moonNote,
+      confNote,
+      metarNote,
+      weekLine,
+      altLocations,
+      todayDay,
+      auroraVisibleLocally,
+      auroraThreshold,
+      peakKpTonight,
+      currentMonth,
+      sessionRecommendation,
+    }));
   }
 
   return {
     prompt,
+    systemPrompt,
+    userPrompt,
+    responseSchemaName: EDITORIAL_RESPONSE_SCHEMA_NAME,
+    responseSchema: buildEditorialResponseSchema(),
     dontBother: effectiveDontBother,
     windows,
     todayCarWash,

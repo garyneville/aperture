@@ -410,6 +410,16 @@ describe('parseEditorialResponse — spurOfTheMoment', () => {
     expect(parseEditorialResponse(raw).spurRaw).toBeNull();
   });
 
+  it('drops spurRaw when structured-output placeholders are blank', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good.',
+      composition: [],
+      weekStandout: 'Today.',
+      spurOfTheMoment: { locationName: '', hookLine: '', confidence: 0 },
+    });
+    expect(parseEditorialResponse(raw).spurRaw).toBeNull();
+  });
+
   it('returns null spurRaw when spurOfTheMoment key is absent', () => {
     const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Today.' });
     expect(parseEditorialResponse(raw).spurRaw).toBeNull();

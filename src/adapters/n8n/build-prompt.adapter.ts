@@ -1,5 +1,6 @@
 import { buildPrompt } from '../../domain/editorial/prompt/build-prompt.js';
 import {
+  getPhotoBriefEditorialPromptMode,
   PHOTO_BRIEF_WORKFLOW_VERSION,
   getPhotoWeatherIcao,
   getPhotoWeatherLat,
@@ -7,7 +8,30 @@ import {
   getPhotoWeatherLon,
   getPhotoWeatherTimezone,
 } from '../../config.js';
+import type { EditorialPromptMode } from '../../config.js';
 import type { N8nRuntime } from './types.js';
+
+function objectOrNull(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function parseEditorialPromptMode(value: unknown): EditorialPromptMode | null {
+  return value === 'structured-output' || value === 'legacy-json'
+    ? value
+    : null;
+}
+
+function resolveEditorialPromptMode(input: Record<string, unknown>): EditorialPromptMode {
+  const triggerRequest = objectOrNull(input.triggerRequest);
+  const body = objectOrNull(triggerRequest?.body);
+  const query = objectOrNull(triggerRequest?.query);
+
+  return parseEditorialPromptMode(body?.editorialPromptMode)
+    ?? parseEditorialPromptMode(query?.editorialPromptMode)
+    ?? getPhotoBriefEditorialPromptMode();
+}
 
 export function run({ $input }: N8nRuntime) {
   const input = $input.first().json;
@@ -44,5 +68,12 @@ export function run({ $input }: N8nRuntime) {
     longRangeDebugCandidates: input.longRangeDebugCandidates,
   });
 
-  return [{ json: result }];
+  const editorialPromptMode = resolveEditorialPromptMode(input as Record<string, unknown>);
+
+  return [{
+    json: {
+      ...result,
+      editorialPromptMode,
+    },
+  }];
 }

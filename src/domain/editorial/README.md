@@ -13,7 +13,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 ## Public entrypoints
 
 - [`prompt/build-prompt.ts`](./prompt/build-prompt.ts)
-  Builds the provider prompt and returns the enriched scoring context used by editorial resolution.
+  Builds both the legacy provider prompt and the structured-output prompt payload (`systemPrompt`, `userPrompt`, response schema) alongside the enriched scoring context used by editorial resolution.
 - [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts)
   Canonical resolver for provider choice, validation, fallback text, and debug trace output. Consumes the stable `EditorialGatewayPayload` rather than raw transport shapes.
 - [`resolution/parse.ts`](./resolution/parse.ts)
@@ -24,7 +24,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 ## Flow
 
 1. Prompt construction happens in [`prompt/build-prompt.ts`](./prompt/build-prompt.ts).
-2. Shared prompt blocks (response contract, spur instructions, week standout) live in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) and [`prompt/sections/week-standout.ts`](./prompt/sections/week-standout.ts).
+2. Shared prompt blocks and the structured response schema live in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) and [`prompt/sections/week-standout.ts`](./prompt/sections/week-standout.ts).
 3. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts) via `parseEditorialResponse()` — a provider-neutral parser that handles responses from any AI provider (Groq, Gemini, etc.) without tying the code to specific provider naming.
 4. The runtime/app edge uses that parser to build an `EditorialGatewayPayload` with normalized text, raw text, parse outcome, diagnostics, and API status metadata.
 5. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
@@ -37,6 +37,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 - Provider fallback rules in [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts)
 - Validation heuristics in [`resolution/validation.ts`](./resolution/validation.ts)
 - Output contract types re-exported from [`../../contracts/editorial.ts`](../../contracts/editorial.ts)
+- The structured response schema and prompt split in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) unless the workflow rollout plan changes too
 
 ## Tests
 
