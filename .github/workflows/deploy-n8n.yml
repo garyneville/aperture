@@ -231,17 +231,49 @@ jobs:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
         run: |
           BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
-          curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sf \
+
+          # Deactivate first to tear down stale webhook registrations
+          echo "Deactivating workflow ${workflow_id} to clear webhooks..."
+          curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -s \
             -X POST \
             -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
             -H "Accept: application/json" \
-            "${BASE_URL}/api/v1/workflows/${workflow_id}/activate"
-          echo "Workflow ${workflow_id} activated"
+            "${BASE_URL}/api/v1/workflows/${workflow_id}/deactivate" \
+            -o /dev/null || true
+
+          # Activate to force fresh webhook registration
+          echo "Activating workflow ${workflow_id}..."
+          HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -s \
+            -o activate-response.json -w '%{http_code}' \
+            -X POST \
+            -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+            -H "Accept: application/json" \
+            "${BASE_URL}/api/v1/workflows/${workflow_id}/activate")
+
+          if [[ "$HTTP_CODE" != 2* ]]; then
+            echo "::error::Activate returned HTTP ${HTTP_CODE}"
+            cat activate-response.json
+            exit 1
+          fi
+
+          # Verify the workflow is actually active
+          ACTIVE=$(python3 -c "import json; print(json.load(open('activate-response.json')).get('active', False))")
+          if [ "$ACTIVE" != "True" ]; then
+            echo "::error::Workflow is not active after activation call"
+            cat activate-response.json
+            exit 1
+          fi
+
+          echo "Workflow ${workflow_id} activated successfully"
 
       - name: Trigger workflow run after deploy
         env:
           N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
         run: |
+          # Give n8n time to register webhooks after activation
+          echo "Waiting 10s for webhook registration..."
+          sleep 10
+
           BASE_URL=$(python3 -c "import os; print(os.environ['N8N_BASE_URL'].strip().rstrip('/'))")
           TRIGGER_PATH=$(python3 -c "import os; print(os.environ['PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED'].strip().strip('/'))")
           if [ -z "$TRIGGER_PATH" ]; then
