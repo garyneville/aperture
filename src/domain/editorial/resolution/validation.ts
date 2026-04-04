@@ -126,8 +126,35 @@ export function getFactualCheck(aiText: string, ctx: BriefContext): DebugAiCheck
 
   const explicitPeakTime = aiText.match(/\b(?:peak(?: local)? time is around|best(?: local)? time is around|tops? out around)\s+(\d{2}:\d{2})/i)?.[1] || null;
   const expectedPeakTime = peakHour?.hour || topWindow?.end || topWindow?.start || today?.bestPhotoHour || null;
-  if (explicitPeakTime && expectedPeakTime && explicitPeakTime !== expectedPeakTime) {
-    rulesTriggered.push('editorial peak time does not match the selected window peak hour');
+
+  // Validate that explicit peak time is reasonably aligned with expected peak
+  // The AI may reference any time within the window range, not just the exact peak hour.
+  // This is intentional looseness per Issue #96 - "loosen the validation logic".
+  if (explicitPeakTime && expectedPeakTime) {
+    const explicitMinutes = clockToMinutes(explicitPeakTime);
+    const expectedMinutes = clockToMinutes(expectedPeakTime);
+    const windowStartMinutes = clockToMinutes(topWindow?.start);
+    const windowEndMinutes = clockToMinutes(topWindow?.end);
+
+    // Check if explicit time falls within the overall window range (inclusive)
+    // This allows the AI to mention any time within the window, e.g., "10:00" for 08:00-10:00
+    const withinWindowRange = windowStartMinutes !== null
+      && windowEndMinutes !== null
+      && explicitMinutes !== null
+      && explicitMinutes >= windowStartMinutes
+      && explicitMinutes <= windowEndMinutes;
+
+    // Also check if explicit time is very close to expected peak (±30 min tolerance)
+    // This provides some strictness for cases where the time is completely wrong
+    const PEAK_TIME_TOLERANCE_MINUTES = 30;
+    const withinPeakTolerance = explicitMinutes !== null
+      && expectedMinutes !== null
+      && Math.abs(explicitMinutes - expectedMinutes) <= PEAK_TIME_TOLERANCE_MINUTES;
+
+    // Reject only if time is BOTH outside window range AND outside peak tolerance
+    if (!withinWindowRange && !withinPeakTolerance) {
+      rulesTriggered.push('editorial peak time does not match the selected window peak hour');
+    }
   }
 
   return {
