@@ -22,11 +22,12 @@ This folder owns prompt assembly and editorial resolution for the photography br
 ## Flow
 
 1. Prompt construction happens in [`prompt/build-prompt.ts`](./prompt/build-prompt.ts).
-2. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts).
-3. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
-4. Composition filtering lives in [`resolution/composition.ts`](./resolution/composition.ts).
-5. Week-standout and spur logic live in [`resolution/week-standout.ts`](./resolution/week-standout.ts) and [`resolution/spur-suggestion.ts`](./resolution/spur-suggestion.ts).
-6. [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts) orchestrates those pieces and produces the final editorial decision.
+2. Shared prompt blocks (response contract, spur instructions, week standout) live in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) and [`prompt/sections/week-standout.ts`](./prompt/sections/week-standout.ts).
+3. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts).
+4. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
+5. Composition filtering lives in [`resolution/composition.ts`](./resolution/composition.ts).
+6. Week-standout and spur logic live in [`resolution/week-standout.ts`](./resolution/week-standout.ts) and [`resolution/spur-suggestion.ts`](./resolution/spur-suggestion.ts).
+7. [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts) orchestrates those pieces and produces the final editorial decision.
 
 ## What not to edit casually
 

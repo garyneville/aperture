@@ -4,9 +4,13 @@ import type { Window, DailySummary } from '../../../windowing/best-windows.js';
 import type { AltLocationResult } from '../build-prompt.js';
 import type { SessionRecommendationSummary } from '../../../../types/session-score.js';
 import { alternativePromptSection } from './alternatives.js';
-import { weekStandoutSchemaHint, weekStandoutInstructionBlock } from './week-standout.js';
 import { isAstroWindow, windowRange, windowTrendInsight } from './shared.js';
 import { skyQualityConstraints } from './sky-quality-constraints.js';
+import {
+  buildEditorialResponseContractText,
+  buildSpurInstructions,
+  buildWeekStandoutInstructions,
+} from './prompt-blocks.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -117,9 +121,13 @@ export function buildLocalWindowPrompt(p: LocalWindowPromptParams): string {
     ].filter(Boolean).join('\n')}`
     : '';
 
+  const responseContract = buildEditorialResponseContractText({
+    homeLocationName,
+    variant: 'local-window',
+  });
+
   return `You are an expert landscape and astrophotography assistant giving a daily photography briefing for ${homeLocationName}.
-Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":"<2 sentences max 55 words>","composition":["<shot idea 1>","<shot idea 2>"],"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}
+${responseContract}
 
 EDITORIAL (exactly 2 sentences, max 55 words total):
 Selected primary window: ${bestWin.label} (${windowRange(bestWin)}). Your editorial must reference this window by name or time range. Do not describe conditions outside this window unless making a direct comparison.
@@ -134,10 +142,9 @@ COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
 Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing" unless the supplied constraints explicitly support them.
 ${shotConstraints ? `\n${shotConstraints}\n` : ''}
-${weekStandoutInstructionBlock()}
+${buildWeekStandoutInstructions()}
 
-SPUR OF THE MOMENT — pick one location from this list that would reward a spontaneous drive today given today's season and conditions. Copy the name exactly as shown. hookLine: 1 evocative sentence, ≤25 words, no scores, no drive times, no "${homeLocationName}". confidence: 0.7+ only when the fit is clear and specific; omit the spurOfTheMoment key entirely if nothing stands out. Do not pick locations from the 'Nearby alternatives' section.
-Locations: ${SPUR_LOCATION_NAMES}
+${buildSpurInstructions({ homeLocationName, locationList: SPUR_LOCATION_NAMES })}
 
 Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
 ${temporalContext}${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}
