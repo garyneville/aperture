@@ -66,8 +66,9 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
   try {
     const parsed = JSON.parse(stripped);
     if (parsed && typeof parsed === 'object') {
+      const parsedRecord = parsed as Record<string, unknown>;
       let spurRaw: SpurRaw | null = null;
-      const spur = (parsed as Record<string, unknown>).spurOfTheMoment;
+      const spur = parsedRecord.spurOfTheMoment;
       const spurRecord = spur && typeof spur === 'object'
         ? spur as Record<string, unknown>
         : null;
@@ -92,20 +93,21 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
         };
       }
 
-      const weekStandoutRawValue = typeof (parsed as Record<string, unknown>).weekStandout === 'string'
-        ? (parsed as Record<string, unknown>).weekStandout as string
+      const weekStandoutRawValue = typeof parsedRecord.weekStandout === 'string'
+        && parsedRecord.weekStandout.trim().length > 0
+        ? parsedRecord.weekStandout.trim()
         : null;
 
       // Determine if the structured response was actually valid
-      const hasValidEditorial = typeof (parsed as Record<string, unknown>).editorial === 'string';
+      const hasValidEditorial = typeof parsedRecord.editorial === 'string';
       const parseResult: EditorialParseResult = hasValidEditorial ? 'valid-structured' : 'malformed-structured';
 
       return {
         editorial: hasValidEditorial
-          ? (parsed as Record<string, unknown>).editorial as string
+          ? parsedRecord.editorial as string
           : rawContent,
-        compositionBullets: Array.isArray((parsed as Record<string, unknown>).composition)
-          ? ((parsed as Record<string, unknown>).composition as unknown[]).filter(
+        compositionBullets: Array.isArray(parsedRecord.composition)
+          ? (parsedRecord.composition as unknown[]).filter(
               (value: unknown): value is string => typeof value === 'string',
             )
           : [],

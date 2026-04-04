@@ -7,7 +7,11 @@
 
 import type { DebugAiTrace, DebugGeminiDiagnostics, DebugGroqDiagnostics } from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
-import type { EditorialGatewayPayload, WeekStandoutResolution } from './types.js';
+import type {
+  EditorialGatewayPayload,
+  EditorialParseResult,
+  WeekStandoutResolution,
+} from './types.js';
 import type { CandidateSelectionResult } from './candidate-selection.js';
 
 /**
@@ -73,17 +77,24 @@ function buildCompositionDebugInfo(input: CompositionDebugInput): { rawCount: nu
  * Build week standout debug information.
  */
 function buildWeekStandoutDebugInfo(
-  parseStatus: string | undefined,
+  parseResult: EditorialParseResult | undefined,
   rawValue: string | null | undefined,
   resolved: WeekStandoutResolution,
 ): DebugAiTrace['weekStandout'] {
+  const parseStatus = parseResult === 'malformed-structured'
+    ? 'parse-failure'
+    : rawValue
+      ? 'present'
+      : 'absent';
+
   return {
-    parseStatus: (parseStatus as DebugAiTrace['weekStandout']['parseStatus']) || 'absent',
+    parseStatus,
     rawValue: rawValue ?? null,
-    used: resolved.usedRaw,
+    used: resolved.used,
     decision: resolved.decision,
     finalValue: resolved.text ?? null,
-    fallbackReason: resolved.fallbackReason ?? null,
+    hintAligned: resolved.hintAligned,
+    note: resolved.note ?? null,
   };
 }
 
@@ -113,8 +124,11 @@ export interface BuildDebugTraceInput {
   resolvedCompositionBullets: string[];
   /** Week standout resolution result */
   weekStandout: WeekStandoutResolution;
-  /** Component candidate for parse status */
-  componentCandidate: { weekStandoutParseStatus?: string; weekStandoutRawValue?: string | null } | null;
+  /** Best available hint candidate for debug derivation */
+  weekStandoutHintCandidate: {
+    parseResult?: EditorialParseResult;
+    weekStandoutRawValue?: string | null;
+  } | null;
 }
 
 /**
@@ -160,8 +174,8 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
   };
 
   const weekStandout = buildWeekStandoutDebugInfo(
-    input.componentCandidate?.weekStandoutParseStatus,
-    input.componentCandidate?.weekStandoutRawValue ?? null,
+    input.weekStandoutHintCandidate?.parseResult,
+    input.weekStandoutHintCandidate?.weekStandoutRawValue ?? null,
     input.weekStandout,
   );
 
@@ -176,7 +190,7 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     primaryRejectionReason: input.primaryRejectionReason,
     secondaryRejectionReason: input.secondaryRejectionReason,
     rawGroqResponse: input.editorialGateway.groq.rawText,
-    rawGeminiResponse: input.editorialGateway.gemini.rawText || undefined,
+    rawGeminiResponse: input.editorialGateway.gemini.rawText,
     rawGeminiPayload: input.editorialGateway.gemini.rawPayload,
     geminiDiagnostics,
     groqDiagnostics,

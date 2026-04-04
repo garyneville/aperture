@@ -921,7 +921,7 @@ describe('run — weekStandout validation', () => {
     ]);
 
     expect(result.emailHtml).toContain('Wednesday is the standout day.');
-    expect(result.debugEmailHtml).toContain('present in raw response → used: &quot;Wednesday is the standout day.&quot;');
+    expect(result.debugEmailHtml).toContain('present in raw response → matched deterministic result: &quot;Wednesday is the standout day.&quot;');
   });
 
   it('returns the canonical briefJson payload for downstream consumers', () => {
@@ -1025,8 +1025,8 @@ describe('run — weekStandout validation', () => {
 
     expect(result.emailHtml).toContain('Today is the most reliable forecast; Wednesday may score higher but with much lower certainty.');
     expect(result.emailHtml).not.toContain('Wednesday is most reliable.');
-    expect(result.debugEmailHtml).toContain('replaced with fallback');
-    expect(result.debugEmailHtml).toContain('weekStandout misidentified the reliable day');
+    expect(result.debugEmailHtml).toContain('ignored in favour of deterministic result');
+    expect(result.debugEmailHtml).toContain('model hint did not identify today as the reliable lead');
   });
 
   it('accepts weekStandout naming an equally-scored day with lower certainty (#223)', () => {
@@ -1045,7 +1045,7 @@ describe('run — weekStandout validation', () => {
     );
 
     expect(result.emailHtml).toContain('Today is the most reliable forecast; Saturday may score higher but with much lower certainty');
-    expect(result.debugEmailHtml).toContain('present in raw response → used');
+    expect(result.debugEmailHtml).toContain('present in raw response → matched deterministic result');
   });
 
   it('keeps composition bullets and spur output when editorial text falls back to the template', () => {

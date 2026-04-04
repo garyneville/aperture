@@ -99,7 +99,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   const secondaryProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
 
   // Step 2: Extract component data
-  const { selectedCandidate, componentCandidate } = selection;
+  const { selectedCandidate } = selection;
 
   // Step 3: Resolve reusable components from the best available candidate
   const resolvedComponents = resolveEditorialComponents({
@@ -152,7 +152,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     rawCompositionCount: resolvedComponents.rawCompositionBullets.length,
     resolvedCompositionBullets: resolvedComponents.compositionBullets,
     weekStandout: resolvedComponents.weekStandout,
-    componentCandidate,
+    weekStandoutHintCandidate: resolvedComponents.weekStandoutHintCandidate,
   });
 
   // Return final editorial decision

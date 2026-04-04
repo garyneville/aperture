@@ -18,6 +18,8 @@ This folder owns prompt assembly and editorial resolution for the photography br
   Canonical resolver for provider choice, validation, fallback text, and debug trace output. Consumes the stable `EditorialGatewayPayload` rather than raw transport shapes.
 - [`resolution/parse.ts`](./resolution/parse.ts)
   Provider-neutral response parsing. Use `parseEditorialResponse()` for new code; `parseGroqResponse()` is kept for backward compatibility.
+- [`resolution/week-standout.ts`](./resolution/week-standout.ts)
+  Canonical deterministic week-standout resolver. Provider `weekStandout` text is debug/hint input only; final week-standout wording is derived from forecast data.
 - [`../../contracts/editorial.ts`](../../contracts/editorial.ts)
   Stable re-export surface for external callers.
 
@@ -30,6 +32,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 5. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
 6. Composition filtering lives in [`resolution/composition.ts`](./resolution/composition.ts).
 7. Week-standout and spur logic live in [`resolution/week-standout.ts`](./resolution/week-standout.ts) and [`resolution/spur-suggestion.ts`](./resolution/spur-suggestion.ts).
+   Week-standout correctness is code-owned; provider hints are retained only for diagnostics/debug trace output.
 8. [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts) orchestrates those pieces and produces the final editorial decision.
 
 ## What not to edit casually
