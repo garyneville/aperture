@@ -248,16 +248,19 @@ export function formatDebugEmail(debugContext: DebugContext): string {
             })()],
             ['weekStandout', (() => {
               const weekStandout = aiTrace.weekStandout;
-              if (weekStandout.parseStatus === 'parse-failure') return '⚠️ parse failure (fenced/malformed JSON) — dropped [ALERT]';
-              if (weekStandout.parseStatus === 'absent' && weekStandout.finalValue) {
-                return `absent from raw response → fallback used: "${weekStandout.finalValue}"`;
+              if (weekStandout.decision === 'omitted') {
+                return weekStandout.note || 'omitted — no forecast data available';
               }
-              if (weekStandout.parseStatus === 'absent') return 'absent from raw response — model did not generate';
-              if (weekStandout.decision === 'fallback-used') {
-                return `present in raw response → replaced with fallback: "${weekStandout.finalValue || ''}"${weekStandout.fallbackReason ? ` (${weekStandout.fallbackReason})` : ''}`;
+              if (weekStandout.parseStatus === 'parse-failure') {
+                return `⚠️ parse failure (fenced/malformed JSON) → deterministic result: "${weekStandout.finalValue || ''}"${weekStandout.note ? ` (${weekStandout.note})` : ''}`;
               }
-              if (!weekStandout.used) return 'present in raw response (empty string) — not used';
-              return `present in raw response → used: "${weekStandout.rawValue}"`;
+              if (weekStandout.parseStatus === 'absent') {
+                return `absent from raw response → deterministic result: "${weekStandout.finalValue || ''}"${weekStandout.note ? ` (${weekStandout.note})` : ''}`;
+              }
+              if (weekStandout.hintAligned === true) {
+                return `present in raw response → matched deterministic result: "${weekStandout.finalValue || ''}"`;
+              }
+              return `present in raw response → ignored in favour of deterministic result: "${weekStandout.finalValue || ''}"${weekStandout.note ? ` (${weekStandout.note})` : ''}`;
             })()],
           ])}
           <div style="Margin-top:10px;font-family:${FONT};font-size:12px;font-weight:700;line-height:1.4;color:${C.onPrimaryContainer};">Raw Groq response</div>

@@ -3,11 +3,12 @@ import { filterCompositionBullets } from './composition.js';
 import { resolveSpurDropReason, resolveSpurSuggestion } from './spur-suggestion.js';
 import type {
   BriefContext,
+  EditorialCandidate,
   LongRangeSpurCandidate,
   SpurRaw,
   WeekStandoutResolution,
 } from './types.js';
-import { validateWeekInsight } from './week-standout.js';
+import { resolveWeekStandout } from './week-standout.js';
 
 export interface ResolveEditorialComponentsInput {
   selection: CandidateSelectionResult;
@@ -23,6 +24,7 @@ export interface ResolveEditorialComponentsOutput {
   rawCompositionBullets: string[];
   compositionBullets: string[];
   weekStandout: WeekStandoutResolution;
+  weekStandoutHintCandidate: Pick<EditorialCandidate, 'parseResult' | 'weekStandoutRawValue'> | null;
 }
 
 function pickBestSpurRaw(selection: CandidateSelectionResult): SpurRaw | null {
@@ -32,11 +34,19 @@ function pickBestSpurRaw(selection: CandidateSelectionResult): SpurRaw | null {
     || null;
 }
 
-function pickBestWeekInsight(selection: CandidateSelectionResult): string {
-  return (selection.componentCandidate?.weekInsight || '')
-    || selection.primaryCandidate?.weekInsight
-    || selection.secondaryCandidate?.weekInsight
-    || '';
+function pickWeekStandoutHintCandidate(
+  selection: CandidateSelectionResult,
+): Pick<EditorialCandidate, 'parseResult' | 'weekStandoutRawValue'> | null {
+  return selection.componentCandidate?.weekStandoutRawValue
+    ? selection.componentCandidate
+    : selection.primaryCandidate?.weekStandoutRawValue
+      ? selection.primaryCandidate
+      : selection.secondaryCandidate?.weekStandoutRawValue
+        ? selection.secondaryCandidate
+        : selection.componentCandidate
+          ?? selection.primaryCandidate
+          ?? selection.secondaryCandidate
+          ?? null;
 }
 
 function pickRawCompositionBullets(selection: CandidateSelectionResult): string[] {
@@ -65,6 +75,7 @@ export function resolveEditorialComponents(
   const bestSpurRaw = pickBestSpurRaw(selection);
   const spurOfTheMoment = resolveSpurSuggestion(bestSpurRaw, nearbyAltNames, longRangePool);
   const rawCompositionBullets = pickRawCompositionBullets(selection);
+  const weekStandoutHintCandidate = pickWeekStandoutHintCandidate(selection);
 
   return {
     bestSpurRaw,
@@ -72,6 +83,10 @@ export function resolveEditorialComponents(
     spurDropReason: resolveSpurDropReason(bestSpurRaw, nearbyAltNames, longRangePool),
     rawCompositionBullets,
     compositionBullets: filterCompositionBullets(rawCompositionBullets, ctx),
-    weekStandout: validateWeekInsight(pickBestWeekInsight(selection), ctx.dailySummary),
+    weekStandout: resolveWeekStandout(
+      weekStandoutHintCandidate?.weekStandoutRawValue ?? null,
+      ctx.dailySummary,
+    ),
+    weekStandoutHintCandidate,
   };
 }

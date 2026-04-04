@@ -202,7 +202,7 @@ export type EditorialCandidate = {
   compositionBullets: string[];
   weekInsight: string;
   spurRaw: SpurRaw | null;
-  weekStandoutParseStatus: WeekStandoutParseStatus;
+  parseResult: EditorialParseResult;
   weekStandoutRawValue: string | null;
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
@@ -215,9 +215,10 @@ export type WeekSummaryDay = NonNullable<BriefContext['dailySummary']>[number];
 
 export type WeekStandoutResolution = {
   text: string;
-  usedRaw: boolean;
+  used: boolean;
   decision: WeekStandoutDecision;
-  fallbackReason: string | null;
+  hintAligned: boolean | null;
+  note: string | null;
 };
 
 export type ResolveEditorialInput = {

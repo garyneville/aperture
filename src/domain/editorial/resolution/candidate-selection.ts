@@ -49,7 +49,7 @@ export function buildEditorialCandidate(
     compositionBullets: parsed.compositionBullets,
     weekInsight: parsed.weekInsight,
     spurRaw: parsed.spurRaw,
-    weekStandoutParseStatus: parsed.parseResult === 'malformed-structured' ? 'parse-failure' : parsed.weekStandoutRawValue !== null ? 'present' : 'absent',
+    parseResult: parsed.parseResult,
     weekStandoutRawValue: parsed.weekStandoutRawValue,
     normalizedAiText,
     factualCheck,

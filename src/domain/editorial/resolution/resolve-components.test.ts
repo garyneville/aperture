@@ -11,7 +11,7 @@ function makeCandidate(overrides: Partial<EditorialCandidate> = {}): EditorialCa
     compositionBullets: [],
     weekInsight: '',
     spurRaw: null,
-    weekStandoutParseStatus: 'absent',
+    parseResult: 'valid-structured',
     weekStandoutRawValue: null,
     normalizedAiText: 'Conditions improve later.',
     factualCheck: { passed: true, rulesTriggered: [] },
@@ -70,9 +70,12 @@ describe('resolveEditorialComponents', () => {
     expect(result.compositionBullets).toContain('Shoot tree silhouettes at sunrise');
     expect(result.compositionBullets.some(bullet => bullet.includes('Brimham Rocks'))).toBe(false);
     expect(result.weekStandout.text).toContain('best bet this week');
+    expect(result.weekStandout.used).toBe(true);
+    expect(result.weekStandout.decision).toBe('deterministic-used');
+    expect(result.weekStandout.hintAligned).toBeNull();
   });
 
-  it('falls back to secondary reusable week insight and composition when the selected candidate leaves them empty', () => {
+  it('uses a secondary provider hint only for debug while keeping the final week standout deterministic', () => {
     const primaryCandidate = makeCandidate({
       provider: 'gemini',
       compositionBullets: [],
@@ -82,7 +85,6 @@ describe('resolveEditorialComponents', () => {
       provider: 'groq',
       compositionBullets: ['Set a dark ridge low in the frame for the cleanest sky late in the slot.'],
       weekInsight: 'Friday is the standout day.',
-      weekStandoutParseStatus: 'present',
       weekStandoutRawValue: 'Friday is the standout day.',
     });
 
@@ -116,8 +118,41 @@ describe('resolveEditorialComponents', () => {
     });
 
     expect(result.weekStandout.text).toBe('Friday is the standout day.');
-    expect(result.weekStandout.usedRaw).toBe(true);
+    expect(result.weekStandout.used).toBe(true);
+    expect(result.weekStandout.hintAligned).toBe(true);
+    expect(result.weekStandoutHintCandidate?.weekStandoutRawValue).toBe('Friday is the standout day.');
     expect(result.compositionBullets[0]).toBe('Set a dark ridge low in the frame for the cleanest sky late in the slot.');
     expect(result.compositionBullets).toHaveLength(2);
+  });
+
+  it('ignores a misaligned model hint while keeping the deterministic result', () => {
+    const componentCandidate = makeCandidate({
+      weekInsight: 'Today is the standout day.',
+      weekStandoutRawValue: 'Today is the standout day.',
+    });
+
+    const selection: CandidateSelectionResult = {
+      primaryProvider: 'groq',
+      selectedProvider: 'groq',
+      primaryCandidate: componentCandidate,
+      secondaryCandidate: null,
+      selectedCandidate: componentCandidate,
+      componentCandidate,
+      fallbackUsed: false,
+    };
+
+    const result = resolveEditorialComponents({
+      selection,
+      ctx: {
+        dailySummary: [
+          { dayIdx: 0, dayLabel: 'Today', headlineScore: 44, confidenceStdDev: 5 },
+          { dayIdx: 1, dayLabel: 'Friday', headlineScore: 57, confidenceStdDev: 9 },
+        ],
+      },
+    });
+
+    expect(result.weekStandout.text).toBe('Friday is the standout day.');
+    expect(result.weekStandout.hintAligned).toBe(false);
+    expect(result.weekStandout.note).toContain('did not name Friday');
   });
 });
