@@ -60,7 +60,7 @@
       }
     }
   ],
-  "geminiResponse": "{\"editorial\": \"The morning golden hour brings the best conditions today. Mist clears by 07:00 revealing excellent light with 12km visibility and a peak score of 72/100.\", \"composition\": [\"Capture the mist while it lasts in the early hour\", \"Position east-facing for golden sunrise light\"], \"weekStandout\": \"Monday morning offers the clearest window this week.\"}",
+  "geminiResponse": "{\"editorial\": \"The morning golden hour brings the best conditions today because mist is clearing by 07:00, revealing excellent light with 12km visibility and a peak score of 72/100. Expect conditions to improve as the sun rises higher.\", \"composition\": [\"Capture the mist while it lasts in the early hour\", \"Position east-facing for golden sunrise light\"], \"weekStandout\": \"Monday morning offers the clearest window this week.\"}",
   "homeLocation": {
     "name": "Leeds",
     "lat": 53.8008,
