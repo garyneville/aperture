@@ -16,6 +16,8 @@ This folder owns prompt assembly and editorial resolution for the photography br
   Builds the provider prompt and returns the enriched scoring context used by editorial resolution.
 - [`resolution/resolve-editorial.ts`](./resolution/resolve-editorial.ts)
   Canonical resolver for provider choice, validation, fallback text, and debug trace output.
+- [`resolution/parse.ts`](./resolution/parse.ts)
+  Provider-neutral response parsing. Use `parseEditorialResponse()` for new code; `parseGroqResponse()` is kept for backward compatibility.
 - [`../../contracts/editorial.ts`](../../contracts/editorial.ts)
   Stable re-export surface for external callers.
 
@@ -23,7 +25,7 @@ This folder owns prompt assembly and editorial resolution for the photography br
 
 1. Prompt construction happens in [`prompt/build-prompt.ts`](./prompt/build-prompt.ts).
 2. Shared prompt blocks (response contract, spur instructions, week standout) live in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) and [`prompt/sections/week-standout.ts`](./prompt/sections/week-standout.ts).
-3. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts).
+3. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts) via `parseEditorialResponse()` — a provider-neutral parser that handles responses from any AI provider (Groq, Gemini, etc.) without tying the code to specific provider naming.
 4. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
 5. Composition filtering lives in [`resolution/composition.ts`](./resolution/composition.ts).
 6. Week-standout and spur logic live in [`resolution/week-standout.ts`](./resolution/week-standout.ts) and [`resolution/spur-suggestion.ts`](./resolution/spur-suggestion.ts).

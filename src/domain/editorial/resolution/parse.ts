@@ -1,8 +1,34 @@
 import { splitAiSentences } from '../ai-briefing.js';
+import type { WeekStandoutParseStatus } from '../../../lib/debug-context.js';
 import type {
-  ParsedEditorialResponse,
+  EditorialCandidatePayload,
+  EditorialModelResponse,
+  EditorialParseResult,
   SpurRaw,
 } from './types.js';
+
+/**
+ * Convert new provider-neutral parse result to legacy weekStandoutParseStatus.
+ * @deprecated This is for backward compatibility only. Use parseResult directly.
+ *
+ * Note: For backward compatibility with the original parseGroqResponse behavior,
+ * both 'malformed-structured' and 'raw-text-only' return 'parse-failure'.
+ * Only 'valid-structured' differentiates between present/absent.
+ */
+function toWeekStandoutParseStatus(
+  parseResult: EditorialParseResult,
+  hasWeekStandout: boolean,
+): WeekStandoutParseStatus {
+  switch (parseResult) {
+    case 'valid-structured':
+      return hasWeekStandout ? 'present' : 'absent';
+    case 'malformed-structured':
+    case 'raw-text-only':
+    default:
+      // For backward compatibility: any non-valid parse result is 'parse-failure'
+      return 'parse-failure';
+  }
+}
 
 export function stripMarkdownFences(content: string): string {
   return content.replace(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/, '$1').trim();
@@ -22,9 +48,20 @@ export function normalizeAiText(text: string): string {
   return result.replace(/(\d)\.\s*(\d)/g, '$1.$2');
 }
 
-export function parseGroqResponse(rawContent: string): ParsedEditorialResponse {
+/**
+ * Parse an editorial model response from any AI provider.
+ *
+ * This function is provider-neutral - it parses the expected JSON contract
+ * without tying the parsing logic to specific provider naming (Groq/Gemini/etc).
+ *
+ * @param rawContent - Raw response content from the AI provider
+ * @returns Parsed and normalized editorial candidate payload with explicit parse result state
+ */
+export function parseEditorialResponse(rawContent: string): EditorialCandidatePayload {
   const stripped = stripMarkdownFences(rawContent);
-  let parseFailure = false;
+
+  // Check if the content looks like it might be JSON (starts with { or [)
+  const lookedLikeJson = /^\s*[{\[]/.test(stripped);
 
   try {
     const parsed = JSON.parse(stripped);
@@ -48,10 +85,13 @@ export function parseGroqResponse(rawContent: string): ParsedEditorialResponse {
       const weekStandoutRawValue = typeof (parsed as Record<string, unknown>).weekStandout === 'string'
         ? (parsed as Record<string, unknown>).weekStandout as string
         : null;
-      const weekStandoutParseStatus = weekStandoutRawValue !== null ? 'present' : 'absent';
+
+      // Determine if the structured response was actually valid
+      const hasValidEditorial = typeof (parsed as Record<string, unknown>).editorial === 'string';
+      const parseResult: EditorialParseResult = hasValidEditorial ? 'valid-structured' : 'malformed-structured';
 
       return {
-        editorial: typeof (parsed as Record<string, unknown>).editorial === 'string'
+        editorial: hasValidEditorial
           ? (parsed as Record<string, unknown>).editorial as string
           : rawContent,
         compositionBullets: Array.isArray((parsed as Record<string, unknown>).composition)
@@ -61,20 +101,41 @@ export function parseGroqResponse(rawContent: string): ParsedEditorialResponse {
           : [],
         weekInsight: weekStandoutRawValue ?? '',
         spurRaw,
-        weekStandoutParseStatus,
+        parseResult,
+        weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, weekStandoutRawValue !== null),
         weekStandoutRawValue,
       };
     }
   } catch {
-    parseFailure = true;
+    // JSON parsing failed
+    const parseResult: EditorialParseResult = lookedLikeJson ? 'malformed-structured' : 'raw-text-only';
+
+    return {
+      editorial: rawContent,
+      compositionBullets: [],
+      weekInsight: '',
+      spurRaw: null,
+      parseResult,
+      weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false),
+      weekStandoutRawValue: null,
+    };
   }
+
+  // Non-object JSON (e.g. just a string or number)
+  const parseResult: EditorialParseResult = lookedLikeJson ? 'malformed-structured' : 'raw-text-only';
 
   return {
     editorial: rawContent,
     compositionBullets: [],
     weekInsight: '',
     spurRaw: null,
-    weekStandoutParseStatus: parseFailure ? 'parse-failure' : 'absent',
+    parseResult,
+    weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false, lookedLikeJson),
     weekStandoutRawValue: null,
   };
 }
+
+/**
+ * @deprecated Use parseEditorialResponse instead. This function is kept for backward compatibility.
+ */
+export const parseGroqResponse = parseEditorialResponse;

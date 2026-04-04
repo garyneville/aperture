@@ -112,14 +112,55 @@ export type ValidationWindowContext = {
 export type SpurRaw = { locationName: string; hookLine: string; confidence: number };
 export type LongRangeSpurCandidate = { name?: string; shown?: boolean; discardedReason?: string };
 
-export type ParsedEditorialResponse = {
+/**
+ * Provider-neutral parse result states.
+ * Explicitly categorizes the outcome of parsing a model response.
+ */
+export type EditorialParseResult =
+  | 'valid-structured'    // Successfully parsed valid structured JSON with expected fields
+  | 'raw-text-only'       // No parseable structure; returning raw text only
+  | 'malformed-structured'; // JSON was detected but malformed or missing expected fields
+
+/**
+ * Provider-neutral model response structure.
+ * This represents the expected shape of any AI provider's response,
+ * decoupled from specific provider naming (Groq/Gemini/etc).
+ */
+export type EditorialModelResponse = {
+  /** Primary editorial text content */
+  editorial: string;
+  /** Composition/shot suggestions as bullet points */
+  composition?: string[];
+  /** Week standout insight text */
+  weekStandout?: string;
+  /** Spur-of-the-moment suggestion with metadata */
+  spurOfTheMoment?: {
+    locationName: string;
+    hookLine: string;
+    confidence: number;
+  };
+};
+
+/**
+ * Provider-neutral candidate payload extracted from a model response.
+ * This is the normalized form used internally after parsing.
+ */
+export type EditorialCandidatePayload = {
   editorial: string;
   compositionBullets: string[];
   weekInsight: string;
   spurRaw: SpurRaw | null;
+  /** Explicit parse result state - new provider-neutral field */
+  parseResult: EditorialParseResult;
+  /** @deprecated Use parseResult instead. Kept for backward compatibility. */
   weekStandoutParseStatus: WeekStandoutParseStatus;
   weekStandoutRawValue: string | null;
 };
+
+/**
+ * @deprecated Use EditorialCandidatePayload instead. This type will be removed in a future release.
+ */
+export type ParsedEditorialResponse = EditorialCandidatePayload;
 
 export type EditorialCandidate = {
   provider: EditorialProvider;

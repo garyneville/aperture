@@ -12,7 +12,7 @@
  */
 
 import type { DebugGeminiDiagnostics, DebugGroqDiagnostics, DebugApiCallStatus } from '../../../lib/debug-context.js';
-import { normalizeAiText, parseGroqResponse } from './parse.js';
+import { normalizeAiText, parseEditorialResponse, parseGroqResponse } from './parse.js';
 import type {
   BriefContext,
   LongRangeSpurCandidate,
@@ -33,13 +33,16 @@ import { resolveEditorialComponents } from './resolve-components.js';
 // Re-exports for consumers
 export type {
   BriefContext,
+  EditorialCandidatePayload,
+  EditorialModelResponse,
+  EditorialParseResult,
   LongRangeSpurCandidate,
   ResolveEditorialInput,
   ResolveEditorialOutput,
   SpurRaw,
   WindowLike,
 } from './types.js';
-export { normalizeAiText, parseGroqResponse } from './parse.js';
+export { normalizeAiText, parseEditorialResponse, parseGroqResponse } from './parse.js';
 export {
   isFactuallyIncoherentEditorial,
   shouldReplaceAiText,

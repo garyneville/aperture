@@ -6,6 +6,7 @@ import {
   filterCompositionBullets,
   isFactuallyIncoherentEditorial,
   normalizeAiText,
+  parseEditorialResponse,
   parseGroqResponse,
   resolveSpurSuggestion,
   shouldReplaceAiText,
@@ -365,7 +366,7 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
   });
 });
 
-describe('parseGroqResponse — spurOfTheMoment', () => {
+describe('parseEditorialResponse — spurOfTheMoment', () => {
   it('extracts spurRaw when all required fields are present', () => {
     const raw = JSON.stringify({
       editorial: 'Good conditions today.',
@@ -373,7 +374,7 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
       weekStandout: 'Thursday looks best.',
       spurOfTheMoment: { locationName: 'Aysgarth Falls', hookLine: 'Overcast light is perfect for waterfalls without harsh shadows.', confidence: 0.85 },
     });
-    const result = parseGroqResponse(raw);
+    const result = parseEditorialResponse(raw);
     expect(result.spurRaw).not.toBeNull();
     expect(result.spurRaw?.locationName).toBe('Aysgarth Falls');
     expect(result.spurRaw?.hookLine).toBe('Overcast light is perfect for waterfalls without harsh shadows.');
@@ -387,7 +388,7 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
       weekStandout: 'Today.',
       spurOfTheMoment: { locationName: 'Mam Tor', hookLine: 'Nice upland views.', confidence: 0.65 },
     });
-    expect(parseGroqResponse(raw).spurRaw).toEqual({
+    expect(parseEditorialResponse(raw).spurRaw).toEqual({
       locationName: 'Mam Tor',
       hookLine: 'Nice upland views.',
       confidence: 0.65,
@@ -401,17 +402,17 @@ describe('parseGroqResponse — spurOfTheMoment', () => {
       weekStandout: 'Today.',
       spurOfTheMoment: { hookLine: 'Great views.', confidence: 0.8 },
     });
-    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+    expect(parseEditorialResponse(raw).spurRaw).toBeNull();
   });
 
   it('returns null spurRaw when spurOfTheMoment key is absent', () => {
     const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Today.' });
-    expect(parseGroqResponse(raw).spurRaw).toBeNull();
+    expect(parseEditorialResponse(raw).spurRaw).toBeNull();
   });
 
   it('still extracts editorial and composition when spurOfTheMoment is absent', () => {
     const raw = JSON.stringify({ editorial: 'Fine day.', composition: ['Idea A'], weekStandout: 'Friday.' });
-    const result = parseGroqResponse(raw);
+    const result = parseEditorialResponse(raw);
     expect(result.editorial).toBe('Fine day.');
     expect(result.compositionBullets).toEqual(['Idea A']);
     expect(result.weekInsight).toBe('Friday.');
@@ -549,7 +550,77 @@ describe('chooseEditorialCandidate', () => {
   });
 });
 
-describe('parseGroqResponse — weekStandout parse status', () => {
+describe('parseEditorialResponse — provider-neutral parsing', () => {
+  it('returns valid-structured parse result for valid JSON response', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good conditions today.',
+      composition: ['Shot idea 1'],
+      weekStandout: 'Thursday looks best.',
+    });
+    const result = parseEditorialResponse(raw);
+    expect(result.parseResult).toBe('valid-structured');
+    expect(result.editorial).toBe('Good conditions today.');
+    expect(result.compositionBullets).toEqual(['Shot idea 1']);
+    expect(result.weekInsight).toBe('Thursday looks best.');
+  });
+
+  it('returns raw-text-only parse result for non-JSON response', () => {
+    const raw = 'This is just plain text without JSON structure.';
+    const result = parseEditorialResponse(raw);
+    expect(result.parseResult).toBe('raw-text-only');
+    expect(result.editorial).toBe(raw);
+    expect(result.compositionBullets).toEqual([]);
+    expect(result.weekInsight).toBe('');
+    expect(result.spurRaw).toBeNull();
+  });
+
+  it('returns malformed-structured parse result for invalid JSON', () => {
+    const raw = '{ invalid json }';
+    const result = parseEditorialResponse(raw);
+    expect(result.parseResult).toBe('malformed-structured');
+    expect(result.editorial).toBe(raw);
+  });
+
+  it('returns malformed-structured when editorial field is missing from JSON', () => {
+    const raw = JSON.stringify({ composition: ['Shot idea'], weekStandout: 'Friday' });
+    const result = parseEditorialResponse(raw);
+    expect(result.parseResult).toBe('malformed-structured');
+    expect(result.editorial).toBe(raw); // Falls back to raw content
+    expect(result.weekStandoutRawValue).toBe('Friday');
+  });
+
+  it('extracts spurRaw when all required fields are present', () => {
+    const raw = JSON.stringify({
+      editorial: 'Good conditions today.',
+      composition: ['Shot idea 1', 'Shot idea 2'],
+      weekStandout: 'Thursday looks best.',
+      spurOfTheMoment: { locationName: 'Aysgarth Falls', hookLine: 'Overcast light is perfect for waterfalls without harsh shadows.', confidence: 0.85 },
+    });
+    const result = parseEditorialResponse(raw);
+    expect(result.parseResult).toBe('valid-structured');
+    expect(result.spurRaw).not.toBeNull();
+    expect(result.spurRaw?.locationName).toBe('Aysgarth Falls');
+    expect(result.spurRaw?.hookLine).toBe('Overcast light is perfect for waterfalls without harsh shadows.');
+    expect(result.spurRaw?.confidence).toBe(0.85);
+  });
+
+  it('strips Markdown code fences and successfully parses', () => {
+    const inner = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Friday is best.' });
+    const fenced = `\`\`\`json\n${inner}\n\`\`\``;
+    const result = parseEditorialResponse(fenced);
+    expect(result.parseResult).toBe('valid-structured');
+    expect(result.editorial).toBe('Good.');
+  });
+});
+
+describe('parseGroqResponse — backward compatibility (deprecated)', () => {
+  it('still works as an alias for parseEditorialResponse', () => {
+    const raw = JSON.stringify({ editorial: 'Test.', composition: [] });
+    const result = parseGroqResponse(raw);
+    expect(result.editorial).toBe('Test.');
+    expect(result.parseResult).toBe('valid-structured');
+  });
+
   it('reports present status and raw value when weekStandout is in the response', () => {
     const raw = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Wednesday is the standout day.' });
     const result = parseGroqResponse(raw);
@@ -578,23 +649,6 @@ describe('parseGroqResponse — weekStandout parse status', () => {
     expect(result.weekStandoutParseStatus).toBe('parse-failure');
     expect(result.weekStandoutRawValue).toBeNull();
     expect(result.weekInsight).toBe('');
-  });
-
-  it('strips Markdown code fences and successfully parses weekStandout', () => {
-    const inner = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Friday is best.' });
-    const fenced = `\`\`\`json\n${inner}\n\`\`\``;
-    const result = parseGroqResponse(fenced);
-    expect(result.weekStandoutParseStatus).toBe('present');
-    expect(result.weekStandoutRawValue).toBe('Friday is best.');
-    expect(result.weekInsight).toBe('Friday is best.');
-  });
-
-  it('strips plain Markdown code fences (no language tag) and parses weekStandout', () => {
-    const inner = JSON.stringify({ editorial: 'Good.', composition: [], weekStandout: 'Saturday is clearest.' });
-    const fenced = `\`\`\`\n${inner}\n\`\`\``;
-    const result = parseGroqResponse(fenced);
-    expect(result.weekStandoutParseStatus).toBe('present');
-    expect(result.weekStandoutRawValue).toBe('Saturday is clearest.');
   });
 });
 
