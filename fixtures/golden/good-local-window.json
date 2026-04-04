@@ -63,7 +63,7 @@
   "groqChoices": [
     {
       "message": {
-        "content": "{\"editorial\": \"The evening golden hour offers excellent conditions with clear skies and good visibility. The 19:00 peak scores 78/100 with minimal cloud cover, making this the best local window of the day.\", \"composition\": [\"Position yourself facing west for the best sunset light\", \"Use a polarizer to enhance sky colors\"], \"weekStandout\": \"Today stands out for its clear evening conditions.\"}"
+        "content": "{\"editorial\": \"The evening golden hour offers excellent conditions because clear skies and good visibility coincide with the best light. The 19:00 peak scores 78/100 with cloud cover clearing and visibility improving to 12km, making this the best local window of the day.\", \"composition\": [\"Position yourself facing west for the best sunset light\", \"Use a polarizer to enhance sky colors\"], \"weekStandout\": \"Today stands out for its clear evening conditions.\"}"
       }
     }
   ],
