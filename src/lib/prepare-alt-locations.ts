@@ -65,7 +65,7 @@ export function prepareAltLocations(timezone: string): AltLocationWithUrl[] {
     const elevationParam = loc.isUpland ? `&elevation=${loc.elevationM}` : '';
     return {
       ...loc,
-      url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}${elevationParam}&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=5`,
+      url: `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}${elevationParam}&models=ukmo_seamless&hourly=${HOURLY_FIELDS}&daily=sunrise,sunset&timezone=${tz}&forecast_days=5`,
     };
   });
 }
