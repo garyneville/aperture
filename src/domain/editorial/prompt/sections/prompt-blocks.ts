@@ -17,13 +17,46 @@ export interface StructuredPromptParts {
 
 export const EDITORIAL_RESPONSE_SCHEMA_NAME = 'photo_brief_editorial_response';
 
-export function buildEditorialResponseSchema(): Record<string, unknown> {
+export function buildLocalWindowResponseSchema(): Record<string, unknown> {
   return {
     type: 'object',
     properties: {
       editorial: { type: 'string' },
       composition: {
         type: 'array',
+        minItems: 2,
+        maxItems: 2,
+        items: { type: 'string' },
+      },
+      weekStandout: { type: 'string' },
+      spurOfTheMoment: {
+        type: 'object',
+        properties: {
+          locationName: { type: 'string' },
+          hookLine: { type: 'string' },
+          confidence: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1,
+          },
+        },
+        required: ['locationName', 'hookLine', 'confidence'],
+        additionalProperties: false,
+      },
+    },
+    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+    additionalProperties: false,
+  };
+}
+
+export function buildDontBotherResponseSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    properties: {
+      editorial: { type: 'string' },
+      composition: {
+        type: 'array',
+        maxItems: 0,
         items: { type: 'string' },
       },
       weekStandout: { type: 'string' },

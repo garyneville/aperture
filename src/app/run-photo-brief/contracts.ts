@@ -1,7 +1,7 @@
 import type { BriefJson, ScoredForecastContext } from '../../contracts/index.js';
 export type { ScoredForecastContext } from '../../contracts/index.js';
 
-export type EditorialProvider = 'groq' | 'gemini';
+export type EditorialProvider = 'primary' | 'fallback';
 
 export interface ForecastLocation {
   name: string;
@@ -51,9 +51,10 @@ export interface EditorialDecision {
   weekInsight: string;
   spurOfTheMoment?: SpurSuggestion | null;
   geminiInspire?: string;
-  rawGroqResponse?: string;
-  rawGeminiResponse?: string;
-  rawGeminiPayload?: string;
+  // Renamed to slot role naming
+  rawFallbackResponse?: string;
+  rawPrimaryResponse?: string;
+  rawPrimaryPayload?: string;
 }
 
 export interface RenderedOutputs {

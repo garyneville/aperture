@@ -30,11 +30,7 @@ import type { FinalRuntimePayload } from './contracts/final-runtime-payload.js';
 import { firstInputJson } from './input.js';
 import type { N8nRuntime } from './types.js';
 
-function stringList(value: unknown): string[] | undefined {
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : undefined;
-}
+
 
 export function run({ $input }: N8nRuntime) {
   // Read raw input from n8n
