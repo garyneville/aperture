@@ -11,7 +11,12 @@
  * Heavy logic has been extracted to focused modules.
  */
 
-import { normalizeAiText, parseEditorialResponse, parseGroqResponse } from './parse.js';
+import {
+  normalizeAiText,
+  parseEditorialResponse,
+  parseGroqResponse,
+  parseEditorialResponseWithCompat,
+} from './parse.js';
 import type {
   BriefContext,
   LongRangeSpurCandidate,
@@ -37,8 +42,13 @@ export type {
   EditorialGatewayPayload,
   EditorialGatewayResult,
   EditorialCandidatePayload,
+  EditorialCandidatePayloadWithCompat,
   EditorialModelResponse,
   EditorialParseResult,
+  // Slot role based types (preferred)
+  PrimaryEditorialGatewayResult,
+  FallbackEditorialGatewayResult,
+  // Legacy provider-specific types (deprecated)
   GeminiEditorialGatewayResult,
   GroqEditorialGatewayResult,
   LongRangeSpurCandidate,
@@ -47,7 +57,12 @@ export type {
   SpurRaw,
   WindowLike,
 } from './types.js';
-export { normalizeAiText, parseEditorialResponse, parseGroqResponse } from './parse.js';
+export {
+  normalizeAiText,
+  parseEditorialResponse,
+  parseGroqResponse,
+  parseEditorialResponseWithCompat,
+} from './parse.js';
 export {
   isFactuallyIncoherentEditorial,
   shouldReplaceAiText,

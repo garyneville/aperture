@@ -2,8 +2,8 @@ import type {
   DebugAiCheck,
   DebugAiTrace,
   DebugApiCallStatus,
-  DebugGeminiDiagnostics,
-  DebugGroqDiagnostics,
+  DebugPrimaryDiagnostics,
+  DebugFallbackDiagnostics,
   WeekStandoutDecision,
   WeekStandoutParseStatus,
 } from '../../../lib/debug-context.js';
@@ -150,11 +150,19 @@ export type EditorialCandidatePayload = {
   compositionBullets: string[];
   weekInsight: string;
   spurRaw: SpurRaw | null;
-  /** Explicit parse result state - new provider-neutral field */
+  /** Explicit parse result state - provider-neutral field */
   parseResult: EditorialParseResult;
-  /** @deprecated Use parseResult instead. Kept for backward compatibility. */
-  weekStandoutParseStatus: WeekStandoutParseStatus;
   weekStandoutRawValue: string | null;
+};
+
+/**
+ * Extended payload with compatibility fields for boundary adapters.
+ * This type is used only at adapter boundaries where backward compatibility
+ * with legacy parse status fields is required.
+ */
+export type EditorialCandidatePayloadWithCompat = EditorialCandidatePayload & {
+  /** @deprecated Use parseResult instead. Kept for backward compatibility at boundaries. */
+  weekStandoutParseStatus: WeekStandoutParseStatus;
 };
 
 export type EditorialGatewayParseState = EditorialParseResult | 'empty';
@@ -170,24 +178,44 @@ type EditorialGatewayBase = {
   apiCallStatus?: DebugApiCallStatus;
 };
 
-export type GroqEditorialGatewayResult = EditorialGatewayBase & {
+/**
+ * Fallback provider (historically Groq) gateway result.
+ * Uses slot role naming to decouple from specific provider.
+ */
+export type FallbackEditorialGatewayResult = EditorialGatewayBase & {
   provider: 'groq';
-  diagnostics?: DebugGroqDiagnostics;
+  diagnostics?: DebugFallbackDiagnostics;
 };
 
-export type GeminiEditorialGatewayResult = EditorialGatewayBase & {
+/**
+ * Primary provider (historically Gemini) gateway result.
+ * Uses slot role naming to decouple from specific provider.
+ */
+export type PrimaryEditorialGatewayResult = EditorialGatewayBase & {
   provider: 'gemini';
-  diagnostics?: DebugGeminiDiagnostics;
+  diagnostics?: DebugPrimaryDiagnostics;
   rawPayload?: string;
 };
 
+/**
+ * @deprecated Use FallbackEditorialGatewayResult instead.
+ */
+export type GroqEditorialGatewayResult = FallbackEditorialGatewayResult;
+
+/**
+ * @deprecated Use PrimaryEditorialGatewayResult instead.
+ */
+export type GeminiEditorialGatewayResult = PrimaryEditorialGatewayResult;
+
 export type EditorialGatewayResult =
-  | GroqEditorialGatewayResult
-  | GeminiEditorialGatewayResult;
+  | FallbackEditorialGatewayResult
+  | PrimaryEditorialGatewayResult;
 
 export type EditorialGatewayPayload = {
-  groq: GroqEditorialGatewayResult;
-  gemini: GeminiEditorialGatewayResult;
+  /** @deprecated Access via slot role instead of direct property */
+  groq: FallbackEditorialGatewayResult;
+  /** @deprecated Access via slot role instead of direct property */
+  gemini: PrimaryEditorialGatewayResult;
 };
 
 /**

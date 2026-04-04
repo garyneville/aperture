@@ -37,17 +37,42 @@ This folder contains the canonical orchestration spine for the photo brief appli
   5. **render** — Render all presentation outputs
   6. **persist/deliver** — Optional persistence and delivery
 
+- `normalize-editorial-input.ts`
+  Input normalization module. Extracted from `finalize-brief.ts` during Phase 7 cleanup.
+
+- `prepare-debug-context.ts`
+  Debug context preparation module. Extracted from `finalize-brief.ts` during Phase 7 cleanup.
+
+- `hydrate-debug-context.ts`
+  Debug context hydration module. Extracted from `finalize-brief.ts` during Phase 7 cleanup.
+
+- `render-outputs.ts`
+  Output rendering module. Extracted from `finalize-brief.ts` during Phase 7 cleanup.
+
 - `finalize-brief.ts`
-  The "finalize brief" use case. Orchestrates the final assembly of the brief:
-  1. **normalize** — Apply shared defaults to the edge-built editorial gateway payload
-  2. **prepare** — Set up debug context
-  3. **resolve** — Resolve editorial with fallbacks
-  4. **hydrate** — Add debug trace information
-  5. **render** — Generate all output formats (email, Telegram, site, JSON)
-  
+  The "finalize brief" use case. Thin orchestration (~80 lines) that delegates to focused modules:
+  1. **normalize** — [`normalize-editorial-input.ts`](./normalize-editorial-input.ts)
+  2. **prepare** — [`prepare-debug-context.ts`](./prepare-debug-context.ts)
+  3. **resolve** — Domain layer (`resolveEditorial`)
+  4. **hydrate** — [`hydrate-debug-context.ts`](./hydrate-debug-context.ts)
+  5. **render** — [`render-outputs.ts`](./render-outputs.ts)
+
   This use case is called by the n8n adapter and can be called directly for CLI/testing.
-  It is the only live finalization orchestration path; adapter-side helper copies
-  of these steps have been removed.
+  The heavy lifting has been extracted to focused modules per Phase 7 cleanup.
+
+- `normalize-editorial-input.ts`
+  Normalizes raw editorial inputs from AI providers. Applies shared defaults to the
+  edge-built editorial gateway payload.
+
+- `prepare-debug-context.ts`
+  Prepares the initial debug context before editorial resolution.
+
+- `hydrate-debug-context.ts`
+  Hydrates the debug context with editorial resolution results including AI trace,
+  runtime payload snapshots, and metadata.
+
+- `render-outputs.ts`
+  Renders all output formats (email, Telegram, site, JSON) from the finalized brief data.
 
 - `finalize-brief-contracts.ts`
   Type contracts for the finalize-brief use case.

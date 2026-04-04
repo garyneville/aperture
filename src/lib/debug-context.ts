@@ -101,7 +101,11 @@ export interface DebugAiCheck {
   rulesTriggered: string[];
 }
 
-export interface DebugGeminiDiagnostics {
+/**
+ * Diagnostics for the primary AI provider.
+ * Previously named DebugGeminiDiagnostics, renamed to reflect slot role.
+ */
+export interface DebugPrimaryDiagnostics {
   statusCode: number | null;
   finishReason: string | null;
   candidateCount: number | null;
@@ -120,15 +124,41 @@ export interface DebugGeminiDiagnostics {
   retryAfter?: number | null;
 }
 
-export interface DebugGroqDiagnostics {
+/**
+ * Diagnostics for the fallback AI provider.
+ * Previously named DebugGroqDiagnostics, renamed to reflect slot role.
+ */
+export interface DebugFallbackDiagnostics {
   statusCode: number | null;
   responseByteLength: number | null;
   /** Rate limit retry-after header value in seconds, if applicable */
   retryAfter?: number | null;
 }
 
+/**
+ * @deprecated Use DebugPrimaryDiagnostics instead. Kept for backward compatibility.
+ */
+export type DebugGeminiDiagnostics = DebugPrimaryDiagnostics;
+
+/**
+ * @deprecated Use DebugFallbackDiagnostics instead. Kept for backward compatibility.
+ */
+export type DebugGroqDiagnostics = DebugFallbackDiagnostics;
+
+/**
+ * Provider slot type - represents the role of the provider in the editorial pipeline.
+ */
+export type ProviderSlot = 'primary' | 'fallback';
+
+/**
+ * Legacy provider names for backward compatibility.
+ * @deprecated Use ProviderSlot instead.
+ */
+export type LegacyProviderName = 'gemini' | 'groq';
+
 export interface DebugApiCallStatus {
-  provider: 'gemini' | 'groq';
+  /** Provider slot (primary/fallback) rather than specific vendor */
+  provider: ProviderSlot | LegacyProviderName;
   status: 'success' | 'rate-limited' | 'error';
   httpStatus: number | null;
   message: string;
@@ -148,16 +178,46 @@ export interface DebugWeekStandoutTrace {
   note?: string | null;
 }
 
+/**
+ * Provider selection result type.
+ * Represents which provider slot was selected for the editorial.
+ */
+export type SelectedProvider = ProviderSlot | 'template';
+
+/**
+ * @deprecated Use SelectedProvider instead.
+ */
+export type LegacySelectedProvider = 'groq' | 'gemini' | 'template';
+
 export interface DebugAiTrace {
-  primaryProvider?: 'groq' | 'gemini';
-  selectedProvider?: 'groq' | 'gemini' | 'template';
+  /** Primary provider slot used for this run */
+  primaryProvider?: ProviderSlot | LegacyProviderName;
+  /** Selected provider (primary, fallback, or template) */
+  selectedProvider?: SelectedProvider | LegacySelectedProvider;
+  /** Reason primary provider was rejected (if applicable) */
   primaryRejectionReason?: string | null;
+  /** Reason fallback provider was rejected (if applicable) */
   secondaryRejectionReason?: string | null;
+  /** Raw response from fallback provider (historically Groq) */
+  rawFallbackResponse: string;
+  /** Raw response from primary provider (historically Gemini) */
+  rawPrimaryResponse?: string;
+  /** Raw payload from primary provider (historically Gemini) */
+  rawPrimaryPayload?: string;
+  /** @deprecated Use rawFallbackResponse instead */
   rawGroqResponse: string;
+  /** @deprecated Use rawPrimaryResponse instead */
   rawGeminiResponse?: string;
+  /** @deprecated Use rawPrimaryPayload instead */
   rawGeminiPayload?: string;
-  geminiDiagnostics?: DebugGeminiDiagnostics;
-  groqDiagnostics?: DebugGroqDiagnostics;
+  /** Diagnostics for primary provider */
+  primaryDiagnostics?: DebugPrimaryDiagnostics;
+  /** Diagnostics for fallback provider */
+  fallbackDiagnostics?: DebugFallbackDiagnostics;
+  /** @deprecated Use primaryDiagnostics instead */
+  geminiDiagnostics?: DebugPrimaryDiagnostics;
+  /** @deprecated Use fallbackDiagnostics instead */
+  groqDiagnostics?: DebugFallbackDiagnostics;
   /** High-level API call status for both providers */
   apiCallStatuses?: DebugApiCallStatus[];
   normalizedAiText: string;

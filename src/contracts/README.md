@@ -55,8 +55,20 @@ Main use case contracts.
 
 ### Debug (`debug.ts`)
 Debug context and diagnostics types for tracing and observability.
+
+**Slot-role based types (preferred for new code):**
+- `DebugPrimaryDiagnostics` — Diagnostics for primary AI provider
+- `DebugFallbackDiagnostics` — Diagnostics for fallback AI provider
+- `ProviderSlot` — `'primary' | 'fallback'`
+- `SelectedProvider` — `ProviderSlot | 'template'`
+
+**Legacy provider-specific types (deprecated):**
+- `DebugGeminiDiagnostics` — Alias for `DebugPrimaryDiagnostics`
+- `DebugGroqDiagnostics` — Alias for `DebugFallbackDiagnostics`
+
+**Core debug types:**
 - `DebugContext`, `DebugPayloadSnapshot`
-- `DebugGeminiDiagnostics`, `DebugGroqDiagnostics`, `DebugApiCallStatus`
+- `DebugApiCallStatus`
 - `DebugRunMetadata`, `DebugScores`, `DebugHourlyScore`, `DebugWindowTrace`
 - `DebugAiTrace`, `DebugWeekStandoutTrace`
 - `DebugLongRangeCandidate`, `DebugNearbyAlternative`
