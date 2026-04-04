@@ -907,7 +907,7 @@ describe('workflow assembly', () => {
     expect(buildPromptConnections).toEqual(expect.arrayContaining([
       expect.objectContaining({ node: 'HTTP: Groq', index: 0 }),
       expect.objectContaining({ node: 'Merge: Prompt + Groq', index: 0 }),
-      expect.objectContaining({ node: 'Code: Build Inspire Prompt', index: 0 }),
+      expect.objectContaining({ node: 'If: Run Inspire', index: 0 }),
     ]));
     expect(buildPromptConnections).not.toEqual(expect.arrayContaining([
       expect.objectContaining({ node: 'HTTP: Gemini Fallback' }),

@@ -60,6 +60,8 @@ The primary editorial request now supports two workflow modes:
 
 The deployed workflow selects the mode via the `PHOTO_BRIEF_EDITORIAL_PROMPT_MODE` secret. The default is now `structured-output`; override per webhook run with `editorialPromptMode=legacy-json` to roll back to the legacy path.
 
+The inspire chain (Gemini creative spark) is gated by the `PHOTO_BRIEF_INSPIRE_ENABLED` secret (defaults to `true`). Set to `false` to skip the API call and save cost/latency.
+
 ## Development Setup
 
 **⚠️ Important: You must run `npm run build` before `npm run typecheck`**

@@ -6,6 +6,7 @@ export const PHOTO_WEATHER_CONFIG = {
   icao: '__PHOTO_WEATHER_ICAO__',
   editorialPrimaryProvider: '__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__',
   editorialPromptMode: '__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__',
+  inspireEnabled: '__PHOTO_BRIEF_INSPIRE_ENABLED__',
 } as const;
 
 export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
@@ -53,4 +54,10 @@ export function getPhotoBriefEditorialPrimaryProvider(): 'groq' | 'gemini' {
 export function getPhotoBriefEditorialPromptMode(): EditorialPromptMode {
   const mode = parseString(PHOTO_WEATHER_CONFIG.editorialPromptMode, 'structured-output').toLowerCase();
   return mode === 'legacy-json' ? 'legacy-json' : 'structured-output';
+}
+
+export function getPhotoBriefInspireEnabled(): boolean {
+  const value = PHOTO_WEATHER_CONFIG.inspireEnabled;
+  if (!value || isPlaceholder(value)) return true;
+  return value.toLowerCase() !== 'false';
 }

@@ -35,8 +35,11 @@ structured output) so the workflow only pays for fallback when it needs to.
 
 - legacy `prompt` for the existing JSON-in-prompt route
 - structured `systemPrompt` / `userPrompt` plus `responseSchema` metadata for the Groq schema-enforced route
+- `inspireEnabled` flag from the `PHOTO_BRIEF_INSPIRE_ENABLED` config (defaults to `true`)
 
 The workflow chooses between them with `editorialPromptMode` (`legacy-json` or `structured-output`). The default comes from the `PHOTO_BRIEF_EDITORIAL_PROMPT_MODE` secret and can be overridden per webhook request with `editorialPromptMode` in the body or query string.
+
+The inspire chain is gated by `inspireEnabled`. When `false`, the workflow skips `HTTP: Gemini Inspire` entirely, avoiding API cost and latency.
 
 ## What not to edit casually
 
