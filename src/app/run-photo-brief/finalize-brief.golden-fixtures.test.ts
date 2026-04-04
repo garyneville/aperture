@@ -96,9 +96,9 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
       expect(result.briefJson.aiText.length).toBeGreaterThan(0);
     });
 
-    it('should use groq as selected provider (preferred provider succeeded)', () => {
-      expect(result.editorial.selectedProvider).toBe('groq');
-      expect(result.editorial.primaryProvider).toBe('groq');
+    it('should use primary slot as selected provider (preferred provider succeeded)', () => {
+      expect(result.editorial.selectedProvider).toBe('primary');
+      expect(result.editorial.primaryProvider).toBe('primary');
     });
 
     it('should NOT use fallback', () => {
@@ -117,7 +117,7 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
 
     it('should have debug context with correct provider info', () => {
       expect(result.debugContext.ai).toBeDefined();
-      expect(result.debugContext.ai?.selectedProvider).toBe('groq');
+      expect(result.debugContext.ai?.selectedProvider).toBe('primary');
       expect(result.debugContext.ai?.fallbackUsed).toBe(false);
     });
 
@@ -145,8 +145,8 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
       expect(result.briefJson.dontBother).toBe(true);
     });
 
-    it('should use groq as selected provider', () => {
-      expect(result.editorial.selectedProvider).toBe('groq');
+    it('should use primary slot as selected provider', () => {
+      expect(result.editorial.selectedProvider).toBe('primary');
     });
 
     it('should NOT use fallback (AI response is valid)', () => {
@@ -182,9 +182,9 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
       expect(result.briefJson.aiText).toBeTruthy();
     });
 
-    it('should use groq as selected provider (gemini empty)', () => {
-      expect(result.editorial.selectedProvider).toBe('groq');
-      expect(result.editorial.primaryProvider).toBe('groq');
+    it('should use primary slot as selected provider (groq empty skipped, groq succeeds)', () => {
+      expect(result.editorial.selectedProvider).toBe('primary');
+      expect(result.editorial.primaryProvider).toBe('primary');
     });
 
     it('should NOT use fallback (Groq succeeded)', () => {
@@ -210,10 +210,10 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
       expect(result.briefJson.aiText).toBeTruthy();
     });
 
-    it('should use gemini as selected provider (model fallback)', () => {
-      // Groq is preferred but malformed, so should fallback to Gemini
-      expect(result.editorial.selectedProvider).toBe('gemini');
-      expect(result.editorial.primaryProvider).toBe('groq');
+    it('should use fallback slot as selected provider (model fallback)', () => {
+      // Primary slot (groq) is malformed, so should fallback to fallback slot (gemini)
+      expect(result.editorial.selectedProvider).toBe('fallback');
+      expect(result.editorial.primaryProvider).toBe('primary');
     });
 
     it('should NOT use template fallback (Gemini usable)', () => {
@@ -294,7 +294,7 @@ describe('Golden Fixtures - Debug Output Invariants', () => {
       // Provider info
       expect(trace?.primaryProvider).toBeDefined();
       expect(trace?.selectedProvider).toBeDefined();
-      expect(['groq', 'gemini', 'template']).toContain(trace?.selectedProvider);
+      expect(['primary', 'fallback', 'template']).toContain(trace?.selectedProvider);
 
       // Fallback info
       expect(typeof trace?.fallbackUsed).toBe('boolean');
@@ -458,10 +458,10 @@ describe('Golden Fixtures - briefJson Snapshot Assertions', () => {
 
 describe('Golden Fixtures - Provider Selection Matrix', () => {
   const scenarios = [
-    { name: 'good-local-window', expectedProvider: 'groq', fallbackUsed: false },
-    { name: 'dont-bother', expectedProvider: 'groq', fallbackUsed: false },
-    { name: 'groq-succeeds-gemini-empty', expectedProvider: 'groq', fallbackUsed: false },
-    { name: 'groq-malformed-gemini-usable', expectedProvider: 'gemini', fallbackUsed: false },
+    { name: 'good-local-window', expectedProvider: 'primary', fallbackUsed: false },
+    { name: 'dont-bother', expectedProvider: 'primary', fallbackUsed: false },
+    { name: 'groq-succeeds-gemini-empty', expectedProvider: 'primary', fallbackUsed: false },
+    { name: 'groq-malformed-gemini-usable', expectedProvider: 'fallback', fallbackUsed: false },
     { name: 'both-fail-template-fallback', expectedProvider: 'template', fallbackUsed: true },
   ] as const;
 

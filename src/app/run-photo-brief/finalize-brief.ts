@@ -60,8 +60,11 @@ export function finalizeBrief(
   const runtimePayloadSnapshot = serializeDebugPayload(input);
 
   // Step 4: Resolve editorial (with validation and fallbacks)
+  // Map vendor name ('groq'/'gemini') to slot role ('primary'/'fallback') for domain layer.
+  // By convention, 'groq' is the primary slot and 'gemini' is the fallback slot.
+  const preferredSlot: 'primary' | 'fallback' = config.preferredProvider === 'groq' ? 'primary' : 'fallback';
   const { editorial, debugAiTrace } = resolveEditorial({
-    preferredProvider: config.preferredProvider,
+    preferredProvider: preferredSlot,
     ctx: {
       ...normalized.context,
       debugContext: preparedDebug.debugContext,

@@ -33,9 +33,9 @@ interface SpurDebugInput {
 interface CompositionDebugInput {
   rawCount: number;
   resolvedCount: number;
-  componentCandidate: { provider: EditorialProvider; compositionBullets?: string[] } | null;
-  primaryCandidate: { provider: EditorialProvider; compositionBullets?: string[] } | null;
-  secondaryCandidate: { provider: EditorialProvider; compositionBullets?: string[] } | null;
+  componentCandidate: { provider: 'groq' | 'gemini'; compositionBullets?: string[] } | null;
+  primaryCandidate: { provider: 'groq' | 'gemini'; compositionBullets?: string[] } | null;
+  secondaryCandidate: { provider: 'groq' | 'gemini'; compositionBullets?: string[] } | null;
 }
 
 /**
@@ -135,10 +135,15 @@ export interface BuildDebugTraceInput {
  * @returns Complete debug AI trace object
  */
 export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
-  const primaryGateway = input.selection.primaryProvider === 'groq'
+  // Map slot role to vendor key: 'primary' is configured via getPhotoBriefEditorialPrimaryProvider()
+  // The gateway always has groq/gemini keys; primaryProvider slot is 'primary'|'fallback'.
+  // We use the configured primary slot: by convention, 'primary' maps to groq unless overridden.
+  // The gateway key is determined from which candidate was the primary selection.
+  const primaryGatewayProvider = input.selection.primaryCandidate?.provider ?? 'groq';
+  const primaryGateway = primaryGatewayProvider === 'groq'
     ? input.editorialGateway.groq
     : input.editorialGateway.gemini;
-  const fallbackGateway = input.selection.primaryProvider === 'groq'
+  const fallbackGateway = primaryGatewayProvider === 'groq'
     ? input.editorialGateway.gemini
     : input.editorialGateway.groq;
 

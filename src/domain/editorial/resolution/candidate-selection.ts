@@ -93,14 +93,26 @@ export function chooseEditorialCandidate(
   ctx: BriefContext,
   editorialGateway: EditorialGatewayPayload,
 ): CandidateSelectionResult {
-  const candidates: Record<EditorialProvider, EditorialCandidate | null> = {
-    groq: buildEditorialCandidate(editorialGateway.groq, ctx),
-    gemini: buildEditorialCandidate(editorialGateway.gemini, ctx),
-  };
+  // Build candidates from both vendor gateway slots
+  const groqCandidate = buildEditorialCandidate(editorialGateway.groq, ctx);
+  const geminiCandidate = buildEditorialCandidate(editorialGateway.gemini, ctx);
 
-  const secondaryProvider: EditorialProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
-  const primaryCandidate = candidates[preferredProvider];
-  const secondaryCandidate = candidates[secondaryProvider];
+  // Map slot role to vendor gateway: primary/fallback is a configured preference.
+  // The n8n adapter passes preferredProvider as 'groq'|'gemini' but resolveEditorial
+  // receives it as 'primary'|'fallback'. For the gateway lookup we rely on the
+  // gateway having fixed groq/gemini keys. We choose primary = first configured slot.
+  // By convention from finalize-brief: 'primary' slot = preferred adaptor var → groq or gemini.
+  // Since EditorialProvider is now 'primary'|'fallback', we default primaries as:
+  //   'primary' → groq (the default in n8n config)
+  //   'fallback' → gemini
+  // But the real mapping is controlled by FinalizeConfig.preferredProvider which is
+  // passed through as a slot role. The CandidateSelectionResult.primaryProvider is the
+  // slot role ('primary'|'fallback'). We track vendor names on the candidates themselves.
+  const primaryVendorCandidate = preferredProvider === 'primary' ? groqCandidate : geminiCandidate;
+  const secondaryVendorCandidate = preferredProvider === 'primary' ? geminiCandidate : groqCandidate;
+
+  const primaryCandidate = primaryVendorCandidate;
+  const secondaryCandidate = secondaryVendorCandidate;
 
   // Select candidate: prefer primary if it passes, else secondary, else null
   const selectedCandidate = primaryCandidate?.passed
@@ -117,9 +129,18 @@ export function chooseEditorialCandidate(
         ? secondaryCandidate
         : null);
 
+  // Determine selectedProvider slot role — must check for null first to avoid
+  // null === null being mistakenly true (both selectedCandidate and primaryCandidate could be null)
+  const selectedProviderSlot: EditorialProvider | 'template' =
+    selectedCandidate === null
+      ? 'template'
+      : selectedCandidate === primaryCandidate
+        ? preferredProvider
+        : (preferredProvider === 'primary' ? 'fallback' : 'primary');
+
   return {
     primaryProvider: preferredProvider,
-    selectedProvider: selectedCandidate?.provider ?? 'template',
+    selectedProvider: selectedProviderSlot,
     primaryCandidate,
     secondaryCandidate,
     selectedCandidate,

@@ -124,13 +124,6 @@ export interface DebugPrimaryDiagnostics {
   retryAfter?: number | null;
 }
 
-export interface DebugFallbackDiagnostics {
-  statusCode: number | null;
-  responseByteLength: number | null;
-  /** Rate limit retry-after header value in seconds, if applicable */
-  retryAfter?: number | null;
-}
-
 /**
  * Diagnostics for the fallback AI provider.
  * Previously named DebugGroqDiagnostics, renamed to reflect slot role.
@@ -143,9 +136,14 @@ export interface DebugFallbackDiagnostics {
 }
 
 /**
- * @deprecated Use DebugPrimaryDiagnostics instead. Kept for backward compatibility.
+ * @deprecated Use DebugPrimaryDiagnostics instead.
  */
-// Deprecated aliases removed, consumers updated to slot role naming
+export type DebugGeminiDiagnostics = DebugPrimaryDiagnostics;
+
+/**
+ * @deprecated Use DebugFallbackDiagnostics instead.
+ */
+export type DebugGroqDiagnostics = DebugFallbackDiagnostics;
 
 
 /**

@@ -485,12 +485,13 @@ describe('chooseEditorialCandidate', () => {
     });
 
     const choice = chooseEditorialCandidate(
-      'gemini',
+      'fallback',
       ctx,
       createEditorialGateway(groqContent, geminiContent),
     );
 
-    expect(choice.selectedProvider).toBe('gemini');
+    // 'fallback' maps to gemini candidate which passes
+    expect(choice.selectedProvider).toBe('fallback');
     expect(choice.selectedCandidate?.compositionBullets[0]).toContain('Face north');
   });
 
@@ -505,12 +506,13 @@ describe('chooseEditorialCandidate', () => {
     });
 
     const choice = chooseEditorialCandidate(
-      'gemini',
+      'fallback',
       ctx,
       createEditorialGateway(groqContent, geminiContent),
     );
 
-    expect(choice.selectedProvider).toBe('groq');
+    // fallback (gemini) fails validation, so primary (groq) is used from the other slot
+    expect(choice.selectedProvider).toBe('primary');
     expect(choice.primaryCandidate?.passed).toBe(false);
     expect(choice.secondaryCandidate?.passed).toBe(true);
   });
@@ -564,12 +566,12 @@ describe('chooseEditorialCandidate', () => {
     });
 
     const choice = chooseEditorialCandidate(
-      'groq',
+      'primary',
       pastWindowCtx,
       createEditorialGateway(groqContent, geminiContent),
     );
 
-    expect(choice.selectedProvider).toBe('groq');
+    expect(choice.selectedProvider).toBe('primary');
     expect(choice.primaryCandidate?.passed).toBe(true);
     expect(choice.primaryCandidate?.factualCheck.passed).toBe(true);
     expect(choice.primaryCandidate?.editorialCheck.passed).toBe(true);
@@ -588,7 +590,7 @@ describe('chooseEditorialCandidate', () => {
     });
 
     const choice = chooseEditorialCandidate(
-      'groq',
+      'primary',
       ctx,
       createEditorialGateway(groqContent),
     );
@@ -1393,9 +1395,9 @@ describe('run — model fallback reporting (#74)', () => {
 
     expect(result.debugEmailHtml).toContain('Model fallback');
     expect(result.debugEmailHtml).toContain('Primary rejection');
-    expect(result.debugEmailHtml).toContain('Yes — groq rejected:');
+    expect(result.debugEmailHtml).toContain('Yes — primary rejected:');
     expect(result.debugEmailHtml).toContain('editorial field absent or unparseable');
-    expect(result.debugEmailHtml).toContain('used gemini');
+    expect(result.debugEmailHtml).toContain('used fallback');
     expect(result.debugEmailHtml).not.toContain('groq failed, used gemini');
     expect(result.debugEmailHtml).toContain('Hardcoded fallback');
     expect(result.debugEmailHtml).toContain('Gemini HTTP status');

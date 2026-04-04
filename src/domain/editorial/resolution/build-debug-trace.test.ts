@@ -6,8 +6,8 @@ describe('buildDebugAiTrace', () => {
   it('maps slot-based debug fields from the configured primary provider', () => {
     const trace = buildDebugAiTrace({
       selection: {
-        primaryProvider: 'groq',
-        selectedProvider: 'gemini',
+        primaryProvider: 'primary',
+        selectedProvider: 'fallback',
         primaryCandidate: {
           provider: 'groq',
           rawContent: 'groq raw',

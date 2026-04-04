@@ -17,6 +17,7 @@ import {
 } from './parse.js';
 import type {
   BriefContext,
+  EditorialProvider,
   LongRangeSpurCandidate,
   ResolveEditorialInput,
   ResolveEditorialOutput,
@@ -105,8 +106,8 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     editorialGateway,
   );
 
-  // Determine secondary provider for rejection summarization
-  const secondaryProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
+  // Determine secondary provider (opposite slot role from primary)
+  const secondaryProvider: EditorialProvider = preferredProvider === 'primary' ? 'fallback' : 'primary';
 
   // Step 2: Extract component data
   const { selectedCandidate } = selection;
@@ -130,8 +131,8 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     : undefined;
 
   // Step 6: Calculate rejection reasons
-  const primaryResponse = editorialGateway[preferredProvider];
-  const secondaryResponse = editorialGateway[secondaryProvider];
+  const primaryResponse = preferredProvider === 'primary' ? editorialGateway.groq : editorialGateway.gemini;
+  const secondaryResponse = preferredProvider === 'primary' ? editorialGateway.gemini : editorialGateway.groq;
 
   const primaryRejectionReason = selection.selectedProvider === preferredProvider
     ? null
@@ -176,9 +177,9 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       weekInsight: resolvedComponents.weekStandout.text,
       spurOfTheMoment: resolvedComponents.spurOfTheMoment,
       geminiInspire: safeGeminiInspire,
-      rawGroqResponse: groqResponse.rawText || undefined,
-      rawGeminiResponse: geminiResponse.rawText || undefined,
-      rawGeminiPayload: geminiResponse.rawPayload,
+      rawFallbackResponse: groqResponse.rawText || undefined,
+      rawPrimaryResponse: geminiResponse.rawText || undefined,
+      rawPrimaryPayload: geminiResponse.rawPayload,
     },
     debugAiTrace,
   };
