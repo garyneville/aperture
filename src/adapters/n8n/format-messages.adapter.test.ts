@@ -334,9 +334,11 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
     expect(isFactuallyIncoherentEditorial(misleadingText, moonCtx)).toBe(true);
   });
 
-  it('flags peak-time phrasing when the named time does not match the selected window peak hour', () => {
-    const wrongPeakText = 'Dark-sky conditions hold through the midnight astro window. Peak local time is around 01:00 within the midnight astro window.';
-    expect(isFactuallyIncoherentEditorial(wrongPeakText, {
+  it('flags peak-time phrasing when the named time is outside the window range', () => {
+    // Times within window range are now accepted (Issue #96 - loosened validation)
+    // Only times completely outside the window range should be flagged
+    const outsideWindowText = 'Dark-sky conditions hold through the midnight astro window. Peak local time is around 22:00 the previous evening.';
+    expect(isFactuallyIncoherentEditorial(outsideWindowText, {
       windows: [{
         label: 'Midnight astro window',
         start: '00:00',
@@ -352,6 +354,25 @@ describe('isFactuallyIncoherentEditorial — 15 March regression', () => {
       }],
       altLocations: [],
     })).toBe(true);
+
+    // Times within the window range should be accepted even if not the exact peak
+    const withinWindowText = 'Dark-sky conditions hold through the midnight astro window. Peak local time is around 01:00 within the midnight astro window.';
+    expect(isFactuallyIncoherentEditorial(withinWindowText, {
+      windows: [{
+        label: 'Midnight astro window',
+        start: '00:00',
+        end: '04:00',
+        peak: 56,
+        hours: [{ hour: '03:00', score: 56, ct: 0, visK: 12, aod: 0.13 }],
+      }],
+      dailySummary: [{
+        bestPhotoHour: '03:00',
+        astroScore: 68,
+        bestAstroHour: '03:00',
+        darkSkyStartsAt: '00:00',
+      }],
+      altLocations: [],
+    })).toBe(false);
   });
 
   it('shouldReplaceAiText returns true for the 15 March hallucination', () => {
