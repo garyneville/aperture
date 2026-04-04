@@ -38,7 +38,7 @@ describe('resolveEditorialComponents', () => {
     });
 
     const selection: CandidateSelectionResult = {
-      primaryProvider: 'groq',
+      primaryProvider: 'primary',
       selectedProvider: 'template',
       primaryCandidate: componentCandidate,
       secondaryCandidate: null,
@@ -89,8 +89,8 @@ describe('resolveEditorialComponents', () => {
     });
 
     const selection: CandidateSelectionResult = {
-      primaryProvider: 'gemini',
-      selectedProvider: 'gemini',
+      primaryProvider: 'primary',
+      selectedProvider: 'primary',
       primaryCandidate,
       secondaryCandidate,
       selectedCandidate: primaryCandidate,
@@ -132,8 +132,8 @@ describe('resolveEditorialComponents', () => {
     });
 
     const selection: CandidateSelectionResult = {
-      primaryProvider: 'groq',
-      selectedProvider: 'groq',
+      primaryProvider: 'primary',
+      selectedProvider: 'primary',
       primaryCandidate: componentCandidate,
       secondaryCandidate: null,
       selectedCandidate: componentCandidate,

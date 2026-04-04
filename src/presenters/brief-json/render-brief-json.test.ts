@@ -68,8 +68,8 @@ function makeScoredContext(): ScoredForecastContext {
 
 function makeEditorialDecision(): EditorialDecision {
   return {
-    primaryProvider: 'gemini',
-    selectedProvider: 'gemini',
+    primaryProvider: 'primary',
+    selectedProvider: 'primary',
     fallbackUsed: false,
     aiText: 'Conditions improve through the local astro slot.',
     compositionBullets: ['Face north.'],

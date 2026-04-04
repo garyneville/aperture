@@ -30,7 +30,8 @@ import {
   buildStructuredLocalWindowPrompt,
 } from './sections/local-window-prompt.js';
 import {
-  buildEditorialResponseSchema,
+  buildLocalWindowResponseSchema,
+  buildDontBotherResponseSchema,
   EDITORIAL_RESPONSE_SCHEMA_NAME,
 } from './sections/prompt-blocks.js';
 
@@ -235,7 +236,7 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     systemPrompt,
     userPrompt,
     responseSchemaName: EDITORIAL_RESPONSE_SCHEMA_NAME,
-    responseSchema: buildEditorialResponseSchema(),
+    responseSchema: buildLocalWindowResponseSchema(),
     dontBother: effectiveDontBother,
     windows,
     todayCarWash,

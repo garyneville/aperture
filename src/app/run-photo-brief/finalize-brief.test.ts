@@ -137,7 +137,7 @@ describe('finalizeBrief', () => {
 
     const result = finalizeBrief(input, config);
 
-    expect(result.editorial.primaryProvider).toBe('groq');
+    expect(result.editorial.primaryProvider).toBe('primary');
     expect(result.editorial.aiText).toBeDefined();
   });
 
@@ -150,7 +150,7 @@ describe('finalizeBrief', () => {
 
     const result = finalizeBrief(input, config);
 
-    expect(result.editorial.primaryProvider).toBe('gemini');
+    expect(result.editorial.primaryProvider).toBe('fallback');
     expect(result.editorial.aiText).toBeDefined();
   });
 

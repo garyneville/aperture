@@ -76,14 +76,14 @@ function makeEditorialRequest(context: ScoredForecastContext): EditorialRequest 
 
 function makeEditorialDecision(): EditorialDecision {
   return {
-    primaryProvider: 'gemini',
-    selectedProvider: 'gemini',
+    primaryProvider: 'primary',
+    selectedProvider: 'primary',
     fallbackUsed: false,
     aiText: 'Conditions improve through the local astro slot; a clear northern horizon is worth keeping in play.',
     compositionBullets: ['Face north with a low ridge and leave space for any aurora structure.'],
     weekInsight: 'Today is the most reliable forecast.',
     spurOfTheMoment: null,
-    rawGeminiResponse: '{"editorial":"..."}',
+    rawPrimaryResponse: '{"editorial":"..."}',
   };
 }
 
@@ -145,13 +145,13 @@ describe('runPhotoBrief', () => {
       'score:Leeds',
       'build:Wednesday 18 March',
       'resolve:Respond with a short editorial summary.',
-      'render:60:gemini',
+      'render:60:primary',
       'persist',
       'deliver',
     ]);
     expect(result.generatedAt).toBe('2026-03-18T06:30:44.082Z');
     expect(result.forecast.location.name).toBe('Leeds');
-    expect(result.editorial.selectedProvider).toBe('gemini');
+    expect(result.editorial.selectedProvider).toBe('primary');
     expect(result.outputs.emailHtml).toBe('<p>email</p>');
     expect(result.outputs.briefJson.schemaVersion).toBe(BRIEF_JSON_SCHEMA_VERSION);
     expect(result.stageTimingsMs.acquire).toBeTypeOf('number');

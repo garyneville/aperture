@@ -210,7 +210,7 @@ export type EditorialGatewayPayload = {
 };
 
 export type EditorialCandidate = {
-  provider: EditorialProvider;
+  provider: 'groq' | 'gemini';
   rawContent: string;
   editorial: string;
   compositionBullets: string[];

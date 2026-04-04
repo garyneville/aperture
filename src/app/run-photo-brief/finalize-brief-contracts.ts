@@ -83,7 +83,7 @@ export type NormalizedEditorialInput = {
  * Configuration for the finalize operation.
  */
 export type FinalizeConfig = {
-  /** Primary AI provider preference */
+  /** Primary AI provider preference (vendor name: 'groq' | 'gemini') */
   preferredProvider: 'groq' | 'gemini';
 
   /** Home location metadata */
