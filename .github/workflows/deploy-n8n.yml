@@ -302,42 +302,9 @@ jobs:
 
           echo "Workflow ${workflow_id} activated successfully"
 
-      - name: Verify webhook is registered
+      - name: Trigger workflow run after deploy
         env:
           N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
-        run: |
-          TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
-          echo "Waiting for webhook registration (path: ${TRIGGER_PATH})..."
-
-          # n8n registers webhooks asynchronously after activation.
-          # Poll by sending HEAD requests to the webhook URL —
-          # HEAD won't trigger the workflow but returns 200 if registered.
-          for attempt in $(seq 1 24); do
-            HEAD_CODE=$(curl --ipv4 -sS -o /dev/null -w '%{http_code}' \
-              --head \
-              "${N8N_BASE_URL_NORM}/webhook/${TRIGGER_PATH}" 2>/dev/null || echo "000")
-
-            if [[ "$HEAD_CODE" == 2* ]]; then
-              echo "Webhook registered (HTTP ${HEAD_CODE}) after ${attempt} check(s)"
-              break
-            fi
-
-            if [ "$attempt" -eq 24 ]; then
-              echo "::error::Webhook not registered after 24 attempts (~120s). HEAD returned ${HEAD_CODE}"
-              # Dump workflow state for debugging
-              curl --ipv4 -sS \
-                -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
-                -H "Accept: application/json" \
-                "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}" \
-                | python3 -c "import json,sys; wf=json.load(sys.stdin); print(f\"active={wf.get('active')}, nodes={len(wf.get('nodes',[]))}\")"
-              exit 1
-            fi
-
-            echo "Webhook not ready yet (attempt ${attempt}/24, HTTP ${HEAD_CODE}); waiting 5s..."
-            sleep 5
-          done
-
-      - name: Trigger workflow run after deploy
         run: |
           TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
           if [ -z "$TRIGGER_PATH" ]; then
@@ -361,8 +328,9 @@ jobs:
           PY
           )
 
-          for attempt in $(seq 1 12); do
-            HTTP_CODE=$(curl --ipv4 --retry 5 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
+          echo "Triggering POST ${TRIGGER_URL}..."
+          for attempt in $(seq 1 20); do
+            HTTP_CODE=$(curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
               -X POST \
               -H "Accept: application/json" \
               -H "Content-Type: application/json" \
@@ -371,20 +339,37 @@ jobs:
 
             case "$HTTP_CODE" in
               2*)
-                break
+                echo "Triggered post-deploy workflow execution (HTTP ${HTTP_CODE})"
+                exit 0
                 ;;
               404)
-                if [ "$attempt" -lt 12 ]; then
-                  echo "Webhook not registered yet (attempt ${attempt}/12); retrying in 5s"
+                if [ "$attempt" -lt 20 ]; then
+                  echo "Webhook not registered yet (attempt ${attempt}/20); retrying in 5s"
                   sleep 5
                   continue
                 fi
                 ;;
             esac
 
-            echo "::error::Trigger webhook returned HTTP ${HTTP_CODE}"
+            # Final failure — dump diagnostics
+            echo "::error::Trigger webhook returned HTTP ${HTTP_CODE} after ${attempt} attempt(s)"
             cat trigger-response.json
+            echo ""
+            echo "--- Workflow state ---"
+            curl --ipv4 -sS \
+              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
+              -H "Accept: application/json" \
+              "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}" \
+              | python3 -c "
+          import json, sys
+          wf = json.load(sys.stdin)
+          print(f\"active={wf.get('active')}\")
+          print(f\"nodes={len(wf.get('nodes', []))}\")
+          webhooks = [n['name'] for n in wf.get('nodes', []) if 'webhook' in n.get('type', '').lower()]
+          print(f\"webhook_nodes={webhooks}\")
+          for n in wf.get('nodes', []):
+              if 'webhook' in n.get('type', '').lower():
+                  print(f\"  {n['name']}: path={n.get('parameters', {}).get('path')}, method={n.get('parameters', {}).get('httpMethod')}\")
+          " 2>/dev/null || echo "(could not fetch workflow details)"
             exit 1
           done
-
-          echo "Triggered post-deploy workflow execution"
