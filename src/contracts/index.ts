@@ -51,6 +51,14 @@ export type {
 // Editorial resolution types
 export type {
   BriefContext,
+  EditorialCandidatePayload,
+  EditorialGatewayOutcome,
+  EditorialGatewayParseState,
+  EditorialGatewayPayload,
+  EditorialGatewayResult,
+  EditorialParseResult,
+  GeminiEditorialGatewayResult,
+  GroqEditorialGatewayResult,
   LongRangeSpurCandidate,
   ResolveEditorialInput,
   ResolveEditorialOutput,

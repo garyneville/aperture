@@ -14,7 +14,12 @@ import {
 import {
   run,
 } from './format-messages.adapter.js';
+import { buildEditorialGatewayPayload } from '../../app/run-photo-brief/editorial-gateway.js';
 import { LONG_RANGE_LOCATIONS, estimatedDriveMins } from '../../lib/long-range-locations.js';
+
+function createEditorialGateway(groqRawText: string, geminiRawText = '') {
+  return buildEditorialGatewayPayload({ groqRawText, geminiRawText });
+}
 
 describe('format-messages adapter editorial fallback', () => {
   const ctx = {
@@ -449,7 +454,11 @@ describe('chooseEditorialCandidate', () => {
       composition: ['Star trails with a silhouetted landmark foreground', 'Wide-field constellation framing'],
     });
 
-    const choice = chooseEditorialCandidate('gemini', ctx, groqContent, geminiContent);
+    const choice = chooseEditorialCandidate(
+      'gemini',
+      ctx,
+      createEditorialGateway(groqContent, geminiContent),
+    );
 
     expect(choice.selectedProvider).toBe('gemini');
     expect(choice.selectedCandidate?.compositionBullets[0]).toContain('Face north');
@@ -465,7 +474,11 @@ describe('chooseEditorialCandidate', () => {
       composition: ['Set a dark ridge low in the frame for the 03:00 peak', 'Keep the cleanest skyline for the darkest part of the slot'],
     });
 
-    const choice = chooseEditorialCandidate('gemini', ctx, groqContent, geminiContent);
+    const choice = chooseEditorialCandidate(
+      'gemini',
+      ctx,
+      createEditorialGateway(groqContent, geminiContent),
+    );
 
     expect(choice.selectedProvider).toBe('groq');
     expect(choice.primaryCandidate?.passed).toBe(false);
@@ -520,7 +533,11 @@ describe('chooseEditorialCandidate', () => {
       composition: ['Wide-field constellation framing'],
     });
 
-    const choice = chooseEditorialCandidate('groq', pastWindowCtx, groqContent, geminiContent);
+    const choice = chooseEditorialCandidate(
+      'groq',
+      pastWindowCtx,
+      createEditorialGateway(groqContent, geminiContent),
+    );
 
     expect(choice.selectedProvider).toBe('groq');
     expect(choice.primaryCandidate?.passed).toBe(true);
@@ -540,7 +557,11 @@ describe('chooseEditorialCandidate', () => {
       },
     });
 
-    const choice = chooseEditorialCandidate('groq', ctx, groqContent, '');
+    const choice = chooseEditorialCandidate(
+      'groq',
+      ctx,
+      createEditorialGateway(groqContent),
+    );
 
     expect(choice.selectedProvider).toBe('template');
     expect(choice.selectedCandidate).toBeNull();

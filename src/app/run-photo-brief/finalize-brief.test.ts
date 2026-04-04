@@ -10,8 +10,9 @@
  * - Output rendering
  */
 
-import { describe, expect, it, vi } from 'vitest';
-import { finalizeBrief, extractGeminiDiagnostics } from './finalize-brief.js';
+import { describe, expect, it } from 'vitest';
+import { finalizeBrief } from './finalize-brief.js';
+import { buildEditorialGatewayPayload, extractGeminiDiagnostics } from './editorial-gateway.js';
 import type { FinalizeConfig, FinalizeRuntimeContext, RawEditorialInput } from './finalize-brief-contracts.js';
 
 // Minimal valid FinalizeRuntimeContext for testing
@@ -97,12 +98,21 @@ function createMinimalConfig(): FinalizeConfig {
   };
 }
 
+function createEditorialGateway(input: {
+  groqRawText?: string;
+  geminiRawText?: string;
+} = {}) {
+  return buildEditorialGatewayPayload({
+    groqRawText: input.groqRawText,
+    geminiRawText: input.geminiRawText,
+  });
+}
+
 describe('finalizeBrief', () => {
   it('should return a finalized brief with all required outputs', () => {
     const input: RawEditorialInput = {
       context: createMinimalBriefContext(),
-      groqChoices: [{ message: { content: 'Test AI response' } }],
-      geminiResponse: '',
+      editorialGateway: createEditorialGateway({ groqRawText: 'Test AI response' }),
     };
     const config = createMinimalConfig();
 
@@ -121,7 +131,7 @@ describe('finalizeBrief', () => {
   it('should handle groq-only input', () => {
     const input: RawEditorialInput = {
       context: createMinimalBriefContext(),
-      groqChoices: [{ message: { content: 'Groq only response' } }],
+      editorialGateway: createEditorialGateway({ groqRawText: 'Groq only response' }),
     };
     const config = createMinimalConfig();
 
@@ -134,7 +144,7 @@ describe('finalizeBrief', () => {
   it('should handle gemini-only input', () => {
     const input: RawEditorialInput = {
       context: createMinimalBriefContext(),
-      geminiResponse: 'Gemini only response',
+      editorialGateway: createEditorialGateway({ geminiRawText: 'Gemini only response' }),
     };
     const config = { ...createMinimalConfig(), preferredProvider: 'gemini' as const };
 
@@ -147,7 +157,7 @@ describe('finalizeBrief', () => {
   it('should enable debug mode when configured', () => {
     const input: RawEditorialInput = {
       context: createMinimalBriefContext(),
-      groqChoices: [{ message: { content: 'Test response' } }],
+      editorialGateway: createEditorialGateway({ groqRawText: 'Test response' }),
     };
     const config: FinalizeConfig = {
       ...createMinimalConfig(),
@@ -169,7 +179,7 @@ describe('finalizeBrief', () => {
   it('should populate metadata in debug context', () => {
     const input: RawEditorialInput = {
       context: createMinimalBriefContext(),
-      groqChoices: [{ message: { content: 'Test response' } }],
+      editorialGateway: createEditorialGateway({ groqRawText: 'Test response' }),
     };
     const config = createMinimalConfig();
 
@@ -195,7 +205,7 @@ describe('finalizeBrief', () => {
         ...createMinimalBriefContext(),
         debugContext: existingDebugContext,
       },
-      groqChoices: [{ message: { content: 'Test response' } }],
+      editorialGateway: createEditorialGateway({ groqRawText: 'Test response' }),
     };
     const config = createMinimalConfig();
 
@@ -269,5 +279,33 @@ describe('extractGeminiDiagnostics', () => {
     expect(result?.statusCode).toBe(500);
     expect(result?.finishReason).toBe('ERROR');
     expect(result?.candidateCount).toBeNull();
+  });
+});
+
+describe('buildEditorialGatewayPayload', () => {
+  it('classifies malformed structured provider output at the gateway edge', () => {
+    const gateway = buildEditorialGatewayPayload({
+      groqRawText: '{"editorial":',
+    });
+
+    expect(gateway.groq.outcome).toBe('malformed');
+    expect(gateway.groq.parseResult).toBe('malformed-structured');
+  });
+
+  it('attaches API call status metadata to provider results', () => {
+    const gateway = buildEditorialGatewayPayload({
+      geminiRawText: 'Plain text response',
+      geminiDiagnostics: {
+        statusCode: 200,
+        finishReason: 'STOP',
+        candidateCount: 1,
+        responseByteLength: 512,
+        truncated: false,
+        candidatesTokenCount: 91,
+      },
+    });
+
+    expect(gateway.gemini.apiCallStatus?.provider).toBe('gemini');
+    expect(gateway.gemini.apiCallStatus?.message).toContain('Success');
   });
 });

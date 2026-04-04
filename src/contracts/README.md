@@ -46,6 +46,8 @@ Session scoring types.
 Editorial resolution types.
 - `BriefContext`, `EditorialDecision`, `SpurSuggestion`
 - `ResolveEditorialInput`, `ResolveEditorialOutput`
+- `EditorialGatewayPayload`, `EditorialGatewayResult`, `EditorialGatewayOutcome`
+- `EditorialCandidatePayload`, `EditorialParseResult`
 
 ### Run Photo Brief (`run-photo-brief.ts`)
 Main use case contracts.

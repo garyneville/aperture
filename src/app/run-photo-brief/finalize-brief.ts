@@ -2,7 +2,7 @@
  * Finalize Brief Use Case
  *
  * Assembles the final photo brief by orchestrating:
- * 1. Input normalization (parsing AI provider responses)
+ * 1. Input normalization (defaulting gateway-side editorial inputs)
  * 2. Debug context preparation
  * 3. Editorial resolution (with validation and fallbacks)
  * 4. Debug trace hydration
@@ -34,9 +34,6 @@ import type {
 // Cross-layer types imported from contracts (shared across app/domain/presenters/adapters)
 import type {
   DebugContext,
-  DebugGeminiDiagnostics,
-  DebugGroqDiagnostics,
-  DebugApiCallStatus,
   DebugPayloadSnapshot,
   LongRangeSpurCandidate,
 } from '../../contracts/index.js';
@@ -51,38 +48,21 @@ export type {
 } from './finalize-brief-contracts.js';
 
 /**
- * Normalize raw editorial inputs from AI providers.
+ * Normalize editorial inputs for the finalize-brief use case.
  *
- * Parses Groq and Gemini responses, extracts diagnostics,
- * and prepares the context for editorial resolution.
+ * Provider transport extraction already happened at the runtime edge.
+ * The app layer only applies shared defaults here.
  */
 function normalizeEditorialInput(
   input: RawEditorialInput,
 ): NormalizedEditorialInput {
   const {
     context,
-    groqChoices,
-    geminiResponse,
-    geminiRawPayload,
+    editorialGateway,
     geminiInspire,
-    geminiDiagnostics: providedGeminiDiagnostics,
     nearbyAltNames,
     longRangePool,
   } = input;
-
-  // Extract raw content from Groq response
-  const groqRawContent = groqChoices?.[0]?.message?.content?.trim() || '';
-
-  // Extract raw content from Gemini response
-  const geminiRawContent = typeof geminiResponse === 'string'
-    ? geminiResponse.trim()
-    : '';
-
-  // Normalize Gemini raw payload
-  const normalizedGeminiRawPayload =
-    typeof geminiRawPayload === 'string' && geminiRawPayload.trim().length > 0
-      ? geminiRawPayload
-      : undefined;
 
   // Build nearby alternative names list
   const normalizedNearbyAltNames = nearbyAltNames ?? [
@@ -104,195 +84,11 @@ function normalizeEditorialInput(
 
   return {
     context,
-    groqRawContent,
-    geminiRawContent,
+    editorialGateway,
     geminiInspire: typeof geminiInspire === 'string' ? geminiInspire : undefined,
-    geminiRawPayload: normalizedGeminiRawPayload,
-    geminiDiagnostics: providedGeminiDiagnostics,
-    groqDiagnostics: input.groqDiagnostics,
     nearbyAltNames: normalizedNearbyAltNames,
     longRangePool: normalizedLongRangePool,
   };
-}
-
-function finiteNumberOrNull(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function stringList(value: unknown): string[] | undefined {
-  return Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : undefined;
-}
-
-/**
- * Extract Gemini diagnostics from raw input fields.
- *
- * This handles the case where diagnostics are provided as loose
- * fields rather than a structured object.
- */
-export function extractGeminiDiagnostics(input: {
-  geminiStatusCode?: unknown;
-  geminiFinishReason?: unknown;
-  geminiCandidateCount?: unknown;
-  geminiResponseByteLength?: unknown;
-  geminiResponseTruncated?: unknown;
-  geminiExtractionPath?: unknown;
-  geminiTopLevelKeys?: unknown;
-  geminiPayloadKeys?: unknown;
-  geminiPartKinds?: unknown;
-  geminiExtractedTextLength?: unknown;
-  geminiPromptTokenCount?: unknown;
-  geminiCandidatesTokenCount?: unknown;
-  geminiTotalTokenCount?: unknown;
-  geminiThoughtsTokenCount?: unknown;
-}): DebugGeminiDiagnostics | undefined {
-  const {
-    geminiStatusCode,
-    geminiFinishReason,
-    geminiCandidateCount,
-    geminiResponseByteLength,
-    geminiResponseTruncated,
-    geminiExtractionPath,
-    geminiTopLevelKeys,
-    geminiPayloadKeys,
-    geminiPartKinds,
-    geminiExtractedTextLength,
-    geminiPromptTokenCount,
-    geminiCandidatesTokenCount,
-    geminiTotalTokenCount,
-    geminiThoughtsTokenCount,
-  } = input;
-
-  const hasAnyDiagnostic =
-    typeof geminiStatusCode === 'number' ||
-    (typeof geminiFinishReason === 'string' && geminiFinishReason.trim().length > 0) ||
-    typeof geminiCandidateCount === 'number' ||
-    typeof geminiResponseByteLength === 'number' ||
-    typeof geminiResponseTruncated === 'boolean';
-
-  if (!hasAnyDiagnostic) {
-    return undefined;
-  }
-
-  return {
-    statusCode: finiteNumberOrNull(geminiStatusCode),
-    finishReason:
-      typeof geminiFinishReason === 'string' && geminiFinishReason.trim().length > 0
-        ? geminiFinishReason.trim()
-        : null,
-    candidateCount: finiteNumberOrNull(geminiCandidateCount),
-    responseByteLength: finiteNumberOrNull(geminiResponseByteLength),
-    truncated: geminiResponseTruncated === true,
-    extractionPath:
-      typeof geminiExtractionPath === 'string' && geminiExtractionPath.trim().length > 0
-        ? geminiExtractionPath.trim()
-        : null,
-    topLevelKeys: stringList(geminiTopLevelKeys),
-    payloadKeys: stringList(geminiPayloadKeys),
-    partKinds: stringList(geminiPartKinds),
-    extractedTextLength: finiteNumberOrNull(geminiExtractedTextLength),
-    promptTokenCount: finiteNumberOrNull(geminiPromptTokenCount),
-    candidatesTokenCount: finiteNumberOrNull(geminiCandidatesTokenCount),
-    totalTokenCount: finiteNumberOrNull(geminiTotalTokenCount),
-    thoughtsTokenCount: finiteNumberOrNull(geminiThoughtsTokenCount),
-  };
-}
-
-/**
- * Extract Groq diagnostics from raw input fields.
- */
-export function extractGroqDiagnostics(input: {
-  groqStatusCode?: unknown;
-  groqResponseByteLength?: unknown;
-  groqRetryAfter?: unknown;
-}): DebugGroqDiagnostics | undefined {
-  const { groqStatusCode, groqResponseByteLength, groqRetryAfter } = input;
-
-  const hasAnyDiagnostic =
-    typeof groqStatusCode === 'number' || typeof groqResponseByteLength === 'number';
-
-  if (!hasAnyDiagnostic) {
-    return undefined;
-  }
-
-  return {
-    statusCode: finiteNumberOrNull(groqStatusCode),
-    responseByteLength: finiteNumberOrNull(groqResponseByteLength),
-    retryAfter: finiteNumberOrNull(groqRetryAfter),
-  };
-}
-
-/**
- * Build API call status summaries for both providers.
- */
-export function buildApiCallStatuses(
-  geminiDiagnostics?: DebugGeminiDiagnostics,
-  groqDiagnostics?: DebugGroqDiagnostics,
-): DebugApiCallStatus[] {
-  const statuses: DebugApiCallStatus[] = [];
-
-  // Gemini status
-  if (geminiDiagnostics?.statusCode !== undefined && geminiDiagnostics?.statusCode !== null) {
-    const statusCode = geminiDiagnostics.statusCode;
-    let status: DebugApiCallStatus['status'] = 'success';
-    let message = `HTTP ${statusCode}`;
-
-    if (statusCode === 429) {
-      status = 'rate-limited';
-      message = geminiDiagnostics.retryAfter
-        ? `Rate limited — retry after ${geminiDiagnostics.retryAfter}s`
-        : 'Rate limited';
-    } else if (statusCode >= 400) {
-      status = 'error';
-      message = `Error ${statusCode}`;
-    } else if (statusCode === 200) {
-      const bytes = geminiDiagnostics.responseByteLength ?? 0;
-      const tokens = geminiDiagnostics.candidatesTokenCount ?? 0;
-      message = `Success — ${bytes} bytes, ${tokens} tokens`;
-      if (geminiDiagnostics.truncated) {
-        message += `, truncated (${geminiDiagnostics.finishReason})`;
-      }
-    }
-
-    statuses.push({
-      provider: 'gemini',
-      status,
-      httpStatus: statusCode,
-      message,
-      retryAfter: geminiDiagnostics.retryAfter ?? null,
-    });
-  }
-
-  // Groq status
-  if (groqDiagnostics?.statusCode !== undefined && groqDiagnostics?.statusCode !== null) {
-    const statusCode = groqDiagnostics.statusCode;
-    let status: DebugApiCallStatus['status'] = 'success';
-    let message = `HTTP ${statusCode}`;
-
-    if (statusCode === 429) {
-      status = 'rate-limited';
-      message = groqDiagnostics.retryAfter
-        ? `Rate limited — retry after ${groqDiagnostics.retryAfter}s`
-        : 'Rate limited';
-    } else if (statusCode >= 400) {
-      status = 'error';
-      message = `Error ${statusCode}`;
-    } else if (statusCode === 200) {
-      const bytes = groqDiagnostics.responseByteLength ?? 0;
-      message = `Success — ${bytes} bytes`;
-    }
-
-    statuses.push({
-      provider: 'groq',
-      status,
-      httpStatus: statusCode,
-      message,
-      retryAfter: groqDiagnostics.retryAfter ?? null,
-    });
-  }
-
-  return statuses;
 }
 
 /**
@@ -523,11 +319,8 @@ export function finalizeBrief(
       homeLatitude: config.homeLocation.lat,
       homeLocationName: config.homeLocation.name,
     },
-    groqRawContent: normalized.groqRawContent,
-    geminiRawContent: normalized.geminiRawContent,
+    editorialGateway: normalized.editorialGateway,
     geminiInspire: normalized.geminiInspire,
-    geminiDiagnostics: normalized.geminiDiagnostics,
-    geminiRawPayload: normalized.geminiRawPayload,
     nearbyAltNames: normalized.nearbyAltNames,
     longRangePool: normalized.longRangePool,
   });

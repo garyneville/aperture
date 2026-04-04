@@ -7,7 +7,15 @@
 
 export type {
   BriefContext,
+  EditorialCandidatePayload,
+  EditorialGatewayOutcome,
+  EditorialGatewayParseState,
+  EditorialGatewayPayload,
+  EditorialGatewayResult,
+  EditorialParseResult,
+  GeminiEditorialGatewayResult,
   LongRangeSpurCandidate,
+  GroqEditorialGatewayResult,
   ResolveEditorialInput,
   ResolveEditorialOutput,
 } from '../domain/editorial/resolution/resolve-editorial.js';

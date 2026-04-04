@@ -16,6 +16,7 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { finalizeBrief } from './finalize-brief.js';
+import { buildEditorialGatewayPayload } from './editorial-gateway.js';
 import type { RawEditorialInput, FinalizeConfig } from './finalize-brief-contracts.js';
 
 interface FixtureFile {
@@ -23,7 +24,7 @@ interface FixtureFile {
   context: RawEditorialInput['context'];
 
   /** Groq response choices */
-  groqChoices?: RawEditorialInput['groqChoices'];
+  groqChoices?: Array<{ message?: { content?: string } }>;
 
   /** Gemini response text */
   geminiResponse?: string;
@@ -96,8 +97,10 @@ Fixture format:
     // Build raw input
     const rawInput: RawEditorialInput = {
       context: fixture.context,
-      groqChoices: fixture.groqChoices,
-      geminiResponse: fixture.geminiResponse,
+      editorialGateway: buildEditorialGatewayPayload({
+        groqRawText: fixture.groqChoices?.[0]?.message?.content,
+        geminiRawText: fixture.geminiResponse,
+      }),
       geminiInspire: fixture.geminiInspire,
     };
 

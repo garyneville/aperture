@@ -157,6 +157,39 @@ export type EditorialCandidatePayload = {
   weekStandoutRawValue: string | null;
 };
 
+export type EditorialGatewayParseState = EditorialParseResult | 'empty';
+
+export type EditorialGatewayOutcome = 'ready' | 'empty' | 'malformed' | 'unusable';
+
+type EditorialGatewayBase = {
+  rawText: string;
+  normalizedText: string;
+  outcome: EditorialGatewayOutcome;
+  parseResult: EditorialGatewayParseState;
+  parsedResponse: EditorialCandidatePayload | null;
+  apiCallStatus?: DebugApiCallStatus;
+};
+
+export type GroqEditorialGatewayResult = EditorialGatewayBase & {
+  provider: 'groq';
+  diagnostics?: DebugGroqDiagnostics;
+};
+
+export type GeminiEditorialGatewayResult = EditorialGatewayBase & {
+  provider: 'gemini';
+  diagnostics?: DebugGeminiDiagnostics;
+  rawPayload?: string;
+};
+
+export type EditorialGatewayResult =
+  | GroqEditorialGatewayResult
+  | GeminiEditorialGatewayResult;
+
+export type EditorialGatewayPayload = {
+  groq: GroqEditorialGatewayResult;
+  gemini: GeminiEditorialGatewayResult;
+};
+
 /**
  * @deprecated Use EditorialCandidatePayload instead. This type will be removed in a future release.
  */
@@ -190,15 +223,10 @@ export type WeekStandoutResolution = {
 export type ResolveEditorialInput = {
   preferredProvider: EditorialProvider;
   ctx: BriefContext;
-  groqRawContent: string;
-  geminiRawContent: string;
+  editorialGateway: EditorialGatewayPayload;
   geminiInspire?: string;
-  geminiDiagnostics?: DebugGeminiDiagnostics;
-  groqDiagnostics?: DebugGroqDiagnostics;
-  geminiRawPayload?: string;
   nearbyAltNames?: string[];
   longRangePool?: LongRangeSpurCandidate[];
-  apiCallStatuses?: DebugApiCallStatus[];
 };
 
 export type ResolveEditorialOutput = {

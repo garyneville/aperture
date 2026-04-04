@@ -19,7 +19,12 @@ import {
   getPhotoWeatherLon,
   getPhotoWeatherTimezone,
 } from '../../config.js';
-import { finalizeBrief, extractGeminiDiagnostics } from '../../app/run-photo-brief/finalize-brief.js';
+import { finalizeBrief } from '../../app/run-photo-brief/finalize-brief.js';
+import {
+  buildEditorialGatewayPayload,
+  extractGeminiDiagnostics,
+  extractGroqDiagnostics,
+} from '../../app/run-photo-brief/editorial-gateway.js';
 import type { DebugGeminiDiagnostics } from '../../contracts/index.js';
 import type { FinalRuntimePayload } from './contracts/final-runtime-payload.js';
 import { firstInputJson } from './input.js';
@@ -34,6 +39,7 @@ function stringList(value: unknown): string[] | undefined {
 export function run({ $input }: N8nRuntime) {
   // Read raw input from n8n
   const input = firstInputJson($input, {} as FinalRuntimePayload);
+  const looseInput = input as Record<string, unknown>;
 
   // Build config from n8n environment
   const config = {
@@ -79,14 +85,27 @@ export function run({ $input }: N8nRuntime) {
       geminiThoughtsTokenCount: input.geminiThoughtsTokenCount,
     });
 
+  const groqDiagnostics = extractGroqDiagnostics({
+    groqStatusCode: looseInput.groqStatusCode,
+    groqResponseByteLength: looseInput.groqResponseByteLength,
+    groqRetryAfter: looseInput.groqRetryAfter,
+  });
+
+  const groqRawText = typeof input.choices?.[0]?.message?.content === 'string'
+    ? input.choices[0].message.content
+    : undefined;
+
   // Build raw editorial input
   const rawInput = {
     context: input,
-    groqChoices: input.choices,
-    geminiResponse: typeof input.geminiResponse === 'string' ? input.geminiResponse : undefined,
-    geminiRawPayload: typeof input.geminiRawPayload === 'string' ? input.geminiRawPayload : undefined,
+    editorialGateway: buildEditorialGatewayPayload({
+      groqRawText,
+      geminiRawText: typeof input.geminiResponse === 'string' ? input.geminiResponse : undefined,
+      geminiRawPayload: typeof input.geminiRawPayload === 'string' ? input.geminiRawPayload : undefined,
+      geminiDiagnostics,
+      groqDiagnostics,
+    }),
     geminiInspire: typeof input.geminiInspire === 'string' ? input.geminiInspire : undefined,
-    geminiDiagnostics,
     nearbyAltNames: undefined, // Will be extracted from context
     longRangePool: undefined, // Will be extracted from context
   };

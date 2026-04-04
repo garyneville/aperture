@@ -15,8 +15,7 @@ import type { EditorialDecision } from './contracts.js';
 import type {
   BriefJson,
   DebugContext,
-  DebugGeminiDiagnostics,
-  DebugGroqDiagnostics,
+  EditorialGatewayPayload,
   ScoredForecastContext,
   LongRangeSpurCandidate,
 } from '../../contracts/index.js';
@@ -40,30 +39,18 @@ export type FinalizeRuntimeContext = Omit<ScoredForecastContext, 'debugContext'>
 
 /**
  * Raw editorial inputs from AI providers.
- * This is the boundary payload that crosses from the runtime (n8n, CLI, etc.)
- * into the application layer.
+ * This is the stable boundary payload that crosses from the runtime (n8n, CLI, etc.)
+ * into the application layer after transport-specific extraction has already happened.
  */
 export type RawEditorialInput = {
   /** Scored runtime context used for both editorial resolution and rendering. */
   context: FinalizeRuntimeContext;
 
-  /** Groq API response choices */
-  groqChoices?: Array<{ message?: { content?: string } }>;
-
-  /** Gemini raw text response */
-  geminiResponse?: string;
-
-  /** Gemini raw payload (for debugging) */
-  geminiRawPayload?: string;
+  /** Stable editorial gateway payload built at the runtime edge. */
+  editorialGateway: EditorialGatewayPayload;
 
   /** Gemini inspire text (optional creative addition) */
   geminiInspire?: string;
-
-  /** Gemini diagnostics for debug tracing */
-  geminiDiagnostics?: DebugGeminiDiagnostics;
-
-  /** Groq diagnostics for debug tracing */
-  groqDiagnostics?: DebugGroqDiagnostics;
 
   /** Nearby alternative location names for spur suggestion filtering */
   nearbyAltNames?: string[];
@@ -79,23 +66,11 @@ export type NormalizedEditorialInput = {
   /** The final runtime context (minus diagnostic fields) */
   context: FinalizeRuntimeContext;
 
-  /** Raw Groq response content */
-  groqRawContent: string;
-
-  /** Raw Gemini response content */
-  geminiRawContent: string;
+  /** Stable editorial gateway payload */
+  editorialGateway: EditorialGatewayPayload;
 
   /** Optional Gemini inspire text */
   geminiInspire?: string;
-
-  /** Optional Gemini raw payload for debugging */
-  geminiRawPayload?: string;
-
-  /** Optional Gemini diagnostics */
-  geminiDiagnostics?: DebugGeminiDiagnostics;
-
-  /** Optional Groq diagnostics */
-  groqDiagnostics?: DebugGroqDiagnostics;
 
   /** Nearby alternative names for spur filtering */
   nearbyAltNames: string[];

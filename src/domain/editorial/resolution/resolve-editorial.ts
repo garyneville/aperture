@@ -11,7 +11,6 @@
  * Heavy logic has been extracted to focused modules.
  */
 
-import type { DebugGeminiDiagnostics, DebugGroqDiagnostics, DebugApiCallStatus } from '../../../lib/debug-context.js';
 import { normalizeAiText, parseEditorialResponse, parseGroqResponse } from './parse.js';
 import type {
   BriefContext,
@@ -33,9 +32,15 @@ import { resolveEditorialComponents } from './resolve-components.js';
 // Re-exports for consumers
 export type {
   BriefContext,
+  EditorialGatewayOutcome,
+  EditorialGatewayParseState,
+  EditorialGatewayPayload,
+  EditorialGatewayResult,
   EditorialCandidatePayload,
   EditorialModelResponse,
   EditorialParseResult,
+  GeminiEditorialGatewayResult,
+  GroqEditorialGatewayResult,
   LongRangeSpurCandidate,
   ResolveEditorialInput,
   ResolveEditorialOutput,
@@ -75,23 +80,19 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   const {
     preferredProvider,
     ctx,
-    groqRawContent,
-    geminiRawContent,
+    editorialGateway,
     geminiInspire,
-    geminiDiagnostics,
-    groqDiagnostics,
-    geminiRawPayload,
     nearbyAltNames = [],
     longRangePool = [],
-    apiCallStatuses,
   } = input;
+  const groqResponse = editorialGateway.groq;
+  const geminiResponse = editorialGateway.gemini;
 
   // Step 1: Select best candidate from provider responses
   const selection = chooseEditorialCandidate(
     preferredProvider,
     ctx,
-    groqRawContent,
-    geminiRawContent,
+    editorialGateway,
   );
 
   // Determine secondary provider for rejection summarization
@@ -119,26 +120,22 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     : undefined;
 
   // Step 6: Calculate rejection reasons
-  const primaryRawContent = preferredProvider === 'gemini' ? geminiRawContent : groqRawContent;
-  const secondaryRawContent = secondaryProvider === 'gemini' ? geminiRawContent : groqRawContent;
+  const primaryResponse = editorialGateway[preferredProvider];
+  const secondaryResponse = editorialGateway[secondaryProvider];
 
   const primaryRejectionReason = selection.selectedProvider === preferredProvider
     ? null
     : summarizeCandidateRejection(
-        preferredProvider,
-        primaryRawContent,
+        primaryResponse,
         selection.primaryCandidate,
-        preferredProvider === 'gemini' ? geminiDiagnostics : undefined,
       );
 
   const secondaryRejectionReason = selection.selectedProvider === secondaryProvider
     ? null
     : selection.selectedProvider === 'template'
       ? summarizeCandidateRejection(
-          secondaryProvider,
-          secondaryRawContent,
+          secondaryResponse,
           selection.secondaryCandidate,
-          secondaryProvider === 'gemini' ? geminiDiagnostics : undefined,
         )
       : null;
 
@@ -146,11 +143,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   const debugAiTrace = buildDebugAiTrace({
     selection,
     finalAiText: aiText,
-    groqRawContent,
-    geminiRawContent,
-    geminiRawPayload,
-    geminiDiagnostics,
-    groqDiagnostics,
+    editorialGateway,
     primaryRejectionReason,
     secondaryRejectionReason,
     bestSpurRaw: resolvedComponents.bestSpurRaw,
@@ -160,7 +153,6 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
     resolvedCompositionBullets: resolvedComponents.compositionBullets,
     weekStandout: resolvedComponents.weekStandout,
     componentCandidate,
-    apiCallStatuses,
   });
 
   // Return final editorial decision
@@ -174,9 +166,9 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       weekInsight: resolvedComponents.weekStandout.text,
       spurOfTheMoment: resolvedComponents.spurOfTheMoment,
       geminiInspire: safeGeminiInspire,
-      rawGroqResponse: groqRawContent || undefined,
-      rawGeminiResponse: geminiRawContent || undefined,
-      rawGeminiPayload: geminiRawPayload,
+      rawGroqResponse: groqResponse.rawText || undefined,
+      rawGeminiResponse: geminiResponse.rawText || undefined,
+      rawGeminiPayload: geminiResponse.rawPayload,
     },
     debugAiTrace,
   };
