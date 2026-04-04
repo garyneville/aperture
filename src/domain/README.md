@@ -48,6 +48,9 @@ This folder contains the business logic for weather scoring and editorial genera
 - `prompt/build-prompt.ts`
   Builds the AI provider prompt from scored forecast context.
 
+- `prompt/sections/prompt-blocks.ts`
+  Shared prompt block builders for response contracts, spur instructions, and week standout text.
+
 - `resolution/resolve-editorial.ts`
   Orchestrates provider choice, response validation, fallback selection, and debug trace output.
 
