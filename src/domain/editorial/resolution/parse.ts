@@ -2,18 +2,15 @@ import { splitAiSentences } from '../ai-briefing.js';
 import type { WeekStandoutParseStatus } from '../../../lib/debug-context.js';
 import type {
   EditorialCandidatePayload,
+  EditorialCandidatePayloadWithCompat,
   EditorialModelResponse,
   EditorialParseResult,
   SpurRaw,
 } from './types.js';
 
 /**
- * Convert new provider-neutral parse result to legacy weekStandoutParseStatus.
+ * Convert provider-neutral parse result to legacy weekStandoutParseStatus.
  * @deprecated This is for backward compatibility only. Use parseResult directly.
- *
- * Note: For backward compatibility with the original parseGroqResponse behavior,
- * both 'malformed-structured' and 'raw-text-only' return 'parse-failure'.
- * Only 'valid-structured' differentiates between present/absent.
  */
 function toWeekStandoutParseStatus(
   parseResult: EditorialParseResult,
@@ -114,7 +111,6 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
         weekInsight: weekStandoutRawValue ?? '',
         spurRaw,
         parseResult,
-        weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, weekStandoutRawValue !== null),
         weekStandoutRawValue,
       };
     }
@@ -128,7 +124,6 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
       weekInsight: '',
       spurRaw: null,
       parseResult,
-      weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false),
       weekStandoutRawValue: null,
     };
   }
@@ -142,8 +137,25 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
     weekInsight: '',
     spurRaw: null,
     parseResult,
-    weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false),
     weekStandoutRawValue: null,
+  };
+}
+
+/**
+ * Parse an editorial response with backward compatibility fields.
+ * Use this at adapter boundaries where legacy code expects weekStandoutParseStatus.
+ *
+ * @deprecated Use parseEditorialResponse for new code. This is for boundary compatibility only.
+ */
+export function parseEditorialResponseWithCompat(rawContent: string): EditorialCandidatePayloadWithCompat {
+  const base = parseEditorialResponse(rawContent);
+
+  return {
+    ...base,
+    weekStandoutParseStatus: toWeekStandoutParseStatus(
+      base.parseResult,
+      base.weekStandoutRawValue !== null,
+    ),
   };
 }
 
@@ -151,3 +163,8 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
  * @deprecated Use parseEditorialResponse instead. This function is kept for backward compatibility.
  */
 export const parseGroqResponse = parseEditorialResponse;
+
+/**
+ * @deprecated Use parseEditorialResponseWithCompat instead. This function is kept for backward compatibility.
+ */
+export const parseGroqResponseWithCompat = parseEditorialResponseWithCompat;

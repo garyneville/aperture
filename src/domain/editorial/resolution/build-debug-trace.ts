@@ -5,7 +5,11 @@
  * Captures provider responses, validation results, and component resolution.
  */
 
-import type { DebugAiTrace, DebugGeminiDiagnostics, DebugGroqDiagnostics } from '../../../lib/debug-context.js';
+import type {
+  DebugAiTrace,
+  DebugPrimaryDiagnostics,
+  DebugFallbackDiagnostics,
+} from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
 import type {
   EditorialGatewayPayload,
@@ -138,8 +142,8 @@ export interface BuildDebugTraceInput {
  * @returns Complete debug AI trace object
  */
 export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
-  const geminiDiagnostics = input.editorialGateway.gemini.diagnostics as DebugGeminiDiagnostics | undefined;
-  const groqDiagnostics = input.editorialGateway.groq.diagnostics as DebugGroqDiagnostics | undefined;
+  const primaryDiagnostics = input.editorialGateway.gemini.diagnostics as DebugPrimaryDiagnostics | undefined;
+  const fallbackDiagnostics = input.editorialGateway.groq.diagnostics as DebugFallbackDiagnostics | undefined;
   const apiCallStatuses = [
     input.editorialGateway.groq.apiCallStatus,
     input.editorialGateway.gemini.apiCallStatus,
@@ -184,16 +188,30 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     && input.selection.selectedProvider !== input.selection.primaryProvider
     && input.selection.selectedProvider !== 'template';
 
+  // Raw responses mapped to slot roles
+  const rawFallbackResponse = input.editorialGateway.groq.rawText;
+  const rawPrimaryResponse = input.editorialGateway.gemini.rawText;
+  const rawPrimaryPayload = input.editorialGateway.gemini.rawPayload;
+
   return {
+    // Slot role based fields (new)
     primaryProvider: input.selection.primaryProvider,
     selectedProvider: input.selection.selectedProvider,
     primaryRejectionReason: input.primaryRejectionReason,
     secondaryRejectionReason: input.secondaryRejectionReason,
-    rawGroqResponse: input.editorialGateway.groq.rawText,
-    rawGeminiResponse: input.editorialGateway.gemini.rawText,
-    rawGeminiPayload: input.editorialGateway.gemini.rawPayload,
-    geminiDiagnostics,
-    groqDiagnostics,
+    rawFallbackResponse,
+    rawPrimaryResponse,
+    rawPrimaryPayload,
+    primaryDiagnostics,
+    fallbackDiagnostics,
+
+    // Legacy field names (for backward compatibility)
+    rawGroqResponse: rawFallbackResponse,
+    rawGeminiResponse: rawPrimaryResponse,
+    rawGeminiPayload: rawPrimaryPayload,
+    geminiDiagnostics: primaryDiagnostics,
+    groqDiagnostics: fallbackDiagnostics,
+
     apiCallStatuses: apiCallStatuses.length > 0 ? apiCallStatuses : undefined,
     normalizedAiText: traceCandidate?.normalizedAiText || '',
     factualCheck: traceCandidate?.factualCheck || {
