@@ -15,13 +15,16 @@ This folder contains the canonical orchestration spine for the photo brief appli
   `runPhotoBrief(deps)` — Main entry point for the full pipeline. Accepts injected dependencies for all stages, times execution, and returns the complete run artifact.
 
 - [`finalize-brief.ts`](./finalize-brief.ts)
-  `finalizeBrief(input, config)` — Assembles the final brief from scored forecast data and AI provider responses. This is the use case that bridges domain logic (editorial resolution) with presentation (rendering outputs). Called by the n8n adapter and the CLI runner.
+  `finalizeBrief(input, config)` — Assembles the final brief from scored forecast data and a stable `editorialGateway` payload. This is the use case that bridges domain logic (editorial resolution) with presentation (rendering outputs). Called by the n8n adapter and the CLI runner.
 
 - [`contracts.ts`](./contracts.ts)
   Type definitions for the main use case: `StandaloneRunnerDependencies`, `StandaloneBriefRun`, `ForecastBundle`, `EditorialRequest`, `EditorialDecision`, `RenderedOutputs`, and stage types.
 
 - [`finalize-brief-contracts.ts`](./finalize-brief-contracts.ts)
-  Type definitions for the finalize-brief use case: `RawEditorialInput`, `FinalizeConfig`, `FinalizedBrief`.
+  Type definitions for the finalize-brief use case: `RawEditorialInput`, `FinalizeConfig`, `FinalizedBrief`, and the stable `editorialGateway` boundary.
+
+- [`editorial-gateway.ts`](./editorial-gateway.ts)
+  Edge helpers for building `editorialGateway` provider results from runtime payloads, plus loose Gemini/Groq diagnostics extraction.
 
 ## Main Files / Module Map
 
@@ -36,7 +39,7 @@ This folder contains the canonical orchestration spine for the photo brief appli
 
 - `finalize-brief.ts`
   The "finalize brief" use case. Orchestrates the final assembly of the brief:
-  1. **normalize** — Parse AI provider responses
+  1. **normalize** — Apply shared defaults to the edge-built editorial gateway payload
   2. **prepare** — Set up debug context
   3. **resolve** — Resolve editorial with fallbacks
   4. **hydrate** — Add debug trace information
@@ -48,6 +51,9 @@ This folder contains the canonical orchestration spine for the photo brief appli
 
 - `finalize-brief-contracts.ts`
   Type contracts for the finalize-brief use case.
+
+- `editorial-gateway.ts`
+  Runtime-edge seam for turning provider transport output into a stable payload with raw text, normalized editorial text, parse/outcome state, raw payload, diagnostics, and API status metadata.
 
 - `finalize-brief-cli.ts`
   CLI runner that demonstrates running the finalize-brief use case without n8n. Loads a fixture file and runs the use case.
@@ -63,10 +69,10 @@ This folder contains the canonical orchestration spine for the photo brief appli
 
 - `finalize-brief.test.ts`
   Unit tests for the finalize-brief use case. Tests the runtime-independent seam including:
-  - Input normalization from AI providers
+  - Consumption of the stable `editorialGateway` payload
   - Debug context preparation and hydration
   - Output rendering orchestration
-  - Gemini diagnostics extraction
+  - Gateway result building and Gemini diagnostics extraction
 
 ## Dependency Rules
 
@@ -132,6 +138,10 @@ Create a JSON file with this structure:
 }
 ```
 
+The CLI fixture format stays transport-shaped for convenience. The CLI converts
+those raw fields into the stable `editorialGateway` payload before calling
+`finalizeBrief()`.
+
 `BriefContext` is still the narrower editorial-domain contract. The
 `finalizeBrief()` seam expects `FinalizeRuntimeContext`, because it renders the
 final brief as well as resolving editorial.
@@ -147,8 +157,9 @@ The core logic in `src/app/run-photo-brief/` can be invoked from:
 - **Test harness** — direct function calls with fixtures
 
 Both the n8n adapter and the CLI use the same `finalizeBrief()` seam. That keeps
-debug-context hydration, AI normalization, and rendering orchestration in one
-place instead of duplicating those steps across runtimes.
+debug-context hydration, editorial resolution, and rendering orchestration in one
+place. Runtime-specific provider extraction now happens in `editorial-gateway.ts`
+at the edge instead of inside `finalizeBrief()`.
 
 ## Data In / Data Out
 

@@ -130,7 +130,7 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
     weekInsight: '',
     spurRaw: null,
     parseResult,
-    weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false, lookedLikeJson),
+    weekStandoutParseStatus: toWeekStandoutParseStatus(parseResult, false),
     weekStandoutRawValue: null,
   };
 }

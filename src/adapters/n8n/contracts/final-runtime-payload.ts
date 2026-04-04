@@ -25,6 +25,9 @@ export type GeminiDiagnosticsFields = {
   geminiCandidatesTokenCount?: unknown;
   geminiTotalTokenCount?: unknown;
   geminiThoughtsTokenCount?: unknown;
+  groqStatusCode?: unknown;
+  groqResponseByteLength?: unknown;
+  groqRetryAfter?: unknown;
 };
 
 export type EditorialBoundaryPayload = FinalizeRuntimeContext & GeminiDiagnosticsFields & {

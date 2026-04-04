@@ -9,8 +9,19 @@ import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.j
 import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
 import { filterCompositionBullets } from './composition.js';
 import { normalizeAiText, parseEditorialResponse } from './parse.js';
-import type { BriefContext, EditorialCandidate } from './types.js';
+import type {
+  BriefContext,
+  EditorialCandidate,
+  EditorialGatewayPayload,
+  EditorialGatewayResult,
+} from './types.js';
 import { getEditorialCheck, getFactualCheck } from './validation.js';
+
+function getGeminiDiagnostics(
+  response: EditorialGatewayResult,
+): DebugGeminiDiagnostics | undefined {
+  return response.provider === 'gemini' ? response.diagnostics : undefined;
+}
 
 /**
  * Build an editorial candidate from raw provider response.
@@ -21,20 +32,19 @@ import { getEditorialCheck, getFactualCheck } from './validation.js';
  * @returns Editorial candidate or null if no content
  */
 export function buildEditorialCandidate(
-  provider: EditorialProvider,
-  rawContent: string,
+  response: EditorialGatewayResult,
   ctx: BriefContext,
 ): EditorialCandidate | null {
-  if (!rawContent.trim()) return null;
+  if (response.outcome === 'empty' || !response.normalizedText.trim()) return null;
 
-  const parsed = parseEditorialResponse(rawContent);
-  const normalizedAiText = normalizeAiText(parsed.editorial);
+  const parsed = response.parsedResponse ?? parseEditorialResponse(response.rawText);
+  const normalizedAiText = normalizeAiText(response.normalizedText);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
 
   return {
-    provider,
-    rawContent,
+    provider: response.provider,
+    rawContent: response.rawText,
     editorial: parsed.editorial,
     compositionBullets: parsed.compositionBullets,
     weekInsight: parsed.weekInsight,
@@ -45,7 +55,7 @@ export function buildEditorialCandidate(
     factualCheck,
     editorialCheck,
     passed: factualCheck.passed && editorialCheck.passed,
-    reusableComponents: parsed.parseResult !== 'malformed-structured',
+    reusableComponents: response.outcome !== 'malformed',
   };
 }
 
@@ -81,12 +91,11 @@ export interface CandidateSelectionResult {
 export function chooseEditorialCandidate(
   preferredProvider: EditorialProvider,
   ctx: BriefContext,
-  groqRawContent: string,
-  geminiRawContent: string,
+  editorialGateway: EditorialGatewayPayload,
 ): CandidateSelectionResult {
   const candidates: Record<EditorialProvider, EditorialCandidate | null> = {
-    groq: buildEditorialCandidate('groq', groqRawContent, ctx),
-    gemini: buildEditorialCandidate('gemini', geminiRawContent, ctx),
+    groq: buildEditorialCandidate(editorialGateway.groq, ctx),
+    gemini: buildEditorialCandidate(editorialGateway.gemini, ctx),
   };
 
   const secondaryProvider: EditorialProvider = preferredProvider === 'groq' ? 'gemini' : 'groq';
@@ -129,12 +138,13 @@ export function chooseEditorialCandidate(
  * @returns Rejection reason string or null
  */
 export function summarizeCandidateRejection(
-  provider: EditorialProvider,
-  rawContent: string,
+  response: EditorialGatewayResult,
   candidate: EditorialCandidate | null,
-  geminiDiagnostics?: DebugGeminiDiagnostics,
 ): string | null {
   const reasons: string[] = [];
+  const rawContent = response.rawText;
+  const provider = response.provider;
+  const geminiDiagnostics = getGeminiDiagnostics(response);
 
   // Empty response
   if (!rawContent.trim()) {
@@ -155,7 +165,7 @@ export function summarizeCandidateRejection(
     } else {
       reasons.push('empty response body');
     }
-  } else if (candidate && candidate.editorial === rawContent) {
+  } else if (response.outcome === 'malformed' || (candidate && candidate.editorial === rawContent)) {
     // Raw content wasn't parsed properly
     if (provider === 'gemini' && geminiDiagnostics?.statusCode !== null && geminiDiagnostics?.statusCode !== undefined) {
       reasons.push(`HTTP ${geminiDiagnostics.statusCode} — response received (${geminiDiagnostics.responseByteLength ?? '?'} bytes) but editorial field absent or unparseable`);

@@ -17,8 +17,11 @@ This folder is the runtime boundary between the application and n8n code nodes.
 
 `format-messages.adapter.ts` is the single live finalization bridge. It maps n8n
 payload/config into `finalizeBrief(...)` and returns the rendered outputs for
-downstream workflow nodes. Finalization orchestration does not live in
-adapter-only helper modules anymore.
+downstream workflow nodes. It is also the transport edge for editorial output:
+the adapter extracts raw provider text/diagnostics from the workflow payload,
+builds the stable `editorialGateway` contract, then hands that to the app
+layer. Finalization orchestration does not live in adapter-only helper modules
+anymore.
 
 ## What not to edit casually
 

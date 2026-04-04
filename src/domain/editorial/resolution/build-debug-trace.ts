@@ -7,7 +7,7 @@
 
 import type { DebugAiTrace, DebugGeminiDiagnostics, DebugGroqDiagnostics } from '../../../lib/debug-context.js';
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
-import type { WeekStandoutResolution } from './types.js';
+import type { EditorialGatewayPayload, WeekStandoutResolution } from './types.js';
 import type { CandidateSelectionResult } from './candidate-selection.js';
 
 /**
@@ -95,16 +95,8 @@ export interface BuildDebugTraceInput {
   selection: CandidateSelectionResult;
   /** The final AI text used */
   finalAiText: string;
-  /** Groq raw response content */
-  groqRawContent: string;
-  /** Gemini raw response content */
-  geminiRawContent: string;
-  /** Gemini raw payload for debugging */
-  geminiRawPayload?: string;
-  /** Gemini diagnostics */
-  geminiDiagnostics?: DebugGeminiDiagnostics;
-  /** Groq diagnostics */
-  groqDiagnostics?: DebugGroqDiagnostics;
+  /** Provider gateway payload built at the runtime edge */
+  editorialGateway: EditorialGatewayPayload;
   /** Primary rejection reason or null */
   primaryRejectionReason: string | null;
   /** Secondary rejection reason or null */
@@ -123,8 +115,6 @@ export interface BuildDebugTraceInput {
   weekStandout: WeekStandoutResolution;
   /** Component candidate for parse status */
   componentCandidate: { weekStandoutParseStatus?: string; weekStandoutRawValue?: string | null } | null;
-  /** API call statuses for both providers */
-  apiCallStatuses?: DebugAiTrace['apiCallStatuses'];
 }
 
 /**
@@ -134,6 +124,13 @@ export interface BuildDebugTraceInput {
  * @returns Complete debug AI trace object
  */
 export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
+  const geminiDiagnostics = input.editorialGateway.gemini.diagnostics as DebugGeminiDiagnostics | undefined;
+  const groqDiagnostics = input.editorialGateway.groq.diagnostics as DebugGroqDiagnostics | undefined;
+  const apiCallStatuses = [
+    input.editorialGateway.groq.apiCallStatus,
+    input.editorialGateway.gemini.apiCallStatus,
+  ].filter((status): status is NonNullable<typeof status> => Boolean(status));
+
   // Find the trace candidate (for validation results)
   const traceCandidate = input.selection.selectedCandidate
     || input.selection.componentCandidate
@@ -178,12 +175,12 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     selectedProvider: input.selection.selectedProvider,
     primaryRejectionReason: input.primaryRejectionReason,
     secondaryRejectionReason: input.secondaryRejectionReason,
-    rawGroqResponse: input.groqRawContent,
-    rawGeminiResponse: input.geminiRawContent || undefined,
-    rawGeminiPayload: input.geminiRawPayload,
-    geminiDiagnostics: input.geminiDiagnostics,
-    groqDiagnostics: input.groqDiagnostics,
-    apiCallStatuses: input.apiCallStatuses,
+    rawGroqResponse: input.editorialGateway.groq.rawText,
+    rawGeminiResponse: input.editorialGateway.gemini.rawText || undefined,
+    rawGeminiPayload: input.editorialGateway.gemini.rawPayload,
+    geminiDiagnostics,
+    groqDiagnostics,
+    apiCallStatuses: apiCallStatuses.length > 0 ? apiCallStatuses : undefined,
     normalizedAiText: traceCandidate?.normalizedAiText || '',
     factualCheck: traceCandidate?.factualCheck || {
       passed: false,

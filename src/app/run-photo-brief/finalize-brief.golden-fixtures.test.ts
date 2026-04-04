@@ -10,9 +10,10 @@
  * Part of Phase 0 — Baseline and guardrails (Issue #169)
  */
 
-import { describe, expect, it, beforeAll } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { finalizeBrief } from './finalize-brief.js';
 import type { FinalizeConfig, RawEditorialInput, FinalizeRuntimeContext } from './finalize-brief-contracts.js';
+import { buildEditorialGatewayPayload } from './editorial-gateway.js';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -26,18 +27,48 @@ const FIXTURES_DIR = join(__dirname, '../../../fixtures/golden');
 /**
  * Load a golden fixture file
  */
-function loadFixture(name: string): RawEditorialInput & { scenario: string; description: string } {
+type GoldenFixtureFile = {
+  scenario: string;
+  description: string;
+  context: FinalizeRuntimeContext;
+  groqChoices?: Array<{ message?: { content?: string } }>;
+  geminiResponse?: string;
+  geminiRawPayload?: string;
+  geminiInspire?: string;
+  preferredProvider?: string;
+  homeLocation?: {
+    name?: string;
+    lat?: number;
+    lon?: number;
+    timezone?: string;
+  };
+  debug?: {
+    enabled?: boolean;
+    emailTo?: string;
+  };
+};
+
+function loadFixture(name: string): RawEditorialInput & GoldenFixtureFile {
   const path = join(FIXTURES_DIR, `${name}.json`);
   const content = readFileSync(path, 'utf-8');
-  return JSON.parse(content);
+  const fixture = JSON.parse(content) as GoldenFixtureFile;
+
+  return {
+    ...fixture,
+    editorialGateway: buildEditorialGatewayPayload({
+      groqRawText: fixture.groqChoices?.[0]?.message?.content,
+      geminiRawText: fixture.geminiResponse,
+      geminiRawPayload: fixture.geminiRawPayload,
+    }),
+  };
 }
 
 /**
  * Create base config from fixture data
  */
-function createConfigFromFixture(fixture: RawEditorialInput & { preferredProvider?: string }): FinalizeConfig {
+function createConfigFromFixture(fixture: GoldenFixtureFile): FinalizeConfig {
   return {
-    preferredProvider: fixture.preferredProvider || 'groq',
+    preferredProvider: fixture.preferredProvider === 'gemini' ? 'gemini' : 'groq',
     homeLocation: {
       name: fixture.homeLocation?.name || 'Test Location',
       lat: fixture.homeLocation?.lat ?? 53.8,
@@ -133,7 +164,7 @@ describe('Golden Fixtures - finalizeBrief E2E', () => {
     });
 
     it('should have low headline score in context', () => {
-      expect(result.briefJson.headline?.score).toBeLessThan(40);
+      expect(result.briefJson.todayBestScore).toBeLessThan(40);
     });
 
     it('should have debug context with fallbackUsed false', () => {
@@ -349,25 +380,24 @@ describe('Golden Fixtures - briefJson Snapshot Assertions', () => {
     const json = result.briefJson;
 
     it('should have all required top-level fields', () => {
-      expect(json.headline).toBeDefined();
       expect(json.windows).toBeDefined();
       expect(json.altLocations).toBeDefined();
       expect(json.aiText).toBeDefined();
       expect(json.compositionBullets).toBeDefined();
-      expect(json.spurOfTheMoment).toBeDefined();
       expect(json.weekInsight).toBeDefined();
       expect(json.dontBother).toBeDefined();
-      expect(json.sunTimes).toBeDefined();
-      expect(json.moon).toBeDefined();
-      expect(json.carWash).toBeDefined();
+      expect(json.todayCarWash).toBeDefined();
+      expect(json.sunriseStr).toBeDefined();
+      expect(json.sunsetStr).toBeDefined();
+      expect(json.moonPct).toBeDefined();
       expect(json.location).toBeDefined();
       expect(json.generatedAt).toBeDefined();
     });
 
-    it('should have correct headline structure', () => {
-      expect(json.headline?.score).toBe(78);
-      expect(json.headline?.label).toBeDefined();
-      expect(json.headline?.emoji).toBeDefined();
+    it('should have correct top-level scoring structure', () => {
+      expect(json.todayBestScore).toBe(78);
+      expect(json.dailySummary[0]?.photoScore).toBe(78);
+      expect(json.dailySummary[0]?.dayLabel).toBe('Today');
     });
 
     it('should have correct window structure', () => {
@@ -384,18 +414,19 @@ describe('Golden Fixtures - briefJson Snapshot Assertions', () => {
       expect(json.altLocations.length).toBeGreaterThan(0);
       const alt = json.altLocations[0];
       expect(alt.name).toBe('Ilkley Moor');
-      expect(alt.score).toBe(82);
+      expect(alt.bestScore).toBe(82);
       expect(alt.driveMins).toBe(25);
     });
 
-    it('should have correct sunTimes structure', () => {
-      expect(json.sunTimes?.sunrise).toBe('06:15');
-      expect(json.sunTimes?.sunset).toBe('19:45');
+    it('should have correct sun timing structure', () => {
+      expect(json.sunriseStr).toBe('06:15');
+      expect(json.sunsetStr).toBe('19:45');
     });
 
-    it('should have correct moon structure', () => {
-      expect(json.moon?.illuminationPct).toBeDefined();
-      expect(json.moon?.phase).toBeDefined();
+    it('should have correct moon and car-wash structure', () => {
+      expect(json.moonPct).toBeDefined();
+      expect(json.todayCarWash.score).toBeDefined();
+      expect(json.todayCarWash.label).toBeDefined();
     });
   });
 
@@ -418,7 +449,7 @@ describe('Golden Fixtures - briefJson Snapshot Assertions', () => {
     });
 
     it('should have low headline score', () => {
-      expect(json.headline?.score).toBeLessThan(40);
+      expect(json.todayBestScore).toBeLessThan(40);
     });
   });
 });
