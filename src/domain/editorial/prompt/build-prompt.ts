@@ -4,7 +4,6 @@ import { emptyDebugContext, type DebugContext } from '../../../lib/debug-context
 import type { DarkSkyAlert, LongRangeCandidate, LongRangeDebugCandidate } from '../../scoring/score-long-range.js';
 import type { AuroraSignal } from '../../../lib/aurora-providers.js';
 import {
-  DEFAULT_BRIEF_WORKFLOW_VERSION,
   DEFAULT_HOME_LOCATION,
 } from '../../../lib/home-location.js';
 import type {
@@ -89,7 +88,6 @@ export interface BuildPromptOutput extends ScoredForecastContext {
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const {
     homeLocation = DEFAULT_HOME_LOCATION,
-    workflowVersion = DEFAULT_BRIEF_WORKFLOW_VERSION,
     windows, dontBother, todayBestScore, todayCarWash,
     dailySummary, altLocations, closeContenders, noAltsMsg, metarNote,
     sessionRecommendation,
@@ -119,18 +117,6 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
   const todayDay = dailySummary[0];
   const hasLocalWindow = windows.length > 0;
   const effectiveDontBother = dontBother || !hasLocalWindow;
-
-  debugContext.metadata = {
-    generatedAt: now.toISOString(),
-    location: homeLocation.name,
-    latitude: homeLocation.lat,
-    longitude: homeLocation.lon,
-    timezone: homeLocation.timezone,
-    workflowVersion,
-    debugModeEnabled: false,
-    debugModeSource: null,
-    debugRecipient: null,
-  };
 
   const selectedWindowIsAstro = isAstroWindow(windows[0]);
   let confNote = '';

@@ -823,7 +823,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing"');
   });
 
-  it('uses injected home location metadata when provided', () => {
+  it('uses injected home location in the prompt without populating debug metadata', () => {
     const result = buildPrompt({
       homeLocation: {
         name: 'York',
@@ -848,9 +848,7 @@ describe('buildPrompt', () => {
     });
 
     expect(result.prompt).toContain('Photography assistant for York.');
-    expect(result.debugContext.metadata?.location).toBe('York');
-    expect(result.debugContext.metadata?.latitude).toBe(53.96);
-    expect(result.debugContext.metadata?.workflowVersion).toBe('test-workflow-v2');
+    expect(result.debugContext.metadata).toBeUndefined();
   });
 
   it('does not double-apply DST offset for sunrise/sunset strings (regression)', () => {

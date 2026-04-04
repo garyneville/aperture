@@ -34,7 +34,7 @@ export function prepareDebugContext(
   const debugEmailTo = config.debug.emailTo;
   const debugModeSource =
     config.debug.source.trim().length > 0
-      ? config.debug.source
+      ? config.debug.source.trim()
       : debugMode
         ? 'toggle'
         : 'default';
