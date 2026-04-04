@@ -83,6 +83,7 @@ export function run({ $input }: N8nRuntime) {
       geminiCandidatesTokenCount: input.geminiCandidatesTokenCount,
       geminiTotalTokenCount: input.geminiTotalTokenCount,
       geminiThoughtsTokenCount: input.geminiThoughtsTokenCount,
+      geminiRetryAfter: input.geminiRetryAfter,
     });
 
   const groqDiagnostics = extractGroqDiagnostics({

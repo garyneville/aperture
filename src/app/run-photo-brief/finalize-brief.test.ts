@@ -267,6 +267,7 @@ describe('extractGeminiDiagnostics', () => {
       candidatesTokenCount: 100,
       totalTokenCount: 1100,
       thoughtsTokenCount: 50,
+      retryAfter: null,
     });
   });
 
@@ -279,6 +280,16 @@ describe('extractGeminiDiagnostics', () => {
     expect(result?.statusCode).toBe(500);
     expect(result?.finishReason).toBe('ERROR');
     expect(result?.candidateCount).toBeNull();
+  });
+
+  it('captures retry-after when Gemini exposes it', () => {
+    const result = extractGeminiDiagnostics({
+      geminiStatusCode: 429,
+      geminiRetryAfter: 18,
+    });
+
+    expect(result?.statusCode).toBe(429);
+    expect(result?.retryAfter).toBe(18);
   });
 });
 

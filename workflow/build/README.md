@@ -20,6 +20,13 @@ This folder contains the build-time tooling for generated workflow artifacts.
 - adapter placeholder names in [`assemble.ts`](./assemble.ts)
 - the generated output locations without also updating tests and `package.json` verification scripts
 
+The workflow skeleton now contains a conditional editorial branch:
+
+- `HTTP: Groq` runs first in full-response mode
+- `Code: Inspect Groq Primary` decides whether fallback is required
+- `HTTP: Gemini Fallback` only runs when the primary response is clearly unusable
+- app-layer template fallback remains the final safety net after the workflow edge
+
 ## Tests
 
 - [`../assemble.test.ts`](../assemble.test.ts)

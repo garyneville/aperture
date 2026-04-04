@@ -33,6 +33,7 @@ export const ADAPTERS: Record<string, string> = {
   'prepare-long-range': 'src/adapters/n8n/prepare-long-range.adapter.ts',
   'score-long-range': 'src/adapters/n8n/score-long-range.adapter.ts',
   'build-prompt': 'src/adapters/n8n/build-prompt.adapter.ts',
+  'inspect-groq-primary': 'src/adapters/n8n/inspect-groq-primary.adapter.ts',
   'extract-gemini-fallback': 'src/adapters/n8n/extract-gemini-fallback.adapter.ts',
   'build-inspire-prompt': 'src/adapters/n8n/build-inspire-prompt.adapter.ts',
   'extract-gemini-inspire': 'src/adapters/n8n/extract-gemini-inspire.adapter.ts',

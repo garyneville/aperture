@@ -14,6 +14,7 @@ This folder is the runtime boundary between the application and n8n code nodes.
 - thin data-wrapping nodes such as [`wrap-weather.adapter.ts`](./wrap-weather.adapter.ts)
 - scoring/editorial adapters such as [`score-hours.adapter.ts`](./score-hours.adapter.ts) and [`format-messages.adapter.ts`](./format-messages.adapter.ts)
 - contract helpers under [`contracts/`](./contracts)
+- primary editorial inspection via [`inspect-groq-primary.adapter.ts`](./inspect-groq-primary.adapter.ts)
 
 `format-messages.adapter.ts` is the single live finalization bridge. It maps n8n
 payload/config into `finalizeBrief(...)` and returns the rendered outputs for
@@ -22,6 +23,12 @@ the adapter extracts raw provider text/diagnostics from the workflow payload,
 builds the stable `editorialGateway` contract, then hands that to the app
 layer. Finalization orchestration does not live in adapter-only helper modules
 anymore.
+
+The workflow now inspects the Groq primary response before calling Gemini
+fallback. `inspect-groq-primary.adapter.ts` preserves the Groq `choices`
+payload for finalization, emits transport diagnostics, and flags clearly
+unusable primary results (HTTP error/rate limit, empty content, malformed
+structured output) so the workflow only pays for fallback when it needs to.
 
 ## What not to edit casually
 

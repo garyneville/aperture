@@ -2,6 +2,7 @@ import type { N8nRuntime } from './types.js';
 import { firstInputJson } from './input.js';
 import {
   getHttpResponseBodySource,
+  getHttpRetryAfterSeconds,
   getHttpResponseStatusCode,
   getObjectKeys,
   getUtf8ByteLength,
@@ -96,22 +97,6 @@ function isMalformedJsonText(text: string | null): boolean {
   }
 }
 
-function extractRetryAfter(item: Record<string, unknown>): number | null {
-  // Check common header locations for retry-after
-  const itemError = isRecord(item.error) ? item.error : null;
-  const errorResponse = itemError && isRecord(itemError.response) ? itemError.response : null;
-  const headers = item.headers || itemError?.headers || errorResponse?.headers;
-  if (!isRecord(headers)) return null;
-  
-  const retryAfter = headers['retry-after'] || headers['Retry-After'];
-  if (typeof retryAfter === 'number') return retryAfter;
-  if (typeof retryAfter === 'string') {
-    const parsed = parseInt(retryAfter, 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
 export function extractGeminiFallback(item: Record<string, unknown>): GeminiFallbackExtraction {
   const responseSource = getHttpResponseBodySource(item);
   const payloadInfo = unwrapHttpPayload(
@@ -156,7 +141,7 @@ export function extractGeminiFallback(item: Record<string, unknown>): GeminiFall
     geminiCandidatesTokenCount: numberOrNull(usageMetadata?.candidatesTokenCount),
     geminiTotalTokenCount: numberOrNull(usageMetadata?.totalTokenCount),
     geminiThoughtsTokenCount: numberOrNull(usageMetadata?.thoughtsTokenCount),
-    geminiRetryAfter: extractRetryAfter(item),
+    geminiRetryAfter: getHttpRetryAfterSeconds(item),
   };
 }
 

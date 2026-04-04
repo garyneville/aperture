@@ -176,6 +176,31 @@ export function getHttpResponseStatusCode(item: unknown): number | null {
   return null;
 }
 
+export function getHttpRetryAfterSeconds(item: unknown): number | null {
+  if (!isRecord(item)) {
+    return null;
+  }
+
+  const error = isRecord(item.error) ? item.error : null;
+  const response = error && isRecord(error.response) ? error.response : null;
+  const headers = item.headers || error?.headers || response?.headers;
+  if (!isRecord(headers)) {
+    return null;
+  }
+
+  const retryAfter = headers['retry-after'] || headers['Retry-After'];
+  if (typeof retryAfter === 'number' && Number.isFinite(retryAfter)) {
+    return retryAfter;
+  }
+
+  if (typeof retryAfter === 'string') {
+    const parsed = Number.parseInt(retryAfter, 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
 export function getUtf8ByteLength(value: string | null | undefined): number | null {
   if (typeof value !== 'string' || value.length === 0) {
     return null;

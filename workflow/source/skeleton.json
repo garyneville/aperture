@@ -172,7 +172,14 @@
         "contentType": "raw",
         "rawContentType": "application/json",
         "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 800, response_format: { type: 'json_object' } }) }}",
-        "options": {}
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "a1b2c3d4-0009-0009-0009-000000000009",
       "name": "HTTP: Groq",
@@ -189,6 +196,21 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_inspect-groq-primary__"
+      },
+      "id": "a1b2c3d4-0067-0067-0067-000000000067",
+      "name": "Code: Inspect Groq Primary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        300
+      ]
+    },
+    {
+      "parameters": {
         "mode": "combine",
         "combineBy": "combineByPosition",
         "options": {}
@@ -198,7 +220,27 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        1980,
+        2200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.groqFallbackRequired }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0068-0068-0068-000000000068",
+      "name": "If: Need Gemini Fallback",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        2420,
         300
       ]
     },
@@ -213,7 +255,20 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        2200,
+        2640,
+        520
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "id": "a1b2c3d4-0069-0069-0069-000000000069",
+      "name": "Merge: Editorial Route",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2860,
         420
       ]
     },
@@ -228,7 +283,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        2420,
+        3080,
         420
       ]
     },
@@ -243,7 +298,7 @@
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
-        2200,
+        3300,
         300
       ]
     },
@@ -258,7 +313,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2420,
+        3520,
         300
       ]
     },
@@ -1254,11 +1309,6 @@
             "index": 0
           },
           {
-            "node": "HTTP: Gemini Fallback",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Code: Build Inspire Prompt",
             "type": "main",
             "index": 0
@@ -1325,6 +1375,17 @@
       "main": [
         [
           {
+            "node": "Code: Inspect Groq Primary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Inspect Groq Primary": {
+      "main": [
+        [
+          {
             "node": "Merge: Prompt + Groq",
             "type": "main",
             "index": 1
@@ -1336,7 +1397,25 @@
       "main": [
         [
           {
-            "node": "Merge: Prompt + Gemini FB",
+            "node": "If: Need Gemini Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If: Need Gemini Fallback": {
+      "main": [
+        [
+          {
+            "node": "HTTP: Gemini Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge: Editorial Route",
             "type": "main",
             "index": 0
           }
@@ -1344,6 +1423,17 @@
       ]
     },
     "Merge: Prompt + Gemini FB": {
+      "main": [
+        [
+          {
+            "node": "Merge: Editorial Route",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Editorial Route": {
       "main": [
         [
           {
