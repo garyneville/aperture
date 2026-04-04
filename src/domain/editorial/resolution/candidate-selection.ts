@@ -8,7 +8,7 @@
 import type { EditorialProvider } from '../../../app/run-photo-brief/contracts.js';
 import type { DebugGeminiDiagnostics } from '../../../lib/debug-context.js';
 import { filterCompositionBullets } from './composition.js';
-import { normalizeAiText, parseGroqResponse } from './parse.js';
+import { normalizeAiText, parseEditorialResponse } from './parse.js';
 import type { BriefContext, EditorialCandidate } from './types.js';
 import { getEditorialCheck, getFactualCheck } from './validation.js';
 
@@ -27,7 +27,7 @@ export function buildEditorialCandidate(
 ): EditorialCandidate | null {
   if (!rawContent.trim()) return null;
 
-  const parsed = parseGroqResponse(rawContent);
+  const parsed = parseEditorialResponse(rawContent);
   const normalizedAiText = normalizeAiText(parsed.editorial);
   const factualCheck = getFactualCheck(normalizedAiText, ctx);
   const editorialCheck = getEditorialCheck(normalizedAiText, ctx);
@@ -39,13 +39,13 @@ export function buildEditorialCandidate(
     compositionBullets: parsed.compositionBullets,
     weekInsight: parsed.weekInsight,
     spurRaw: parsed.spurRaw,
-    weekStandoutParseStatus: parsed.weekStandoutParseStatus,
+    weekStandoutParseStatus: parsed.parseResult === 'malformed-structured' ? 'parse-failure' : parsed.weekStandoutRawValue !== null ? 'present' : 'absent',
     weekStandoutRawValue: parsed.weekStandoutRawValue,
     normalizedAiText,
     factualCheck,
     editorialCheck,
     passed: factualCheck.passed && editorialCheck.passed,
-    reusableComponents: parsed.weekStandoutParseStatus !== 'parse-failure',
+    reusableComponents: parsed.parseResult !== 'malformed-structured',
   };
 }
 
