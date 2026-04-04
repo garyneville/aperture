@@ -46,11 +46,11 @@ export function getPhotoWeatherIcao(): string {
 }
 
 export function getPhotoBriefEditorialPrimaryProvider(): 'groq' | 'gemini' {
-  const provider = parseString(PHOTO_WEATHER_CONFIG.editorialPrimaryProvider, 'gemini').toLowerCase();
-  return provider === 'groq' ? 'groq' : 'gemini';
+  const provider = parseString(PHOTO_WEATHER_CONFIG.editorialPrimaryProvider, 'groq').toLowerCase();
+  return provider === 'gemini' ? 'gemini' : 'groq';
 }
 
 export function getPhotoBriefEditorialPromptMode(): EditorialPromptMode {
-  const mode = parseString(PHOTO_WEATHER_CONFIG.editorialPromptMode, 'legacy-json').toLowerCase();
-  return mode === 'structured-output' ? 'structured-output' : 'legacy-json';
+  const mode = parseString(PHOTO_WEATHER_CONFIG.editorialPromptMode, 'structured-output').toLowerCase();
+  return mode === 'legacy-json' ? 'legacy-json' : 'structured-output';
 }

@@ -1,5 +1,6 @@
 import type { N8nRuntime } from './types.js';
 import { firstInputJson } from './input.js';
+import { getPhotoWeatherLocation } from '../../config.js';
 
 type InspireWindow = {
   label?: unknown;
@@ -17,6 +18,7 @@ type InspireInput = {
   altLocations?: unknown;
   dontBother?: unknown;
   peakKpTonight?: unknown;
+  locationName?: string;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -34,6 +36,7 @@ function normalizeAltLocations(value: unknown): InspireAltLocation[] {
 }
 
 export function buildInspirePrompt(input: InspireInput): string {
+  const locationName = input.locationName || getPhotoWeatherLocation();
   const windows = Array.isArray(input.windows) ? input.windows.map(normalizeWindow).filter(Boolean) : [];
   const topWindow = windows[0];
   const altLocations = normalizeAltLocations(input.altLocations);
@@ -55,7 +58,7 @@ export function buildInspirePrompt(input: InspireInput): string {
 
   let context: string;
   if (dontBother) {
-    context = `Today the conditions are genuinely poor for photography in Leeds.${altNames ? ` There are better options nearby: ${altNames}.` : ''} Be honest but find inspiration anyway.`;
+    context = `Today the conditions are genuinely poor for photography in ${locationName}.${altNames ? ` There are better options nearby: ${altNames}.` : ''} Be honest but find inspiration anyway.`;
   } else if (topWindow) {
     const label = typeof topWindow.label === 'string' ? topWindow.label.toLowerCase() : 'a window';
     const peak = typeof topWindow.peak === 'number' ? topWindow.peak : 0;
@@ -64,10 +67,10 @@ export function buildInspirePrompt(input: InspireInput): string {
       : '';
     context = `Today's best window is ${label}${range ? ` from ${range}` : ''}, scoring ${peak}/100. ${altNames ? `Nearby options: ${altNames}.` : ''} Conditions lean toward ${isAstro ? 'astrophotography and night skies' : 'golden light and landscape shots'}.${auroraNote}`;
   } else {
-    context = 'Conditions today are uncertain in Leeds.';
+    context = `Conditions today are uncertain in ${locationName}.`;
   }
 
-  return `You are a creative photography inspiration companion for a photographer based in Leeds, West Yorkshire.\n\n${context}\n\nIn 2\u20133 sentences (~50 words): where should they go today, what should they look for, what feeling should they chase? Be poetic, evocative, whimsical \u2014 no scores, no metrics, no technical advice. Just pure inspiration. Surprise them.`;
+  return `You are a creative photography inspiration companion for a photographer based in ${locationName}.\n\n${context}\n\nIn 2\u20133 sentences (~50 words): where should they go today, what should they look for, what feeling should they chase? Be poetic, evocative, whimsical \u2014 no scores, no metrics, no technical advice. Just pure inspiration. Surprise them.`;
 }
 
 export function run({ $input }: N8nRuntime) {
