@@ -1155,6 +1155,31 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [1980, 740]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.inspireEnabled }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-0070-0070-0070-000000000070",
+      "name": "If: Run Inspire",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1540, 580]
+    },
+    {
+      "parameters": {},
+      "id": "a1b2c3d4-0071-0071-0071-000000000071",
+      "name": "NoOp: Skip Inspire",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1760, 900]
     }
   ],
   "connections": {
@@ -1309,7 +1334,7 @@
             "index": 0
           },
           {
-            "node": "Code: Build Inspire Prompt",
+            "node": "If: Run Inspire",
             "type": "main",
             "index": 0
           }
@@ -1361,6 +1386,35 @@
       ]
     },
     "Code: Extract Gemini Inspire": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "If: Run Inspire": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Inspire Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoOp: Skip Inspire",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NoOp: Skip Inspire": {
       "main": [
         [
           {

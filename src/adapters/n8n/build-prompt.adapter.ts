@@ -1,6 +1,7 @@
 import { buildPrompt } from '../../domain/editorial/prompt/build-prompt.js';
 import {
   getPhotoBriefEditorialPromptMode,
+  getPhotoBriefInspireEnabled,
   PHOTO_BRIEF_WORKFLOW_VERSION,
   getPhotoWeatherIcao,
   getPhotoWeatherLat,
@@ -74,6 +75,7 @@ export function run({ $input }: N8nRuntime) {
     json: {
       ...result,
       editorialPromptMode,
+      inspireEnabled: getPhotoBriefInspireEnabled(),
     },
   }];
 }

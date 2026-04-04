@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify:generated": "npm run build",
+    "verify:generated": "node --loader ts-node/esm workflow/build/verify-generated.ts",
     "cli:finalize-brief": "node --loader ts-node/esm src/app/run-photo-brief/finalize-brief-cli.ts",
     "cli:example": "npm run cli:finalize-brief -- ./fixtures/sample-forecast.json"
   },
