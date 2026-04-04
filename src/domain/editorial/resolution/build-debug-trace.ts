@@ -56,7 +56,7 @@ function buildSpurDebugInfo(input: SpurDebugInput): DebugAiTrace['spurSuggestion
 /**
  * Build composition bullets debug information.
  */
-function buildCompositionDebugInfo(input: CompositionDebugInput): { rawCount: number; resolvedCount: number; sourceProvider: string | null; resolved: string[] } {
+function buildCompositionDebugInfo(input: CompositionDebugInput): { rawCount: number; resolvedCount: number; sourceProvider: string | null } {
   const sourceProvider = input.rawCount > 0
     ? (input.componentCandidate?.compositionBullets?.length
         ? input.componentCandidate.provider
@@ -73,7 +73,6 @@ function buildCompositionDebugInfo(input: CompositionDebugInput): { rawCount: nu
     rawCount: input.rawCount,
     resolvedCount: input.resolvedCount,
     sourceProvider: sourceProvider as string | null,
-    resolved: [] as string[], // Will be filled by caller with actual bullets
   };
 }
 
@@ -136,8 +135,15 @@ export interface BuildDebugTraceInput {
  * @returns Complete debug AI trace object
  */
 export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
-  const primaryDiagnostics = input.editorialGateway.gemini.diagnostics as DebugPrimaryDiagnostics | undefined;
-  const fallbackDiagnostics = input.editorialGateway.groq.diagnostics as DebugFallbackDiagnostics | undefined;
+  const primaryGateway = input.selection.primaryProvider === 'groq'
+    ? input.editorialGateway.groq
+    : input.editorialGateway.gemini;
+  const fallbackGateway = input.selection.primaryProvider === 'groq'
+    ? input.editorialGateway.gemini
+    : input.editorialGateway.groq;
+
+  const primaryDiagnostics = primaryGateway.diagnostics as DebugPrimaryDiagnostics | undefined;
+  const fallbackDiagnostics = fallbackGateway.diagnostics as DebugFallbackDiagnostics | undefined;
   const apiCallStatuses = [
     input.editorialGateway.groq.apiCallStatus,
     input.editorialGateway.gemini.apiCallStatus,
@@ -183,9 +189,11 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     && input.selection.selectedProvider !== 'template';
 
   // Raw responses mapped to slot roles
-  const rawFallbackResponse = input.editorialGateway.groq.rawText;
-  const rawPrimaryResponse = input.editorialGateway.gemini.rawText;
-  const rawPrimaryPayload = input.editorialGateway.gemini.rawPayload;
+  const rawFallbackResponse = fallbackGateway.rawText;
+  const rawPrimaryResponse = primaryGateway.rawText;
+  const rawPrimaryPayload = 'rawPayload' in primaryGateway
+    ? primaryGateway.rawPayload
+    : undefined;
 
   return {
     // Slot role based fields (new)
@@ -200,11 +208,11 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     fallbackDiagnostics,
 
     // Legacy field names (for backward compatibility)
-    rawGroqResponse: rawFallbackResponse,
-    rawGeminiResponse: rawPrimaryResponse,
-    rawGeminiPayload: rawPrimaryPayload,
-    geminiDiagnostics: primaryDiagnostics,
-    groqDiagnostics: fallbackDiagnostics,
+    rawGroqResponse: input.editorialGateway.groq.rawText,
+    rawGeminiResponse: input.editorialGateway.gemini.rawText,
+    rawGeminiPayload: input.editorialGateway.gemini.rawPayload,
+    geminiDiagnostics: input.editorialGateway.gemini.diagnostics,
+    groqDiagnostics: input.editorialGateway.groq.diagnostics,
 
     apiCallStatuses: apiCallStatuses.length > 0 ? apiCallStatuses : undefined,
     normalizedAiText: traceCandidate?.normalizedAiText || '',
