@@ -642,7 +642,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=precipitation_probability&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=precipitation_probability&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0017-0017-0017-000000000017",
