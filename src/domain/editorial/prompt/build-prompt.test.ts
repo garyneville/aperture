@@ -165,6 +165,31 @@ describe('buildPrompt', () => {
     expect(result.prompt).not.toContain('points stronger');
     expect(result.prompt).toContain('The editorial must describe Leeds conditions only.');
     expect(result.prompt).toContain('- Sutton Bank (75min): 85/100 best astro 20:00 (dark sky)');
+    expect(result.systemPrompt).toContain('Return JSON that matches the supplied schema exactly.');
+    expect(result.systemPrompt).toContain('EDITORIAL RULES');
+    expect(result.systemPrompt).toContain('COMPOSITION RULES');
+    expect(result.systemPrompt).toContain('If nothing stands out, return spurOfTheMoment with locationName "", hookLine "", and confidence 0.');
+    expect(result.userPrompt).toContain('Selected primary window: Evening astro window (19:00-21:00)');
+    expect(result.userPrompt).toContain('Editorial insight options:');
+    expect(result.userPrompt).toContain('Shot constraints:');
+    expect(result.userPrompt).toContain('Long-range locations for spurOfTheMoment:');
+    expect(result.userPrompt).not.toContain('Respond with ONLY a raw JSON object');
+    expect(result.responseSchemaName).toBe('photo_brief_editorial_response');
+    expect(result.responseSchema).toMatchObject({
+      type: 'object',
+      required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+      additionalProperties: false,
+      properties: {
+        editorial: { type: 'string' },
+        composition: { type: 'array', items: { type: 'string' } },
+        weekStandout: { type: 'string' },
+        spurOfTheMoment: {
+          type: 'object',
+          required: ['locationName', 'hookLine', 'confidence'],
+          additionalProperties: false,
+        },
+      },
+    });
     expect(result.peakKpTonight).toBeNull();
     // Visibility must be a whole number in the prompt (no decimal) so the LLM
     // cannot echo back "18. 3km" with a spurious decimal space (#108).
@@ -506,6 +531,10 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('Today is the most reliable forecast; Wednesday may score higher but with much lower certainty');
     expect(result.prompt).toContain('Use only the supplied 5-day outlook labels, scores, and spreads. Do not invent a different higher-scoring day.');
     expect(result.prompt).toContain('"weekStandout":"<1 sentence max 30 words — if one day scores clearly higher, call it standout; if today wins only on certainty while another day scores higher, call it most reliable and name the higher-scoring day>"');
+    expect(result.systemPrompt).toContain('composition must be an empty array.');
+    expect(result.userPrompt).toContain('Nearby alternatives summary:');
+    expect(result.userPrompt).toContain('Long-range locations for spurOfTheMoment:');
+    expect(result.userPrompt).not.toContain('Respond with ONLY a raw JSON object');
   });
 
   it('treats a missing local window as dontBother and explains the weighted no-window state', () => {

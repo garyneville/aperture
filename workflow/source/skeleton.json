@@ -171,7 +171,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 800, response_format: { type: 'json_object' } }) }}",
+        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; return JSON.stringify(structured ? { model: 'openai/gpt-oss-120b', messages: [{ role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt }], temperature: 0.4, max_tokens: 800, response_format: { type: 'json_schema', json_schema: { name: $json.responseSchemaName, strict: true, schema: $json.responseSchema } } } : { model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 800, response_format: { type: 'json_object' } }); })() }}",
         "options": {
           "response": {
             "response": {

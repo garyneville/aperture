@@ -15,6 +15,7 @@
 #   PHOTO_WEATHER_LAT, PHOTO_WEATHER_LON, PHOTO_WEATHER_LOCATION,
 #   PHOTO_WEATHER_TIMEZONE, PHOTO_WEATHER_ICAO,
 #   PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER,
+#   PHOTO_BRIEF_EDITORIAL_PROMPT_MODE,
 #   SUNSETHUE_API_KEY, NASA_API_KEY, GEMINI_API_KEY,
 #   APERTURE_GITHUB_PAT
 
@@ -95,6 +96,7 @@ jobs:
             -e 's|__PHOTO_WEATHER_TIMEZONE__|${{ secrets.PHOTO_WEATHER_TIMEZONE }}|g' \
             -e 's|__PHOTO_WEATHER_ICAO__|${{ secrets.PHOTO_WEATHER_ICAO }}|g' \
             -e 's|__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__|${{ secrets.PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER }}|g' \
+            -e 's|__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__|${{ secrets.PHOTO_BRIEF_EDITORIAL_PROMPT_MODE }}|g' \
             -e 's|__SUNSETHUE_API_KEY__|${{ secrets.SUNSETHUE_API_KEY }}|g' \
             -e 's|__NASA_API_KEY__|${{ secrets.NASA_API_KEY }}|g' \
             -e 's|__GEMINI_API_KEY__|${{ secrets.GEMINI_API_KEY }}|g' \
@@ -120,6 +122,7 @@ jobs:
             __PHOTO_WEATHER_TIMEZONE__ \
             __PHOTO_WEATHER_ICAO__ \
             __PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__ \
+            __PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__ \
             __SUNSETHUE_API_KEY__ \
             __NASA_API_KEY__ \
             __GEMINI_API_KEY__ \

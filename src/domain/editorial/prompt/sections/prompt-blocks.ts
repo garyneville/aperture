@@ -10,6 +10,43 @@ export interface ResponseContractParams {
   maxWords?: number;
 }
 
+export interface StructuredPromptParts {
+  systemPrompt: string;
+  userPrompt: string;
+}
+
+export const EDITORIAL_RESPONSE_SCHEMA_NAME = 'photo_brief_editorial_response';
+
+export function buildEditorialResponseSchema(): Record<string, unknown> {
+  return {
+    type: 'object',
+    properties: {
+      editorial: { type: 'string' },
+      composition: {
+        type: 'array',
+        items: { type: 'string' },
+      },
+      weekStandout: { type: 'string' },
+      spurOfTheMoment: {
+        type: 'object',
+        properties: {
+          locationName: { type: 'string' },
+          hookLine: { type: 'string' },
+          confidence: {
+            type: 'number',
+            minimum: 0,
+            maximum: 1,
+          },
+        },
+        required: ['locationName', 'hookLine', 'confidence'],
+        additionalProperties: false,
+      },
+    },
+    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+    additionalProperties: false,
+  };
+}
+
 export function buildEditorialResponseContractText(p: ResponseContractParams): string {
   const { homeLocationName, variant, maxWords = 55 } = p;
 

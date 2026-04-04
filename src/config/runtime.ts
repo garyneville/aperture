@@ -5,9 +5,11 @@ export const PHOTO_WEATHER_CONFIG = {
   timezone: '__PHOTO_WEATHER_TIMEZONE__',
   icao: '__PHOTO_WEATHER_ICAO__',
   editorialPrimaryProvider: '__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__',
+  editorialPromptMode: '__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__',
 } as const;
 
 export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
+export type EditorialPromptMode = 'legacy-json' | 'structured-output';
 
 function isPlaceholder(value: string): boolean {
   return /^__.+__$/.test(value);
@@ -46,4 +48,9 @@ export function getPhotoWeatherIcao(): string {
 export function getPhotoBriefEditorialPrimaryProvider(): 'groq' | 'gemini' {
   const provider = parseString(PHOTO_WEATHER_CONFIG.editorialPrimaryProvider, 'gemini').toLowerCase();
   return provider === 'groq' ? 'groq' : 'gemini';
+}
+
+export function getPhotoBriefEditorialPromptMode(): EditorialPromptMode {
+  const mode = parseString(PHOTO_WEATHER_CONFIG.editorialPromptMode, 'legacy-json').toLowerCase();
+  return mode === 'structured-output' ? 'structured-output' : 'legacy-json';
 }

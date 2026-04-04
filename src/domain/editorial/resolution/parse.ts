@@ -68,17 +68,27 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
     if (parsed && typeof parsed === 'object') {
       let spurRaw: SpurRaw | null = null;
       const spur = (parsed as Record<string, unknown>).spurOfTheMoment;
+      const spurRecord = spur && typeof spur === 'object'
+        ? spur as Record<string, unknown>
+        : null;
+      const locationName = typeof spurRecord?.locationName === 'string'
+        ? spurRecord.locationName.trim()
+        : '';
+      const hookLine = typeof spurRecord?.hookLine === 'string'
+        ? spurRecord.hookLine.trim()
+        : '';
+      const confidence = typeof spurRecord?.confidence === 'number' && Number.isFinite(spurRecord.confidence)
+        ? spurRecord.confidence
+        : null;
       if (
-        spur
-        && typeof spur === 'object'
-        && typeof (spur as Record<string, unknown>).locationName === 'string'
-        && typeof (spur as Record<string, unknown>).hookLine === 'string'
-        && typeof (spur as Record<string, unknown>).confidence === 'number'
+        locationName.length > 0
+        && hookLine.length > 0
+        && confidence !== null
       ) {
         spurRaw = {
-          locationName: (spur as Record<string, unknown>).locationName as string,
-          hookLine: (spur as Record<string, unknown>).hookLine as string,
-          confidence: (spur as Record<string, unknown>).confidence as number,
+          locationName,
+          hookLine,
+          confidence,
         };
       }
 

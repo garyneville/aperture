@@ -15,6 +15,7 @@ This folder is the runtime boundary between the application and n8n code nodes.
 - scoring/editorial adapters such as [`score-hours.adapter.ts`](./score-hours.adapter.ts) and [`format-messages.adapter.ts`](./format-messages.adapter.ts)
 - contract helpers under [`contracts/`](./contracts)
 - primary editorial inspection via [`inspect-groq-primary.adapter.ts`](./inspect-groq-primary.adapter.ts)
+- prompt shaping and rollout selection via [`build-prompt.adapter.ts`](./build-prompt.adapter.ts)
 
 `format-messages.adapter.ts` is the single live finalization bridge. It maps n8n
 payload/config into `finalizeBrief(...)` and returns the rendered outputs for
@@ -29,6 +30,13 @@ fallback. `inspect-groq-primary.adapter.ts` preserves the Groq `choices`
 payload for finalization, emits transport diagnostics, and flags clearly
 unusable primary results (HTTP error/rate limit, empty content, malformed
 structured output) so the workflow only pays for fallback when it needs to.
+
+`build-prompt.adapter.ts` now emits both prompt styles needed by the workflow:
+
+- legacy `prompt` for the existing JSON-in-prompt route
+- structured `systemPrompt` / `userPrompt` plus `responseSchema` metadata for the Groq schema-enforced route
+
+The workflow chooses between them with `editorialPromptMode` (`legacy-json` or `structured-output`). The default comes from the `PHOTO_BRIEF_EDITORIAL_PROMPT_MODE` secret and can be overridden per webhook request with `editorialPromptMode` in the body or query string.
 
 ## What not to edit casually
 
