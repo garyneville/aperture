@@ -82,10 +82,44 @@ export function summarizeSessionRecommendations(hours: DerivedHourFeatures[]): S
   }
 
   const bySession = [...bestBySession.values()].sort((a, b) => b.score - a.score);
+  const primary = bySession[0] ?? null;
+  const runnerUps = bySession.slice(1);
+  const planB = buildPlanB(primary, runnerUps[0] ?? null);
+
   return {
-    primary: bySession[0] ?? null,
-    runnerUps: bySession.slice(1),
+    primary,
+    runnerUps,
     bySession,
     hoursAnalyzed: hours.length,
+    planB,
   };
+}
+
+function buildPlanB(
+  primary: SessionRecommendation | null,
+  runnerUp: SessionRecommendation | null,
+): string | null {
+  if (!primary || !runnerUp) return null;
+  if (primary.confidence === 'high') return null;
+
+  const riskClause = primary.warnings[0]
+    || `${sessionLabel(primary.session)} conditions don't hold`;
+  const reason = runnerUp.reasons[0] || `${sessionLabel(runnerUp.session)} conditions look favourable`;
+
+  return `If ${riskClause}: consider ${sessionLabel(runnerUp.session).toLowerCase()} at ${runnerUp.hourLabel} — ${reason.charAt(0).toLowerCase()}${reason.slice(1)}`;
+}
+
+function sessionLabel(session: SessionId): string {
+  switch (session) {
+    case 'golden-hour': return 'Golden hour';
+    case 'astro': return 'Astro';
+    case 'mist': return 'Mist';
+    case 'storm': return 'Storm';
+    case 'urban': return 'Urban';
+    case 'long-exposure': return 'Long exposure';
+    case 'street': return 'Street';
+    case 'wildlife': return 'Wildlife';
+    case 'waterfall': return 'Waterfall';
+    case 'seascape': return 'Seascape';
+  }
 }

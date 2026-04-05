@@ -267,3 +267,11 @@ export function sessionRunnerUpLine(summary: SessionRecommendationSummary | unde
   if (primary.confidence !== 'low' && (primary.volatility ?? 0) < 20) return null;
   return `Runner-up: ${displaySessionName(runnerUp.session)} at ${runnerUp.hourLabel} (${runnerUp.score}/100).`;
 }
+
+/**
+ * Returns the plan-B scenario string from the session recommendation summary,
+ * or null when unavailable (high confidence or no runner-up).
+ */
+export function planBScenario(summary: SessionRecommendationSummary | undefined): string | null {
+  return summary?.planB ?? null;
+}

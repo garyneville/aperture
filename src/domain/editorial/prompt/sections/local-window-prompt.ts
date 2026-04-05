@@ -147,13 +147,17 @@ function buildLocalWindowPromptSections(p: LocalWindowPromptParams): LocalWindow
 
   const contextFacts = `${temporalContext}${seasonalNote ? `Seasonal context: ${seasonalNote}\n` : ''}${auroraNote ? `${auroraNote}\n` : ''}${shInfo}${moonNote}${crepNote}${shQNote}${confNote}${fallbackNote}`;
 
+  const planBNote = p.sessionRecommendation?.planB
+    ? `\nPlan B: ${p.sessionRecommendation.planB}`
+    : '';
+
   return {
     bestWin,
     editorialInsights,
     shotConstraints,
     windowsText,
     altText,
-    contextFacts,
+    contextFacts: contextFacts + planBNote,
   };
 }
 

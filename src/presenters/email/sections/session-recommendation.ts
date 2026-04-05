@@ -13,6 +13,7 @@ import {
   sessionRecommendationHeadline,
   sessionRunnerUpLine,
   sessionVolatilityLabel,
+  planBScenario,
 } from '../../shared/window-helpers.js';
 import type { FormatEmailInput } from '../types.js';
 
@@ -27,6 +28,7 @@ export function sessionRecommendationCard(sessionRecommendation: FormatEmailInpu
       : C.warning;
   const volatility = sessionVolatilityLabel(primary);
   const runnerUp = sessionRunnerUpLine(sessionRecommendation);
+  const planB = planBScenario(sessionRecommendation);
 
   return card(`
     <div style="Margin:0 0 4px;font-family:${FONT};font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${C.subtle};">Best session today</div>
@@ -38,5 +40,6 @@ export function sessionRecommendationCard(sessionRecommendation: FormatEmailInpu
     </div>
     <div style="Margin-top:10px;font-family:${FONT};font-size:13px;line-height:1.5;color:${C.muted};">${esc(sessionRecommendationBody(primary))}</div>
     ${runnerUp ? `<div style="Margin-top:8px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.subtle};">${esc(runnerUp)}</div>` : ''}
+    ${planB ? `<div style="Margin-top:10px;padding:8px 10px;background:${C.surfaceAlt || '#f7f5f0'};border-radius:6px;font-family:${FONT};font-size:12px;line-height:1.5;color:${C.muted};"><strong>Plan\u00a0B:</strong> ${esc(planB)}</div>` : ''}
   `, '', `border-left:3px solid ${scoreState(primary.score).fg};`);
 }

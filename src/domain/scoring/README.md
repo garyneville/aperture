@@ -15,7 +15,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - [`features/derive-hour-features.ts`](./features/derive-hour-features.ts)
   Shared derived-feature seam used by the session evaluators.
 - [`sessions/index.ts`](./sessions/index.ts)
-  Built-in session evaluators, cross-hour selection, and recommendation summary.
+  Built-in session evaluators, cross-hour selection, recommendation summary, and Plan B scenario generation.
 - [`../../contracts/scored-forecast.ts`](../../contracts/scored-forecast.ts)
   Shared scored-forecast contract surface for callers.
 
@@ -24,7 +24,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `features/`
   Hour-level feature engineering.
 - `sessions/`
-  Session evaluation and recommendation logic.
+  Session evaluation, recommendation logic, and Plan B scenario framing (alternative-scenario string when primary confidence is medium or low).
 - `nowcast/`
   Near-term (0-6h) nowcast signal computation. Currently supports satellite radiation clearing/thickening detection via Open-Meteo Satellite Radiation API (EUMETSAT).
 - `metar/`

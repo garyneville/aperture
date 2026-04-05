@@ -99,6 +99,7 @@ export interface SessionRecommendationSummary {
   runnerUps: SessionRecommendation[];
   bySession: SessionRecommendation[];
   hoursAnalyzed: number;
+  planB: string | null;
 }
 
 export interface SessionEvaluator {
