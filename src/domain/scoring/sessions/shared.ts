@@ -295,3 +295,34 @@ export const WILDLIFE_CAPABILITIES: ScoringCapability[] = [
   'wind',
   'precipitation',
 ];
+
+export const SEASCAPE_CAPABILITIES: ScoringCapability[] = [
+  'marine',
+  'sun-geometry',
+  'cloud-stratification',
+  'visibility',
+  'wind',
+  'ensemble-confidence',
+];
+
+export function seascapeUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 12) return 0;
+  return clamp(Math.round((spread - 12) * 0.5), 0, 12);
+}
+
+export function seascapeConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const swellOk = features.swellHeightM != null
+    && features.swellHeightM >= 0.5
+    && features.swellHeightM <= 2.0;
+  const periodOk = features.swellPeriodS != null
+    && features.swellPeriodS >= 8
+    && features.swellPeriodS <= 14;
+  const windOk = features.windKph <= 25;
+  const base = swellOk && periodOk && windOk;
+  if (!hardPass) return 'low';
+  if (spread == null) return base ? 'high' : 'medium';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 10, 20)
+    : confidenceFromSpread(spread, hardPass, 8, 16);
+}
