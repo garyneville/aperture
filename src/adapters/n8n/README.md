@@ -11,7 +11,7 @@ This folder is the runtime boundary between the application and n8n code nodes.
 
 ## Entry patterns
 
-- thin data-wrapping nodes such as [`wrap-weather.adapter.ts`](./wrap-weather.adapter.ts)
+- thin data-wrapping nodes such as [`wrap-weather.adapter.ts`](./wrap-weather.adapter.ts), [`wrap-marine.adapter.ts`](./wrap-marine.adapter.ts)
 - scoring/editorial adapters such as [`score-hours.adapter.ts`](./score-hours.adapter.ts) and [`format-messages.adapter.ts`](./format-messages.adapter.ts)
 - contract helpers under [`contracts/`](./contracts)
 - primary editorial inspection via [`inspect-groq-primary.adapter.ts`](./inspect-groq-primary.adapter.ts)

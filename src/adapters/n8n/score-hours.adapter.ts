@@ -40,6 +40,7 @@ export function run({ $input }: N8nRuntime) {
     azimuthByPhase: input.azimuthByPhase ?? {},
     precipProb: input.precipProb ?? EMPTY_HOURLY,
     nowcastSatellite: input.nowcastSatellite ?? undefined,
+    marine: input.marine ?? undefined,
   }, new Date());
 
   return [{ json: result }];

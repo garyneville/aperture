@@ -5,6 +5,7 @@ import { buildMetarNote } from './daily/metar-note.js';
 import { buildDebugContext } from './daily/build-debug-context.js';
 import { computeClearingSignal } from './nowcast/satellite-clearing.js';
 import { parseMetarRaw } from './metar/parse-metar.js';
+import { parseMarineData } from './marine/parse-marine.js';
 import type { DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import type { SessionRecommendationSummary } from '../../types/session-score.js';
 export type {
@@ -20,6 +21,7 @@ export type {
   DaySummary,
   NowcastSatelliteData,
   NowcastSignal,
+  MarineData,
 } from './contracts.js';
 import type {
   WeatherData,
@@ -31,6 +33,7 @@ import type {
   ScoredHour,
   DaySummary,
   NowcastSatelliteData,
+  MarineData,
 } from './contracts.js';
 
 // ── Input interface ───────────────────────────────────────────────────────────
@@ -47,6 +50,7 @@ export interface ScoreHoursInput {
   ensemble: EnsembleData;
   azimuthByPhase: AzimuthByPhase;
   nowcastSatellite?: NowcastSatelliteData;
+  marine?: MarineData;
 }
 
 // ── Output interface ──────────────────────────────────────────────────────────
@@ -108,6 +112,17 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     ensIdx[ts] = { mean, stdDev };
   });
 
+  // Marine data lookup (empty when no marine data is provided)
+  const marineIdx = parseMarineData(input.marine);
+
+  // Precipitation accumulation lookup for recent-rainfall derivation (6h trailing window)
+  const precipByTs: Record<string, number> = {};
+  const weatherTimes = w.hourly?.time || [];
+  const weatherPrecip = w.hourly?.precipitation || [];
+  for (let i = 0; i < weatherTimes.length; i++) {
+    precipByTs[weatherTimes[i]] = weatherPrecip[i] ?? 0;
+  }
+
   const tod = now ?? new Date();
   const todayKey = tod.toLocaleDateString('en-CA', { timeZone: timezone });
   const featureInputsByTs: Record<string, DerivedHourFeatureInput> = {};
@@ -142,6 +157,39 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
 
   const todayDay = dailySummary.find(day => day.dateKey === todayKey) || dailySummary[0];
   const metarNote = buildMetarNote(input.metarRaw);
+
+  // Backfill marine and hydrology fields into feature inputs
+  for (const ts of Object.keys(featureInputsByTs)) {
+    const fi = featureInputsByTs[ts];
+
+    // Marine: wave height, direction, swell period
+    const marine = marineIdx[ts];
+    if (marine) {
+      fi.waveHeightM = marine.waveHeightM;
+      fi.swellDirectionDeg = marine.waveDirectionDeg;
+      // Use wave_height as swell proxy when swellHeightM not already set
+      if (fi.swellHeightM == null && marine.waveHeightM != null) {
+        fi.swellHeightM = marine.waveHeightM;
+      }
+      // Use wave_period as swell period proxy when swellPeriodS not already set
+      if (fi.swellPeriodS == null && marine.wavePeriodS != null) {
+        fi.swellPeriodS = marine.wavePeriodS;
+      }
+    }
+
+    // Hydrology: recent rainfall from trailing 6h window
+    const tsMs = new Date(ts).getTime();
+    let recentRainfall = 0;
+    for (let h = 0; h < 6; h++) {
+      const lookbackMs = tsMs - h * 3600_000;
+      // Find matching weather timestamp within the same hour
+      const matchTs = weatherTimes.find(wt => Math.abs(new Date(wt).getTime() - lookbackMs) < 1800_000);
+      if (matchTs && precipByTs[matchTs] != null) {
+        recentRainfall += precipByTs[matchTs];
+      }
+    }
+    fi.recentRainfallMm = Math.round(recentRainfall * 10) / 10;
+  }
 
   const { debugContext, todayFeatures } = buildDebugContext({
     scoreInput: input,

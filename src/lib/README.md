@@ -29,6 +29,7 @@ This folder is the canonical infrastructure layer: shared utilities, astronomy h
 
 - [`long-range-locations.ts`](./long-range-locations.ts) — canonical long-range location registry with drive-time helpers.
 - [`prepare-alt-locations.ts`](./prepare-alt-locations.ts) — alt-location registry with Open-Meteo URL builder.
+- [`prepare-marine.ts`](./prepare-marine.ts) — URL builder for the Open-Meteo Marine API (wave height, direction, period, peak period) for coastal seascape scoring.
 - [`prepare-long-range.ts`](./prepare-long-range.ts) — filters and enriches long-range locations with forecast URLs.
 - [`prepare-azimuth.ts`](./prepare-azimuth.ts) — generates azimuth sample points for sunrise/sunset horizon scans.
 - [`aggregate-azimuth.ts`](./aggregate-azimuth.ts) — aggregates multi-distance azimuth scan results into horizon metrics.

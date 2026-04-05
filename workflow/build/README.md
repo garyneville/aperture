@@ -58,6 +58,10 @@ The inspire chain is gated behind a feature flag:
 - When enabled: `Code: Build Inspire Prompt` → `HTTP: Gemini Inspire` → `Code: Extract Gemini Inspire`
 - When disabled: `NoOp: Skip Inspire` bypasses the API call; downstream code handles missing inspire content
 
+### Marine API
+
+The skeleton includes an `HTTP: Marine` node that fetches hourly wave data from the Open-Meteo Marine API (`marine-api.open-meteo.com/v1/marine`). The response is wrapped by `Code: Wrap Marine` and merged into the score input chain via `Merge: Score Input 8`. Fields fetched: `wave_height`, `wave_direction`, `wave_period`, `wave_peak_period`. When the marine fetch fails or returns empty data, scoring degrades gracefully — the seascape evaluator returns score 0 with a diagnostic warning.
+
 ## Tests
 
 - [`../assemble.test.ts`](../assemble.test.ts)

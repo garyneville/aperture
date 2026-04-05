@@ -50,6 +50,7 @@ describe('session scoring foundation', () => {
       'urban',
       'wildlife',
       'seascape',
+      'waterfall',
     ]);
   });
 
@@ -995,7 +996,7 @@ describe('session scoring foundation', () => {
     expect(summary.primary?.session).toBe('storm');
     expect(summary.primary?.hourLabel).toBe('19:00');
     expect(summary.hoursAnalyzed).toBe(2);
-    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'wildlife', 'astro', 'seascape']);
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'waterfall', 'urban', 'wildlife', 'astro', 'seascape']);
     expect(summary.runnerUps[0]?.session).toBe('long-exposure');
   });
 
@@ -1429,6 +1430,142 @@ describe('seascape evaluator', () => {
     })));
     expect(result.requiredCapabilities).toContain('marine');
     expect(result.requiredCapabilities).toContain('sun-geometry');
+    expect(result.requiredCapabilities).toContain('wind');
+  });
+});
+
+describe('waterfall evaluator', () => {
+  it('hard-passes with recent rainfall, calm wind, and good visibility', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 6,
+      gustKph: 10,
+      visibilityKm: 10,
+      humidityPct: 82,
+      isGolden: true,
+      cloudTotalPct: 60,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.score).toBeGreaterThan(40);
+    expect(result.requiredCapabilities).toContain('hydrology');
+    expect(result.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('fails hard-pass when wind is too high', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 30,
+      gustKph: 40,
+      visibilityKm: 10,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('fails hard-pass when visibility is too low and no rainfall or humidity', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 0.5,
+      windKph: 6,
+      visibilityKm: 1,
+      humidityPct: 60,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('hard-passes on high humidity alone even without rainfall', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 0,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 8,
+      humidityPct: 92,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.score).toBeGreaterThan(0);
+  });
+
+  it('scores higher with ideal rainfall range than with very little rain', () => {
+    const ideal = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 10,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 80,
+      isGolden: true,
+    })));
+    const dry = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 0.8,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 80,
+      isGolden: true,
+    })));
+
+    expect(ideal.score).toBeGreaterThan(dry.score);
+  });
+
+  it('warns about heavy rainfall above 20 mm', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 25,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 85,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.warnings).toContain('Heavy recent rainfall — paths may be flooded and falls may be a torrent rather than photogenic.');
+  });
+
+  it('applies ensemble uncertainty as a score and confidence penalty', () => {
+    const stable = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 80,
+      isGolden: true,
+      ensembleCloudStdDevPct: 5,
+    })));
+    const volatile = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 80,
+      isGolden: true,
+      ensembleCloudStdDevPct: 28,
+    })));
+
+    expect(stable.score).toBeGreaterThan(volatile.score);
+  });
+
+  it('gives high confidence when rainfall, wind, and visibility all align', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 5,
+      gustKph: 8,
+      visibilityKm: 10,
+      humidityPct: 80,
+      ensembleCloudStdDevPct: 6,
+    })));
+
+    expect(result.confidence).toBe('high');
+  });
+
+  it('exposes hydrology as a required capability', () => {
+    const result = evaluateSessionFeatures('waterfall', deriveHourFeatures(makeHour({
+      recentRainfallMm: 8,
+      windKph: 5,
+    })));
+    expect(result.requiredCapabilities).toContain('hydrology');
+    expect(result.requiredCapabilities).toContain('precipitation');
     expect(result.requiredCapabilities).toContain('wind');
   });
 });

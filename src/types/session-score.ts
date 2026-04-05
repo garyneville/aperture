@@ -76,6 +76,9 @@ export interface DerivedHourFeatures {
   metarDewPointSpreadC?: number | null;
   visibilityDeltaVsModelKm?: number | null;
   postFrontalClarityScore?: number | null;
+  recentRainfallMm?: number | null;
+  swellDirectionDeg?: number | null;
+  waveHeightM?: number | null;
 }
 
 export interface SessionScore {

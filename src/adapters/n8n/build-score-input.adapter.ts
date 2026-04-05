@@ -17,6 +17,7 @@ export function run({ $input }: N8nRuntime) {
       ensemble: input.ensemble ?? EMPTY_HOURLY,
       azimuthByPhase: input.azimuthByPhase ?? {},
       nowcastSatellite: input.nowcastSatellite ?? undefined,
+      marine: input.marine ?? EMPTY_HOURLY,
     },
   }];
 }

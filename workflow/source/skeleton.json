@@ -1249,6 +1249,54 @@
         2100,
         760
       ]
+    },
+    {
+      "parameters": {
+        "url": "https://marine-api.open-meteo.com/v1/marine?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=wave_height,wave_direction,wave_period,wave_peak_period&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0060-0060-0060-000000000060",
+      "name": "HTTP: Marine",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        1640
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-marine__"
+      },
+      "id": "a1b2c3d4-0061-0061-0061-000000000061",
+      "name": "Code: Wrap Marine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1700
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0062-0062-0062-000000000062",
+      "name": "Merge: Score Input 8",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2220,
+        760
+      ]
     }
   ],
   "connections": {
@@ -1282,6 +1330,11 @@
           },
           {
             "node": "HTTP: Satellite Radiation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Marine",
             "type": "main",
             "index": 0
           }
@@ -1318,6 +1371,11 @@
           },
           {
             "node": "HTTP: Satellite Radiation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Marine",
             "type": "main",
             "index": 0
           }
@@ -2107,6 +2165,39 @@
       ]
     },
     "Merge: Score Input 7": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Marine": {
+      "main": [
+        [
+          {
+            "node": "Code: Wrap Marine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Marine": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 8",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 8": {
       "main": [
         [
           {
