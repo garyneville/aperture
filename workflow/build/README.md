@@ -38,6 +38,7 @@ The following fields are **not** requested in the `HTTP: Weather` node because `
 | Field | Scoring fallback | Impact |
 |---|---|---|
 | `precipitation_probability` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model |
+| `lightning_potential` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model; gated by CAPE ≥ 500 J/kg floor before use |
 | `total_column_integrated_water_vapour` | Falls back to 20 (neutral — no clarity bonus or penalty) | Scoring degraded; real values would improve clarity assessment |
 | `boundary_layer_height` | Falls back to `null` | Informational only; no direct scoring impact |
 

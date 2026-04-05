@@ -50,6 +50,8 @@ export interface ScoreHourParams {
   azimuthLowRisk: number | null;
   azimuthScan: AzimuthScanResult | null;
   horizonGapPct: number | null;
+  // Lightning
+  lightningRisk: number | null;
   // SunsetHue
   shQ: number | null;
 }
@@ -220,6 +222,7 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     boundaryLayerHeightM: p.blh != null ? Math.round(p.blh) : null,
     horizonGapPct: p.horizonGapPct !== null ? Math.round(p.horizonGapPct) : null,
     capeJkg: Math.round(p.cap),
+    lightningRisk: p.lightningRisk,
     ensembleCloudStdDevPct: null, // populated by orchestrator
     ensembleCloudMeanPct: null,   // populated by orchestrator
   };

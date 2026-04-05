@@ -93,11 +93,15 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     const dew  = w.hourly!.dewpoint_2m?.[i]     ?? 5;
     const ppI  = ppIdx[ts] ?? -1;
     const pp   = ppI >= 0 ? (ppData.hourly!.precipitation_probability?.[ppI] ?? 0) : 0;
+    const rawLpr = ppI >= 0 ? (ppData.hourly!.lightning_potential?.[ppI] ?? null) : null;
     const pr   = w.hourly!.precipitation?.[i]   ?? 0;
     const spd  = w.hourly!.windspeed_10m?.[i]   ?? 0;
     const gst  = w.hourly!.windgusts_10m?.[i]   ?? 0;
     const wdir = w.hourly!.winddirection_10m?.[i] ?? null;
     const cap  = w.hourly!.cape?.[i]            ?? 0;
+    // Apply CAPE < 500 J/kg hard floor: lightning_potential is unreliable at low CAPE
+    // in UK/Northern Europe mid-latitude conditions
+    const lightningRisk = rawLpr != null && cap >= 500 ? rawLpr : null;
     const vpd  = w.hourly!.vapour_pressure_deficit?.[i] ?? 0.5;
     const prev = i > 0 ? (w.hourly!.precipitation?.[i - 1] ?? 0) : 0;
     const tpw  = w.hourly!.total_column_integrated_water_vapour?.[i] ?? 20;
@@ -143,6 +147,7 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
       cl, cm, ch, ct, visK, tmp, hum, dew, pp, pr,
       spd, gst, wdir, cap, vpd, prev, tpw, blh,
       aod, dust, aqi, uv,
+      lightningRisk,
       isGolden, isGoldAm, isGoldPm, isBlue, isBlueAm, isBluePm, isNight,
       isPostSunset,
       azimuthRisk, azimuthLowRisk, azimuthScan, horizonGapPct,

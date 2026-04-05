@@ -773,4 +773,83 @@ describe('scoreAllDays session scoring foundation', () => {
     expect(lowBoundaryLayerMist?.reasons).toContain('A low boundary layer should help mist or haze stay trapped near the ground.');
     expect(highBoundaryLayerMist?.warnings).toContain('A deep boundary layer may mix out low-level mist before it becomes photogenic.');
   });
+
+  it('applies a CAPE < 500 J/kg hard floor to lightning_potential from precipProb data', () => {
+    const baseInput: ScoreHoursInput = {
+      lat: 53.8,
+      lon: -1.57,
+      weather: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z'],
+          cloudcover: [65, 65],
+          cloudcover_low: [14, 14],
+          cloudcover_mid: [22, 22],
+          cloudcover_high: [29, 29],
+          visibility: [18000, 18000],
+          temperature_2m: [21, 21],
+          relativehumidity_2m: [74, 74],
+          dewpoint_2m: [16, 16],
+          precipitation: [0, 0],
+          windspeed_10m: [10, 10],
+          windgusts_10m: [15, 15],
+          cape: [800, 800],
+          vapour_pressure_deficit: [0.6, 0.6],
+          total_column_integrated_water_vapour: [22, 22],
+        },
+        daily: {
+          sunrise: ['2026-07-10T04:46:00Z'],
+          sunset: ['2026-07-10T19:35:00Z'],
+        },
+      },
+      airQuality: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z'],
+          aerosol_optical_depth: [0.12],
+          dust: [0],
+          european_aqi: [18],
+          uv_index: [1],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z'],
+          precipitation_probability: [0],
+          lightning_potential: [75],
+        },
+      },
+      metarRaw: [],
+      sunsetHue: [],
+      ensemble: { hourly: { time: [] } },
+      azimuthByPhase: {},
+    };
+
+    // CAPE >= 500: lightning_potential should pass through as lightningRisk
+    const withHighCape = scoreAllDays(baseInput, new Date('2026-07-10T12:00:00Z'));
+    const stormHighCape = withHighCape.debugContext.hourlyScoring[0]?.sessionScores?.find(s => s.session === 'storm');
+    expect(stormHighCape?.hardPass).toBe(true);
+    expect(stormHighCape?.warnings).toContain('Elevated lightning risk warrants a safety-first setup.');
+
+    // CAPE < 500: lightning_potential should be gated out; storm can only fire via other signals
+    const withLowCape: ScoreHoursInput = {
+      ...baseInput,
+      weather: {
+        ...baseInput.weather,
+        hourly: {
+          ...baseInput.weather.hourly,
+          cape: [100, 100],
+        },
+      },
+      precipProb: {
+        hourly: {
+          time: ['2026-07-10T19:00:00Z'],
+          precipitation_probability: [25],
+          lightning_potential: [75],
+        },
+      },
+    };
+    const withLowCapeResult = scoreAllDays(withLowCape, new Date('2026-07-10T12:00:00Z'));
+    const stormLowCape = withLowCapeResult.debugContext.hourlyScoring[0]?.sessionScores?.find(s => s.session === 'storm');
+    expect(stormLowCape?.hardPass).toBe(true);
+    expect(stormLowCape?.warnings).not.toContain('Elevated lightning risk warrants a safety-first setup.');
+  });
 });
