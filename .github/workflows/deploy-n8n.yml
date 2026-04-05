@@ -70,9 +70,11 @@ jobs:
           name: workflow-json
 
       - name: Setup SSH key for n8n host
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/homelab_deploy_key
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/homelab_deploy_key
           chmod 600 ~/.ssh/homelab_deploy_key
 
       - name: Normalise base URL once
