@@ -54,7 +54,7 @@ export const ALT_LOCATIONS: AltLocation[] = [
 const HOURLY_FIELDS = [
   'cloudcover', 'cloudcover_low', 'cloudcover_mid', 'cloudcover_high',
   'visibility', 'temperature_2m', 'relativehumidity_2m', 'dewpoint_2m',
-  'precipitation_probability', 'precipitation', 'windspeed_10m', 'windgusts_10m',
+  'precipitation', 'windspeed_10m', 'windgusts_10m',
   'total_column_integrated_water_vapour',
   'snowfall', 'snow_depth',
 ].join(',');
