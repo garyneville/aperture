@@ -17,7 +17,8 @@
 #   PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER,
 #   PHOTO_BRIEF_EDITORIAL_PROMPT_MODE,
 #   SUNSETHUE_API_KEY, NASA_API_KEY, GEMINI_API_KEY,
-#   APERTURE_GITHUB_PAT
+#   APERTURE_GITHUB_PAT,
+#   SSH_PRIVATE_KEY (homelab deploy key for n8n CLI trigger)
 
 name: Deploy workflow to n8n
 
@@ -67,6 +68,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: workflow-json
+
+      - name: Setup SSH key for n8n host
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/homelab_deploy_key
+          chmod 600 ~/.ssh/homelab_deploy_key
 
       - name: Normalise base URL once
         env:
@@ -306,6 +313,10 @@ jobs:
         run: |
           N8N_HOST=$(python3 -c "from urllib.parse import urlparse; import os; print(urlparse(os.environ['N8N_BASE_URL_NORM']).hostname)")
           echo "Executing workflow ${workflow_id} via n8n CLI on ${N8N_HOST}..."
-          ssh -o StrictHostKeyChecking=accept-new "root@${N8N_HOST}" \
+          ssh -i ~/.ssh/homelab_deploy_key -o StrictHostKeyChecking=accept-new "root@${N8N_HOST}" \
             "n8n execute --id=${workflow_id}"
           echo "Workflow ${workflow_id} executed successfully via CLI"
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/homelab_deploy_key
