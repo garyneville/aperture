@@ -216,4 +216,6 @@ export interface DaySummary {
   bestPmHour: string;
   sunriseOcclusionRisk: number | null;
   sunsetOcclusionRisk: number | null;
+  postFrontalClarityPeak: number;
+  postFrontalClarityWindow: string | null;
 }

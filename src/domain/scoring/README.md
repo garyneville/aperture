@@ -29,6 +29,8 @@ This folder owns weather feature derivation, day scoring, and session recommenda
   Near-term (0-6h) nowcast signal computation. Currently supports satellite radiation clearing/thickening detection via Open-Meteo Satellite Radiation API (EUMETSAT).
 - `metar/`
   Structured METAR observation parsing. Extracts wx type (fog/mist/haze/smoke/rain/snow/thunderstorm), visibility, cloud base height, and dew-point spread from raw METAR strings using `metar-taf-parser`. Parsed fields are injected into `DerivedHourFeatures` for evaluator consumption.
+- `features/post-frontal-clarity.ts`
+  Post-frontal clarity detection. Identifies the transient 2–6 hour window of clean, high-contrast air following frontal passage by combining four signals: recent rain accumulation, wind direction shift, visibility jump, and humidity drop. Produces a 0–100 `postFrontalClarityScore` per hour and a day-level peak/window summary. Requires multi-hour lookback so is computed in `summarize-day.ts` and backfilled into feature inputs.
 - `score-all-days.ts`
   Orchestrates hourly scoring, day summaries, debug payload assembly, and session recommendation attachment.
 
@@ -47,6 +49,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `features/derive-hour-features.ts` derives `diffuseToDirectRatio` (diffuse / (direct + 1)) and `hasFrost` (soil temp ≤ 0 °C) from raw radiation and soil temperature fields.
 - `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
 - `features/derive-hour-features.ts` derives `crepuscularScore` from three multiplicative Van Den Broeke sub-scores: geometry window (solar elevation −4° to 12°), occlusion + gap (broken/layered cloud with gaps), and beam visibility (AOD sweet-spot 0.10–0.30 with moderate humidity). The score is zero outside the geometry window. Previously this was an inline heuristic in `score-hour.ts`; it is now physics-informed and derived alongside other features.
+- `summarize-day.ts` runs post-frontal clarity detection after scoring all hours (multi-hour lookback required). Backfills `postFrontalClarityScore` into feature inputs and emits `postFrontalClarityPeak` / `postFrontalClarityWindow` on `DaySummary`. Returns `null` when insufficient lookback data is available (< 3 hours).
 
 ## What not to edit casually
 
@@ -61,3 +64,4 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - [`sessions/index.test.ts`](./sessions/index.test.ts)
 - [`nowcast/satellite-clearing.test.ts`](./nowcast/satellite-clearing.test.ts)
 - [`metar/parse-metar.test.ts`](./metar/parse-metar.test.ts)
+- [`features/post-frontal-clarity.test.ts`](./features/post-frontal-clarity.test.ts)

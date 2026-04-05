@@ -75,6 +75,7 @@ export interface DerivedHourFeatures {
   metarCloudBaseM?: number | null;
   metarDewPointSpreadC?: number | null;
   visibilityDeltaVsModelKm?: number | null;
+  postFrontalClarityScore?: number | null;
 }
 
 export interface SessionScore {
