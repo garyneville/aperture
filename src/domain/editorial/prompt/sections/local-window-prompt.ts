@@ -12,6 +12,7 @@ import {
   buildWeekStandoutInstructions,
   type StructuredPromptParts,
 } from './prompt-blocks.js';
+import type { NarrativeFrame } from './narrative-frames.js';
 
 const SPUR_LOCATION_NAMES = LONG_RANGE_LOCATIONS.map(l => l.name).join(', ');
 
@@ -38,6 +39,8 @@ export interface LocalWindowPromptParams {
   peakKpTonight: number | null;
   currentMonth: number;
   sessionRecommendation?: SessionRecommendationSummary;
+  narrativeFrame?: NarrativeFrame;
+  phrasebookLine?: string;
 }
 
 type LocalWindowPromptSections = {
@@ -190,7 +193,7 @@ The window card already shows the label, time range, score, and headline metrics
 Use only supplied facts. No camera tips, composition advice, hype, or filler. No emojis. Never return a single sentence. Do not call conditions ideal unless score ≥ 70.
 Do not blame cloud unless the supplied peak-hour cloud cover supports it. If the score gap is explained by visibility or AOD, say that instead.
 The editorial must describe ${homeLocationName} conditions only. Do not name or reference any nearby alternative location, score, or comparison. All alternative detail is in the dedicated card below.
-
+${p.narrativeFrame ? `\nNARRATIVE FRAME (${p.narrativeFrame.label}):\n${p.narrativeFrame.instruction}\n` : ''}
 COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
 Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing" unless the supplied constraints explicitly support them.
@@ -200,7 +203,7 @@ ${buildWeekStandoutInstructions()}
 ${buildSpurInstructions({ homeLocationName, locationList: SPUR_LOCATION_NAMES })}
 
 Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${contextFacts}
+${p.phrasebookLine ? p.phrasebookLine + '\n' : ''}${contextFacts}
 ${metarNote ? 'METAR: ' + metarNote : ''}
 ${editorialInsights ? `\nEditorial insight options:\n${editorialInsights}` : ''}
 
@@ -243,7 +246,7 @@ EDITORIAL RULES
 - Never call conditions ideal unless the supplied score is 70 or higher.
 - Do not blame cloud unless the supplied peak-hour cloud cover supports it.
 - The editorial must describe ${homeLocationName} conditions only. Do not name or compare nearby alternatives in the editorial.
-
+${p.narrativeFrame ? `\nNARRATIVE FRAME (${p.narrativeFrame.label})\n${p.narrativeFrame.instruction}\n` : ''}
 COMPOSITION RULES
 - composition must contain exactly 2 short shot ideas.
 - Each idea must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to the supplied conditions.
@@ -262,7 +265,7 @@ SPUR OF THE MOMENT RULES
 
   const userPrompt = `Selected primary window: ${bestWin.label} (${windowRange(bestWin)})
 Date: ${today} | Current time: ${nowTimeStr} | Sunrise: ${sunriseStr} | Sunset: ${sunsetStr} | Moon: ${moonPct}%
-${contextFacts}
+${p.phrasebookLine ? p.phrasebookLine + '\n' : ''}${contextFacts}
 ${metarNote ? `METAR: ${metarNote}\n` : ''}${editorialInsights ? `Editorial insight options:\n${editorialInsights}\n\n` : ''}${shotConstraints ? `Shot constraints:\n${shotConstraints}\n\n` : ''}${homeLocationName} shooting windows:
 ${windowsText}${altText}
 
