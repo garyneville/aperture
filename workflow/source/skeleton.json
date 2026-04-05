@@ -642,7 +642,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=precipitation_probability&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=precipitation_probability,lightning_potential&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0017-0017-0017-000000000017",
@@ -1097,7 +1097,10 @@
       "name": "HTTP: Gemini Fallback",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1760, 520],
+      "position": [
+        1760,
+        520
+      ],
       "retryOnFail": true,
       "maxTries": 2,
       "waitBetweenTries": 3000,
@@ -1113,7 +1116,10 @@
       "name": "Code: Extract Gemini Fallback",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1980, 520]
+      "position": [
+        1980,
+        520
+      ]
     },
     {
       "parameters": {
@@ -1125,7 +1131,10 @@
       "name": "Code: Build Inspire Prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1540, 740]
+      "position": [
+        1540,
+        740
+      ]
     },
     {
       "parameters": {
@@ -1141,7 +1150,10 @@
       "name": "HTTP: Gemini Inspire",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1760, 740],
+      "position": [
+        1760,
+        740
+      ],
       "onError": "continueRegularOutput"
     },
     {
@@ -1154,7 +1166,10 @@
       "name": "Code: Extract Gemini Inspire",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1980, 740]
+      "position": [
+        1980,
+        740
+      ]
     },
     {
       "parameters": {
@@ -1171,7 +1186,10 @@
       "name": "If: Run Inspire",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [1540, 580]
+      "position": [
+        1540,
+        580
+      ]
     },
     {
       "parameters": {},
@@ -1179,7 +1197,10 @@
       "name": "NoOp: Skip Inspire",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [1760, 900]
+      "position": [
+        1760,
+        900
+      ]
     }
   ],
   "connections": {

@@ -45,6 +45,7 @@ export interface PrecipProbData {
   hourly?: {
     time?: string[];
     precipitation_probability?: number[];
+    lightning_potential?: (number | null)[];
   };
 }
 

@@ -32,6 +32,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 
 - `summarize-day.ts` coalesces `null` AirQualityData into static fallbacks (AOD: 0.2, AQI: 25, Dust: 0, UV: 0) and issues console warnings so that downstream feature math survives the shorter Open-Meteo Air Quality forecast horizon.
 - `summarize-day.ts` resolves `precipitation_probability` from the dedicated `PrecipProbData` input (fetched without a model pin so the API's best-match model provides real values). The main weather response does not carry this field.
+- `summarize-day.ts` resolves `lightning_potential` from the same `PrecipProbData` input (also requires best-match model; not supported by UKMO `ukmo_seamless`). A **CAPE < 500 J/kg hard floor** is applied before the value is propagated as `lightningRisk`: in UK/Northern Europe mid-latitude conditions, lightning risk is effectively zero below this CAPE threshold, and gating prevents false-positive storm scores on calm photogenic days with incidental cloud.
 - `summarize-day.ts` falls back to 20 for `total_column_integrated_water_vapour` and `null` for `boundary_layer_height` when absent. The UKMO model does not support these fields, so they are not requested in the Weather node URL.
 - `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
 - `sessions/evaluators/golden-hour.ts` applies a humidity haze penalty when RH exceeds 70% — hygroscopic aerosol swelling in humid air creates milky haze that mutes sunset colour vibrancy.
