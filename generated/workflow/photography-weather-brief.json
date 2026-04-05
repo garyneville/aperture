@@ -614,7 +614,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.sunsethue.com/forecast?lat=__PHOTO_WEATHER_LAT__&lon=__PHOTO_WEATHER_LON__",
+        "url": "https://api.sunsethue.com/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__",
         "sendHeaders": true,
         "specifyHeaders": "keypair",
         "headerParameters": {
