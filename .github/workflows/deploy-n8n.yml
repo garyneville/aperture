@@ -64,6 +64,9 @@ jobs:
     needs: test
     runs-on: self-hosted
     environment: production
+    env:
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
     steps:
       - uses: actions/download-artifact@v4
         with:
