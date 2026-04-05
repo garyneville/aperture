@@ -34,10 +34,10 @@ export interface WeatherData {
 export interface AirQualityData {
   hourly?: {
     time?: string[];
-    aerosol_optical_depth?: number[];
-    dust?: number[];
-    european_aqi?: number[];
-    uv_index?: number[];
+    aerosol_optical_depth?: (number | null)[];
+    dust?: (number | null)[];
+    european_aqi?: (number | null)[];
+    uv_index?: (number | null)[];
   };
 }
 

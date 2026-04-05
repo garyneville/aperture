@@ -75,6 +75,8 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     ? new Date(darkSkyStartTs).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: timezone })
     : null;
 
+  let aqNullCount = 0;
+
   // Score each hour
   const hours: ScoredHour[] = [];
   (byDate[dateKey] || []).forEach(({ ts, i }) => {
@@ -102,10 +104,19 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     const blh  = w.hourly!.boundary_layer_height?.[i] ?? null;
 
     const qi   = aqIdx[ts] ?? -1;
-    const aod  = qi >= 0 ? (aqData.hourly!.aerosol_optical_depth?.[qi]  ?? 0.2) : 0.2;
-    const dust = qi >= 0 ? (aqData.hourly!.dust?.[qi]                    ?? 0)   : 0;
-    const aqi  = qi >= 0 ? (aqData.hourly!.european_aqi?.[qi]            ?? 25)  : 25;
-    const uv   = qi >= 0 ? (aqData.hourly!.uv_index?.[qi]                ?? 0)   : 0;
+    const rawAod  = qi >= 0 ? (aqData.hourly!.aerosol_optical_depth?.[qi] ?? null) : null;
+    const rawDust = qi >= 0 ? (aqData.hourly!.dust?.[qi]                  ?? null) : null;
+    const rawAqi  = qi >= 0 ? (aqData.hourly!.european_aqi?.[qi]          ?? null) : null;
+    const rawUv   = qi >= 0 ? (aqData.hourly!.uv_index?.[qi]              ?? null) : null;
+
+    if (qi >= 0 && (rawAod === null || rawDust === null || rawAqi === null || rawUv === null)) {
+      aqNullCount++;
+    }
+
+    const aod  = rawAod  ?? 0.2;
+    const dust = rawDust ?? 0;
+    const aqi  = rawAqi  ?? 25;
+    const uv   = rawUv   ?? 0;
 
     const isGoldAm = t >= goldAmS && t <= goldAmE;
     const isGoldPm = t >= goldPmS && t <= goldPmE;
@@ -145,6 +156,10 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     featureInputsByTs[ts] = featureInput;
     hours.push(scoredHour);
   });
+
+  if (aqNullCount > 0) {
+    console.warn(`[Summarize Day] Coalesced null air quality values to defaults for ${aqNullCount} hours on ${dateKey}.`);
+  }
 
   // Best photo score - apply duration bonus at the day level
   const goldenHours = hours.filter(h => h.isGolden || h.isBlue);
