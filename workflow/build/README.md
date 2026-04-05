@@ -31,6 +31,16 @@ The skeleton uses two separate Open-Meteo forecast calls with different model st
 
 If a new hourly field is needed, check whether the chosen model supports it before adding it to a URL. Fields unsupported by a model return `null` arrays.
 
+### UKMO-incompatible fields
+
+The following fields are **not** requested in the `HTTP: Weather` node because `ukmo_seamless` returns `null` for them:
+
+| Field | Scoring fallback | Impact |
+|---|---|---|
+| `precipitation_probability` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model |
+| `total_column_integrated_water_vapour` | Falls back to 20 (neutral — no clarity bonus or penalty) | Scoring degraded; real values would improve clarity assessment |
+| `boundary_layer_height` | Falls back to `null` | Informational only; no direct scoring impact |
+
 The workflow skeleton now contains a conditional editorial branch:
 
 - `HTTP: Groq` runs first in full-response mode

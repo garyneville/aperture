@@ -105,7 +105,9 @@ describe('workflow assembly', () => {
       expect.objectContaining({ node: 'HTTP: Air Quality', index: 0 }),
       expect.objectContaining({ node: 'Code: Wrap Weather', index: 0 }),
     ]));
-    expect(weatherNode?.parameters?.url).toContain('boundary_layer_height');
+    // UKMO does not support these fields — they must NOT appear in the Weather URL
+    expect(weatherNode?.parameters?.url).not.toContain('total_column_integrated_water_vapour');
+    expect(weatherNode?.parameters?.url).not.toContain('boundary_layer_height');
 
     const ensembleConnection = data.connections['HTTP: Ensemble']?.main?.[0]?.[0];
     expect(ensembleConnection?.node).toBe('Code: Wrap Ensemble');
@@ -174,10 +176,14 @@ describe('workflow assembly', () => {
     const weatherNode = skeleton.nodes.find((n: { name: string }) => n.name === 'HTTP: Weather');
     expect(weatherNode).toBeTruthy();
     const weatherUrl: string = weatherNode.parameters.url;
-    // Main weather call should use ukmo_seamless but NOT request precipitation_probability
-    // (precipitation_probability is handled by the dedicated Precip Prob node)
+    // Main weather call should use ukmo_seamless but NOT request fields UKMO can't serve:
+    // - precipitation_probability (handled by dedicated Precip Prob node)
+    // - total_column_integrated_water_vapour (UKMO returns null; scoring falls back to 20)
+    // - boundary_layer_height (UKMO returns null; scoring falls back to null)
     expect(weatherUrl).toContain('models=ukmo_seamless');
     expect(weatherUrl).not.toContain('precipitation_probability');
+    expect(weatherUrl).not.toContain('total_column_integrated_water_vapour');
+    expect(weatherUrl).not.toContain('boundary_layer_height');
     expect(weatherUrl).toContain('precipitation');
   });
 
