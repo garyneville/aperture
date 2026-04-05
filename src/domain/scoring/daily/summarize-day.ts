@@ -17,6 +17,7 @@ import { computeConfidence, type EnsEntry } from './confidence.js';
 import { computeCarWash } from './car-wash.js';
 import { computeTwilightBoundaries } from './twilight.js';
 import type { ParsedMetar } from '../metar/parse-metar.js';
+import { detectPostFrontalClarity, findPostFrontalClarityPeak, type HourSlice } from '../features/post-frontal-clarity.js';
 
 interface DateEntry { ts: string; i: number }
 
@@ -182,6 +183,34 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     console.warn(`[Summarize Day] Coalesced null air quality values to defaults for ${aqNullCount} hours on ${dateKey}.`);
   }
 
+  // ── Post-frontal clarity detection (multi-hour lookback) ──────────────────
+  const hourSlices: HourSlice[] = (byDate[dateKey] || []).map(({ ts, i }) => ({
+    ts,
+    precipMm: w.hourly!.precipitation?.[i] ?? 0,
+    precipProbPct: ppIdx[ts] != null && ppIdx[ts] >= 0
+      ? (ppData.hourly!.precipitation_probability?.[ppIdx[ts]] ?? 0)
+      : 0,
+    visibilityKm: (w.hourly!.visibility?.[i] ?? 10000) / 1000,
+    humidityPct: w.hourly!.relativehumidity_2m?.[i] ?? 70,
+    windDirectionDeg: w.hourly!.winddirection_10m?.[i] ?? null,
+    aerosolOpticalDepth: (() => {
+      const qi = aqIdx[ts] ?? -1;
+      return qi >= 0 ? (aqData.hourly!.aerosol_optical_depth?.[qi] ?? 0.2) : 0.2;
+    })(),
+  }));
+
+  const { peakScore: postFrontalClarityPeak, windowLabel: postFrontalClarityWindow } =
+    findPostFrontalClarityPeak(hourSlices);
+
+  // Backfill post-frontal clarity scores into feature inputs
+  hourSlices.forEach((slice, idx) => {
+    const result = detectPostFrontalClarity(hourSlices, idx);
+    const ts = slice.ts;
+    if (featureInputsByTs[ts]) {
+      featureInputsByTs[ts].postFrontalClarityScore = result?.score ?? null;
+    }
+  });
+
   // Best photo score - apply duration bonus at the day level
   const goldenHours = hours.filter(h => h.isGolden || h.isBlue);
   const photoHours  = goldenHours.length ? goldenHours : hours.filter(h => !h.isNight);
@@ -251,5 +280,7 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     bestAmHour: bestAmH.hour || '\u2014', bestPmHour: bestPmH.hour || '\u2014',
     sunriseOcclusionRisk: sunriseOcclusionRisk !== null ? Math.round(sunriseOcclusionRisk) : null,
     sunsetOcclusionRisk: sunsetOcclusionRisk !== null ? Math.round(sunsetOcclusionRisk) : null,
+    postFrontalClarityPeak,
+    postFrontalClarityWindow,
   };
 }
