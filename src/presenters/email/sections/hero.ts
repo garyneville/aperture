@@ -40,6 +40,7 @@ export interface HeroSectionParams {
   topAlternativeIsCloseContender: boolean;
   localSummary: string;
   spurOfTheMoment?: SpurOfTheMomentSuggestion | null;
+  hasAstroWindow?: boolean;
 }
 
 export function heroSection(p: HeroSectionParams): string {
@@ -109,7 +110,7 @@ export function heroSection(p: HeroSectionParams): string {
   </table>
   <div style="height:1px;background:rgba(255,255,255,0.10);margin:16px 0;"></div>
   <div style="border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(factStats, 2)}</div>
-  <div style="Margin-top:5px;padding:0 2px;font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.36);">${moonAstroContext(p.moonPct)}</div>
+  <div style="Margin-top:5px;padding:0 2px;font-family:${FONT};font-size:11px;color:rgba(255,255,255,0.36);">${moonAstroContext(p.moonPct, p.hasAstroWindow)}</div>
   <div style="Margin-top:8px;border-radius:8px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;">${summaryGrid(scoreStats, 2)}</div>
   ${p.localSummary || alternativeSummary ? '<div style="height:1px;background:rgba(255,255,255,0.10);margin:14px 0 10px;"></div>' : ''}
   ${p.localSummary ? `<div style="font-family:${FONT};font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(p.localSummary.replace(/\n/g, ' · '))}</div>` : ''}

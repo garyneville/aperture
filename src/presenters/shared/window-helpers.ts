@@ -192,12 +192,15 @@ export function timeAwareLocalSummary(
 
 /**
  * Returns a moon astro context description with icon for the given moon percentage.
+ * When the moon is bright but sets below the horizon during astro windows,
+ * the message is qualified to avoid a blanket "avoid astrophotography" warning.
  */
-export function moonAstroContext(moonPct: number): string {
+export function moonAstroContext(moonPct: number, hasAstroWindow = false): string {
   const icon = moonIconForPct(moonPct);
   if (moonPct <= 15) return `${icon} Dark skies — excellent for astrophotography`;
   if (moonPct <= 40) return `${icon} Low moon glow — good for astrophotography`;
   if (moonPct <= 70) return `${icon} Moderate moon — astrophotography compromised`;
+  if (hasAstroWindow) return `${icon} Bright moon — but sets during late-night astro windows`;
   if (moonPct <= 90) return `${icon} Bright moon — poor for astrophotography`;
   return `${icon} Full moon — avoid astrophotography`;
 }
