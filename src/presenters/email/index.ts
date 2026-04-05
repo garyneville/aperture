@@ -129,6 +129,7 @@ export function formatEmail(input: FormatEmailInput): string {
     topAlternativeIsCloseContender,
     localSummary,
     spurOfTheMoment,
+    hasAstroWindow: windows.some(w => w.label?.toLowerCase().includes('astro') || (w.tops || []).includes('astrophotography')),
   });
 
   const signals = signalCards(shSunriseQ, shSunsetQ, shSunsetText, sunDir, crepPeak, metarNote, peakKpTonight, auroraSignal, locationName, homeLatitude);

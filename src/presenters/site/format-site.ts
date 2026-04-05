@@ -163,6 +163,7 @@ export function formatSite(input: FormatEmailInput): string {
     localSummary,
     alternativeSummary,
     altSummaryTitle,
+    hasAstroWindow: windows.some(w => w.label?.toLowerCase().includes('astro') || (w.tops || []).includes('astrophotography')),
   }));
 
   const utilityBar = sDaylightUtilityBar({ todayCarWash: todayCarWashData, runTime });
