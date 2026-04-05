@@ -16,6 +16,7 @@ import type { DerivedHourFeatureInput } from '../features/derive-hour-features.j
 import { computeConfidence, type EnsEntry } from './confidence.js';
 import { computeCarWash } from './car-wash.js';
 import { computeTwilightBoundaries } from './twilight.js';
+import type { ParsedMetar } from '../metar/parse-metar.js';
 
 interface DateEntry { ts: string; i: number }
 
@@ -35,13 +36,14 @@ export interface SummarizeDayParams {
   ppIdx: Record<string, number>;
   aqIdx: Record<string, number>;
   featureInputsByTs: Record<string, DerivedHourFeatureInput>;
+  parsedMetar: ParsedMetar;
 }
 
 export function summarizeDay(p: SummarizeDayParams): DaySummary {
   const {
     dateKey, dayIdx, lat, lon, timezone,
     byDate, w, ppData, aqData, shByDay, azimuthByPhase, ensIdx, ppIdx, aqIdx,
-    featureInputsByTs,
+    featureInputsByTs, parsedMetar,
   } = p;
 
   const sunriseD = new Date(w.daily!.sunrise[dayIdx]);
@@ -161,6 +163,16 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     // Backfill ensemble fields into feature input
     featureInput.ensembleCloudStdDevPct = ensIdx[ts] ? Math.round(ensIdx[ts]!.stdDev) : null;
     featureInput.ensembleCloudMeanPct   = ensIdx[ts] ? Math.round(ensIdx[ts]!.mean)   : null;
+
+    // Backfill parsed METAR observation fields
+    featureInput.metarWxType           = parsedMetar.wxType;
+    featureInput.metarVisibilityM      = parsedMetar.visibilityM;
+    featureInput.metarCloudBaseM       = parsedMetar.cloudBaseM;
+    featureInput.metarDewPointSpreadC  = parsedMetar.dewPointSpreadC;
+    // Visibility drift: observed minus forecast (positive = observed better than model)
+    featureInput.visibilityDeltaVsModelKm = parsedMetar.visibilityM != null
+      ? Math.round(((parsedMetar.visibilityM / 1000) - visK) * 10) / 10
+      : null;
 
     featureInputsByTs[ts] = featureInput;
     hours.push(scoredHour);

@@ -27,6 +27,8 @@ This folder owns weather feature derivation, day scoring, and session recommenda
   Session evaluation and recommendation logic.
 - `nowcast/`
   Near-term (0-6h) nowcast signal computation. Currently supports satellite radiation clearing/thickening detection via Open-Meteo Satellite Radiation API (EUMETSAT).
+- `metar/`
+  Structured METAR observation parsing. Extracts wx type (fog/mist/haze/smoke/rain/snow/thunderstorm), visibility, cloud base height, and dew-point spread from raw METAR strings using `metar-taf-parser`. Parsed fields are injected into `DerivedHourFeatures` for evaluator consumption.
 - `score-all-days.ts`
   Orchestrates hourly scoring, day summaries, debug payload assembly, and session recommendation attachment.
 
@@ -37,6 +39,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `summarize-day.ts` resolves `lightning_potential` from the same `PrecipProbData` input (also requires best-match model; not supported by UKMO `ukmo_seamless`). A **CAPE < 500 J/kg hard floor** is applied before the value is propagated as `lightningRisk`: in UK/Northern Europe mid-latitude conditions, lightning risk is effectively zero below this CAPE threshold, and gating prevents false-positive storm scores on calm photogenic days with incidental cloud.
 - `summarize-day.ts` falls back to 20 for `total_column_integrated_water_vapour` and `null` for `boundary_layer_height` when absent. The UKMO model does not support these fields, so they are not requested in the Weather node URL.
 - `summarize-day.ts` extracts `direct_radiation`, `diffuse_radiation`, and `soil_temperature_0cm` from the weather response. These degrade to `null` when absent (e.g. if the model does not provide them), and derived features fall back gracefully.
+- `summarize-day.ts` injects parsed METAR observation fields (`metarWxType`, `metarVisibilityM`, `metarCloudBaseM`, `metarDewPointSpreadC`, `visibilityDeltaVsModelKm`) into each hour's feature input. All fields are `null` when METAR is unavailable or unparseable.
 - `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
 - `sessions/evaluators/golden-hour.ts` applies a humidity haze penalty when RH exceeds 70% — hygroscopic aerosol swelling in humid air creates milky haze that mutes sunset colour vibrancy.
 - `sessions/evaluators/golden-hour.ts` weights cloud-stratification (high-cloud translucency, low-cloud blocking) more heavily than total cloud percentage, reflecting research that cloud altitude distribution matters more than total cover for sunset colour.
@@ -57,3 +60,4 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - [`features/derive-hour-features.test.ts`](./features/derive-hour-features.test.ts)
 - [`sessions/index.test.ts`](./sessions/index.test.ts)
 - [`nowcast/satellite-clearing.test.ts`](./nowcast/satellite-clearing.test.ts)
+- [`metar/parse-metar.test.ts`](./metar/parse-metar.test.ts)
