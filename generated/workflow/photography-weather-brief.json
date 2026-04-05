@@ -54,7 +54,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit,total_column_integrated_water_vapour,boundary_layer_height&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0003-0003-0003-000000000003",
