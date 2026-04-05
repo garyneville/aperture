@@ -266,12 +266,26 @@ export function fuseAuroraSignals(
   // Count upcoming Earth-directed CMEs (arriving within lookahead window).
   // Stale long-range data is not surfaced — we can't trust arrival windows.
   const freshLongRange = longRange && !longRange.isStale ? longRange : null;
-  const upcomingCmes = (freshLongRange?.earthDirectedCmes ?? []).filter(cme => {
+  const freshUpcoming = (freshLongRange?.earthDirectedCmes ?? []).filter(cme => {
     if (!cme.estimatedArrivalTime) return false;
     const arrival = new Date(cme.estimatedArrivalTime).getTime();
     const diff = arrival - now.getTime();
     return diff >= 0 && diff <= DONKI_LOOKAHEAD_MS;
   });
+
+  // Fallback: also count CMEs from stale data if arrival is imminent (<24h away).
+  // CME arrival estimates are stable enough that 12-24h-old data is still
+  // actionable for imminent arrivals — photographers shouldn't miss tonight's aurora.
+  const IMMINENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const imminentFromStale = (longRange?.isStale ? (longRange.earthDirectedCmes ?? []) : [])
+    .filter(cme => {
+      if (!cme.estimatedArrivalTime) return false;
+      const arrival = new Date(cme.estimatedArrivalTime).getTime();
+      const diff = arrival - now.getTime();
+      return diff >= 0 && diff <= IMMINENT_WINDOW_MS;
+    });
+
+  const upcomingCmes = freshUpcoming.length > 0 ? freshUpcoming : imminentFromStale;
 
   const nextCmeArrival = upcomingCmes[0]?.estimatedArrivalTime ?? null;
   const upcomingCmeCount = upcomingCmes.length;
@@ -281,7 +295,7 @@ export function fuseAuroraSignals(
   let horizon: AuroraSignal['horizon'] = 'none';
 
   const nearTermLevel = nearTerm && !nearTerm.isStale ? nearTerm.level : null;
-  const hasUpcomingCme = upcomingCmeCount > 0 && !(longRange?.isStale ?? true);
+  const hasUpcomingCme = upcomingCmeCount > 0;
 
   if (nearTermLevel && nearTermLevel !== 'green') {
     // Active alert (yellow/amber/red) — near-term drives
