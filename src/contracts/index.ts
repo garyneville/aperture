@@ -48,6 +48,13 @@ export type {
   SessionScore,
 } from './session-score.js';
 
+// Nowcast types
+export type {
+  NowcastSatelliteData,
+  NowcastSignal,
+  NowcastDirection,
+} from '../domain/scoring/contracts.js';
+
 // Editorial resolution types
 export type {
   BriefContext,

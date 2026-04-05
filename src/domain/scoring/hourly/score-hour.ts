@@ -32,6 +32,9 @@ export interface ScoreHourParams {
   prev: number;
   tpw: number;
   blh: number | null;
+  drad: number | null;
+  frad: number | null;
+  st0: number | null;
   aod: number;
   dust: number;
   aqi: number;
@@ -223,6 +226,9 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     horizonGapPct: p.horizonGapPct !== null ? Math.round(p.horizonGapPct) : null,
     capeJkg: Math.round(p.cap),
     lightningRisk: p.lightningRisk,
+    directRadiationWm2: p.drad != null ? Math.round(p.drad) : null,
+    diffuseRadiationWm2: p.frad != null ? Math.round(p.frad) : null,
+    soilTemperature0cmC: p.st0 != null ? Math.round(p.st0 * 10) / 10 : null,
     ensembleCloudStdDevPct: null, // populated by orchestrator
     ensembleCloudMeanPct: null,   // populated by orchestrator
   };
@@ -245,6 +251,9 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     isBlue: p.isBlue, isBlueAm: p.isBlueAm, isBluePm: p.isBluePm, isNight: p.isNight,
     moon: Math.round(moon * 100), moonAltDeg: Math.round(moonMetrics.altitudeDeg * 10) / 10,
     solarAltDeg: Math.round(solarAltDeg * 10) / 10, uv: p.uv, tags,
+    directRadiationWm2: p.drad != null ? Math.round(p.drad) : null,
+    diffuseRadiationWm2: p.frad != null ? Math.round(p.frad) : null,
+    soilTemperature0cmC: p.st0 != null ? Math.round(p.st0 * 10) / 10 : null,
   };
 
   return { hour, featureInput };

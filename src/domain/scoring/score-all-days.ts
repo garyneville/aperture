@@ -3,6 +3,7 @@ import { summarizeSessionRecommendations } from './sessions/index.js';
 import { summarizeDay } from './daily/summarize-day.js';
 import { buildMetarNote } from './daily/metar-note.js';
 import { buildDebugContext } from './daily/build-debug-context.js';
+import { computeClearingSignal } from './nowcast/satellite-clearing.js';
 import type { DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import type { SessionRecommendationSummary } from '../../types/session-score.js';
 export type {
@@ -16,6 +17,8 @@ export type {
   ScoredHour,
   CarWash,
   DaySummary,
+  NowcastSatelliteData,
+  NowcastSignal,
 } from './contracts.js';
 import type {
   WeatherData,
@@ -26,6 +29,7 @@ import type {
   AzimuthByPhase,
   ScoredHour,
   DaySummary,
+  NowcastSatelliteData,
 } from './contracts.js';
 
 // ── Input interface ───────────────────────────────────────────────────────────
@@ -41,6 +45,7 @@ export interface ScoreHoursInput {
   sunsetHue: SunsetHueEntry[] | SunsetHueEntry;
   ensemble: EnsembleData;
   azimuthByPhase: AzimuthByPhase;
+  nowcastSatellite?: NowcastSatelliteData;
 }
 
 // ── Output interface ──────────────────────────────────────────────────────────
@@ -155,5 +160,32 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
     };
   }
 
+  // Attach nowcast clearing signals to near-term hours (0-6h window)
+  attachNowcastSignals(todayHours, input.nowcastSatellite, tod);
+
   return { todayHours, dailySummary, metarNote, sessionRecommendation, debugContext };
+}
+
+// ── Nowcast signal attachment ─────────────────────────────────────────────────
+
+const NOWCAST_HORIZON_HOURS = 6;
+
+function attachNowcastSignals(
+  todayHours: ScoredHour[],
+  satellite: NowcastSatelliteData | undefined,
+  now: Date,
+): void {
+  if (!satellite) return;
+
+  for (const hour of todayHours) {
+    const hourDate = new Date(hour.ts);
+    const hoursAhead = (hourDate.getTime() - now.getTime()) / (3600 * 1000);
+    if (hoursAhead < -1 || hoursAhead > NOWCAST_HORIZON_HOURS) continue;
+
+    const forecastCloudCover = hour.ct; // total cloud cover 0-100
+    const signal = computeClearingSignal({ satellite, forecastCloudCover, now });
+    if (signal) {
+      hour.nowcastSignal = signal;
+    }
+  }
 }

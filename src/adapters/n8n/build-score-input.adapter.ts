@@ -16,6 +16,7 @@ export function run({ $input }: N8nRuntime) {
       precipProb: input.precipProb ?? EMPTY_HOURLY,
       ensemble: input.ensemble ?? EMPTY_HOURLY,
       azimuthByPhase: input.azimuthByPhase ?? {},
+      nowcastSatellite: input.nowcastSatellite ?? undefined,
     },
   }];
 }

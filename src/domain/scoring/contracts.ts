@@ -1,6 +1,41 @@
 // Shared data contracts for the scoring domain.
 // Types here are used by both score-all-days.ts and the hourly/daily submodules.
 
+// ── Nowcast interfaces ────────────────────────────────────────────────────────
+
+export interface NowcastSatelliteData {
+  current?: {
+    time?: string;
+    shortwave_radiation?: number;
+    shortwave_radiation_instant?: number;
+  };
+  hourly?: {
+    time?: string[];
+    shortwave_radiation?: number[];
+    shortwave_radiation_instant?: number[];
+  };
+  current_clear_sky?: {
+    shortwave_radiation?: number;
+  };
+  hourly_clear_sky?: {
+    time?: string[];
+    shortwave_radiation?: number[];
+  };
+}
+
+export type NowcastDirection = 'clearing' | 'thickening' | 'neutral';
+
+export interface NowcastSignal {
+  direction: NowcastDirection;
+  magnitude: number;
+  observedCloudFactor: number;
+  forecastCloudFraction: number;
+  delta: number;
+  confidence: 'high' | 'medium' | 'low';
+  staleAfter: string;
+  source: 'satellite-radiation';
+}
+
 // ── Input interfaces ──────────────────────────────────────────────────────────
 
 export interface WeatherData {
@@ -22,6 +57,9 @@ export interface WeatherData {
     vapour_pressure_deficit?: number[];
     total_column_integrated_water_vapour?: number[];
     boundary_layer_height?: number[];
+    direct_radiation?: (number | null)[];
+    diffuse_radiation?: (number | null)[];
+    soil_temperature_0cm?: (number | null)[];
   };
   daily?: {
     sunrise: string[];
@@ -122,6 +160,10 @@ export interface ScoredHour {
   solarAltDeg: number | null;
   uv: number;
   tags: string[];
+  directRadiationWm2?: number | null;
+  diffuseRadiationWm2?: number | null;
+  soilTemperature0cmC?: number | null;
+  nowcastSignal?: NowcastSignal | null;
 }
 
 export interface CarWash {
