@@ -4,6 +4,7 @@ import { summarizeDay } from './daily/summarize-day.js';
 import { buildMetarNote } from './daily/metar-note.js';
 import { buildDebugContext } from './daily/build-debug-context.js';
 import { computeClearingSignal } from './nowcast/satellite-clearing.js';
+import { parseMetarRaw } from './metar/parse-metar.js';
 import type { DerivedHourFeatureInput } from './features/derive-hour-features.js';
 import type { SessionRecommendationSummary } from '../../types/session-score.js';
 export type {
@@ -74,6 +75,9 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
   const azimuthByPhase = azimuthByPhaseRaw || {};
   const timezone = input.timezone || DEFAULT_HOME_LOCATION.timezone;
 
+  // Parse METAR into structured fields (once, up-front)
+  const parsedMetar = parseMetarRaw(input.metarRaw);
+
   // SunsetHue lookup
   const shByDay: Record<string, SunsetHueEntry> = {};
   const shArr = Array.isArray(input.sunsetHue) ? input.sunsetHue : [];
@@ -130,6 +134,7 @@ export function scoreAllDays(input: ScoreHoursInput, now?: Date): ScoreHoursOutp
       byDate, w, ppData, aqData: aq,
       shByDay, azimuthByPhase, ensIdx, ppIdx, aqIdx,
       featureInputsByTs,
+      parsedMetar,
     });
     dailySummary.push(day);
     if (dateKey === todayKey) todayHours = day.hours;

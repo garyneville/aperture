@@ -70,6 +70,11 @@ export interface DerivedHourFeatures {
   soilTemperature0cmC?: number | null;
   diffuseToDirectRatio: number | null;
   hasFrost: boolean | null;
+  metarWxType?: string | null;
+  metarVisibilityM?: number | null;
+  metarCloudBaseM?: number | null;
+  metarDewPointSpreadC?: number | null;
+  visibilityDeltaVsModelKm?: number | null;
 }
 
 export interface SessionScore {
