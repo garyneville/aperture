@@ -1465,6 +1465,11 @@
             "node": "HTTP: Gemini Fallback",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Merge: Prompt + Gemini FB",
+            "type": "main",
+            "index": 0
           }
         ],
         [
