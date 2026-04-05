@@ -244,7 +244,7 @@ function main() {
     altWeatherData: altWeatherData as any[],
     altLocationMeta: matchedAltMeta,
     homeContext: {
-      dailySummary: scoreResult.dailySummary,
+      dailySummary: scoreResult.dailySummary as any[],
       todayBestScore: scoreResult.todayHours.reduce((max, h) => Math.max(max, h.score), 0),
       debugContext: scoreResult.debugContext,
       windows: scoreResult.debugContext.windows,
@@ -287,7 +287,7 @@ function main() {
     sessionRecommendation: scoreResult.sessionRecommendation,
     metarNote: scoreResult.metarNote,
     aurora: auroraSignal,
-    kpForecast: kpForecast.slice(0, 10), // first few for context
+    kpForecast,
     location: DEFAULT_HOME_LOCATION,
     altLocations: altResult.altLocations,
     closeContenders: altResult.closeContenders,
