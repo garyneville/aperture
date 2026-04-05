@@ -24,7 +24,6 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     clarityScore: hour.clarity,
     mistScore: hour.mist,
     astroScore: hour.astro,
-    crepuscularScore: hour.crepuscular,
     cloudLowPct: hour.cl,
     cloudMidPct: hour.cm,
     cloudHighPct: hour.ch,
