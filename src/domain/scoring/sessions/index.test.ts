@@ -706,7 +706,6 @@ describe('session scoring foundation', () => {
         clarityScore: 36,
         mistScore: 10,
         astroScore: 0,
-        crepuscularScore: 58,
         cloudTotalPct: 74,
         visibilityKm: 16,
         aerosolOpticalDepth: 0.14,
@@ -816,15 +815,15 @@ describe('session scoring foundation', () => {
 
   it('storm bell-curve: moderate precip scores higher than dry or heavy rain', () => {
     const moderate = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
-      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 45,
+      dramaScore: 75, cloudTotalPct: 65, precipProbabilityPct: 45,
       isGolden: true, windKph: 15,
     })));
     const dry = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
-      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 5,
+      dramaScore: 75, cloudTotalPct: 65, precipProbabilityPct: 5,
       isGolden: true, windKph: 15,
     })));
     const heavy = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
-      dramaScore: 75, crepuscularScore: 40, cloudTotalPct: 65, precipProbabilityPct: 95,
+      dramaScore: 75, cloudTotalPct: 65, precipProbabilityPct: 95,
       isGolden: true, windKph: 15,
     })));
 
@@ -835,7 +834,7 @@ describe('session scoring foundation', () => {
 
   it('storm scores zero in dry calm conditions with no convective activity', () => {
     const calm = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
-      dramaScore: 78, crepuscularScore: 61, cloudTotalPct: 40, precipProbabilityPct: 0,
+      dramaScore: 78, cloudTotalPct: 40, precipProbabilityPct: 0,
       windKph: 9, gustKph: 14, isGolden: true, capeJkg: undefined, lightningRisk: undefined,
     })));
 
@@ -847,11 +846,11 @@ describe('session scoring foundation', () => {
   it('storm drama-cloud synergy peaks in partial cloud, not in full overcast', () => {
     const partial = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
       dramaScore: 82, cloudTotalPct: 60, precipProbabilityPct: 45,
-      isGolden: true, windKph: 18, crepuscularScore: 44,
+      isGolden: true, windKph: 18,
     })));
     const overcast = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
       dramaScore: 82, cloudTotalPct: 92, precipProbabilityPct: 45,
-      isGolden: true, windKph: 18, crepuscularScore: 44,
+      isGolden: true, windKph: 18,
     })));
 
     expect(partial.score).toBeGreaterThan(overcast.score);
@@ -866,7 +865,6 @@ describe('session scoring foundation', () => {
       precipProbabilityPct: 45,
       isGolden: true,
       windKph: 18,
-      crepuscularScore: 44,
       azimuthOcclusionRiskPct: 40,
       clearPathBonusPts: 0,
       horizonGapPct: 72,
@@ -877,7 +875,6 @@ describe('session scoring foundation', () => {
       precipProbabilityPct: 45,
       isGolden: true,
       windKph: 18,
-      crepuscularScore: 44,
       azimuthOcclusionRiskPct: 40,
       clearPathBonusPts: 0,
       horizonGapPct: 18,
@@ -898,7 +895,6 @@ describe('session scoring foundation', () => {
       precipProbabilityPct: 45,
       isGolden: true,
       windKph: 18,
-      crepuscularScore: 44,
     })));
     const flatLid = evaluateSessionFeatures('storm', deriveHourFeatures(makeHour({
       dramaScore: 82,
@@ -909,7 +905,6 @@ describe('session scoring foundation', () => {
       precipProbabilityPct: 45,
       isGolden: true,
       windKph: 18,
-      crepuscularScore: 44,
     })));
 
     expect(layered.score).toBeGreaterThan(flatLid.score);
@@ -974,7 +969,6 @@ describe('session scoring foundation', () => {
         clarityScore: 36,
         mistScore: 10,
         astroScore: 0,
-        crepuscularScore: 58,
         cloudTotalPct: 74,
         visibilityKm: 16,
         aerosolOpticalDepth: 0.14,
@@ -1082,7 +1076,6 @@ describe('session scoring foundation', () => {
       clarityScore: 22,
       mistScore: 55,
       astroScore: 0,
-      crepuscularScore: 18,
       cloudTotalPct: 60,
       visibilityKm: 6,
       aerosolOpticalDepth: 0.12,
@@ -1109,7 +1102,6 @@ describe('session scoring foundation', () => {
       clarityScore: 28,
       mistScore: 12,
       astroScore: 0,
-      crepuscularScore: 14,
       cloudTotalPct: 75,
       cloudLowPct: 30,
       cloudMidPct: 28,
@@ -1142,7 +1134,6 @@ describe('session scoring foundation', () => {
       clarityScore: 44,
       mistScore: 8,
       astroScore: 0,
-      crepuscularScore: 26,
       cloudTotalPct: 58,
       cloudLowPct: 18,
       cloudMidPct: 22,
@@ -1177,7 +1168,6 @@ describe('session scoring foundation', () => {
       clarityScore: 32,
       mistScore: 6,
       astroScore: 0,
-      crepuscularScore: 14,
       cloudTotalPct: 24,
       cloudLowPct: 12,
       cloudMidPct: 8,
