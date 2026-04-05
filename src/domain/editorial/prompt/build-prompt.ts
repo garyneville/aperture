@@ -34,6 +34,8 @@ import {
   buildDontBotherResponseSchema,
   EDITORIAL_RESPONSE_SCHEMA_NAME,
 } from './sections/prompt-blocks.js';
+import { selectNarrativeFrame } from './sections/narrative-frames.js';
+import { buildPhrasebookLine } from '../phrasebook.js';
 
 export interface KpEntry {
   time: string;
@@ -181,6 +183,26 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
     })();
 
+    const bestWin = windows[0];
+    const narrativeFrame = selectNarrativeFrame({
+      bestWindow: bestWin,
+      todayDay,
+      altLocations,
+      auroraVisibleLocally,
+      peakKpTonight,
+    });
+
+    const bestHour = bestWin?.hours?.find(h => h.score === bestWin.peak) || bestWin?.hours?.[0];
+    const phrasebookLine = bestHour
+      ? buildPhrasebookLine({
+          windKph: bestHour.wind,
+          cloudPct: bestHour.ct,
+          visKm: bestHour.visK,
+          score: bestWin.peak,
+          confidence: todayDay?.confidence ?? 'unknown',
+        })
+      : '';
+
     prompt = buildLocalWindowPrompt({
       homeLocationName,
       windows,
@@ -204,6 +226,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       peakKpTonight,
       currentMonth,
       sessionRecommendation,
+      narrativeFrame,
+      phrasebookLine,
     });
     ({ systemPrompt, userPrompt } = buildStructuredLocalWindowPrompt({
       homeLocationName,
@@ -228,6 +252,8 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
       peakKpTonight,
       currentMonth,
       sessionRecommendation,
+      narrativeFrame,
+      phrasebookLine,
     }));
   }
 

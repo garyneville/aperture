@@ -20,6 +20,10 @@ This folder owns prompt assembly and editorial resolution for the photography br
   Provider-neutral response parsing. Use `parseEditorialResponse()`.
 - [`resolution/week-standout.ts`](./resolution/week-standout.ts)
   Canonical deterministic week-standout resolver. Provider `weekStandout` text is debug/hint input only; final week-standout wording is derived from forecast data.
+- [`phrasebook.ts`](./phrasebook.ts)
+  Controlled threshold-to-word mappings (wind, cloud, visibility, score, confidence). Injected into the prompt context so the LLM sees pre-mapped descriptors alongside raw numbers, reducing arbitrary variation. See #226.
+- [`prompt/sections/narrative-frames.ts`](./prompt/sections/narrative-frames.ts)
+  Deterministic narrative frame selection. Picks one of four structural angles (Plan A / Plan B, Risk-first, Opportunity-first, Timing-critical) based on the day's dominant signal (uncertainty, narrow window, rare condition, viable alternatives). The frame instruction is included in the system prompt. See #226.
 - [`../../contracts/editorial.ts`](../../contracts/editorial.ts)
   Stable re-export surface for external callers.
 
@@ -27,7 +31,9 @@ This folder owns prompt assembly and editorial resolution for the photography br
 
 1. Prompt construction happens in [`prompt/build-prompt.ts`](./prompt/build-prompt.ts).
 2. Shared prompt blocks and the structured response schema live in [`prompt/sections/prompt-blocks.ts`](./prompt/sections/prompt-blocks.ts) and [`prompt/sections/week-standout.ts`](./prompt/sections/week-standout.ts).
-3. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts) via `parseEditorialResponse()` — a provider-neutral parser that handles responses from any AI provider (Groq, Gemini, etc.) without tying the code to specific provider naming.
+3. Narrative frame selection happens in [`prompt/sections/narrative-frames.ts`](./prompt/sections/narrative-frames.ts) — a deterministic pick based on forecast signals (uncertainty, window duration, rare conditions, alternatives).
+4. Controlled phrasebook descriptors are generated in [`phrasebook.ts`](./phrasebook.ts) and injected into the prompt context alongside raw numbers.
+5. Provider JSON/text parsing happens in [`resolution/parse.ts`](./resolution/parse.ts) via `parseEditorialResponse()` — a provider-neutral parser that handles responses from any AI provider (Groq, Gemini, etc.) without tying the code to specific provider naming.
 4. The runtime/app edge uses that parser to build an `EditorialGatewayPayload` with normalized text, raw text, parse outcome, diagnostics, and API status metadata.
 5. Factual/editorial checks live in [`resolution/validation.ts`](./resolution/validation.ts).
 6. Composition filtering lives in [`resolution/composition.ts`](./resolution/composition.ts).
