@@ -82,7 +82,7 @@ export function buildSharedPresentationContext(
 
   const topPrimaryAlternative = input.altLocations?.[0] || null;
   const topCloseContender = input.closeContenders?.[0] || null;
-  const topAlternative = topPrimaryAlternative || topCloseContender || todayDay.bestAlt || null;
+  const topAlternative = topPrimaryAlternative || topCloseContender || null;
   const topAlternativeIsCloseContender =
     !topPrimaryAlternative &&
     !!topCloseContender &&
