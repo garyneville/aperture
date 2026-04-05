@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "verify:generated": "node --loader ts-node/esm workflow/build/verify-generated.ts",
     "cli:finalize-brief": "node --loader ts-node/esm src/app/run-photo-brief/finalize-brief-cli.ts",
+    "cli:dump-pipeline": "node --loader ts-node/esm --loader ./scripts/esm-compat-loader.mjs scripts/dump-pipeline.ts",
     "cli:example": "npm run cli:finalize-brief -- ./fixtures/sample-forecast.json"
   },
   "bin": {
