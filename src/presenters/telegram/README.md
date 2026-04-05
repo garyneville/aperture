@@ -12,7 +12,7 @@ This folder contains the Telegram message formatter. It transforms brief data in
 ## Public Entry Points
 
 - [`format-telegram.ts`](./format-telegram.ts)
-  `formatTelegram(input)` — Main entry point. Accepts `BriefRenderInput` and returns an HTML-formatted string for Telegram.
+  `formatTelegram(input)` — Main entry point. Accepts `BriefRenderInput` and returns an HTML-formatted string for Telegram. Includes Plan B scenario line when primary session confidence is not high.
 
 Exported types (re-exports from brief types):
 ```typescript

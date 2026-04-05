@@ -37,7 +37,7 @@ Each section is a self-contained module that renders one visual area of the page
 | Signal Cards | `signals.ts` | Aurora, moon, sunset hue signal indicators |
 | Window | `window.ts` | Detailed shooting window display with hourly breakdown |
 | Daylight Utility | `daylight-utility.ts` | Sunrise/sunset timeline bar |
-| Session Recommendation | `session-rec.ts` | Recommended photography session card |
+| Session Recommendation | `session-rec.ts` | Recommended photography session card with Plan B callout |
 | Creative Spark | `creative-spark.ts` | AI-generated creative text section |
 | Kit Advisory | `kit-advisory.ts` | Photography equipment recommendations |
 | Alternatives | `alternatives.ts` | Nearby alternative locations comparison |

@@ -15,7 +15,7 @@ This folder contains cross-cutting render primitives used by multiple presenters
   Main export file containing colors, fonts, icons, score helpers, and formatting utilities.
 
 - [`window-helpers.ts`](./window-helpers.ts)
-  Cross-presenter utilities for window and session display. Functions for formatting session names, window labels, moon descriptors, and time-aware summaries.
+  Cross-presenter utilities for window and session display. Functions for formatting session names, window labels, moon descriptors, time-aware summaries, and Plan B scenario callout text.
 
 - [`kit-advisory.ts`](./kit-advisory.ts)
   Rule-based kit recommendation logic shared across presenters. Builds photography equipment tips based on weather conditions.
