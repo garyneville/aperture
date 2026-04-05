@@ -49,6 +49,7 @@ describe('session scoring foundation', () => {
       'long-exposure',
       'urban',
       'wildlife',
+      'seascape',
     ]);
   });
 
@@ -1002,7 +1003,7 @@ describe('session scoring foundation', () => {
     expect(summary.primary?.session).toBe('storm');
     expect(summary.primary?.hourLabel).toBe('19:00');
     expect(summary.hoursAnalyzed).toBe(2);
-    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'wildlife', 'astro']);
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'wildlife', 'astro', 'seascape']);
     expect(summary.runnerUps[0]?.session).toBe('long-exposure');
   });
 
@@ -1313,5 +1314,129 @@ describe('session scoring foundation', () => {
     expect(result.requiredCapabilities).toContain('surface-wetness');
     expect(result.requiredCapabilities).toContain('precipitation');
     expect(result.requiredCapabilities).toContain('aerosols');
+  });
+});
+
+describe('seascape evaluator', () => {
+  it('hard-passes with good swell and moderate wind during golden hour', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.2,
+      swellPeriodS: 10,
+      windKph: 14,
+      gustKph: 22,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 45,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.score).toBeGreaterThan(50);
+    expect(result.requiredCapabilities).toContain('marine');
+    expect(result.reasons.length).toBeGreaterThan(0);
+  });
+
+  it('fails hard-pass when marine data is missing', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: undefined,
+      swellPeriodS: undefined,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+    expect(result.warnings).toContain('No marine swell data available \u2014 seascape score cannot be calculated reliably.');
+  });
+
+  it('fails hard-pass when swell is too heavy', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 5.5,
+      swellPeriodS: 12,
+      windKph: 10,
+      visibilityKm: 20,
+    })));
+
+    expect(result.hardPass).toBe(false);
+    expect(result.score).toBe(0);
+  });
+
+  it('scores higher with ideal swell range than marginal swell', () => {
+    const ideal = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.0,
+      swellPeriodS: 11,
+      windKph: 12,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 40,
+    })));
+    const marginal = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 0.35,
+      swellPeriodS: 5,
+      windKph: 12,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 40,
+    })));
+
+    expect(ideal.score).toBeGreaterThan(marginal.score);
+  });
+
+  it('warns about heavy swell above 2.5 m', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 3.0,
+      swellPeriodS: 12,
+      windKph: 15,
+      visibilityKm: 20,
+      isGolden: true,
+    })));
+
+    expect(result.hardPass).toBe(true);
+    expect(result.warnings).toContain('Heavy swell \u2014 take care near wave-exposed positions and keep a safe distance from the water.');
+  });
+
+  it('applies ensemble uncertainty as a score and confidence penalty', () => {
+    const stable = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.2,
+      swellPeriodS: 10,
+      windKph: 14,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 45,
+      ensembleCloudStdDevPct: 5,
+    })));
+    const volatile = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.2,
+      swellPeriodS: 10,
+      windKph: 14,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 45,
+      ensembleCloudStdDevPct: 28,
+    })));
+
+    expect(stable.score).toBeGreaterThan(volatile.score);
+    expect(stable.confidence).not.toBe('low');
+  });
+
+  it('gives high confidence when swell, period, wind, and spread all align', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.0,
+      swellPeriodS: 10,
+      windKph: 12,
+      visibilityKm: 20,
+      isGolden: true,
+      cloudTotalPct: 40,
+      ensembleCloudStdDevPct: 6,
+    })));
+
+    expect(result.confidence).toBe('high');
+  });
+
+  it('exposes marine as a required capability', () => {
+    const result = evaluateSessionFeatures('seascape', deriveHourFeatures(makeHour({
+      swellHeightM: 1.0,
+      swellPeriodS: 10,
+    })));
+    expect(result.requiredCapabilities).toContain('marine');
+    expect(result.requiredCapabilities).toContain('sun-geometry');
+    expect(result.requiredCapabilities).toContain('wind');
   });
 });

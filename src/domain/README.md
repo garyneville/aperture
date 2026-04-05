@@ -41,7 +41,7 @@ This folder contains the business logic for weather scoring and editorial genera
   Hour-level feature engineering, weather metric derivation, and post-frontal clarity detection (multi-hour lookback for wet-scavenged air windows).
 
 - `sessions/`
-  Built-in session evaluators (golden hour, blue hour, astro, etc.), cross-hour selection logic, and recommendation summary generation.
+  Built-in session evaluators (golden hour, blue hour, astro, mist, storm, urban, long-exposure, wildlife, seascape), cross-hour selection logic, and recommendation summary generation.
 
 ### Editorial (`editorial/`)
 
