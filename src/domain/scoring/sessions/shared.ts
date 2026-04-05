@@ -167,8 +167,13 @@ export function astroConfidence(features: DerivedHourFeatures, hardPass: boolean
   const spread = spreadVolatility(features);
   const seeingOk = features.seeingScore == null || features.seeingScore >= 50;
   const bortleOk = features.lightPollutionBortle == null || features.lightPollutionBortle <= 5;
+  // Moon is not a confidence concern if it's well below the horizon (≤ -6°),
+  // consistent with the astro evaluator's 5-band Krisciunas–Schaefer table
+  // where altitude ≤ -6° yields a moonAltFactor of 0.00.
+  const moonBelowHorizon = features.moonAltitudeDeg != null && features.moonAltitudeDeg <= -6;
+  const moonOk = features.moonIlluminationPct <= 30 || moonBelowHorizon;
   const base = features.cloudTotalPct <= 15
-    && features.moonIlluminationPct <= 30
+    && moonOk
     && features.transparencyScore >= 65
     && (features.hazeTrapRisk == null || features.hazeTrapRisk <= 55)
     && seeingOk
