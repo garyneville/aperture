@@ -3,6 +3,7 @@ import type { DerivedHourFeatures } from '../../../types/session-score.js';
 
 export type DerivedHourFeatureInput = Omit<
   DerivedHourFeatures,
+  | 'crepuscularScore'
   | 'dewPointSpreadC'
   | 'transparencyScore'
   | 'boundaryLayerTrapScore'
@@ -166,6 +167,86 @@ function estimateSeeingProxy(input: DerivedHourFeatureInput): number | null {
   return clamp(100 - totalRisk);
 }
 
+/**
+ * Physics-informed crepuscular ray likelihood score (0–100).
+ *
+ * Three multiplicative sub-scores based on the Van Den Broeke CRI model:
+ *   1. Geometry window — solar elevation must be in the crepuscular band
+ *      (-4° to 12°) for beams to form between cloud gaps.
+ *   2. Occlusion + gap — broken/layered cloud with gaps; solid overcast
+ *      or clear sky both suppress rays.
+ *   3. Beam visibility — moderate aerosols/haze scatter light into visible
+ *      shafts without erasing contrast.
+ *
+ * Returns 0 outside the geometry window (no crepuscular rays possible).
+ */
+function estimateCrepuscularScore(
+  input: DerivedHourFeatureInput,
+  highCloudTranslucencyScore: number,
+  lowCloudBlockingScore: number,
+): number {
+  const alt = input.solarAltitudeDeg ?? null;
+
+  // ── 1. Geometry window ──────────────────────────────────────────────────
+  // Rays require low-angle sun. Peak at 0–6°, tails to -4° and 12°.
+  let geometry = 0;
+  if (alt === null) {
+    // No solar altitude available — fall back to phase flags
+    geometry = input.isGolden ? 60 : input.isBlue ? 30 : 0;
+  } else if (alt < -4 || alt > 12) {
+    geometry = 0;
+  } else if (alt >= 0 && alt <= 6) {
+    geometry = 100;
+  } else if (alt > 6) {
+    // 6–12°: linear taper
+    geometry = clamp(Math.round(100 - ((alt - 6) / 6) * 100));
+  } else {
+    // -4–0°: twilight rays, linear ramp
+    geometry = clamp(Math.round(((alt + 4) / 4) * 100));
+  }
+
+  if (geometry === 0) return 0;
+
+  // ── 2. Occlusion + gap score ────────────────────────────────────────────
+  // Need broken/layered cloud with gaps. Best: mid-high cloud 25–75%
+  // with low cloud < 50%. Overcast or clear both bad.
+  const cloudGap = sweetSpotScore(input.cloudTotalPct, 30, 70, 5, 95);
+  const layerTexture = sweetSpotScore(
+    input.cloudMidPct + input.cloudHighPct,
+    20, 65, 0, 90,
+  );
+  const lowClearance = clamp(Math.round(Math.max(0, 100 - lowCloudBlockingScore) * 0.8));
+  const translucencyBonus = clamp(Math.round(highCloudTranslucencyScore * 0.3));
+
+  const occlusion = clamp(Math.round(
+    (cloudGap * 0.35)
+    + (layerTexture * 0.30)
+    + (lowClearance * 0.20)
+    + (translucencyBonus * 0.15),
+  ));
+
+  // ── 3. Beam visibility score ────────────────────────────────────────────
+  // Moderate aerosols scatter beams visible; too clean = invisible shafts,
+  // too opaque = extinction. AOD sweet spot: 0.10–0.30.
+  const aodScore = sweetSpotScore(input.aerosolOpticalDepth, 0.10, 0.30, 0.02, 0.55);
+  const humidityScatter = sweetSpotScore(input.humidityPct, 50, 75, 30, 92);
+  const visibilityGate = input.visibilityKm < 5
+    ? clamp(Math.round((input.visibilityKm / 5) * 60))
+    : input.visibilityKm > 30
+      ? 70 // very clear air — less beam scattering
+      : 100;
+
+  const beam = clamp(Math.round(
+    (aodScore * 0.45)
+    + (humidityScatter * 0.30)
+    + (visibilityGate * 0.25),
+  ));
+
+  // ── Composite ───────────────────────────────────────────────────────────
+  // Multiplicative blend: all three factors must be present.
+  return clamp(Math.round((geometry / 100) * (occlusion / 100) * (beam / 100) * 100));
+}
+
 function estimateDiffuseToDirectRatio(input: DerivedHourFeatureInput): number | null {
   if (input.directRadiationWm2 == null || input.diffuseRadiationWm2 == null) return null;
   // Avoid division by zero: add 1 W/m² floor to direct component
@@ -192,6 +273,7 @@ export function deriveHourFeatures(input: DerivedHourFeatureInput): DerivedHourF
   return {
     ...input,
     seeingScore,
+    crepuscularScore: estimateCrepuscularScore(input, highCloudTranslucencyScore, lowCloudBlockingScore),
     dewPointSpreadC: Math.max(0, input.temperatureC - input.dewPointC),
     boundaryLayerTrapScore,
     hazeTrapRisk,

@@ -9,7 +9,6 @@ function makeInput(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHou
     clarityScore: 68,
     mistScore: 20,
     astroScore: 14,
-    crepuscularScore: 61,
     cloudLowPct: 20,
     cloudMidPct: 30,
     cloudHighPct: 18,
@@ -28,6 +27,7 @@ function makeInput(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHou
     isGolden: true,
     isBlue: false,
     tags: ['dramatic sky', 'golden hour'],
+    solarAltitudeDeg: 4,
     ...overrides,
   };
 }
@@ -124,5 +124,93 @@ describe('deriveHourFeatures', () => {
 
     // External value should be preserved, not overwritten by the proxy
     expect(features.seeingScore).toBe(85);
+  });
+
+  it('derives a meaningful crepuscular score during golden hour with favourable cloud structure', () => {
+    const good = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      isGolden: true,
+      cloudTotalPct: 55,
+      cloudLowPct: 12,
+      cloudMidPct: 22,
+      cloudHighPct: 30,
+      aerosolOpticalDepth: 0.18,
+      humidityPct: 62,
+      visibilityKm: 20,
+    }));
+
+    expect(good.crepuscularScore).toBeGreaterThan(10);
+  });
+
+  it('returns zero crepuscular score when sun is well above the crepuscular window', () => {
+    const midday = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 45,
+      isGolden: false,
+      isBlue: false,
+    }));
+
+    expect(midday.crepuscularScore).toBe(0);
+  });
+
+  it('returns zero crepuscular score when sun is well below the crepuscular window', () => {
+    const deepNight = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: -15,
+      isGolden: false,
+      isBlue: false,
+      isNight: true,
+    }));
+
+    expect(deepNight.crepuscularScore).toBe(0);
+  });
+
+  it('scores higher with broken cloud than with overcast or clear sky', () => {
+    const broken = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      cloudTotalPct: 55,
+      cloudLowPct: 10,
+      cloudMidPct: 25,
+      cloudHighPct: 25,
+      aerosolOpticalDepth: 0.18,
+    }));
+    const overcast = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      cloudTotalPct: 95,
+      cloudLowPct: 70,
+      cloudMidPct: 15,
+      cloudHighPct: 10,
+      aerosolOpticalDepth: 0.18,
+    }));
+    const clear = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      cloudTotalPct: 2,
+      cloudLowPct: 1,
+      cloudMidPct: 0,
+      cloudHighPct: 1,
+      aerosolOpticalDepth: 0.18,
+    }));
+
+    expect(broken.crepuscularScore).toBeGreaterThan(overcast.crepuscularScore);
+    expect(broken.crepuscularScore).toBeGreaterThan(clear.crepuscularScore);
+  });
+
+  it('penalises very high or very low AOD for crepuscular beams', () => {
+    const sweetSpot = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      cloudTotalPct: 50,
+      cloudMidPct: 25,
+      cloudHighPct: 20,
+      cloudLowPct: 10,
+      aerosolOpticalDepth: 0.18,
+    }));
+    const tooClean = deriveHourFeatures(makeInput({
+      solarAltitudeDeg: 3,
+      cloudTotalPct: 50,
+      cloudMidPct: 25,
+      cloudHighPct: 20,
+      cloudLowPct: 10,
+      aerosolOpticalDepth: 0.01,
+    }));
+
+    expect(sweetSpot.crepuscularScore).toBeGreaterThan(tooClean.crepuscularScore);
   });
 });

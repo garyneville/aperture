@@ -150,6 +150,8 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
   }
 
   // ── CREPUSCULAR RAYS ──────────────────────────────────────────────────────
+  // Now derived in derive-hour-features.ts via estimateCrepuscularScore().
+  // Kept here only for the ScoredHour legacy field and tag logic.
   let crepuscular = 0;
   if (p.isGolden) {
     const elev = solarElevation(+t, p.lat, p.lon);
@@ -198,7 +200,6 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     clarityScore: clarity,
     mistScore: mist,
     astroScore: astro,
-    crepuscularScore: crepuscular,
     cloudLowPct: p.cl,
     cloudMidPct: p.cm,
     cloudHighPct: p.ch,
