@@ -19,7 +19,10 @@ export const goldenHourEvaluator: SessionEvaluator = {
     const hardPass = features.isGolden || features.isBlue;
     const cloudCanvas = bellCurve(features.cloudTotalPct, 50, 22);
     const opticalWindow = cloudOpticalWindowScore(features);
-    const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.08, 0.18, 0.02, 0.35);
+    const hazeSweetSpot = sweetSpotScore(features.aerosolOpticalDepth, 0.10, 0.25, 0.05, 0.40);
+    const humidityHazePenalty = features.humidityPct > 70
+      ? clamp(Math.round((features.humidityPct - 70) * 0.4), 0, 12)
+      : 0;
     const windPenalty = features.windKph > 30 ? 12 : features.windKph > 20 ? 6 : 0;
     const visibilityPenalty = features.visibilityKm < 8 ? 18 : features.visibilityKm < 15 ? 8 : 0;
     const occ = features.azimuthOcclusionRiskPct != null ? features.azimuthOcclusionRiskPct / 100 : 0;
@@ -60,6 +63,7 @@ export const goldenHourEvaluator: SessionEvaluator = {
       - clearSkyPenalty
       - lowCloudBlockPenalty
       - trappedHazePenalty
+      - humidityHazePenalty
       - uncertaintyPenalty;
     const reasons: string[] = [];
     const warnings: string[] = [];
@@ -76,6 +80,7 @@ export const goldenHourEvaluator: SessionEvaluator = {
     if (features.visibilityKm < 10) warnings.push('Heavy haze could mute contrast despite good color.');
     if ((features.horizonGapPct ?? 100) <= 25) warnings.push('The horizon gap looks narrow for reliable low-angle light.');
     if ((features.hazeTrapRisk ?? 0) >= 65) warnings.push('A shallow boundary layer may trap haze and flatten distant contrast.');
+    if (features.humidityPct > 70) warnings.push('High humidity may cause aerosol swelling, creating milky haze that mutes sunset colour.');
     if (features.windKph > 25) {
       const dirNote = features.windDirectionDeg != null ? ` from the ${compassLabel(features.windDirectionDeg)}` : '';
       warnings.push(`Wind${dirNote} may make long-lens or tripod work fussier.`);

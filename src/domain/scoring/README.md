@@ -34,6 +34,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `summarize-day.ts` resolves `precipitation_probability` from the dedicated `PrecipProbData` input (fetched without a model pin so the API's best-match model provides real values). The main weather response does not carry this field.
 - `summarize-day.ts` falls back to 20 for `total_column_integrated_water_vapour` and `null` for `boundary_layer_height` when absent. The UKMO model does not support these fields, so they are not requested in the Weather node URL.
 - `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
+- `sessions/evaluators/golden-hour.ts` applies a humidity haze penalty when RH exceeds 70% — hygroscopic aerosol swelling in humid air creates milky haze that mutes sunset colour vibrancy.
 - `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
 
 ## What not to edit casually
