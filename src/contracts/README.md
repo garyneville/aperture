@@ -38,9 +38,10 @@ Shared home-location configuration shape.
 - `HomeLocation`
 
 ### Session Score (`session-score.ts`)
-Session scoring types.
+Session scoring and alert types.
 - `SessionId`, `SessionRecommendationSummary`, `SessionScore`
 - `SessionConfidence`, `SessionEvaluator`
+- `Alert`, `AlertLevel`, `AlertCategory`
 
 ### Editorial (`editorial.ts`)
 Editorial resolution types.
