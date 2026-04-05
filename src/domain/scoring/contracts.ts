@@ -116,6 +116,16 @@ export interface AzimuthByPhase {
   sunset?: Record<string, AzimuthScanResult>;
 }
 
+export interface MarineData {
+  hourly?: {
+    time?: string[];
+    wave_height?: (number | null)[];
+    wave_direction?: (number | null)[];
+    wave_period?: (number | null)[];
+    wave_peak_period?: (number | null)[];
+  };
+}
+
 // ── Output types ──────────────────────────────────────────────────────────────
 
 export interface ScoredHour {

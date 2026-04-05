@@ -326,3 +326,31 @@ export function seascapeConfidence(features: DerivedHourFeatures, hardPass: bool
     ? confidenceFromSpread(spread, hardPass, 10, 20)
     : confidenceFromSpread(spread, hardPass, 8, 16);
 }
+
+export const WATERFALL_CAPABILITIES: ScoringCapability[] = [
+  'hydrology',
+  'precipitation',
+  'wind',
+  'visibility',
+  'humidity',
+];
+
+export function waterfallUncertaintyPenalty(spread: number | null): number {
+  if (spread == null || spread <= 12) return 0;
+  return clamp(Math.round((spread - 12) * 0.5), 0, 12);
+}
+
+export function waterfallConfidence(features: DerivedHourFeatures, hardPass: boolean): SessionConfidence {
+  const spread = spreadVolatility(features);
+  const rainfallOk = features.recentRainfallMm != null
+    && features.recentRainfallMm >= 4
+    && features.recentRainfallMm <= 20;
+  const windOk = features.windKph <= 12;
+  const visOk = features.visibilityKm >= 5;
+  const base = rainfallOk && windOk && visOk;
+  if (!hardPass) return 'low';
+  if (spread == null) return base ? 'high' : 'medium';
+  return base
+    ? confidenceFromSpread(spread, hardPass, 10, 20)
+    : confidenceFromSpread(spread, hardPass, 8, 16);
+}

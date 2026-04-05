@@ -15,6 +15,7 @@ import { longExposureEvaluator } from './evaluators/long-exposure.js';
 import { urbanEvaluator } from './evaluators/urban.js';
 import { wildlifeEvaluator } from './evaluators/wildlife.js';
 import { seascapeEvaluator } from './evaluators/seascape.js';
+import { waterfallEvaluator } from './evaluators/waterfall.js';
 
 const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
   goldenHourEvaluator,
@@ -25,6 +26,7 @@ const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
   urbanEvaluator,
   wildlifeEvaluator,
   seascapeEvaluator,
+  waterfallEvaluator,
 ];
 
 export function getBuiltInSessionEvaluators(): SessionEvaluator[] {
