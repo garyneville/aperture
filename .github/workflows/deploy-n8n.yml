@@ -17,8 +17,7 @@
 #   PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER,
 #   PHOTO_BRIEF_EDITORIAL_PROMPT_MODE,
 #   SUNSETHUE_API_KEY, NASA_API_KEY, GEMINI_API_KEY,
-#   APERTURE_GITHUB_PAT,
-#   SSH_PRIVATE_KEY (homelab deploy key for Ansible SSH to n8n host)
+#   APERTURE_GITHUB_PAT
 
 name: Deploy workflow to n8n
 
@@ -72,28 +71,10 @@ jobs:
         with:
           name: workflow-json
 
-      - name: Checkout home repo (Ansible inventory & playbooks)
-        uses: actions/checkout@v4
-        with:
-          repository: garyneville/home
-          token: ${{ secrets.APERTURE_GITHUB_PAT }}
-          path: home
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
-      - name: Setup SSH key for Ansible
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/homelab_deploy_key
-          chmod 600 ~/.ssh/homelab_deploy_key
-
-      - name: Install Ansible
-        run: pip install ansible-core==2.18.6
 
       - name: Normalise base URL once
         env:
@@ -329,14 +310,22 @@ jobs:
 
           echo "Workflow ${workflow_id} activated successfully"
 
-      - name: Trigger workflow run via Ansible
-        working-directory: home
+      - name: Trigger workflow via webhook
         run: |
-          echo "Triggering workflow ${workflow_id} via Ansible on n8n host..."
-          ansible-playbook ansible/playbooks/trigger-photo-brief.yml \
-            --extra-vars "workflow_id=${workflow_id}"
-          echo "Workflow ${workflow_id} executed successfully"
+          WEBHOOK_URL="${N8N_BASE_URL_NORM}/webhook/${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
+          echo "Triggering workflow via POST ${WEBHOOK_URL}..."
+          HTTP_CODE=$(curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -sS \
+            -o trigger-response.json -w '%{http_code}' \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            -d '{"triggerSource": "github-actions-deploy"}' \
+            "${WEBHOOK_URL}")
 
-      - name: Cleanup SSH key
-        if: always()
-        run: rm -f ~/.ssh/homelab_deploy_key
+          cat trigger-response.json
+
+          if [[ "$HTTP_CODE" != 2* ]]; then
+            echo "::error::Webhook trigger returned HTTP ${HTTP_CODE}"
+            exit 1
+          fi
+
+          echo "Workflow triggered successfully (HTTP ${HTTP_CODE})"
