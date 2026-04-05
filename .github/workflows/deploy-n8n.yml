@@ -306,6 +306,6 @@ jobs:
         run: |
           N8N_HOST=$(python3 -c "from urllib.parse import urlparse; import os; print(urlparse(os.environ['N8N_BASE_URL_NORM']).hostname)")
           echo "Executing workflow ${workflow_id} via n8n CLI on ${N8N_HOST}..."
-          ssh -o StrictHostKeyChecking=accept-new "n8n@${N8N_HOST}" \
+          ssh -o StrictHostKeyChecking=accept-new "root@${N8N_HOST}" \
             "n8n execute --id=${workflow_id}"
           echo "Workflow ${workflow_id} executed successfully via CLI"
