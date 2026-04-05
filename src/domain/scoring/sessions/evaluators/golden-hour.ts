@@ -37,9 +37,9 @@ export const goldenHourEvaluator: SessionEvaluator = {
       ? clamp(Math.round((30 - features.horizonGapPct) * 0.3), 0, 8)
       : 0;
     const clearSkyPenalty = features.cloudTotalPct < 15 ? clamp(Math.round((15 - features.cloudTotalPct) * 0.6)) : 0;
-    const translucentHighBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.08), 0, 8);
+    const translucentHighBonus = clamp(Math.round(features.highCloudTranslucencyScore * 0.12), 0, 12);
     const lowCloudBlockPenalty = features.lowCloudBlockingScore >= 35
-      ? clamp(Math.round((features.lowCloudBlockingScore - 35) * 0.16), 0, 12)
+      ? clamp(Math.round((features.lowCloudBlockingScore - 35) * 0.20), 0, 15)
       : 0;
     const trappedHazePenalty = features.hazeTrapRisk == null
       ? 0
@@ -50,7 +50,7 @@ export const goldenHourEvaluator: SessionEvaluator = {
       (features.overallScore * 0.35)
       + (features.dramaScore * 0.25)
       + (features.crepuscularScore * 0.15)
-      + (cloudCanvas * 0.15)
+      + (cloudCanvas * 0.12)
       + (opticalWindow * 0.08)
       + (hazeSweetSpot * 0.1)
       + clearPathBoost
