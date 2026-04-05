@@ -44,6 +44,7 @@ describe('extractGeminiFallback', () => {
       geminiTotalTokenCount: 1006,
       geminiThoughtsTokenCount: 704,
       geminiRetryAfter: null,
+      geminiErrorDetail: 'reason=truncated',
     });
   });
 
@@ -99,6 +100,30 @@ describe('extractGeminiFallback', () => {
       geminiTotalTokenCount: 130,
       geminiThoughtsTokenCount: 19,
       geminiRetryAfter: null,
+      geminiErrorDetail: null,
     });
+  });
+
+  it('reports structured error detail for rate-limited responses', () => {
+    const result = extractGeminiFallback({
+      statusCode: 429,
+      headers: { 'retry-after': '18' },
+      body: { error: { message: 'Too Many Requests' } },
+    });
+
+    expect(result.geminiStatusCode).toBe(429);
+    expect(result.geminiErrorDetail).toContain('HTTP 429');
+    expect(result.geminiErrorDetail).toContain('reason=rate-limited');
+    expect(result.geminiErrorDetail).toContain('retryAfter=18s');
+  });
+
+  it('reports structured error detail for empty responses', () => {
+    const result = extractGeminiFallback({
+      statusCode: 200,
+      body: {},
+    });
+
+    expect(result.geminiResponse).toBeNull();
+    expect(result.geminiErrorDetail).toContain('reason=no-text-extracted');
   });
 });

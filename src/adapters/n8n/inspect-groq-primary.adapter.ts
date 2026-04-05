@@ -30,6 +30,8 @@ export type GroqPrimaryInspection = {
   groqRetryAfter: number | null;
   groqFallbackRequired: boolean;
   groqFallbackReason: string | null;
+  /** Structured error message for diagnostic logging. */
+  groqErrorDetail: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -86,6 +88,22 @@ function getFallbackReason(statusCode: number | null, rawText: string): string |
   return null;
 }
 
+function buildErrorDetail(
+  statusCode: number | null,
+  fallbackReason: string | null,
+  responseByteLength: number | null,
+  retryAfter: number | null,
+): string | null {
+  if (!fallbackReason) return null;
+
+  const parts: string[] = [];
+  if (statusCode !== null) parts.push(`HTTP ${statusCode}`);
+  parts.push(`reason=${fallbackReason}`);
+  if (typeof responseByteLength === 'number') parts.push(`bodyBytes=${responseByteLength}`);
+  if (typeof retryAfter === 'number') parts.push(`retryAfter=${retryAfter}s`);
+  return parts.join(', ');
+}
+
 export function inspectGroqPrimary(item: Record<string, unknown>): GroqPrimaryInspection {
   const responseSource = getHttpResponseBodySource(item);
   const payloadInfo = unwrapHttpPayload(
@@ -108,6 +126,12 @@ export function inspectGroqPrimary(item: Record<string, unknown>): GroqPrimaryIn
     groqRetryAfter: getHttpRetryAfterSeconds(item),
     groqFallbackRequired: groqFallbackReason !== null,
     groqFallbackReason,
+    groqErrorDetail: buildErrorDetail(
+      groqStatusCode,
+      groqFallbackReason,
+      responseByteLength,
+      getHttpRetryAfterSeconds(item),
+    ),
   };
 }
 

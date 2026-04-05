@@ -234,6 +234,7 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     weekStandout,
     fallbackUsed: input.selection.fallbackUsed,
     modelFallbackUsed,
+    templateFallbackUsed: input.selection.fallbackUsed,
     finalAiText: input.finalAiText,
   };
 }

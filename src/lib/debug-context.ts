@@ -164,6 +164,10 @@ export interface DebugApiCallStatus {
   httpStatus: number | null;
   message: string;
   retryAfter?: number | null;
+  /** Response body size in bytes (for structured logging). */
+  responseByteLength?: number | null;
+  /** Error classification for structured logging (e.g. 'empty-response', 'rate-limited'). */
+  errorCategory?: string | null;
 }
 
 export type WeekStandoutDecision = 'deterministic-used' | 'omitted';
@@ -240,6 +244,9 @@ export interface DebugAiTrace {
   weekStandout: DebugWeekStandoutTrace;
   fallbackUsed: boolean;
   modelFallbackUsed: boolean;
+  /** True when all AI providers failed and the hardcoded template text was used.
+   *  Indicates a degraded run where editorial is not location-specific. */
+  templateFallbackUsed: boolean;
   finalAiText: string;
 }
 

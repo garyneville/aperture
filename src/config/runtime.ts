@@ -7,6 +7,7 @@ export const PHOTO_WEATHER_CONFIG = {
   editorialPrimaryProvider: '__PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER__',
   editorialPromptMode: '__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__',
   inspireEnabled: '__PHOTO_BRIEF_INSPIRE_ENABLED__',
+  editorialProviders: '__PHOTO_BRIEF_EDITORIAL_PROVIDERS__',
 } as const;
 
 export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
@@ -61,3 +62,29 @@ export function getPhotoBriefInspireEnabled(): boolean {
   if (!value || isPlaceholder(value)) return true;
   return value.toLowerCase() !== 'false';
 }
+
+export type EditorialProviderName = 'groq' | 'gemini' | 'openrouter';
+
+const DEFAULT_EDITORIAL_PROVIDERS: EditorialProviderName[] = ['groq', 'gemini'];
+
+export function getEditorialProviders(): EditorialProviderName[] {
+  const raw = parseString(PHOTO_WEATHER_CONFIG.editorialProviders, '');
+  if (!raw) return DEFAULT_EDITORIAL_PROVIDERS;
+  const providers = raw
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter((s): s is EditorialProviderName => s === 'groq' || s === 'gemini' || s === 'openrouter');
+  return providers.length > 0 ? providers : DEFAULT_EDITORIAL_PROVIDERS;
+}
+
+export interface EditorialRetryConfig {
+  maxAttempts: number;
+  baseDelayMs: number;
+  backoffMultiplier: number;
+}
+
+export const DEFAULT_EDITORIAL_RETRY: EditorialRetryConfig = {
+  maxAttempts: 3,
+  baseDelayMs: 1_000,
+  backoffMultiplier: 3,
+};
