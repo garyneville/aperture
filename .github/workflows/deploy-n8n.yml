@@ -302,74 +302,10 @@ jobs:
 
           echo "Workflow ${workflow_id} activated successfully"
 
-      - name: Trigger workflow run after deploy
-        env:
-          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+      - name: Trigger workflow run via CLI
         run: |
-          TRIGGER_PATH="${PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED}"
-          if [ -z "$TRIGGER_PATH" ]; then
-            echo "::error::PHOTO_BRIEF_TRIGGER_PATH_NORMALIZED is empty"
-            exit 1
-          fi
-          TRIGGER_URL="${N8N_BASE_URL_NORM}/webhook/${TRIGGER_PATH}"
-          PAYLOAD=$(python3 - <<'PY'
-          import json, os
-          print(json.dumps({
-              "triggerSource": "github-actions-deploy",
-              "reason": "post-deploy validation run",
-              "github": {
-                  "repository": os.environ.get("GITHUB_REPOSITORY"),
-                  "workflow": os.environ.get("GITHUB_WORKFLOW"),
-                  "runId": os.environ.get("GITHUB_RUN_ID"),
-                  "runNumber": os.environ.get("GITHUB_RUN_NUMBER"),
-                  "sha": os.environ.get("GITHUB_SHA"),
-              },
-          }))
-          PY
-          )
-
-          echo "Triggering POST ${TRIGGER_URL}..."
-          for attempt in $(seq 1 20); do
-            HTTP_CODE=$(curl --ipv4 --retry 3 --retry-delay 2 --retry-all-errors -sS -o trigger-response.json -w '%{http_code}' \
-              -X POST \
-              -H "Accept: application/json" \
-              -H "Content-Type: application/json" \
-              -d "${PAYLOAD}" \
-              "${TRIGGER_URL}")
-
-            case "$HTTP_CODE" in
-              2*)
-                echo "Triggered post-deploy workflow execution (HTTP ${HTTP_CODE})"
-                exit 0
-                ;;
-              404)
-                if [ "$attempt" -lt 20 ]; then
-                  echo "Webhook not registered yet (attempt ${attempt}/20); retrying in 5s"
-                  sleep 5
-                  continue
-                fi
-                ;;
-            esac
-
-            # Final failure — dump diagnostics
-            echo "::error::Trigger webhook returned HTTP ${HTTP_CODE} after ${attempt} attempt(s)"
-            cat trigger-response.json
-            echo ""
-            echo "--- Workflow state ---"
-            curl --ipv4 -sS \
-              -H "X-N8N-API-KEY: ${N8N_API_KEY}" \
-              -H "Accept: application/json" \
-              "${N8N_BASE_URL_NORM}/api/v1/workflows/${workflow_id}" \
-              | python3 -c "
-          import json, sys
-          wf = json.load(sys.stdin)
-          print(f\"active={wf.get('active')}\")
-          print(f\"nodes={len(wf.get('nodes', []))}\")
-          webhooks = [n['name'] for n in wf.get('nodes', []) if 'webhook' in n.get('type', '').lower()]
-          print(f\"webhook_nodes={webhooks}\")
-          for n in wf.get('nodes', []):
-              if 'webhook' in n.get('type', '').lower():
-                  print(f\"  {n['name']}: path={n.get('parameters', {}).get('path')}, method={n.get('parameters', {}).get('httpMethod')}\")
-          " 2>/dev/null || echo "(could not fetch workflow details)"
-            exit 1
-          done
+          N8N_HOST=$(python3 -c "from urllib.parse import urlparse; import os; print(urlparse(os.environ['N8N_BASE_URL_NORM']).hostname)")
+          echo "Executing workflow ${workflow_id} via n8n CLI on ${N8N_HOST}..."
+          ssh -o StrictHostKeyChecking=accept-new "n8n@${N8N_HOST}" \
+            "n8n execute --id=${workflow_id}"
+          echo "Workflow ${workflow_id} executed successfully via CLI"
