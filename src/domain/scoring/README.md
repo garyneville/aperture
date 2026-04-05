@@ -31,6 +31,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 ## Defensive guards
 
 - `summarize-day.ts` coalesces `null` AirQualityData into static fallbacks (AOD: 0.2, AQI: 25, Dust: 0, UV: 0) and issues console warnings so that downstream feature math survives the shorter Open-Meteo Air Quality forecast horizon.
+- `summarize-day.ts` resolves `precipitation_probability` from the dedicated `PrecipProbData` input (fetched without a model pin so the API's best-match model provides real values). The main weather response does not carry this field.
 - `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
 - `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
 

@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { ADAPTERS, assembleWorkflow, bundleAdapter, writeWorkflow } from './assemble.js';
+import { ADAPTERS, SKELETON_PATH, assembleWorkflow, bundleAdapter, writeWorkflow } from './assemble.js';
 
 describe('workflow assembly', () => {
   const tempDirs: string[] = [];
@@ -158,6 +158,27 @@ describe('workflow assembly', () => {
         azimuthByPhase: { sunrise: { '2026-03-14T06:15': { occlusionRisk: 12 } }, sunset: {} },
       },
     }]);
+  });
+
+  it('uses best-match model for precip prob and reserves ukmo_seamless for main weather', () => {
+    const skeleton = JSON.parse(readFileSync(SKELETON_PATH, 'utf-8'));
+
+    const precipNode = skeleton.nodes.find((n: { name: string }) => n.name === 'HTTP: Precip Prob');
+    expect(precipNode).toBeTruthy();
+    const precipUrl: string = precipNode.parameters.url;
+    // Precip prob must NOT pin to ukmo_seamless — that model returns null for precipitation_probability
+    expect(precipUrl).not.toContain('models=ukmo_seamless');
+    expect(precipUrl).toContain('hourly=precipitation_probability');
+    expect(precipUrl).toContain('forecast_days=5');
+
+    const weatherNode = skeleton.nodes.find((n: { name: string }) => n.name === 'HTTP: Weather');
+    expect(weatherNode).toBeTruthy();
+    const weatherUrl: string = weatherNode.parameters.url;
+    // Main weather call should use ukmo_seamless but NOT request precipitation_probability
+    // (precipitation_probability is handled by the dedicated Precip Prob node)
+    expect(weatherUrl).toContain('models=ukmo_seamless');
+    expect(weatherUrl).not.toContain('precipitation_probability');
+    expect(weatherUrl).toContain('precipitation');
   });
 
   it('assembles score-alternatives code that consumes only merged workflow input', async () => {

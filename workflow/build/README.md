@@ -22,6 +22,15 @@ This folder contains the build-time tooling for generated workflow artifacts.
 - adapter placeholder names in [`assemble.ts`](./assemble.ts)
 - the generated output locations without also updating tests and `package.json` verification scripts
 
+## Weather API design notes
+
+The skeleton uses two separate Open-Meteo forecast calls with different model strategies:
+
+- **`HTTP: Weather`** pins `models=ukmo_seamless` for deterministic fields (cloud cover, visibility, wind, temperature, etc.). UKMO provides high-resolution UK-focused forecasts.
+- **`HTTP: Precip Prob`** omits the `models` parameter so the API uses its default best-match model. The UKMO model does not support `precipitation_probability` (it returns `null` for every hour); the best-match model provides real probability values from ensemble sources.
+
+If a new hourly field is needed, check whether the chosen model supports it before adding it to a URL. Fields unsupported by a model return `null` arrays.
+
 The workflow skeleton now contains a conditional editorial branch:
 
 - `HTTP: Groq` runs first in full-response mode
