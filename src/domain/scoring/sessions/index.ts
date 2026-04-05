@@ -109,8 +109,9 @@ function buildPlanB(
   if (!primary || !runnerUp) return null;
   if (primary.confidence === 'high') return null;
 
-  const riskClause = primary.warnings[0]
+  const rawRisk = primary.warnings[0]
     || `${sessionLabel(primary.session)} conditions don't hold`;
+  const riskClause = rawRisk.replace(/\.\s*$/, '').replace(/^./, c => c.toLowerCase());
   const reason = runnerUp.reasons[0] || `${sessionLabel(runnerUp.session)} conditions look favourable`;
 
   return `If ${riskClause}: consider ${sessionLabel(runnerUp.session).toLowerCase()} at ${runnerUp.hourLabel} — ${reason.charAt(0).toLowerCase()}${reason.slice(1)}`;
