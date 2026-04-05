@@ -43,6 +43,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `sessions/evaluators/wildlife.ts` uses the physics-based `diffuseToDirectRatio` for soft-light scoring when radiation data is available, falling back to the cloud-cover heuristic when it is not.
 - `features/derive-hour-features.ts` derives `diffuseToDirectRatio` (diffuse / (direct + 1)) and `hasFrost` (soil temp ≤ 0 °C) from raw radiation and soil temperature fields.
 - `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
+- `features/derive-hour-features.ts` derives `crepuscularScore` from three multiplicative Van Den Broeke sub-scores: geometry window (solar elevation −4° to 12°), occlusion + gap (broken/layered cloud with gaps), and beam visibility (AOD sweet-spot 0.10–0.30 with moderate humidity). The score is zero outside the geometry window. Previously this was an inline heuristic in `score-hour.ts`; it is now physics-informed and derived alongside other features.
 
 ## What not to edit casually
 

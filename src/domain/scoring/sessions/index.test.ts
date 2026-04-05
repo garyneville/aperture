@@ -17,7 +17,6 @@ function makeHour(overrides: Partial<DerivedHourFeatureInput> = {}): DerivedHour
     clarityScore: 68,
     mistScore: 20,
     astroScore: 14,
-    crepuscularScore: 61,
     cloudLowPct: 20,
     cloudMidPct: 30,
     cloudHighPct: 18,
@@ -1003,7 +1002,7 @@ describe('session scoring foundation', () => {
     expect(summary.primary?.session).toBe('storm');
     expect(summary.primary?.hourLabel).toBe('19:00');
     expect(summary.hoursAnalyzed).toBe(2);
-    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'golden-hour', 'mist', 'urban', 'wildlife', 'astro']);
+    expect(summary.bySession.map(entry => entry.session)).toEqual(['storm', 'long-exposure', 'mist', 'golden-hour', 'urban', 'wildlife', 'astro']);
     expect(summary.runnerUps[0]?.session).toBe('long-exposure');
   });
 
