@@ -5,3 +5,4 @@ dist/
 # Generated artifacts - built in CI
 generated/workflow/photography-weather-brief.json
 src/presenters/email/compiled-layout.generated.ts
+scripts/*
