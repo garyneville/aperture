@@ -367,6 +367,27 @@ describe('session scoring foundation', () => {
     expect(degraded.confidence).not.toBe('high');
   });
 
+  it('does not penalise astro confidence when bright moon is below the horizon', () => {
+    const moonAbove = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 5, cloudLowPct: 2, cloudMidPct: 2, cloudHighPct: 1,
+      visibilityKm: 30, humidityPct: 50, aerosolOpticalDepth: 0.05, moonIlluminationPct: 93,
+      moonAltitudeDeg: 40, seeingScore: 75, lightPollutionBortle: 3,
+    })));
+    const moonBelow = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
+      isNight: true, astroScore: 80, cloudTotalPct: 5, cloudLowPct: 2, cloudMidPct: 2, cloudHighPct: 1,
+      visibilityKm: 30, humidityPct: 50, aerosolOpticalDepth: 0.05, moonIlluminationPct: 93,
+      moonAltitudeDeg: -15, seeingScore: 75, lightPollutionBortle: 3,
+    })));
+
+    // With moon above horizon at 93% illumination, base is false → tighter spread thresholds
+    // moonBelow should get better confidence since moon alt ≤ -6° makes moonOk = true → base = true
+    expect(moonBelow.confidence).not.toBe('low');
+    expect(['medium', 'low']).toContain(moonAbove.confidence);
+    // The key assertion: moonBelow confidence should be strictly better than moonAbove
+    const rank = { low: 0, medium: 1, high: 2 } as const;
+    expect(rank[moonBelow.confidence]).toBeGreaterThan(rank[moonAbove.confidence]);
+  });
+
   it('applies a graduated twilight ramp between nautical and astronomical darkness', () => {
     const fullDark = evaluateSessionFeatures('astro', deriveHourFeatures(makeHour({
       isNight: true, astroScore: 80, cloudTotalPct: 8, cloudLowPct: 3, cloudMidPct: 3, cloudHighPct: 2,
