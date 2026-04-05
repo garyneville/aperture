@@ -164,6 +164,8 @@ describe('workflow assembly', () => {
         precipProb: { hourly: { time: ['2026-03-14T06:00'], precipitation_probability: [10] } },
         ensemble: { hourly: { time: ['2026-03-14T06:00'], cloudcover_member_0: [25] } },
         azimuthByPhase: { sunrise: { '2026-03-14T06:15': { occlusionRisk: 12 } }, sunset: {} },
+        nowcastSatellite: undefined,
+        marine: { hourly: { time: [] } },
       },
     }]);
   });
