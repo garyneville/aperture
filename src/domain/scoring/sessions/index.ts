@@ -16,6 +16,7 @@ import { urbanEvaluator } from './evaluators/urban.js';
 import { wildlifeEvaluator } from './evaluators/wildlife.js';
 import { seascapeEvaluator } from './evaluators/seascape.js';
 import { waterfallEvaluator } from './evaluators/waterfall.js';
+import { generateAlerts } from '../alerts/generate-alerts.js';
 
 const BUILT_IN_SESSION_EVALUATORS: SessionEvaluator[] = [
   goldenHourEvaluator,
@@ -89,6 +90,7 @@ export function summarizeSessionRecommendations(hours: DerivedHourFeatures[]): S
   const primary = bySession[0] ?? null;
   const runnerUps = bySession.slice(1);
   const planB = buildPlanB(primary, runnerUps[0] ?? null);
+  const alerts = generateAlerts(hours);
 
   return {
     primary,
@@ -96,6 +98,7 @@ export function summarizeSessionRecommendations(hours: DerivedHourFeatures[]): S
     bySession,
     hoursAnalyzed: hours.length,
     planB,
+    alerts,
   };
 }
 

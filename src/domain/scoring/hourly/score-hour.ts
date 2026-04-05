@@ -57,6 +57,9 @@ export interface ScoreHourParams {
   lightningRisk: number | null;
   // SunsetHue
   shQ: number | null;
+  // Air quality extras (optional — may be null when API doesn't supply them)
+  pm25: number | null;
+  pollenMax: number | null;
 }
 
 export interface ScoreHourResult {
@@ -232,6 +235,10 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     soilTemperature0cmC: p.st0 != null ? Math.round(p.st0 * 10) / 10 : null,
     ensembleCloudStdDevPct: null, // populated by orchestrator
     ensembleCloudMeanPct: null,   // populated by orchestrator
+    pm25Ugm3: p.pm25 != null ? Math.round(p.pm25 * 10) / 10 : null,
+    pollenGrainsM3: p.pollenMax != null ? Math.round(p.pollenMax) : null,
+    uvIndex: p.uv > 0 ? Math.round(p.uv * 10) / 10 : null,
+    europeanAqi: p.aqi > 0 ? Math.round(p.aqi) : null,
   };
 
   const hour: ScoredHour = {

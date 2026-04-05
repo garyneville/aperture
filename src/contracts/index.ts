@@ -40,6 +40,9 @@ export type { HomeLocation } from './home-location.js';
 
 // Session scoring types
 export type {
+  Alert,
+  AlertCategory,
+  AlertLevel,
   SessionConfidence,
   SessionEvaluator,
   SessionId,

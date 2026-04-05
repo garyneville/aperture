@@ -40,6 +40,8 @@ function makeScoredContext(): ScoredForecastContext {
       runnerUps: [],
       bySession: [],
       hoursAnalyzed: 8,
+      planB: null,
+      alerts: [],
     },
     today: 'Wednesday 18 March',
     todayBestScore: 60,

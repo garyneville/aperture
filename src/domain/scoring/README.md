@@ -16,6 +16,8 @@ This folder owns weather feature derivation, day scoring, and session recommenda
   Shared derived-feature seam used by the session evaluators.
 - [`sessions/index.ts`](./sessions/index.ts)
   Built-in session evaluators, cross-hour selection, recommendation summary, and Plan B scenario generation.
+- [`alerts/generate-alerts.ts`](./alerts/generate-alerts.ts)
+  Safety and environmental alert generation from aggregated hour features (lightning, AQI, pollen, dust, UV).
 - [`../../contracts/scored-forecast.ts`](../../contracts/scored-forecast.ts)
   Shared scored-forecast contract surface for callers.
 
@@ -25,6 +27,8 @@ This folder owns weather feature derivation, day scoring, and session recommenda
   Hour-level feature engineering.
 - `sessions/`
   Session evaluation, recommendation logic, and Plan B scenario framing (alternative-scenario string when primary confidence is medium or low).
+- `alerts/`
+  Safety and environmental alert generation. A pure function takes aggregated `DerivedHourFeatures` and produces `Alert[]` for lightning risk, AQI, pollen, dust (AOD), and UV exposure. Alerts are attached to `SessionRecommendationSummary` at the run level.
 - `nowcast/`
   Near-term (0-6h) nowcast signal computation. Currently supports satellite radiation clearing/thickening detection via Open-Meteo Satellite Radiation API (EUMETSAT).
 - `metar/`
@@ -45,6 +49,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `summarize-day.ts` extracts `direct_radiation`, `diffuse_radiation`, and `soil_temperature_0cm` from the weather response. These degrade to `null` when absent (e.g. if the model does not provide them), and derived features fall back gracefully.
 - `summarize-day.ts` injects parsed METAR observation fields (`metarWxType`, `metarVisibilityM`, `metarCloudBaseM`, `metarDewPointSpreadC`, `visibilityDeltaVsModelKm`) into each hour's feature input. All fields are `null` when METAR is unavailable or unparseable.
 - `summarize-day.ts` guards `crepRayPeak` against empty `hours` arrays (`Math.max(0, ...)` floor).
+- `summarize-day.ts` extracts `pm2_5`, `alder_pollen`, `birch_pollen`, `grass_pollen` from the air quality response and forwards them to feature derivation as `pm25Ugm3`, `pollenGrainsM3` (max across species), `uvIndex`, and `europeanAqi` on `DerivedHourFeatures`. All degrade to `null` when not available.
 - `sessions/evaluators/golden-hour.ts` applies a humidity haze penalty when RH exceeds 70% — hygroscopic aerosol swelling in humid air creates milky haze that mutes sunset colour vibrancy.
 - `sessions/evaluators/golden-hour.ts` weights cloud-stratification (high-cloud translucency, low-cloud blocking) more heavily than total cloud percentage, reflecting research that cloud altitude distribution matters more than total cover for sunset colour.
 - `sessions/evaluators/wildlife.ts` uses the physics-based `diffuseToDirectRatio` for soft-light scoring when radiation data is available, falling back to the cloud-cover heuristic when it is not.
@@ -68,6 +73,7 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - [`score-all-days.test.ts`](./score-all-days.test.ts)
 - [`features/derive-hour-features.test.ts`](./features/derive-hour-features.test.ts)
 - [`sessions/index.test.ts`](./sessions/index.test.ts)
+- [`alerts/generate-alerts.test.ts`](./alerts/generate-alerts.test.ts)
 - [`nowcast/satellite-clearing.test.ts`](./nowcast/satellite-clearing.test.ts)
 - [`metar/parse-metar.test.ts`](./metar/parse-metar.test.ts)
 - [`features/post-frontal-clarity.test.ts`](./features/post-frontal-clarity.test.ts)

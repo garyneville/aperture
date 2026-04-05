@@ -1417,6 +1417,8 @@ describe('formatEmail hero summary', () => {
         }],
         bySession: [],
         hoursAnalyzed: 24,
+        planB: null,
+        alerts: [],
       },
     };
 

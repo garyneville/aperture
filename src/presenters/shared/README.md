@@ -29,6 +29,9 @@ This folder contains cross-cutting render primitives used by multiple presenters
 - [`outdoor-outlook-model.ts`](./outdoor-outlook-model.ts)
   Data model building for outdoor outlook displays. Handles hour filtering, contiguous window selection, best window detection, and summary generation. Pure algorithmic logic with no HTML rendering. Moved from `../email/` to enable sharing across presenters.
 
+- [`alert-helpers.ts`](./alert-helpers.ts)
+  Formatting helpers for safety and environmental alerts. Badge text, CSS class mapping, and deduplication/sorting for alert arrays. Used by email, site, and telegram presenters.
+
 ## Main Files / Module Map
 
 - `brief-primitives.ts`
