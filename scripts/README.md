@@ -26,7 +26,7 @@ Alt-location scoring (Stage 2b) discovers `alt-weather-*` snapshot files dynamic
 
 ## snapshot-apis.sh
 
-Captures live API responses into a timestamped `debug/api-snapshot-*` directory for offline replay by `dump-pipeline.ts`.
+Captures live API responses into a timestamped `debug/api-snapshot-*` directory for offline replay by `dump-pipeline.ts`. The snapshot covers 11 endpoints (items 01–11). A redundant 1-day long-range call for the representative alt-location was removed in #251 — the 5-day alt-weather response is a strict superset.
 
 ## esm-compat-loader.mjs
 
