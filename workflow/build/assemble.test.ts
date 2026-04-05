@@ -926,6 +926,7 @@ describe('workflow assembly', () => {
     const ifConnections = data.connections['If: Need Gemini Fallback']?.main ?? [];
     expect(ifConnections[0]).toEqual([
       expect.objectContaining({ node: 'HTTP: Gemini Fallback', index: 0 }),
+      expect.objectContaining({ node: 'Merge: Prompt + Gemini FB', index: 0 }),
     ]);
     expect(ifConnections[1]).toEqual([
       expect.objectContaining({ node: 'Merge: Editorial Route', index: 0 }),

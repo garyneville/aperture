@@ -27,6 +27,7 @@ The workflow skeleton now contains a conditional editorial branch:
 - `HTTP: Groq` runs first in full-response mode
 - `Code: Inspect Groq Primary` decides whether fallback is required
 - `HTTP: Gemini Fallback` only runs when the primary response is clearly unusable
+- `Merge: Prompt + Gemini FB` combines the prompt context with the extracted Gemini fallback response before routing to `Merge: Editorial Route`
 - app-layer template fallback remains the final safety net after the workflow edge
 
 The inspire chain is gated behind a feature flag:
