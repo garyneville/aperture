@@ -51,6 +51,6 @@ export function sSessionRecommendationCard(input: SessionRecInput): string {
     </div>
     <p class="card-body" style="margin-top:10px;">${esc(sessionRecommendationBody(primary))}</p>
     ${runnerUp ? `<p class="card-body" style="margin-top:8px;color:${C.subtle};">${esc(runnerUp)}</p>` : ''}
-    ${planB ? `<div class="plan-b-callout" style="margin-top:10px;padding:8px 10px;background:${C.surfaceAlt || '#f7f5f0'};border-radius:6px;font-size:0.85em;color:${C.muted};"><strong>Plan\u00a0B:</strong> ${esc(planB)}</div>` : ''}
+    ${planB ? `<div class="plan-b-callout" style="margin-top:10px;padding:8px 10px;background:${C.surfaceVariant};border-radius:6px;font-size:0.85em;color:${C.muted};"><strong>Plan\u00a0B:</strong> ${esc(planB)}</div>` : ''}
   `, { accentSide: 'left', accentColor: scoreState(primary.score).fg });
 }
