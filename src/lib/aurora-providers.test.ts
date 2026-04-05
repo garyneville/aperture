@@ -314,6 +314,41 @@ describe('fuseAuroraSignals', () => {
     expect(signal.upcomingCmeCount).toBe(0);
   });
 
+  it('counts imminent CME from stale data when arrival is within 24h', () => {
+    const now = new Date('2026-04-05T14:00Z');
+    const signal = fuseAuroraSignals(null, {
+      isStale: true,
+      fetchedAt: '2026-04-05T01:48Z',
+      earthDirectedCmes: [{
+        activityId: 'test-cme',
+        startTime: '2026-04-02T20:46Z',
+        estimatedArrivalTime: '2026-04-05T20:00Z', // 6h away
+        estimatedKp: 4,
+        note: 'Earth directed.',
+      }],
+    }, now);
+    expect(signal.upcomingCmeCount).toBe(1);
+    expect(signal.nextCmeArrival).toBe('2026-04-05T20:00Z');
+    expect(signal.dominantLevel).toBe('yellow');
+    expect(signal.confidence).toBe('low');
+  });
+
+  it('does NOT count stale CME when arrival is >24h away', () => {
+    const now = new Date('2026-04-05T14:00Z');
+    const signal = fuseAuroraSignals(null, {
+      isStale: true,
+      fetchedAt: '2026-04-04T01:00Z',
+      earthDirectedCmes: [{
+        activityId: 'test-cme',
+        startTime: '2026-04-02T20:46Z',
+        estimatedArrivalTime: '2026-04-07T20:00Z', // 2 days away
+        estimatedKp: 4,
+        note: 'Earth directed.',
+      }],
+    }, now);
+    expect(signal.upcomingCmeCount).toBe(0);
+  });
+
   it('surfaces both near-term and long-range data on the signal object', () => {
     const nearTerm = makeNearTerm('red');
     const longRange = makeLongRange([makeCme(48)]);
