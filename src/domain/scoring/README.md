@@ -29,6 +29,8 @@ This folder owns weather feature derivation, day scoring, and session recommenda
   Near-term (0-6h) nowcast signal computation. Currently supports satellite radiation clearing/thickening detection via Open-Meteo Satellite Radiation API (EUMETSAT).
 - `metar/`
   Structured METAR observation parsing. Extracts wx type (fog/mist/haze/smoke/rain/snow/thunderstorm), visibility, cloud base height, and dew-point spread from raw METAR strings using `metar-taf-parser`. Parsed fields are injected into `DerivedHourFeatures` for evaluator consumption.
+- `marine/`
+  Marine data parsing. Extracts per-timestamp wave height, direction, period, and peak period from the Open-Meteo Marine API response into a lookup table. Used by `score-all-days.ts` to backfill marine fields (`swellHeightM`, `swellPeriodS`, `swellDirectionDeg`, `waveHeightM`) into feature inputs for the seascape evaluator.
 - `features/post-frontal-clarity.ts`
   Post-frontal clarity detection. Identifies the transient 2–6 hour window of clean, high-contrast air following frontal passage by combining four signals: recent rain accumulation, wind direction shift, visibility jump, and humidity drop. Produces a 0–100 `postFrontalClarityScore` per hour and a day-level peak/window summary. Requires multi-hour lookback so is computed in `summarize-day.ts` and backfilled into feature inputs.
 - `score-all-days.ts`
@@ -51,6 +53,9 @@ This folder owns weather feature derivation, day scoring, and session recommenda
 - `features/derive-hour-features.ts` guards `sweetSpotScore` against division-by-zero when `idealMin === hardMin` or `idealMax === hardMax`.
 - `features/derive-hour-features.ts` derives `crepuscularScore` from three multiplicative Van Den Broeke sub-scores: geometry window (solar elevation −4° to 12°), occlusion + gap (broken/layered cloud with gaps), and beam visibility (AOD sweet-spot 0.10–0.30 with moderate humidity). The score is zero outside the geometry window. Previously this was an inline heuristic in `score-hour.ts`; it is now physics-informed and derived alongside other features.
 - `summarize-day.ts` runs post-frontal clarity detection after scoring all hours (multi-hour lookback required). Backfills `postFrontalClarityScore` into feature inputs and emits `postFrontalClarityPeak` / `postFrontalClarityWindow` on `DaySummary`. Returns `null` when insufficient lookback data is available (< 3 hours).
+- `score-all-days.ts` backfills marine data (`swellHeightM`, `swellPeriodS`, `swellDirectionDeg`, `waveHeightM`) from the parsed Marine API response into feature inputs. When no marine data is provided, all marine fields remain `null` and the seascape evaluator degrades gracefully (score 0 with a diagnostic warning).
+- `score-all-days.ts` derives `recentRainfallMm` from a 6-hour trailing precipitation accumulation window using the existing weather data. This hydrology proxy is used by the waterfall evaluator without requiring a new API call.
+- `sessions/evaluators/waterfall.ts` uses `recentRainfallMm` and humidity as flow proxies. Hard-pass requires recent rainfall > 2 mm OR humidity ≥ 90%, wind ≤ 25 kph, and visibility ≥ 2 km. Falls back to humidity-based scoring when rainfall data is unavailable.
 
 ## What not to edit casually
 
