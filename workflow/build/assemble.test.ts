@@ -744,6 +744,8 @@ describe('workflow assembly', () => {
           runnerUps: [],
           bySession: [],
           hoursAnalyzed: 0,
+          planB: null,
+          alerts: [],
         },
         debugContext: expect.objectContaining({
           hourlyScoring: [],

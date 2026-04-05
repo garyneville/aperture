@@ -76,6 +76,10 @@ export interface AirQualityData {
     dust?: (number | null)[];
     european_aqi?: (number | null)[];
     uv_index?: (number | null)[];
+    pm2_5?: (number | null)[];
+    alder_pollen?: (number | null)[];
+    birch_pollen?: (number | null)[];
+    grass_pollen?: (number | null)[];
   };
 }
 

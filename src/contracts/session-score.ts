@@ -6,6 +6,9 @@
  */
 
 export type {
+  Alert,
+  AlertCategory,
+  AlertLevel,
   SessionConfidence,
   SessionEvaluator,
   SessionId,

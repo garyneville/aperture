@@ -140,6 +140,7 @@ describe('buildPrompt', () => {
         bySession: [],
         hoursAnalyzed: 3,
         planB: null,
+        alerts: [],
       },
       sunrise: '2026-03-14T06:23:00.000Z',
       sunset: '2026-03-14T18:07:00.000Z',

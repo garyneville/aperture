@@ -118,6 +118,10 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     const rawDust = qi >= 0 ? (aqData.hourly!.dust?.[qi]                  ?? null) : null;
     const rawAqi  = qi >= 0 ? (aqData.hourly!.european_aqi?.[qi]          ?? null) : null;
     const rawUv   = qi >= 0 ? (aqData.hourly!.uv_index?.[qi]              ?? null) : null;
+    const rawPm25 = qi >= 0 ? (aqData.hourly!.pm2_5?.[qi]                ?? null) : null;
+    const rawAlderPollen = qi >= 0 ? (aqData.hourly!.alder_pollen?.[qi]  ?? null) : null;
+    const rawBirchPollen = qi >= 0 ? (aqData.hourly!.birch_pollen?.[qi]  ?? null) : null;
+    const rawGrassPollen = qi >= 0 ? (aqData.hourly!.grass_pollen?.[qi]  ?? null) : null;
 
     if (qi >= 0 && (rawAod === null || rawDust === null || rawAqi === null || rawUv === null)) {
       aqNullCount++;
@@ -159,6 +163,8 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
       isPostSunset,
       azimuthRisk, azimuthLowRisk, azimuthScan, horizonGapPct,
       shQ,
+      pm25: rawPm25,
+      pollenMax: Math.max(rawAlderPollen ?? 0, rawBirchPollen ?? 0, rawGrassPollen ?? 0) || null,
     });
 
     // Backfill ensemble fields into feature input

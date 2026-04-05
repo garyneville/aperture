@@ -1,5 +1,15 @@
 import type { ScoringCapability } from './capabilities.js';
 
+export type AlertLevel = 'warn' | 'info';
+export type AlertCategory = 'lightning' | 'air-quality' | 'pollen' | 'dust' | 'uv-exposure';
+
+export interface Alert {
+  level: AlertLevel;
+  category: AlertCategory;
+  badge: string;
+  message: string;
+}
+
 export type SessionId =
   | 'golden-hour'
   | 'astro'
@@ -79,6 +89,10 @@ export interface DerivedHourFeatures {
   recentRainfallMm?: number | null;
   swellDirectionDeg?: number | null;
   waveHeightM?: number | null;
+  pm25Ugm3?: number | null;
+  pollenGrainsM3?: number | null;
+  uvIndex?: number | null;
+  europeanAqi?: number | null;
 }
 
 export interface SessionScore {
@@ -104,6 +118,7 @@ export interface SessionRecommendationSummary {
   bySession: SessionRecommendation[];
   hoursAnalyzed: number;
   planB: string | null;
+  alerts: Alert[];
 }
 
 export interface SessionEvaluator {

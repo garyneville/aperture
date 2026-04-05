@@ -1029,6 +1029,8 @@ describe('bestWindows', () => {
         runnerUps: [],
         bySession: [],
         hoursAnalyzed: 24,
+        planB: null,
+        alerts: [],
       },
     });
 
