@@ -1,6 +1,7 @@
 import { esc } from '../../../lib/utils.js';
 import { buildOutdoorOutlookModel } from '../../shared/outdoor-outlook-model.js';
 import { weatherIconForHour } from '../../shared/brief-primitives.js';
+import { isNowcastSignificant, nowcastBadgeIcon, nowcastBadgeText } from '../../shared/nowcast-helpers.js';
 import type { DaySummary, Window } from '../../../contracts/index.js';
 import { sCard } from './shared.js';
 
@@ -22,9 +23,13 @@ export function sHourlyOutlookSection(input: HourlyOutlookInput): string {
   const rows = model.rows.map(({ hour, score, label, reason }) => {
     const rowBg   = label.highlight ? `${label.bg}33` : 'transparent';
     const dot     = label.highlight ? `<span style="color:${label.fg};">&#x25CF;</span>` : `<span style="color:var(--c-outline);">&#x25CB;</span>`;
+    const ncSignal = hour.nowcastSignal;
+    const ncBadge = isNowcastSignificant(ncSignal)
+      ? `<span class="nowcast-badge ${ncSignal!.direction === 'clearing' ? 'nowcast-clearing' : 'nowcast-thickening'}" title="${esc(nowcastBadgeText(ncSignal) ?? '')}">${nowcastBadgeIcon(ncSignal)}</span>`
+      : '';
     return `<tr style="background:${rowBg};">
       <td style="font-size:12px;font-weight:600;">${esc(hour.hour)}</td>
-      <td class="col-sky">${weatherIconForHour(hour, 18)}</td>
+      <td class="col-sky">${weatherIconForHour(hour, 18)}${ncBadge}</td>
       <td>${Math.round(hour.tmp)}\u00b0C</td>
       <td>${hour.pp}%</td>
       <td>${hour.wind}km/h</td>

@@ -106,6 +106,9 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     const prev = i > 0 ? (w.hourly!.precipitation?.[i - 1] ?? 0) : 0;
     const tpw  = w.hourly!.total_column_integrated_water_vapour?.[i] ?? 20;
     const blh  = w.hourly!.boundary_layer_height?.[i] ?? null;
+    const drad = w.hourly!.direct_radiation?.[i] ?? null;
+    const frad = w.hourly!.diffuse_radiation?.[i] ?? null;
+    const st0  = w.hourly!.soil_temperature_0cm?.[i] ?? null;
 
     const qi   = aqIdx[ts] ?? -1;
     const rawAod  = qi >= 0 ? (aqData.hourly!.aerosol_optical_depth?.[qi] ?? null) : null;
@@ -146,6 +149,7 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
       ts, i, lat, lon, timezone,
       cl, cm, ch, ct, visK, tmp, hum, dew, pp, pr,
       spd, gst, wdir, cap, vpd, prev, tpw, blh,
+      drad, frad, st0,
       aod, dust, aqi, uv,
       lightningRisk,
       isGolden, isGoldAm, isGoldPm, isBlue, isBlueAm, isBluePm, isNight,

@@ -28,7 +28,9 @@ export const wildlifeEvaluator: SessionEvaluator = {
       ? 100
       : features.isBlue
         ? 85
-        : sweetSpotScore(features.cloudTotalPct, 45, 80, 10, 100);
+        : features.diffuseToDirectRatio != null
+          ? clamp(Math.round(sweetSpotScore(features.diffuseToDirectRatio, 0.8, 3.0, 0.1, 8.0)))
+          : sweetSpotScore(features.cloudTotalPct, 45, 80, 10, 100);
     const visibilityWorking = sweetSpotScore(features.visibilityKm, 8, 30, 2, 40);
     const weatherQuiet = clamp(
       100
@@ -67,6 +69,7 @@ export const wildlifeEvaluator: SessionEvaluator = {
     if (calmWind >= 70) reasons.push('Lighter winds should make subjects and longer lenses easier to manage.');
     if (windNote) reasons.push(windNote);
     if (softLight >= 70 && (features.isGolden || features.isBlue)) reasons.push('Soft low-angle light should be kinder on feathers, fur, and contrast.');
+    else if (softLight >= 70 && features.diffuseToDirectRatio != null) reasons.push('The diffuse-to-direct radiation balance favours soft, even light for wildlife.');
     else if (softLight >= 70) reasons.push('Cloud-filtered light should suit wildlife contrast without harsh glare.');
     if (visibilityWorking >= 60) reasons.push('Visibility looks clear enough for longer-lens subject separation.');
     if (weatherQuiet >= 70) reasons.push('The broader weather pattern looks quiet enough for a general wildlife outing.');

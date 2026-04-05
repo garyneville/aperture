@@ -65,6 +65,11 @@ export interface DerivedHourFeatures {
   lightningRisk?: number | null;
   ensembleCloudStdDevPct?: number | null;
   ensembleCloudMeanPct?: number | null;
+  directRadiationWm2?: number | null;
+  diffuseRadiationWm2?: number | null;
+  soilTemperature0cmC?: number | null;
+  diffuseToDirectRatio: number | null;
+  hasFrost: boolean | null;
 }
 
 export interface SessionScore {

@@ -39,6 +39,7 @@ export function run({ $input }: N8nRuntime) {
     ensemble: input.ensemble ?? EMPTY_HOURLY,
     azimuthByPhase: input.azimuthByPhase ?? {},
     precipProb: input.precipProb ?? EMPTY_HOURLY,
+    nowcastSatellite: input.nowcastSatellite ?? undefined,
   }, new Date());
 
   return [{ json: result }];

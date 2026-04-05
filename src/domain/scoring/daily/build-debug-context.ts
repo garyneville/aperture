@@ -52,6 +52,9 @@ function toFeatureInputFromScoredHour(hour: ScoredHour, ensemble?: EnsEntry | nu
     horizonGapPct: hour.horizonGapPct ?? null,
     ensembleCloudStdDevPct: ensemble ? Math.round(ensemble.stdDev) : null,
     ensembleCloudMeanPct: ensemble ? Math.round(ensemble.mean) : null,
+    directRadiationWm2: hour.directRadiationWm2 ?? null,
+    diffuseRadiationWm2: hour.diffuseRadiationWm2 ?? null,
+    soilTemperature0cmC: hour.soilTemperature0cmC ?? null,
   };
 }
 

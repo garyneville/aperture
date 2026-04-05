@@ -10,6 +10,8 @@ export type DerivedHourFeatureInput = Omit<
   | 'cloudOpticalThicknessPct'
   | 'highCloudTranslucencyScore'
   | 'lowCloudBlockingScore'
+  | 'diffuseToDirectRatio'
+  | 'hasFrost'
 >;
 
 function sweetSpotScore(
@@ -164,6 +166,17 @@ function estimateSeeingProxy(input: DerivedHourFeatureInput): number | null {
   return clamp(100 - totalRisk);
 }
 
+function estimateDiffuseToDirectRatio(input: DerivedHourFeatureInput): number | null {
+  if (input.directRadiationWm2 == null || input.diffuseRadiationWm2 == null) return null;
+  // Avoid division by zero: add 1 W/m² floor to direct component
+  return Math.round((input.diffuseRadiationWm2 / (input.directRadiationWm2 + 1)) * 100) / 100;
+}
+
+function estimateHasFrost(input: DerivedHourFeatureInput): boolean | null {
+  if (input.soilTemperature0cmC == null) return null;
+  return input.soilTemperature0cmC <= 0;
+}
+
 export function deriveHourFeatures(input: DerivedHourFeatureInput): DerivedHourFeatures {
   const boundaryLayerTrapScore = estimateBoundaryLayerTrapScore(input);
   const hazeTrapRisk = estimateHazeTrapRisk(input, boundaryLayerTrapScore);
@@ -186,5 +199,7 @@ export function deriveHourFeatures(input: DerivedHourFeatureInput): DerivedHourF
     highCloudTranslucencyScore,
     lowCloudBlockingScore,
     transparencyScore: estimateTransparencyScore(input),
+    diffuseToDirectRatio: estimateDiffuseToDirectRatio(input),
+    hasFrost: estimateHasFrost(input),
   };
 }

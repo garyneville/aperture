@@ -76,6 +76,7 @@ export interface NextDayHour {
   ct: number;
   isNight: boolean;
   moon?: number;
+  nowcastSignal?: import('../domain/scoring/contracts.js').NowcastSignal | null;
 }
 
 export interface RunTimeContext {

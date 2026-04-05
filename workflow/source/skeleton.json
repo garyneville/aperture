@@ -54,7 +54,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit,direct_radiation,diffuse_radiation,soil_temperature_0cm&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0003-0003-0003-000000000003",
@@ -1201,6 +1201,54 @@
         1760,
         900
       ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&current=shortwave_radiation,shortwave_radiation_instant&hourly=shortwave_radiation,shortwave_radiation_instant&models=icon_seamless&forecast_days=1&forecast_hours=6",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0050-0050-0050-000000000050",
+      "name": "HTTP: Satellite Radiation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        1480
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-satellite-radiation__"
+      },
+      "id": "a1b2c3d4-0051-0051-0051-000000000051",
+      "name": "Code: Wrap Satellite Radiation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1540
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0052-0052-0052-000000000052",
+      "name": "Merge: Score Input 7",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2100,
+        760
+      ]
     }
   ],
   "connections": {
@@ -1229,6 +1277,11 @@
           },
           {
             "node": "HTTP: NASA DONKI CME",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Satellite Radiation",
             "type": "main",
             "index": 0
           }
@@ -1260,6 +1313,11 @@
           },
           {
             "node": "HTTP: NASA DONKI CME",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: Satellite Radiation",
             "type": "main",
             "index": 0
           }
@@ -1964,7 +2022,7 @@
       "main": [
         [
           {
-            "node": "Code: Build Score Input",
+            "node": "Merge: Score Input 7",
             "type": "main",
             "index": 0
           }
@@ -2020,6 +2078,39 @@
         [
           {
             "node": "Code: Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Satellite Radiation": {
+      "main": [
+        [
+          {
+            "node": "Code: Wrap Satellite Radiation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap Satellite Radiation": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 7",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 7": {
+      "main": [
+        [
+          {
+            "node": "Code: Build Score Input",
             "type": "main",
             "index": 0
           }
