@@ -66,7 +66,7 @@ ALT_NAME="${ALT_NAME:-Malham Cove}"
 # ─── API definitions ─────────────────────────────────────────────────────────
 # Each entry: number|label|url
 APIS=(
-  "01|Weather (UKMO)|https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit&daily=sunrise,sunset&timezone=${TZ_ENC}&forecast_days=5"
+  "01|Weather (UKMO)|https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit,direct_radiation,diffuse_radiation,soil_temperature_0cm&daily=sunrise,sunset&timezone=${TZ_ENC}&forecast_days=5"
   "02|Air Quality|https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${LAT}&longitude=${LON}&hourly=aerosol_optical_depth,dust,uv_index,european_aqi,pm2_5,alder_pollen,birch_pollen,grass_pollen&timezone=${TZ_ENC}&forecast_days=5"
   "03|METAR (${ICAO})|https://aviationweather.gov/api/data/metar?ids=${ICAO}&format=json&taf=false"
   "04|SunsetHue|https://api.sunsethue.com/forecast?latitude=${LAT}&longitude=${LON}"

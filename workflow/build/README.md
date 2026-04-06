@@ -39,10 +39,22 @@ The following fields are **not** requested in the `HTTP: Weather` node because `
 |---|---|---|
 | `precipitation_probability` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model |
 | `lightning_potential` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model; gated by CAPE ≥ 500 J/kg floor before use |
+| `total_column_integrated_water_vapour` | Falls back to 20 (neutral — no clarity bonus or penalty) | Scoring degraded; real values would improve clarity assessment |
+| `boundary_layer_height` | Falls back to `null` | Mist scoring degrades to dew-point spread only |
 
 Alt-location (`prepare-alt-locations.ts`) and long-range (`prepare-long-range.ts`) URLs also pin `models=ukmo_seamless`, so their `HOURLY_FIELDS` arrays must likewise exclude UKMO-incompatible fields. Precipitation probability scoring for these locations degrades gracefully — the field is optional in their scoring contracts.
-| `total_column_integrated_water_vapour` | Falls back to 20 (neutral — no clarity bonus or penalty) | Scoring degraded; real values would improve clarity assessment |
-| `boundary_layer_height` | Falls back to `null` | Informational only; no direct scoring impact |
+
+### boundary_layer_height — future migration path
+
+ECMWF IFS HRES provides `boundary_layer_height` via the Open-Meteo ECMWF endpoint:
+
+```
+https://api.open-meteo.com/v1/ecmwf?latitude=...&longitude=...&hourly=boundary_layer_height&models=ecmwf_ifs&timezone=...&forecast_days=5
+```
+
+To unlock this in production, a secondary ECMWF HTTP node would need to be added to the workflow skeleton, with a corresponding wrap-code node and merge into the score input chain. The scoring contract (`WeatherData.hourly.boundary_layer_height`) and `summarize-day.ts` already handle the field — only the data pipeline needs extending.
+
+Current impact: mist/inversion scoring works via dew-point spread heuristic. With `boundary_layer_height`, low-boundary-layer conditions (< 500 m) would boost mist scores and high-boundary-layer conditions (> 1500 m) would penalise them.
 
 The workflow skeleton now contains a conditional editorial branch:
 
