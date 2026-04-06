@@ -60,31 +60,15 @@ Findings from pipeline analysis on 6 Apr 2026. Phases 1–4 merged (PRs #269, #2
 
 ---
 
-### R4. `soil_temperature_0cm` returns all nulls from UKMO
+### R4. `soil_temperature_0cm` returns all nulls from UKMO — ✅ resolved
 
-**Observation:** The field was added to the API call (Phase 2b) but Open-Meteo UKMO returns all 120 values as `null` with units `"undefined"`. The `hasFrost` derived feature is permanently disabled.
-
-**Investigation:**
-1. Confirm UKMO doesn't support this by checking Open-Meteo's model documentation for UKMO vs ECMWF field availability.
-2. Test with `&models=ecmwf_ifs025` to see if ECMWF returns soil temperature.
-3. If ECMWF works, decide whether to add a secondary API call for just this field, or combine it with the BLH call (R5).
-4. If neither model provides it reliably at this location, remove `soil_temperature_0cm` from the API call and document the limitation.
-
-**Expected outcome:** Either a working secondary data source, or removal of the dead field.
+**Resolution:** Removed `soil_temperature_0cm` from the UKMO API call. Added `HTTP: ECMWF Supplement` node that fetches `soil_temperature_0cm` from ECMWF IFS 0.25° (`ecmwf_ifs025`). The `build-score-input` adapter aligns and merges the ECMWF field into the weather object. `hasFrost` now works when ECMWF provides data.
 
 ---
 
-### R5. `boundaryLayerHeightM` permanently null — mist quality limited
+### R5. `boundaryLayerHeightM` permanently null — mist quality limited — ✅ resolved
 
-**Observation:** UKMO doesn't provide `boundary_layer_height`. Mist scoring works via dew-point spread heuristic, but BLH would enable inversion detection (trapped fog layers = best photography conditions).
-
-**Investigation:**
-1. Test `https://api.open-meteo.com/v1/forecast?latitude=53.83&longitude=-1.57&hourly=boundary_layer_height&models=ecmwf_ifs025` to confirm ECMWF provides BLH for this location.
-2. If it works, design a minimal secondary call: one HTTP node, hourly BLH only, merged into normalized inputs.
-3. Estimate token impact of the extra API call on n8n workflow execution time.
-4. Check if ECMWF BLH data covers the same 5-day forecast horizon as UKMO.
-
-**Expected outcome:** Confirmed ECMWF BLH availability and a sketch for a secondary API node in the workflow skeleton, or documented decision to defer.
+**Resolution:** Added `HTTP: ECMWF Supplement` node that fetches `boundary_layer_height` from ECMWF IFS 0.25° (`ecmwf_ifs025`). The `build-score-input` adapter aligns and merges the ECMWF field into the weather object. Mist/inversion scoring now uses BLH when ECMWF provides data — low BLH (< 500 m) boosts mist scores, high BLH (> 1500 m) penalises.
 
 ---
 

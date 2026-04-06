@@ -77,6 +77,7 @@ APIS=(
   "09|Kp Index|https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json"
   "10|AuroraWatch UK|https://aurorawatch.lancs.ac.uk/api/0.1/status.xml"
   "11|NASA DONKI CME|https://api.nasa.gov/DONKI/CME?startDate=${DONKI_START}&endDate=${DONKI_END}&api_key=${NASA_API_KEY}"
+  "12|ECMWF Supplement|https://api.open-meteo.com/v1/ecmwf?latitude=${LAT}&longitude=${LON}&hourly=soil_temperature_0cm,boundary_layer_height&models=ecmwf_ifs025&timezone=${TZ_ENC}&forecast_days=5"
 )
 
 echo "Snapshot → ${DIR}/"
