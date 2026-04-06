@@ -1,110 +1,157 @@
 # Aperture — Fix & Improve Plan
 
-Findings from pipeline analysis on 6 Apr 2026. Organised into four phases: unblock editorial first, then fill data gaps, then improve scoring signals, then polish presentation.
+Findings from pipeline analysis on 6 Apr 2026. Phases 1–4 merged (PRs #269, #271, #273, #275). Below: remaining issues found during post-merge verification run (21:32 snapshot).
 
 ---
 
-## Phase 1 — Unblock editorial (both providers failing)
+## Closed phases (for reference)
 
-Both AI providers failed on 6 Apr, leaving the brief on template fallback. This is the only phase that affects every single run.
-
-### 1a. Gemini MAX_TOKENS truncation
-Gemini `gemini-3-flash-preview` uses thinking tokens (1,532) that compete with the `maxOutputTokens: 1600` budget. Only 64 candidate tokens were generated before truncation — the editorial was cut off mid-sentence. Finish reason: `MAX_TOKENS`.
-
-**Fix:** Increase `maxOutputTokens` in `workflow/source/skeleton.json` (currently 1600 for editorial, 800 for inspire) to ~4000, or disable thinking via `thinkingConfig` if the Gemini API supports it, or switch to a non-thinking model variant.
-
-### 1b. Groq returns empty response
-The primary editorial provider returned nothing: `Raw Groq response: (empty)`. Combined with Gemini truncation, both providers failed.
-
-**Fix:** Add diagnostics — log the Groq HTTP status and raw response body in the debug trace when `empty-response` triggers. Check whether the model `openai/gpt-oss-120b` is still available on Groq. Consider testing with `llama-3.3-70b-versatile` as a known-good fallback model.
-
-### 1c. AuroraWatch UK API persistently 404
-`https://aurorawatch.lancs.ac.uk/api/0.1/status/` returned 404 in all snapshots. Not intermittent — the endpoint appears down or moved.
-
-**Fix:** Check whether AuroraWatch has migrated to a new API version. Add a warning in `fuseAuroraSignals()` when the AuroraWatch signal is missing (currently silent). Ensure the remaining two aurora signals (Kp + DONKI CME) still produce a usable fused result when AuroraWatch is absent.
+| Phase | Items | Status |
+|-------|-------|--------|
+| **1** | Gemini token budget, Groq model, AuroraWatch 404 | ✅ Merged (#269) |
+| **2** | Radiation fields, soil temp, BLH docs | ✅ Merged (#271) |
+| **3** | Score gap, debug clarity, confidence, long-range gating | ✅ Merged (#273) |
+| **4** | Fallback bullets, comfort labels, marine skip, inspire docs | ✅ Merged (#275) |
+| **R1** | Comfort labels wired into ScoredHour | ✅ Merged (#276) |
 
 ---
 
-## Phase 2 — Fill data gaps (unlock null features)
+## Remaining issues — investigation plan
 
-Several scoring features are permanently null because the API calls don't request the fields. These are small changes to API URLs (workflow skeleton + snapshot script) with immediate scoring benefit.
+### R1. Comfort labels still empty for all hours
 
-### 2a. Add `direct_radiation` and `diffuse_radiation` to weather API call
-Currently null for all hours. The `diffuseToDirectRatio` feature falls back to a cloud-cover heuristic. UKMO on Open-Meteo supports both fields. Adding them improves golden-hour, wildlife, and long-exposure scoring precision.
+**Observation:** Every hour in `todayHours` has `comfort: ""`. Phase 4b was supposed to address this.
 
-**Change:** Add `direct_radiation,diffuse_radiation` to the UKMO hourly parameter list in:
-- `workflow/source/skeleton.json` (the weather HTTP node)
-- `scripts/snapshot-apis.sh` (API 01)
+**Investigation:**
+1. Grep for where `comfort` is assigned in `src/domain/scoring/` — identify the code path.
+2. Check whether the comfort evaluator produces values that get overwritten or stripped downstream.
+3. Run a targeted unit test for the comfort label function with today's weather data (13°C, wind 14 km/h, humidity 44%) to confirm the function itself returns a non-empty string.
+4. If the function works but the pipeline doesn't wire it, trace the data flow from scoring output through to `todayHours` assembly.
 
-### 2b. Add `soil_temperature_0cm` to weather API call
-Currently null, so `hasFrost` can never trigger. UKMO provides this. Enables frost detection (moody dawn shots, frost-on-cobweb compositions).
-
-**Change:** Add `soil_temperature_0cm` alongside the radiation fields above.
-
-### 2c. Source `boundary_layer_height` from a secondary model
-Not available from UKMO. Open-Meteo provides it from ECMWF and GFS. Would improve mist/inversion scoring.
-
-**Change:** Either add a secondary ECMWF hourly call for `boundary_layer_height` only, or accept the null and document the limitation. Lower priority than 2a/2b since mist scoring already works via dew-point spread.
+**Expected outcome:** Identify whether comfort was implemented but not wired, or whether the Phase 4b PR only documented intent without implementation.
 
 ---
 
-## Phase 3 — Improve scoring signals & debug clarity
+### R2. Editorial context sends only 5 fields per hour to the AI
 
-These address inconsistencies in scoring presentation, confidence calibration, and recommendation gating.
+**Observation:** Each hour in the editorial context has just `{hour, score, ct, visK, aod}`. The scoring output has ~40 fields per hour (drama, clarity, mist, wind, humidity, radiation, moon, tags, session scores). The AI is making editorial decisions with minimal context.
 
-### 3a. Investigate score gap: pipeline 51 vs email 64
-The email shows PM: 64, Overall: 64 for today, but the pipeline dump shows `pmScore=51` and the 20:00 hour raw score is 51. A 13-point gap needs explaining — is there a post-scoring transformation, SunsetHue boost applied after `scoreAllDays()`, or purely a temporal forecast shift between the two runs?
+**Investigation:**
+1. Find where `todayHours` is built for the editorial context — likely in `src/domain/editorial/` or `src/app/`.
+2. Check what fields the editorial prompt expects (read the system prompt template).
+3. Compare the editorial context shape with what the prompt references — identify any fields the prompt asks about but doesn't receive.
+4. Determine whether the sparse shape is intentional (token budget) or an oversight.
 
-**Action:** Trace the data path from `scoreAllDays()` output through to `BriefRenderInput` to find where the score diverges. Document the transformation if intentional.
-
-### 3b. Clarify "best session" vs "best window" in debug email
-Debug email says "Best session: Long Exposure (81/100 at 06:00)" while the main email promotes "Evening golden hour: 20:00 at 64/100". The 64 is an *hourly composite* score, not the golden-hour *session* score (which is 29). The time-aware window system correctly skips the past 06:00 window, but the debug email reports the raw session max without time-awareness.
-
-**Fix:** Either make the debug email's "Best session today" line time-aware (matching the main email's window selection logic), or annotate it clearly as "Best session (any time)" to avoid confusion.
-
-### 3c. Recalibrate confidence bands
-All 5 days show `confidence: low` (spreads 31–39). When everything is "low", the signal is noise. Current thresholds: High <12, Fair 12–24, Low ≥25.
-
-**Fix:** Add a fourth band (e.g., "Very Low" ≥35) or shift the thresholds upward to match typical UK ensemble spread ranges. Alternatively, express confidence as a relative signal ("more reliable than tomorrow" / "least reliable day this week") rather than absolute.
-
-### 3d. Gate long-range astro recommendations on moon phase + confidence
-Kielder Forest (170-min drive) was recommended for astro at 23:00 with 79% moon illumination and low confidence. That's a tough sell.
-
-**Fix:** Add a gate in long-range scoring: suppress astro-driven long-range recommendations when `moonPct > 60%` AND `confidence === 'low'`. Keep the location visible in debug but don't promote it in the main email.
+**Expected outcome:** A list of fields that should be added to the editorial hour payload, or confirmation that sparse is by design with a documented rationale.
 
 ---
 
-## Phase 4 — Presentation polish
+### R3. NASA DONKI CME persistently returning 503
 
-Lower-priority refinements to template quality, comfort labels, and unnecessary API calls.
+**Observation:** DONKI has returned 503 in the last two snapshots (21:25 and 21:32). The fused aurora signal handles it gracefully (`warnings: ["NASA DONKI long-range signal missing"]`), but this means the long-range aurora forecast is permanently absent.
 
-### 4a. Context-aware fallback composition bullets
-When AI fails, the composition bullets are generic ("Use a lone tree, church tower, or ridge break…"). The fallback generator has access to scored context (cloud %, sun direction, visibility, window type) but doesn't use it for shot ideas.
+**Investigation:**
+1. Check whether DONKI 503 is a known NASA outage — query `https://api.nasa.gov` status page or DONKI changelog.
+2. Try the DONKI endpoint manually with different date ranges to isolate whether it's the date range or the endpoint itself.
+3. Check if the API key is rate-limited or expired.
+4. If DONKI is unreliable, research alternative CME data sources (e.g., NOAA SWPC, SpaceWeatherLive API).
 
-**Fix:** In `buildFallbackAiText()` or a companion function, select from a pool of pre-written bullets keyed by conditions: clear-sky golden hour → horizon/silhouette suggestions with sun direction; overcast → diffuse-light subjects; astro → dark-sky framing. Even 3–4 condition buckets would outperform the current one-size-fits-all.
+**Expected outcome:** Determine if this is transient (wait it out) or permanent (need an alternative source or graceful permanent removal from aurora scoring weight).
 
-### 4b. Differentiate outdoor comfort labels
-Every hour from 14:00–22:00 shows "Best for a run" at 95–100/100. When conditions are uniformly good, the identical labels become filler.
+---
 
-**Fix:** Either collapse uniform runs into a single range ("14:00–22:00: excellent conditions"), or add time-of-day variation ("lunch walk" / "evening run" / "after-dark stroll").
+### R4. `soil_temperature_0cm` returns all nulls from UKMO
 
-### 4c. Skip marine API call for inland locations
-Leeds is inland — all marine data returns null. The API call is unnecessary overhead.
+**Observation:** The field was added to the API call (Phase 2b) but Open-Meteo UKMO returns all 120 values as `null` with units `"undefined"`. The `hasFrost` derived feature is permanently disabled.
 
-**Fix:** Add an `isCoastal` flag to location config (or compute distance-to-coast) and skip the marine fetch when false. Seascape is already correctly gated, so no scoring change needed.
+**Investigation:**
+1. Confirm UKMO doesn't support this by checking Open-Meteo's model documentation for UKMO vs ECMWF field availability.
+2. Test with `&models=ecmwf_ifs025` to see if ECMWF returns soil temperature.
+3. If ECMWF works, decide whether to add a secondary API call for just this field, or combine it with the BLH call (R5).
+4. If neither model provides it reliably at this location, remove `soil_temperature_0cm` from the API call and document the limitation.
 
-### 4d. Creative spark constraints (low priority)
-The inspire chain referenced "Malham Cove" — a nearby alternative. The editorial rules say "Leeds conditions only", but this constraint applies to the `editorial` field, not the creative spark. The inspire prompt intentionally receives alt-location names for poetic use.
+**Expected outcome:** Either a working secondary data source, or removal of the dead field.
 
-**Action:** Decide whether the creative spark *should* be allowed to mention alternatives. If yes, document the distinction. If no, filter alt-location names from the inspire prompt input.
+---
+
+### R5. `boundaryLayerHeightM` permanently null — mist quality limited
+
+**Observation:** UKMO doesn't provide `boundary_layer_height`. Mist scoring works via dew-point spread heuristic, but BLH would enable inversion detection (trapped fog layers = best photography conditions).
+
+**Investigation:**
+1. Test `https://api.open-meteo.com/v1/forecast?latitude=53.83&longitude=-1.57&hourly=boundary_layer_height&models=ecmwf_ifs025` to confirm ECMWF provides BLH for this location.
+2. If it works, design a minimal secondary call: one HTTP node, hourly BLH only, merged into normalized inputs.
+3. Estimate token impact of the extra API call on n8n workflow execution time.
+4. Check if ECMWF BLH data covers the same 5-day forecast horizon as UKMO.
+
+**Expected outcome:** Confirmed ECMWF BLH availability and a sketch for a secondary API node in the workflow skeleton, or documented decision to defer.
+
+---
+
+### R6. Kp forecast data is stale in editorial context
+
+**Observation:** The `kpForecast` array in the editorial context starts from 2026-03-30 (a week ago). The AI receives 7 days of old Kp data mixed with current. This wastes tokens and could mislead the editorial.
+
+**Investigation:**
+1. Find where `kpForecast` is filtered/trimmed before inclusion in the editorial context.
+2. Check the NOAA Kp data source — does it return historical + forecast, and is the pipeline failing to filter to forecast-only?
+3. Add a filter to only include Kp entries from today onward in the editorial context.
+
+**Expected outcome:** Kp editorial payload trimmed to relevant forecast window (today + 2 days).
+
+---
+
+### R7. Malham Cove alt-location tagged `types: ["poor"]` despite astro score of 81
+
+**Observation:** Alt-location scoring shows Malham Cove with `bestScore: 81` (astro) and `meetsThreshold: true`, but `types: ["poor"]`. The `types` array appears to be based on the daytime score (37), ignoring the strong astro recommendation. This could confuse editorial about whether to recommend a trip.
+
+**Investigation:**
+1. Find where `types` is assigned in alt-location scoring — likely in `src/domain/scoring/` or `src/app/`.
+2. Check the threshold logic: is `types` derived from `dayScore` only, or should it consider `bestScore` (which includes astro)?
+3. If astro-qualifying locations are tagged "poor" based on daytime conditions, the editorial might skip them. Verify the editorial prompt treats `types` and `isAstroWin` independently.
+
+**Expected outcome:** Either fix types to reflect best-case (astro + day), or confirm the editorial handles `isAstroWin: true` + `types: ["poor"]` correctly.
+
+---
+
+### R8. 3 of 5 days rated "Poor — don't bother" — scoring harshness for UK spring
+
+**Observation:** Headline scores range 36–52, with 3/5 days labelled "Poor — don't bother". Today's best hour (20:00, clear sky, golden hour) only scores 52. At 14:00 with 9% cloud, 31km visibility, and 506 W/m² direct radiation, the score is 40. UK spring conditions routinely produce these marginal scores.
+
+**Investigation:**
+1. Check the `photoRating` label thresholds — what score ranges map to "Poor", "Marginal", "Good", "Excellent"?
+2. Run a histogram of headline scores across the existing API snapshots (3 dates) to see the distribution.
+3. Compare with the session scores at the same time — the long-exposure session scores 86 and wildlife 78, but the headline only reaches 52. Understand what drives the gap between session enthusiasm and overall pessimism.
+4. Consider whether headline scores should factor in the best session score (not just raw hourly composite).
+
+**Expected outcome:** Either recalibrate rating labels for UK conditions (e.g., "Marginal" at 40+ instead of 50+), or decide that session recommendations are the true signal and headline is deliberately conservative.
+
+---
+
+### R9. `darkSkyStartsAt: "00:00"` for today — looks wrong
+
+**Observation:** Today (6 Apr, Leeds, sunset ~19:55) shows `darkSkyStartsAt: "00:00"` and `bestAstroHour: "23:00"`. Astronomical twilight ends around 21:30 in April at this latitude, so dark sky should start ~21:30, not midnight.
+
+**Investigation:**
+1. Find where `darkSkyStartsAt` is computed — likely in sunrise/sunset or astro scoring.
+2. Check whether it uses astronomical twilight end or a simpler heuristic.
+3. Verify the solar altitude data at 21:00–22:00 to confirm when sun drops below -18°.
+4. If it's using `00:00` as a fallback when the value can't be computed, fix the fallback.
+
+**Expected outcome:** `darkSkyStartsAt` reflects actual astronomical twilight end, or documented reason why midnight is used.
 
 ---
 
 ## Summary
 
-| Phase | Items | Theme | Risk if skipped |
-|-------|-------|-------|-----------------|
-| **1** | 1a, 1b, 1c | Unblock editorial providers | Every run falls back to templates |
-| **2** | 2a, 2b, 2c | Fill null API fields | Scoring features permanently disabled |
-| **3** | 3a, 3b, 3c, 3d | Scoring signals & debug clarity | Confusing debug output, noisy confidence |
-| **4** | 4a, 4b, 4c, 4d | Presentation polish | Generic fallbacks, minor UX issues |
+| ID | Issue | Priority | Effort |
+|----|-------|----------|--------|
+| R1 | Comfort labels empty | ✅ Fixed | Wired via `src/lib/outdoor-comfort.ts` |
+| R2 | Editorial hours too sparse | Medium | Medium — field selection + token budget |
+| R3 | DONKI CME 503 | Low | External dependency — monitor or replace |
+| R4 | Soil temp nulls from UKMO | Low | Small — test ECMWF or remove |
+| R5 | BLH null, mist limited | Low | Medium — secondary API call design |
+| R6 | Kp data stale in editorial | Medium | Small — add date filter |
+| R7 | Alt-location types vs astro mismatch | Medium | Small — threshold logic check |
+| R8 | Headline scoring harsh for UK | High | Medium — label recalibration |
+| R9 | darkSkyStartsAt midnight fallback | Low | Small — computation check |
