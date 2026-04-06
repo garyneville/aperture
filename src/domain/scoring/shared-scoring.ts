@@ -146,7 +146,7 @@ export function scoreGoldenBlueHour(
   if (mist > 40) tags.push('atmospheric');
   if (prev > 0.5 && pr < 0.1) tags.push('reflections');
   if (isBlue) tags.push('blue hour');
-  if (!tags.length) tags.push(score > 40 ? 'general' : 'poor');
+  if (!tags.length) tags.push(score > 35 ? 'general' : 'poor');
 
   return { drama, clarity, mist, score, isAm: isAmSession, tags };
 }

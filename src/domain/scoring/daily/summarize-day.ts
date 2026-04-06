@@ -251,9 +251,9 @@ export function summarizeDay(p: SummarizeDayParams): DaySummary {
     : labelDate.toLocaleDateString('en-GB', { weekday: 'long', timeZone: timezone });
 
   let photoEmoji: string, photoRating: string;
-  if (headlineScore >= 75)      { photoEmoji = '\uD83D\uDD25'; photoRating = 'Excellent'; }
-  else if (headlineScore >= 58) { photoEmoji = '\u2705'; photoRating = 'Good'; }
-  else if (headlineScore >= 42) { photoEmoji = '\uD83D\uDFE1'; photoRating = 'Marginal'; }
+  if (headlineScore >= 72)      { photoEmoji = '\uD83D\uDD25'; photoRating = 'Excellent'; }
+  else if (headlineScore >= 52) { photoEmoji = '\u2705'; photoRating = 'Good'; }
+  else if (headlineScore >= 35) { photoEmoji = '\uD83D\uDFE1'; photoRating = 'Marginal'; }
   else                      { photoEmoji = '\u274C'; photoRating = "Poor \u2014 don't bother"; }
 
   // Car wash scoring

@@ -401,11 +401,11 @@ describe('buildPrompt', () => {
     const result = buildPrompt({
       windows: [],
       dontBother: true,
-      todayBestScore: 35,
+      todayBestScore: 30,
       todayCarWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
       dailySummary: [{
         dateKey: '2026-03-16', dayLabel: 'Today', dayIdx: 0, hours: [],
-        photoScore: 35, headlineScore: 35, photoEmoji: '❌', photoRating: 'Poor',
+        photoScore: 30, headlineScore: 30, photoEmoji: '❌', photoRating: 'Poor',
         bestPhotoHour: '—', bestTags: '',
         carWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
         sunrise: '2026-03-16T06:15:00.000Z', sunset: '2026-03-16T18:20:00.000Z',
@@ -500,11 +500,11 @@ describe('buildPrompt', () => {
     const result = buildPrompt({
       windows: [],
       dontBother: true,
-      todayBestScore: 35,
+      todayBestScore: 30,
       todayCarWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
       dailySummary: [{
         dateKey: '2026-03-16', dayLabel: 'Today', dayIdx: 0, hours: [],
-        photoScore: 35, headlineScore: 35, photoEmoji: '❌', photoRating: 'Poor',
+        photoScore: 30, headlineScore: 30, photoEmoji: '❌', photoRating: 'Poor',
         bestPhotoHour: '—', bestTags: '',
         carWash: { score: 40, rating: '❌', label: 'Poor', start: '—', end: '—', wind: 30, pp: 80, tmp: 5 },
         sunrise: '2026-03-16T06:15:00.000Z', sunset: '2026-03-16T18:20:00.000Z',
