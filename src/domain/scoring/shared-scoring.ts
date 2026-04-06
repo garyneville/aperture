@@ -241,5 +241,7 @@ export function evaluateDay(
   const isAstroWin = resolveAstroWin(bestDay, bestAstro, loc.siteDarkness);
   const bestScore = resolveBestScore(bestDay, bestAstro, isAstroWin);
 
+  if (isAstroWin) bestTags.push('astrophotography');
+
   return { bestDay, bestAstro, bestScore, bestDayHour, bestAstroHour, bestTags, amScore, pmScore, isAstroWin };
 }

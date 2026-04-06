@@ -265,6 +265,85 @@ describe('evaluateDay', () => {
     expect(debug!.dayScore).toBeGreaterThan(0);
   });
 
+  it('includes astrophotography tag when isAstroWin is true', () => {
+    // Dark-sky site (bortle 3) → darker than home (bortle 7)
+    const darkSite = {
+      lat: 54.5,
+      lon: -3.0,
+      siteDarkness: siteDarknessFromBortle(3),
+    };
+    // Poor daytime weather but clear night skies: high cloud, low visibility for day;
+    // low total cloud for night
+    const weather = makeWeatherFixture({
+      date: '2026-03-15',
+      cloudcover: 5,         // clear skies (benefits astro)
+      cloudcover_low: 90,    // heavy low cloud (hurts daytime)
+      cloudcover_high: 90,   // heavy high cloud (hurts daytime drama)
+      visibility: 40000,
+      precipitation_probability: 60,
+      precipitation: 2,
+      relativehumidity_2m: 55,
+    });
+    const hourIndices = weather.hourly!.time!.map((ts, i) => ({ ts, i }));
+    const sunriseD = new Date(weather.daily!.sunrise![0]);
+    const sunsetD = new Date(weather.daily!.sunset![0]);
+
+    const result = evaluateDay(weather, darkSite, hourIndices, sunriseD, sunsetD, 'Europe/London');
+
+    expect(result.isAstroWin).toBe(true);
+    expect(result.bestTags).toContain('astrophotography');
+  });
+
+  it('does not include astrophotography tag when isAstroWin is false', () => {
+    const brightSite = {
+      lat: 54.5,
+      lon: -3.0,
+      siteDarkness: siteDarknessFromBortle(8), // bright site
+    };
+    const weather = makeWeatherFixture({
+      date: '2026-03-15',
+      cloudcover: 20,
+      visibility: 40000,
+    });
+    const hourIndices = weather.hourly!.time!.map((ts, i) => ({ ts, i }));
+    const sunriseD = new Date(weather.daily!.sunrise![0]);
+    const sunsetD = new Date(weather.daily!.sunset![0]);
+
+    const result = evaluateDay(weather, brightSite, hourIndices, sunriseD, sunsetD, 'Europe/London');
+
+    expect(result.isAstroWin).toBe(false);
+    expect(result.bestTags).not.toContain('astrophotography');
+  });
+
+  it('daytime-poor + astro-strong does not produce ["poor"] as sole type', () => {
+    const darkSite = {
+      lat: 54.5,
+      lon: -3.0,
+      siteDarkness: siteDarknessFromBortle(3),
+    };
+    // Poor daytime conditions but clear night skies
+    const weather = makeWeatherFixture({
+      date: '2026-03-15',
+      cloudcover: 5,
+      cloudcover_low: 90,
+      cloudcover_high: 90,
+      visibility: 40000,
+      precipitation_probability: 60,
+      precipitation: 2,
+      relativehumidity_2m: 55,
+    });
+    const hourIndices = weather.hourly!.time!.map((ts, i) => ({ ts, i }));
+    const sunriseD = new Date(weather.daily!.sunrise![0]);
+    const sunsetD = new Date(weather.daily!.sunset![0]);
+
+    const result = evaluateDay(weather, darkSite, hourIndices, sunriseD, sunsetD, 'Europe/London');
+
+    expect(result.isAstroWin).toBe(true);
+    // Types should not be just ["poor"] — must include astrophotography
+    expect(result.bestTags).not.toEqual(['poor']);
+    expect(result.bestTags).toContain('astrophotography');
+  });
+
   it('produces consistent scores with score-long-range for same weather data', () => {
     const weather = makeWeatherFixture();
     const input: ScoreLongRangeInput = {

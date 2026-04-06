@@ -427,3 +427,53 @@ describe('regression: lowland alt scoring is unchanged by upland additions', () 
     expect(result.noAltsMsg).toBeNull();
   });
 });
+
+/* ------------------------------------------------------------------ */
+/*  scoreAlternatives — astro-win types propagation                   */
+/* ------------------------------------------------------------------ */
+
+describe('scoreAlternatives astro-win types propagation', () => {
+  it('astro-winning alt-location types include astrophotography', () => {
+    // Malham Cove: bortle 3 (dark sky), home is bortle 7
+    const malhamMeta = ALT_LOCATIONS.find(l => l.name === 'Malham Cove')!;
+    // Poor daytime (heavy low cloud, precipitation) but clear night (low total cloud)
+    const date = '2026-03-15';
+    const hours = Array.from({ length: 24 }, (_, h) => `${date}T${String(h).padStart(2, '0')}:00`);
+    const weather: AltWeatherData = {
+      hourly: {
+        time: hours,
+        cloudcover: hours.map(() => 5),              // clear total cloud → great for astro
+        cloudcover_low: hours.map(() => 90),          // heavy low cloud → hurts daytime
+        cloudcover_mid: hours.map(() => 80),
+        cloudcover_high: hours.map(() => 90),         // heavy high cloud → hurts daytime drama
+        visibility: hours.map(() => 40000),
+        temperature_2m: hours.map(() => 8),
+        relativehumidity_2m: hours.map(() => 55),
+        dewpoint_2m: hours.map(() => 3),
+        precipitation_probability: hours.map(() => 60),
+        precipitation: hours.map(() => 2),
+        windspeed_10m: hours.map(() => 5),
+        windgusts_10m: hours.map(() => 10),
+        total_column_integrated_water_vapour: hours.map(() => 10),
+      },
+      daily: {
+        sunrise: [`${date}T06:15:00`],
+        sunset: [`${date}T18:15:00`],
+      },
+    };
+
+    const result = scoreAlternatives({
+      altWeatherData: [weather],
+      altLocationMeta: [malhamMeta],
+      homeContext: makeLeedsContext(0),
+    });
+
+    // The alt should appear as an alt location or close contender
+    const alt = result.altLocations.find(a => a.name === 'Malham Cove')
+      || result.closeContenders.find(a => a.name === 'Malham Cove');
+    expect(alt).toBeDefined();
+    expect(alt!.isAstroWin).toBe(true);
+    expect(alt!.types).toContain('astrophotography');
+    expect(alt!.types).not.toEqual(['poor']);
+  });
+});
