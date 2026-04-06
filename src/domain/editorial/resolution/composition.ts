@@ -80,6 +80,18 @@ function compositionSpecificityScore(bullet: string, ctx: BriefContext): number 
   return score;
 }
 
+function averageWindowCloud(window: WindowLike): number | null {
+  const hours = (window.hours || []).filter(h => typeof h.ct === 'number');
+  if (!hours.length) return null;
+  return hours.reduce((sum, h) => sum + (h.ct as number), 0) / hours.length;
+}
+
+function averageWindowVisibility(window: WindowLike): number | null {
+  const hours = (window.hours || []).filter(h => typeof h.visK === 'number');
+  if (!hours.length) return null;
+  return hours.reduce((sum, h) => sum + (h.visK as number), 0) / hours.length;
+}
+
 function fallbackCompositionBullets(ctx: BriefContext): string[] {
   const { referenceWindow: topWindow } = getValidationWindowContext(ctx);
   if (!topWindow) return [];
@@ -110,6 +122,7 @@ function fallbackCompositionBullets(ctx: BriefContext): string[] {
     return dedupeBullets(ideas).slice(0, 2);
   }
 
+  // Tag-based bullets (highest priority — the window already signals a specific opportunity)
   if (lowerTags.has('clear light path')) {
     ideas.push('Use a lone tree, church tower, or ridge break where the light path stays clean to the horizon.');
   }
@@ -119,9 +132,34 @@ function fallbackCompositionBullets(ctx: BriefContext): string[] {
   if (lowerTags.has('atmospheric') || lowerTags.has('misty / atmospheric') || lowerTags.has('mist')) {
     ideas.push('Look for layered trees, canal edges, or distant rooftops where haze can separate the scene into soft bands.');
   }
+
+  // Weather-condition buckets — use scored hour data when tags don't cover it
   if (!ideas.length) {
-    ideas.push(`Work a simple local skyline, bare tree, or roofline around ${peakHour} during the ${loweredLabel}.`);
+    const avgCloud = averageWindowCloud(topWindow);
+    const avgVis = averageWindowVisibility(topWindow);
+    const isGolden = loweredLabel.includes('golden');
+
+    if (avgCloud !== null && avgCloud < 30 && isGolden) {
+      // Clear-sky golden hour
+      ideas.push(`Find a clean horizon — lone tree, church spire, or ridge silhouette — and let the low sun do the work around ${peakHour}.`);
+      ideas.push('Side-light picks out every texture; get close to walls, bark, or dry stone for warm, raking detail.');
+    } else if (avgCloud !== null && avgCloud >= 70) {
+      // Overcast / diffuse light
+      ideas.push('Flat light suits intimate subjects — woodland, water reflections, stone textures, or close-up botanicals.');
+      ideas.push(`Work sheltered spots where even light removes harsh shadows around ${peakHour}.`);
+    } else if (avgVis !== null && avgVis < 5) {
+      // Low visibility / atmospheric
+      ideas.push('Use the low visibility for depth — layer trees, fences, or buildings receding into mist or haze.');
+      ideas.push(`Look for isolated shapes that stand out from the murk around ${peakHour}.`);
+    } else if (avgCloud !== null && avgCloud >= 30 && avgCloud < 70) {
+      // Broken / mixed cloud
+      ideas.push(`Broken cloud means shifting light — watch for spotlight moments on open ground or rooftops around ${peakHour}.`);
+      ideas.push('Frame a strong foreground shape and wait for cloud gaps to backlight the scene.');
+    } else {
+      ideas.push(`Work a simple local skyline, bare tree, or roofline around ${peakHour} during the ${loweredLabel}.`);
+    }
   }
+
   ideas.push(`Keep a tighter second frame on one clear foreground shape while the ${loweredLabel} holds its cleanest light.`);
   return dedupeBullets(ideas).slice(0, 2);
 }

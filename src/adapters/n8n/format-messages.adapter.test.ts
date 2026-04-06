@@ -233,6 +233,66 @@ describe('format-messages adapter editorial fallback', () => {
     expect(bullets[0]?.toLowerCase()).toContain('north');
     expect(bullets.join(' ').toLowerCase()).toContain('aurora');
   });
+
+  it('selects clear-sky golden-hour bullets when cloud < 30% and window is golden', () => {
+    const bullets = filterCompositionBullets([], {
+      windows: [{
+        label: 'Evening golden hour',
+        start: '19:00',
+        end: '20:00',
+        peak: 58,
+        tops: ['landscape'],
+        hours: [
+          { hour: '19:00', score: 58, ct: 15, visK: 25 },
+          { hour: '20:00', score: 52, ct: 20, visK: 25 },
+        ],
+      }],
+      dailySummary: [{ bestPhotoHour: '19:00' }],
+      altLocations: [],
+    });
+
+    expect(bullets[0]?.toLowerCase()).toMatch(/horizon|silhouette|low sun/);
+  });
+
+  it('selects overcast bullets when cloud >= 70%', () => {
+    const bullets = filterCompositionBullets([], {
+      windows: [{
+        label: 'Late morning local window',
+        start: '10:00',
+        end: '11:00',
+        peak: 42,
+        tops: ['landscape'],
+        hours: [
+          { hour: '10:00', score: 42, ct: 85, visK: 18 },
+          { hour: '11:00', score: 40, ct: 80, visK: 18 },
+        ],
+      }],
+      dailySummary: [{ bestPhotoHour: '10:00' }],
+      altLocations: [],
+    });
+
+    expect(bullets[0]?.toLowerCase()).toMatch(/flat light|woodland|diffuse|intimate/);
+  });
+
+  it('selects low-visibility bullets when visK < 5', () => {
+    const bullets = filterCompositionBullets([], {
+      windows: [{
+        label: 'Misty morning window',
+        start: '07:00',
+        end: '08:00',
+        peak: 45,
+        tops: ['landscape'],
+        hours: [
+          { hour: '07:00', score: 45, ct: 50, visK: 2 },
+          { hour: '08:00', score: 40, ct: 50, visK: 3 },
+        ],
+      }],
+      dailySummary: [{ bestPhotoHour: '07:00' }],
+      altLocations: [],
+    });
+
+    expect(bullets[0]?.toLowerCase()).toMatch(/visibility|mist|murk|depth/);
+  });
 });
 
 describe('isFactuallyIncoherentEditorial — 15 March regression', () => {

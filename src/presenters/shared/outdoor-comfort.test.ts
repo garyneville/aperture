@@ -164,6 +164,43 @@ describe('outdoorComfortLabel', () => {
       expect(RUN_FRIENDLY_THRESHOLDS.maxRainPct).toBe(40);
     });
   });
+
+  describe('time-of-day variation', () => {
+    it('returns "Morning run" for 09:00 with run-friendly conditions', () => {
+      const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 }, '09:00');
+      expect(label.text).toBe('Morning run');
+    });
+
+    it('returns "Afternoon run" for 14:00 with run-friendly conditions', () => {
+      const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 }, '14:00');
+      expect(label.text).toBe('Afternoon run');
+    });
+
+    it('returns "Evening stroll" for 19:00 with non-run-friendly conditions', () => {
+      const label = outdoorComfortLabel(80, { wind: 28, tmp: 15, pp: 5 }, '19:00');
+      expect(label.text).toBe('Evening stroll');
+    });
+
+    it('returns "Lunch walk" for 12:00 with non-run-friendly conditions', () => {
+      const label = outdoorComfortLabel(80, { wind: 28, tmp: 15, pp: 5 }, '12:00');
+      expect(label.text).toBe('Lunch walk');
+    });
+
+    it('returns "After-dark stroll" for 21:00+', () => {
+      const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 }, '21:00');
+      expect(label.text).toBe('After-dark stroll');
+    });
+
+    it('returns "Pre-dawn stroll" for 05:00', () => {
+      const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 }, '05:00');
+      expect(label.text).toBe('Pre-dawn stroll');
+    });
+
+    it('falls back to generic label when hour is not provided', () => {
+      const label = outdoorComfortLabel(80, { wind: 10, tmp: 15, pp: 5 });
+      expect(label.text).toBe('Best for a run');
+    });
+  });
 });
 
 describe('outdoorComfortReasonCodes', () => {

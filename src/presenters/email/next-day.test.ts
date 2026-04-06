@@ -122,7 +122,7 @@ describe('nextDayHourlyOutlookSection', () => {
       { hour: '14:00', tmp: 10, pp: 80, wind: 50, pr: 3, visK: 2, isNight: false },
     ]);
     const html = nextDayHourlyOutlookSection(tomorrow);
-    expect(html).toMatch(/Best for a (run|walk)/);
+    expect(html).toMatch(/Morning (run|walk)/);
     expect(html).toContain('Poor conditions');
   });
 
@@ -181,7 +181,7 @@ describe('nextDayHourlyOutlookSection', () => {
     expect(debugContext.outdoorComfort?.bestWindow).toEqual({
       start: '14:00',
       end: '16:00',
-      label: 'Best for a run',
+      label: 'Afternoon run',
     });
     expect(html).toContain('Best outdoor window: 14:00–16:00.');
     expect(html).not.toContain('Best outdoor window: 08:00–16:00.');

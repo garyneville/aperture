@@ -10,4 +10,5 @@ export interface HomeLocation {
   lon: number;
   timezone: string;
   icao?: string;
+  isCoastal?: boolean;
 }

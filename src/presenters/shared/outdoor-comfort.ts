@@ -116,15 +116,49 @@ export interface ComfortLabel {
 }
 
 /**
+ * Parse clock string "HH:MM" into minutes since midnight, or null.
+ */
+function clockToMinutes(hour: string | undefined): number | null {
+  if (!hour) return null;
+  const match = hour.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  return parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+}
+
+/**
+ * Select a time-of-day-aware comfort label for the ≥75 score band.
+ * Falls back to generic text when hour is unavailable.
+ */
+function timeOfDayComfortText(runFriendly: boolean, hour: string | undefined): string {
+  const minutes = clockToMinutes(hour);
+  if (minutes === null) return runFriendly ? 'Best for a run' : 'Best for a walk';
+
+  // After dark (21:00+)
+  if (minutes >= 1260) return 'After-dark stroll';
+  // Evening (18:00–20:59)
+  if (minutes >= 1080) return runFriendly ? 'Evening run' : 'Evening stroll';
+  // Afternoon (13:00–17:59)
+  if (minutes >= 780) return runFriendly ? 'Afternoon run' : 'Afternoon walk';
+  // Lunch (11:00–12:59)
+  if (minutes >= 660) return runFriendly ? 'Lunch run' : 'Lunch walk';
+  // Morning (06:00–10:59)
+  if (minutes >= 360) return runFriendly ? 'Morning run' : 'Morning walk';
+  // Pre-dawn (<06:00)
+  return 'Pre-dawn stroll';
+}
+
+/**
  * Get comfort label with styling based on score and weather conditions.
  *
  * @param score - Comfort score (0-100)
  * @param h - Weather metrics for run-friendly determination
+ * @param hour - Optional clock string (e.g. "14:00") for time-of-day label variation
  * @returns Label with colors and highlight flag
  */
 export function outdoorComfortLabel(
   score: number,
   h: Pick<NextDayHour, 'wind' | 'tmp' | 'pp'>,
+  hour?: string,
 ): ComfortLabel {
   const { maxWindKmh, minTempC, maxTempC, maxRainPct } = RUN_FRIENDLY_THRESHOLDS;
 
@@ -135,7 +169,7 @@ export function outdoorComfortLabel(
       h.tmp <= maxTempC &&
       h.pp < maxRainPct;
     return {
-      text: runFriendly ? 'Best for a run' : 'Best for a walk',
+      text: timeOfDayComfortText(runFriendly, hour),
       fg: C.success,
       bg: C.successContainer,
       highlight: true,

@@ -435,7 +435,7 @@ describe('formatEmail hero summary', () => {
       tmp: 6,
       wind: 26,
       comfortScore: 75,
-      label: 'Best for a walk',
+      label: 'Morning walk',
     });
     expect(input.debugContext?.outdoorComfort?.hours[0].tmp).not.toBe(12);
   });

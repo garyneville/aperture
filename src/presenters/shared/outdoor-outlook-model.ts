@@ -261,7 +261,7 @@ export function buildOutdoorOutlookModel(
   // Build outlook rows with comfort scores
   const rows = hours.map(hour => {
     const score = outdoorComfortScore(hour);
-    const label = outdoorComfortLabel(score, hour);
+    const label = outdoorComfortLabel(score, hour, hour.hour);
     const reason = outdoorComfortReason(hour);
     return { hour, score, label, reason };
   });
