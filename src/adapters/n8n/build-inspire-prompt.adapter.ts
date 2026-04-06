@@ -39,6 +39,13 @@ export function buildInspirePrompt(input: InspireInput): string {
   const locationName = input.locationName || getPhotoWeatherLocation();
   const windows = Array.isArray(input.windows) ? input.windows.map(normalizeWindow).filter(Boolean) : [];
   const topWindow = windows[0];
+  // Alt-location names are intentionally included in the inspire prompt.
+  // The editorial chain is constrained to local conditions only, but the
+  // creative spark deliberately references nearby alternatives for poetic
+  // colour ("Nearby options: Malham Cove and Sutton Bank").
+  // This distinction is by design — the inspire output is evocative, not
+  // prescriptive, so mentioning places the photographer might visit adds
+  // texture without violating the editorial's locality rule.
   const altLocations = normalizeAltLocations(input.altLocations);
   const dontBother = input.dontBother === true;
   const isAstro = typeof topWindow?.label === 'string' && topWindow.label.toLowerCase().includes('astro');

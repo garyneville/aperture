@@ -85,7 +85,7 @@ describe('buildOutdoorOutlookModel', () => {
     const model = buildOutdoorOutlookModel(day);
 
     expect(model!.rows[0].label.highlight).toBe(true);
-    expect(model!.rows[0].label.text).toMatch(/Best for a (run|walk)/);
+    expect(model!.rows[0].label.text).toMatch(/Morning (run|walk)/);
   });
 
   it('includes reason text for suboptimal conditions', () => {
@@ -215,7 +215,7 @@ describe('buildOutdoorOutlookModel', () => {
       ]);
       const model = buildOutdoorOutlookModel(day);
 
-      expect(model!.bestWindow!.label).toMatch(/Best for a (run|walk)/);
+      expect(model!.bestWindow!.label).toMatch(/Morning (run|walk)/);
     });
   });
 

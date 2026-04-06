@@ -8,6 +8,7 @@ export const PHOTO_WEATHER_CONFIG = {
   editorialPromptMode: '__PHOTO_BRIEF_EDITORIAL_PROMPT_MODE__',
   inspireEnabled: '__PHOTO_BRIEF_INSPIRE_ENABLED__',
   editorialProviders: '__PHOTO_BRIEF_EDITORIAL_PROVIDERS__',
+  isCoastal: '__PHOTO_WEATHER_COASTAL__',
 } as const;
 
 export const PHOTO_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
@@ -45,6 +46,12 @@ export function getPhotoWeatherTimezone(): string {
 
 export function getPhotoWeatherIcao(): string {
   return parseString(PHOTO_WEATHER_CONFIG.icao, 'EGNM');
+}
+
+export function getPhotoWeatherIsCoastal(): boolean {
+  const value = PHOTO_WEATHER_CONFIG.isCoastal;
+  if (!value || isPlaceholder(value)) return false;
+  return value.toLowerCase() === 'true';
 }
 
 export function getPhotoBriefEditorialPrimaryProvider(): 'groq' | 'gemini' {

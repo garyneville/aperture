@@ -6,6 +6,7 @@ export const DEFAULT_HOME_LOCATION: HomeLocation = {
   lon: -1.570755,
   timezone: 'Europe/London',
   icao: 'EGNM',
+  isCoastal: false,
 };
 
 export const DEFAULT_BRIEF_WORKFLOW_VERSION = 'debug-trace-v1';
