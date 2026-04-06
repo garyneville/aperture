@@ -19,6 +19,7 @@ This folder is the canonical infrastructure layer: shared utilities, astronomy h
 
 ### Scoring utilities
 
+- [`outdoor-comfort.ts`](./outdoor-comfort.ts) — pure outdoor comfort scoring (score 0-100 + text label) from weather metrics. Used by domain scoring and presenter layers.
 - [`best-windows.ts`](./best-windows.ts) — selects and labels the best photo windows from hourly scores.
 - [`score-alternatives.ts`](./score-alternatives.ts) — scores nearby alternative locations against home conditions.
 - [`score-long-range.ts`](./score-long-range.ts) — scores long-range trip destinations and produces a ranked shortlist.
@@ -55,7 +56,7 @@ Tests live beside each module:
 
 - `astro.test.ts`, `astro-score-explanation.test.ts`, `aurora-providers.test.ts`
 - `best-windows.test.ts`, `score-alternatives.test.ts`, `score-long-range.test.ts`, `shared-scoring.test.ts`
-- `aggregate-azimuth.test.ts`, `prepare-locations.test.ts`
+- `aggregate-azimuth.test.ts`, `prepare-locations.test.ts`, `outdoor-comfort.test.ts`
 - `ai-briefing.test.ts`
 
 ## Working rule

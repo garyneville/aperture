@@ -1,6 +1,7 @@
 import { clamp, solarElevation, aodClarity, astroAodPenalty } from '../../../lib/utils.js';
 import { getMoonMetrics, getSolarAltitude, moonScoreAdjustment } from '../../../lib/astro.js';
 import { HOME_SITE_DARKNESS, astroDarknessBonus } from '../../../lib/site-darkness.js';
+import { outdoorComfortScore, outdoorComfortText } from '../../../lib/outdoor-comfort.js';
 import type { DerivedHourFeatureInput } from '../features/derive-hour-features.js';
 import type { ScoredHour, AzimuthScanResult } from '../contracts.js';
 
@@ -262,7 +263,12 @@ export function scoreHour(p: ScoreHourParams): ScoreHourResult {
     directRadiationWm2: p.drad != null ? Math.round(p.drad) : null,
     diffuseRadiationWm2: p.frad != null ? Math.round(p.frad) : null,
     soilTemperature0cmC: p.st0 != null ? Math.round(p.st0 * 10) / 10 : null,
+    comfort: '',  // populated below after object construction
   };
+
+  // Compute outdoor comfort from the fully-rounded ScoredHour fields
+  const comfortScore = outdoorComfortScore(hour);
+  hour.comfort = outdoorComfortText(comfortScore, hour, hourLabel);
 
   return { hour, featureInput };
 }

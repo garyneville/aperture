@@ -283,6 +283,7 @@ function main() {
       ct: h.ct,
       visK: h.visK,
       aod: h.aod,
+      comfort: h.comfort,
     })),
     sessionRecommendation: scoreResult.sessionRecommendation,
     metarNote: scoreResult.metarNote,
