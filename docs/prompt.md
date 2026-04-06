@@ -3,7 +3,7 @@ Perhaps familiarise yourself with the last 5 PR's and read the  /Users/chrisdear
 
 I want you to read, understand, plan and commit code to hand this issue on my project, ensure you take on board the full discussion thread if there is one -
 
-https://github.com/garyneville/aperture/issues/248
+https://github.com/garyneville/aperture/issues/250
 
 1. Check the referenced code, validate the plan makes sense to you.  If not, adopt plan approrpirately.
 2. Document the plan as a comment in the existing issue, or if there isn't one - create a new one.
