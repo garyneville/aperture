@@ -75,7 +75,7 @@ APIS=(
   "07|Alt Weather (${ALT_NAME})|https://api.open-meteo.com/v1/forecast?latitude=${ALT_LAT}&longitude=${ALT_LON}&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation_probability,precipitation,windspeed_10m,windgusts_10m,total_column_integrated_water_vapour,snowfall,snow_depth&daily=sunrise,sunset&timezone=${TZ_ENC}&forecast_days=5"
   "08|Azimuth Weather (25km west)|https://api.open-meteo.com/v1/forecast?latitude=${AZ_LAT}&longitude=${AZ_LON}&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,precipitation_probability,precipitation,visibility,windspeed_10m&timezone=${TZ_ENC}&forecast_days=5"
   "09|Kp Index|https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json"
-  "10|AuroraWatch UK|https://aurorawatch.lancs.ac.uk/api/0.1/status/"
+  "10|AuroraWatch UK|https://aurorawatch.lancs.ac.uk/api/0.1/status.xml"
   "11|NASA DONKI CME|https://api.nasa.gov/DONKI/CME?startDate=${DONKI_START}&endDate=${DONKI_END}&api_key=${NASA_API_KEY}"
 )
 

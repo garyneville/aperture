@@ -771,7 +771,7 @@ describe('workflow assembly', () => {
     const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Fallback');
     expect(httpNode).toBeTruthy();
     expect(extractNode).toBeTruthy();
-    expect(httpNode.parameters.body).toContain('maxOutputTokens: 1600');
+    expect(httpNode.parameters.body).toContain('maxOutputTokens: 4096');
     expect(httpNode.parameters.options.response.response.fullResponse).toBe(true);
     expect(httpNode.parameters.options.response.response.responseFormat).toBe('json');
 
