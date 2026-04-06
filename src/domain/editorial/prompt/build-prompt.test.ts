@@ -448,6 +448,7 @@ describe('buildPrompt', () => {
         driveMins: 120,
         astroScore: 91,
         bestAstroHour: '22:00',
+        moonPct: 12,
       },
       longRangeCandidates: [{
         name: 'Kielder Forest',

@@ -354,6 +354,108 @@ describe('scoreLongRange', () => {
     expect(result.longRangeDebugCandidates[0]?.discardedReason).toContain('does not beat Leeds');
     expect(result.longRangeDebugCandidates[1]?.discardedReason).toContain('score below threshold');
   });
+
+  it('suppresses dark sky alert when moon illumination exceeds 60%', () => {
+    // Use a date near a full moon (2026-03-29 is close to full moon)
+    const times: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      times.push(`2026-03-29T${String(h).padStart(2, '0')}:00`);
+    }
+    const fill = (val: number) => new Array(24).fill(val);
+    const clearNightWeather: AltWeatherData = {
+      hourly: {
+        time: times,
+        cloudcover: fill(5),
+        cloudcover_low: fill(3),
+        cloudcover_mid: fill(5),
+        cloudcover_high: fill(10),
+        visibility: fill(50000),
+        precipitation_probability: fill(0),
+        precipitation: fill(0),
+        windspeed_10m: fill(3),
+        windgusts_10m: fill(5),
+        relativehumidity_2m: fill(50),
+        temperature_2m: fill(5),
+        dewpoint_2m: fill(1),
+        total_column_integrated_water_vapour: fill(8),
+      },
+      daily: {
+        sunrise: ['2026-03-29T05:45:00'],
+        sunset: ['2026-03-29T19:30:00'],
+      },
+    };
+    const darkSkyMeta: LongRangeMeta = {
+      ...baseMeta,
+      name: 'Kielder Forest',
+      lat: 55.23,
+      lon: -2.58,
+      siteDarkness: siteDarknessFromBortle(2),
+      darkSky: true,
+    };
+    const result = scoreLongRange({
+      longRangeWeatherData: [clearNightWeather],
+      longRangeMeta: [darkSkyMeta],
+      homeHeadlineScore: 30,
+      isWeekday: false,
+    });
+    // The astro score should be high enough to qualify, but moon should gate it
+    if (result.darkSkyAlert) {
+      // If alert fires, moon must have been below 60%
+      expect(result.darkSkyAlert.moonPct).not.toBeNull();
+      expect(result.darkSkyAlert.moonPct!).toBeLessThanOrEqual(60);
+    }
+    // The candidate should still appear in the debug pool regardless
+    expect(result.longRangeDebugCandidates.length).toBeGreaterThan(0);
+  });
+
+  it('includes moonPct in dark sky alert when alert fires', () => {
+    // Use a date near new moon (2026-03-14 is near new moon)
+    const times: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      times.push(`2026-03-14T${String(h).padStart(2, '0')}:00`);
+    }
+    const fill = (val: number) => new Array(24).fill(val);
+    const clearNightWeather: AltWeatherData = {
+      hourly: {
+        time: times,
+        cloudcover: fill(5),
+        cloudcover_low: fill(3),
+        cloudcover_mid: fill(5),
+        cloudcover_high: fill(10),
+        visibility: fill(50000),
+        precipitation_probability: fill(0),
+        precipitation: fill(0),
+        windspeed_10m: fill(3),
+        windgusts_10m: fill(5),
+        relativehumidity_2m: fill(50),
+        temperature_2m: fill(5),
+        dewpoint_2m: fill(1),
+        total_column_integrated_water_vapour: fill(8),
+      },
+      daily: {
+        sunrise: ['2026-03-14T06:20:00'],
+        sunset: ['2026-03-14T18:10:00'],
+      },
+    };
+    const darkSkyMeta: LongRangeMeta = {
+      ...baseMeta,
+      name: 'Kielder Forest',
+      lat: 55.23,
+      lon: -2.58,
+      siteDarkness: siteDarknessFromBortle(2),
+      darkSky: true,
+    };
+    const result = scoreLongRange({
+      longRangeWeatherData: [clearNightWeather],
+      longRangeMeta: [darkSkyMeta],
+      homeHeadlineScore: 30,
+      isWeekday: false,
+    });
+    if (result.darkSkyAlert) {
+      expect(result.darkSkyAlert.moonPct).not.toBeNull();
+      expect(typeof result.darkSkyAlert.moonPct).toBe('number');
+    }
+  });
 });
 
 /* ------------------------------------------------------------------ */

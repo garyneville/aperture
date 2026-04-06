@@ -57,7 +57,7 @@ function photoFiveDayTelegram(days: DaySummary[]): string {
   const forecastDays = days.filter(d => d.dayIdx >= 1).slice(0, 4);
   const lines = forecastDays.map(d => {
     const alt = d.bestAlt ? `  \ud83d\udccd${d.bestAlt.name.split(' ')[0]}` : '';
-    const confTag = d.confidence === 'low' ? '?' : d.confidence === 'medium' ? '~' : '';
+    const confTag = d.confidence === 'low' || d.confidence === 'very-low' ? '?' : d.confidence === 'medium' ? '~' : '';
     const label = pad(d.dayLabel, 9);
     const scoreStr = rpad(d.headlineScore ?? d.photoScore, 3);
     const b = bar(d.headlineScore ?? d.photoScore);

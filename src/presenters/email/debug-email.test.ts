@@ -141,7 +141,7 @@ describe('formatDebugEmail', () => {
 
     expect(html).toContain('Run metadata');
     expect(html).toContain('Day scores and certainty');
-    expect(html).toContain('Best session today');
+    expect(html).toContain('Best session (any time)');
     expect(html).toContain('Storm (84/100 at 19:00)');
     expect(html).toContain('Best session volatility');
     expect(html).toContain('Certainty (daylight)');

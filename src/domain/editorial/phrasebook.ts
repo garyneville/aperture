@@ -51,6 +51,7 @@ export function confidenceDescriptor(confidence: string): string {
   if (confidence === 'high') return 'high confidence';
   if (confidence === 'medium') return 'fair confidence';
   if (confidence === 'low') return 'low confidence';
+  if (confidence === 'very-low') return 'very low confidence';
   return 'unknown confidence';
 }
 

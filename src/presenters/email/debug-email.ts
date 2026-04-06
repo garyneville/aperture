@@ -37,6 +37,7 @@ function debugKeyValueLines(items: Array<[string, string | number | null | undef
 function displayDebugConfidence(confidence: string | null | undefined): string | null {
   if (!confidence) return null;
   if (confidence === 'medium') return 'Fair';
+  if (confidence === 'very-low') return 'Very Low';
   return confidence;
 }
 
@@ -161,7 +162,7 @@ export function formatDebugEmail(debugContext: DebugContext): string {
           ['PM', scores ? `${scores.pm}/100` : null],
           ['Astro', scores ? `${scores.astro}/100` : null],
           ['Overall', scores ? `${scores.overall}/100` : null],
-          ['Best session today', scores?.bestSession ? `${displaySessionName(scores.bestSession.session)} (${scores.bestSession.score}/100 at ${scores.bestSession.hour})` : null],
+          ['Best session (any time)', scores?.bestSession ? `${displaySessionName(scores.bestSession.session)} (${scores.bestSession.score}/100 at ${scores.bestSession.hour})` : null],
           ['Best session confidence', scores?.bestSession ? displayDebugConfidence(scores.bestSession.confidence) : null],
           ['Best session volatility', scores?.bestSession?.volatility !== null && scores?.bestSession?.volatility !== undefined ? `${scores.bestSession.volatility}` : null],
           ['Certainty (daylight)', displayDebugConfidence(scores?.certainty)],

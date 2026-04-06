@@ -141,6 +141,7 @@ export interface DarkSkyAlertCard {
   driveMins: number;
   astroScore: number;
   bestAstroHour: string | null;
+  moonPct?: number | null;
 }
 
 export interface SpurOfTheMomentSuggestion {

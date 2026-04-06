@@ -69,6 +69,7 @@ export function confidenceLabel(confidence: string): string {
   if (confidence === 'high') return 'high';
   if (confidence === 'medium') return 'fair';
   if (confidence === 'low') return 'low';
+  if (confidence === 'very-low') return 'very low';
   return 'unknown';
 }
 
