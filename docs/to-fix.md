@@ -144,14 +144,14 @@ Findings from pipeline analysis on 6 Apr 2026. Phases 1–4 merged (PRs #269, #2
 
 ## Summary
 
-| ID | Issue | Priority | Effort |
-|----|-------|----------|--------|
-| R1 | Comfort labels empty | ✅ Fixed | Wired via `src/lib/outdoor-comfort.ts` |
-| R2 | Editorial hours too sparse | Medium | Medium — field selection + token budget |
-| R3 | DONKI CME 503 | Low | External dependency — monitor or replace |
-| R4 | Soil temp nulls from UKMO | Low | Small — test ECMWF or remove |
-| R5 | BLH null, mist limited | Low | Medium — secondary API call design |
-| R6 | Kp data stale in editorial | Medium | Small — add date filter |
-| R7 | Alt-location types vs astro mismatch | Medium | Small — threshold logic check |
-| R8 | Headline scoring harsh for UK | High | Medium — label recalibration |
-| R9 | darkSkyStartsAt midnight fallback | Low | Small — computation check |
+| ID | Issue | Priority | Effort | Tracker |
+|----|-------|----------|--------|---------|
+| R1 | Comfort labels empty | ✅ Fixed | Wired via `src/lib/outdoor-comfort.ts` | #276 |
+| R2 | Editorial hours too sparse | Medium | Medium — field selection + token budget | #278 |
+| R3 | DONKI CME 503 | Low | External dependency — monitor or replace | #279 |
+| R4 | Soil temp nulls from UKMO | Low | Small — test ECMWF or remove | #280 |
+| R5 | BLH null, mist limited | Low | Medium — secondary API call design | #280 |
+| R6 | Kp data stale in editorial | Medium | Small — add date filter | #281 |
+| R7 | Alt-location types vs astro mismatch | Medium | Small — threshold logic check | #282 |
+| R8 | Headline scoring harsh for UK | High | Medium — label recalibration | #283 |
+| R9 | darkSkyStartsAt midnight fallback | Low | Small — computation check | #284 |
