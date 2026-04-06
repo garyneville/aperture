@@ -70,6 +70,7 @@ function findLatestSnapshot(debugDir: string): string {
 
 function parseKpRows(raw: unknown): Array<{ time: string; kp: number }> {
   if (!Array.isArray(raw)) return [];
+  const today = new Date().toISOString().slice(0, 10); // UTC midnight cutoff
   return raw
     .filter((row): row is Record<string, unknown> =>
       row != null && typeof row === 'object' && 'time_tag' in row && 'kp' in row,
@@ -78,7 +79,8 @@ function parseKpRows(raw: unknown): Array<{ time: string; kp: number }> {
       time: String(row.time_tag),
       kp: typeof row.kp === 'number' ? row.kp : parseFloat(String(row.kp)),
     }))
-    .filter(r => !isNaN(r.kp));
+    .filter(r => !isNaN(r.kp))
+    .filter(r => r.time >= today);
 }
 
 function writeStage(dir: string, filename: string, data: unknown): void {
