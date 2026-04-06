@@ -127,6 +127,7 @@ describe('formatDebugEmail', () => {
         },
         fallbackUsed: true,
         modelFallbackUsed: false,
+        templateFallbackUsed: false,
         finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
       },
       payloadSnapshots: [
@@ -264,6 +265,7 @@ describe('formatDebugEmail — new debug sections', () => {
         },
         fallbackUsed: false,
         modelFallbackUsed: true,
+        templateFallbackUsed: false,
         finalAiText: 'Conditions hold through the astro window.',
       },
     });
