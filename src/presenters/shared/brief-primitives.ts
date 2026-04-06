@@ -84,6 +84,9 @@ export function confidenceDetail(confidence: string | undefined | null): { label
   if (confidence === 'medium') {
     return { label: 'Fair certainty', fg: C.warning, bg: C.warningContainer, border: '#EDD17B' };
   }
+  if (confidence === 'very-low') {
+    return { label: 'Very low certainty', fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
+  }
   return { label: 'Low certainty', fg: C.error, bg: C.errorContainer, border: '#ECACA5' };
 }
 

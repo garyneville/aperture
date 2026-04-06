@@ -13,6 +13,7 @@ function debugConfidenceLabel(confidence: string | null | undefined): string | n
   if (confidence === 'medium') return 'Fair';
   if (confidence === 'high') return 'High';
   if (confidence === 'low') return 'Low';
+  if (confidence === 'very-low') return 'Very Low';
   return confidence;
 }
 

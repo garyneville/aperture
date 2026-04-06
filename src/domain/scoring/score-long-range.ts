@@ -3,6 +3,7 @@ import type { AltWeatherData } from './score-alternatives.js';
 import type { LocationTag, Region } from '../../lib/long-range-locations.js';
 import { DEFAULT_HOME_LOCATION } from '../../lib/home-location.js';
 import { evaluateDay } from './shared-scoring.js';
+import { getMoonMetrics } from '../../lib/astro.js';
 
 /* ------------------------------------------------------------------ */
 /*  Interfaces                                                        */
@@ -60,6 +61,8 @@ export interface DarkSkyAlert {
   driveMins: number;
   astroScore: number;
   bestAstroHour: string | null;
+  /** Moon illumination percentage at the best astro hour (for debug visibility). */
+  moonPct: number | null;
 }
 
 export interface ScoreLongRangeOutput {
@@ -88,6 +91,7 @@ export interface ScoreLongRangeOutput {
 const LONG_RANGE_SCORE_THRESHOLD = 50;
 const LONG_RANGE_DELTA_THRESHOLD = 10;
 const ASTRO_DARK_SKY_THRESHOLD = 70;
+const DARK_SKY_MOON_GATE_PCT = 60;
 
 /* ------------------------------------------------------------------ */
 /*  Per-location scoring (today only)                                  */
@@ -177,20 +181,42 @@ export function scoreLongRange(input: ScoreLongRangeInput): ScoreLongRangeOutput
     };
   });
 
-  // Dark sky alert: any dark-sky location with excellent astro, regardless of day score
+  // Dark sky alert: any dark-sky location with excellent astro, regardless of day score.
+  // Gate on moon illumination: suppress when the moon is > 60% illuminated at the best astro hour.
   const darkSkyCandidates = rankedCandidates
     .filter(c => c.darkSky && c.astroScore >= ASTRO_DARK_SKY_THRESHOLD)
     .sort((a, b) => b.astroScore - a.astroScore);
 
-  const darkSkyAlert: DarkSkyAlert | null = darkSkyCandidates[0]
-    ? {
-        name: darkSkyCandidates[0].name,
-        region: darkSkyCandidates[0].region,
-        driveMins: darkSkyCandidates[0].driveMins,
-        astroScore: darkSkyCandidates[0].astroScore,
-        bestAstroHour: darkSkyCandidates[0].bestAstroHour,
+  let darkSkyAlert: DarkSkyAlert | null = null;
+  for (const c of darkSkyCandidates) {
+    const meta = longRangeMeta.find(m => m.name === c.name);
+    let moonPct: number | null = null;
+    if (c.bestAstroHour && meta) {
+      // Reconstruct full timestamp from bestAstroHour (HH:MM) and weather data date
+      const wIdx = longRangeMeta.indexOf(meta);
+      const wData = longRangeWeatherData[wIdx];
+      const dateKey = wData?.hourly?.time?.[0]
+        ? new Date(wData.hourly.time[0]).toLocaleDateString('en-CA', { timeZone: timezone })
+        : null;
+      if (dateKey) {
+        const astroTs = Date.parse(`${dateKey}T${c.bestAstroHour}:00`);
+        if (!isNaN(astroTs)) {
+          moonPct = Math.round(getMoonMetrics(astroTs, meta.lat, meta.lon).illumination * 100);
+        }
       }
-    : null;
+    }
+    // Suppress alert when moon is too bright for dark-sky astrophotography
+    if (moonPct !== null && moonPct > DARK_SKY_MOON_GATE_PCT) continue;
+    darkSkyAlert = {
+      name: c.name,
+      region: c.region,
+      driveMins: c.driveMins,
+      astroScore: c.astroScore,
+      bestAstroHour: c.bestAstroHour,
+      moonPct,
+    };
+    break;
+  }
 
   return {
     longRangeTop: meetsThreshold ? top : null,

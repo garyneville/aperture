@@ -17,13 +17,13 @@ export interface ConfidenceResult {
 
 /**
  * Compute confidence from a list of ensemble entries.
- * High: stdDev < 12, Medium: stdDev < 25, Low: stdDev >= 25
+ * High: stdDev < 15, Medium: 15–29, Low: 30–39, Very Low: stdDev >= 40
  */
 function computeFromEnsemble(ens: EnsEntry[]): ConfidenceResult {
   if (!ens.length) return { confidence: 'unknown', confidenceStdDev: null };
   const avgStdDev = ens.reduce((s, e) => s + e.stdDev, 0) / ens.length;
   return {
-    confidence: avgStdDev < 12 ? 'high' : avgStdDev < 25 ? 'medium' : 'low',
+    confidence: avgStdDev < 15 ? 'high' : avgStdDev < 30 ? 'medium' : avgStdDev < 40 ? 'low' : 'very-low',
     confidenceStdDev: Math.round(avgStdDev),
   };
 }
