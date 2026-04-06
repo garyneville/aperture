@@ -94,9 +94,27 @@ export type WindowLike = {
   hours?: Array<{
     hour?: string;
     score?: number;
+    drama?: number;
+    clarity?: number;
+    mist?: number;
+    cl?: number;
+    cm?: number;
+    ch?: number;
     ct?: number;
     visK?: number;
     aod?: number;
+    wind?: string | number;
+    pp?: number;
+    pr?: number;
+    tmp?: number;
+    hum?: number;
+    crepuscular?: number;
+    shQ?: number | null;
+    isGolden?: boolean;
+    isNight?: boolean;
+    moon?: number;
+    tags?: string[];
+    comfort?: string;
   }>;
 };
 
