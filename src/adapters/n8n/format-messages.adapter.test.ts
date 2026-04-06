@@ -631,14 +631,14 @@ describe('parseEditorialResponse — provider-neutral parsing', () => {
     const raw = '{ invalid json }';
     const result = parseEditorialResponse(raw);
     expect(result.parseResult).toBe('malformed-structured');
-    expect(result.editorial).toBe(raw);
+    expect(result.editorial).toBe(''); // JSON envelope stripped to prevent leak
   });
 
   it('returns malformed-structured when editorial field is missing from JSON', () => {
     const raw = JSON.stringify({ composition: ['Shot idea'], weekStandout: 'Friday' });
     const result = parseEditorialResponse(raw);
     expect(result.parseResult).toBe('malformed-structured');
-    expect(result.editorial).toBe(raw); // Falls back to raw content
+    expect(result.editorial).toBe(''); // JSON envelope stripped to prevent leak
     expect(result.weekStandoutRawValue).toBe('Friday');
   });
 
@@ -663,6 +663,21 @@ describe('parseEditorialResponse — provider-neutral parsing', () => {
     const result = parseEditorialResponse(fenced);
     expect(result.parseResult).toBe('valid-structured');
     expect(result.editorial).toBe('Good.');
+  });
+
+  it('strips JSON envelope from truncated editorial response (#270)', () => {
+    const truncated = '{"editorial":"Arrive by 19:50 to catch the final light before the 20:00 window closes, as the 0% cloud cover ensures an unobstructed path for the setting sun.';
+    const result = parseEditorialResponse(truncated);
+    expect(result.parseResult).toBe('malformed-structured');
+    expect(result.editorial).toBe('');
+    expect(result.editorial).not.toContain('{"editorial"');
+  });
+
+  it('preserves plain text editorial when response is not JSON', () => {
+    const plain = 'Good conditions for the evening window from 19:00-20:00.';
+    const result = parseEditorialResponse(plain);
+    expect(result.parseResult).toBe('raw-text-only');
+    expect(result.editorial).toBe(plain);
   });
 });
 

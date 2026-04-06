@@ -80,7 +80,7 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
       return {
         editorial: hasValidEditorial
           ? parsedRecord.editorial as string
-          : rawContent,
+          : '',
         compositionBullets: Array.isArray(parsedRecord.composition)
           ? (parsedRecord.composition as unknown[]).filter(
               (value: unknown): value is string => typeof value === 'string',
@@ -97,7 +97,7 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
     const parseResult: EditorialParseResult = lookedLikeJson ? 'malformed-structured' : 'raw-text-only';
 
     return {
-      editorial: rawContent,
+      editorial: lookedLikeJson ? '' : rawContent,
       compositionBullets: [],
       weekInsight: '',
       spurRaw: null,
@@ -110,7 +110,7 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
   const parseResult: EditorialParseResult = lookedLikeJson ? 'malformed-structured' : 'raw-text-only';
 
   return {
-    editorial: rawContent,
+    editorial: lookedLikeJson ? '' : rawContent,
     compositionBullets: [],
     weekInsight: '',
     spurRaw: null,
