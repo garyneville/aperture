@@ -51,6 +51,8 @@ type GeminiFallbackExtraction = {
   geminiTotalTokenCount: number | null;
   geminiThoughtsTokenCount: number | null;
   geminiRetryAfter: number | null;
+  /** Structured error message for diagnostic logging. */
+  geminiErrorDetail: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -97,6 +99,29 @@ function isMalformedJsonText(text: string | null): boolean {
   }
 }
 
+function buildGeminiErrorDetail(
+  statusCode: number | null,
+  responseByteLength: number | null,
+  text: string | null,
+  truncated: boolean,
+  retryAfter: number | null,
+): string | null {
+  const issues: string[] = [];
+  if (statusCode !== null && statusCode >= 400) {
+    issues.push(`HTTP ${statusCode}`);
+  }
+  if (statusCode === 429) issues.push('reason=rate-limited');
+  if (typeof responseByteLength === 'number' && responseByteLength > 0 && !text) {
+    issues.push(`reason=no-text-extracted, bodyBytes=${responseByteLength}`);
+  }
+  if (text === null && (responseByteLength === null || responseByteLength === 0)) {
+    issues.push('reason=empty-response');
+  }
+  if (truncated) issues.push('reason=truncated');
+  if (typeof retryAfter === 'number') issues.push(`retryAfter=${retryAfter}s`);
+  return issues.length > 0 ? issues.join(', ') : null;
+}
+
 export function extractGeminiFallback(item: Record<string, unknown>): GeminiFallbackExtraction {
   const responseSource = getHttpResponseBodySource(item);
   const payloadInfo = unwrapHttpPayload(
@@ -124,14 +149,19 @@ export function extractGeminiFallback(item: Record<string, unknown>): GeminiFall
     : null;
   const finishReason = typeof candidate?.finishReason === 'string' ? candidate.finishReason : null;
 
+  const statusCode = getHttpResponseStatusCode(item);
+  const responseByteLength = getUtf8ByteLength(diagnosticPayload);
+  const truncated = finishReason === 'MAX_TOKENS' || isMalformedJsonText(text);
+  const retryAfter = getHttpRetryAfterSeconds(item);
+
   return {
     geminiResponse: text,
     geminiRawPayload: diagnosticPayload || null,
-    geminiStatusCode: getHttpResponseStatusCode(item),
+    geminiStatusCode: statusCode,
     geminiFinishReason: finishReason,
     geminiCandidateCount: Array.isArray(payload?.candidates) ? payload.candidates.length : null,
-    geminiResponseByteLength: getUtf8ByteLength(diagnosticPayload),
-    geminiResponseTruncated: finishReason === 'MAX_TOKENS' || isMalformedJsonText(text),
+    geminiResponseByteLength: responseByteLength,
+    geminiResponseTruncated: truncated,
     geminiExtractionPath: payloadInfo.path,
     geminiTopLevelKeys: getObjectKeys(item) ?? [],
     geminiPayloadKeys: getObjectKeys(payload),
@@ -141,7 +171,8 @@ export function extractGeminiFallback(item: Record<string, unknown>): GeminiFall
     geminiCandidatesTokenCount: numberOrNull(usageMetadata?.candidatesTokenCount),
     geminiTotalTokenCount: numberOrNull(usageMetadata?.totalTokenCount),
     geminiThoughtsTokenCount: numberOrNull(usageMetadata?.thoughtsTokenCount),
-    geminiRetryAfter: getHttpRetryAfterSeconds(item),
+    geminiRetryAfter: retryAfter,
+    geminiErrorDetail: buildGeminiErrorDetail(statusCode, responseByteLength, text, truncated, retryAfter),
   };
 }
 

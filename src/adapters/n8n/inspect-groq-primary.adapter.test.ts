@@ -23,6 +23,7 @@ describe('inspectGroqPrimary', () => {
       groqRetryAfter: null,
       groqFallbackRequired: false,
       groqFallbackReason: null,
+      groqErrorDetail: null,
     });
   });
 
@@ -53,5 +54,37 @@ describe('inspectGroqPrimary', () => {
 
     expect(result.groqFallbackRequired).toBe(true);
     expect(result.groqFallbackReason).toBe('malformed-structured-output');
+  });
+
+  it('reports structured error detail for rate-limited responses', () => {
+    const result = inspectGroqPrimary({
+      statusCode: 429,
+      headers: { 'retry-after': '5' },
+      body: { error: { message: 'Rate limited' } },
+    });
+
+    expect(result.groqErrorDetail).toBe('HTTP 429, reason=rate-limited, retryAfter=5s');
+  });
+
+  it('reports structured error detail for empty responses', () => {
+    const result = inspectGroqPrimary({
+      statusCode: 200,
+      body: {
+        choices: [{ message: { content: '' } }],
+      },
+    });
+
+    expect(result.groqErrorDetail).toContain('reason=empty-response');
+  });
+
+  it('returns null error detail when response is healthy', () => {
+    const content = JSON.stringify({ editorial: 'Healthy editorial text.' });
+
+    const result = inspectGroqPrimary({
+      statusCode: 200,
+      body: { choices: [{ message: { content } }] },
+    });
+
+    expect(result.groqErrorDetail).toBeNull();
   });
 });

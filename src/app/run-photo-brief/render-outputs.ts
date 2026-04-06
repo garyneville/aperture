@@ -48,9 +48,11 @@ export function renderAllOutputs(
   // Render debug email if enabled
   const debugEmailHtml = debugMode ? formatDebugEmail(debugContext) : '';
   const today = context.today;
+  const templateFallbackUsed = debugContext.ai?.templateFallbackUsed === true;
+  const degradedPrefix = templateFallbackUsed ? '[DEGRADED] ' : '';
   const debugEmailSubject = debugContext.metadata?.location
-    ? `Photo Brief Debug - ${debugContext.metadata.location} - ${today || 'today'}`
-    : `Photo Brief Debug - ${today || 'today'}`;
+    ? `${degradedPrefix}Photo Brief Debug - ${debugContext.metadata.location} - ${today || 'today'}`
+    : `${degradedPrefix}Photo Brief Debug - ${today || 'today'}`;
 
   return {
     briefJson,

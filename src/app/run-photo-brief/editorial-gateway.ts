@@ -58,17 +58,24 @@ function buildApiCallStatus(
 
   let status: DebugApiCallStatus['status'] = 'success';
   let message = `HTTP ${statusCode}`;
+  let errorCategory: string | null = null;
 
   if (statusCode === 429) {
     status = 'rate-limited';
+    errorCategory = 'rate-limited';
     message = diagnostics?.retryAfter
       ? `Rate limited — retry after ${diagnostics.retryAfter}s`
       : 'Rate limited';
   } else if (statusCode >= 400) {
     status = 'error';
+    errorCategory = `http-error-${statusCode}`;
     message = `Error ${statusCode}`;
   } else if (statusCode === 200) {
     const bytes = diagnostics?.responseByteLength ?? 0;
+
+    if (bytes === 0) {
+      errorCategory = 'empty-response';
+    }
 
     if (provider === 'gemini') {
       const geminiDiagnostics = diagnostics as DebugGeminiDiagnostics | undefined;
@@ -89,6 +96,8 @@ function buildApiCallStatus(
     httpStatus: statusCode,
     message,
     retryAfter: diagnostics?.retryAfter ?? null,
+    responseByteLength: diagnostics?.responseByteLength ?? null,
+    errorCategory,
   };
 }
 
