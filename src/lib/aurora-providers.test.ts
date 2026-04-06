@@ -126,6 +126,42 @@ describe('parseAuroraWatchUK', () => {
     const result = parseAuroraWatchUK(xml, NOW);
     expect(result!.fetchedAt).toBe(NOW.toISOString());
   });
+
+  // ---- New status.xml format ----
+
+  it('parses new status.xml format with <state name="green">', () => {
+    const xml = `<aurorawatch>
+      <current><state name="green" value="0" color="#33ff33">No significant activity</state></current>
+      <previous><state name="yellow" value="50" color="#ffff00">Minor geomagnetic activity</state></previous>
+      <station>SAMNET/CRK2</station>
+      <updated>2026-03-17 17:00:00</updated>
+    </aurorawatch>`;
+    const result = parseAuroraWatchUK(xml, NOW);
+    expect(result).not.toBeNull();
+    expect(result!.level).toBe('green');
+    expect(result!.fetchedAt).toBe('2026-03-17 17:00:00');
+    expect(result!.isStale).toBe(false);
+  });
+
+  it('parses new status.xml format with amber state', () => {
+    const xml = `<aurorawatch>
+      <current><state name="amber" value="100" color="#ff9900">Amber alert: possible aurora</state></current>
+      <updated>2026-03-17 16:30:00</updated>
+    </aurorawatch>`;
+    const result = parseAuroraWatchUK(xml, NOW);
+    expect(result!.level).toBe('amber');
+    expect(result!.isStale).toBe(false);
+  });
+
+  it('marks new format as stale when updated timestamp is old', () => {
+    const xml = `<aurorawatch>
+      <current><state name="yellow" value="50" color="#ffff00">Minor activity</state></current>
+      <updated>2026-03-17 14:00:00</updated>
+    </aurorawatch>`;
+    // NOW is 17:30, updated at 14:00 = 3.5 h ago → stale
+    const result = parseAuroraWatchUK(xml, NOW);
+    expect(result!.isStale).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -355,5 +391,34 @@ describe('fuseAuroraSignals', () => {
     const signal: AuroraSignal = fuseAuroraSignals(nearTerm, longRange, NOW);
     expect(signal.nearTerm).toBe(nearTerm);
     expect(signal.longRange).toBe(longRange);
+  });
+
+  // ---- Diagnostic warnings ----
+
+  it('warns when AuroraWatch near-term signal is missing', () => {
+    const signal = fuseAuroraSignals(null, makeLongRange([makeCme(36)]), NOW);
+    expect(signal.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('AuroraWatch UK near-term signal missing')]),
+    );
+  });
+
+  it('warns when AuroraWatch near-term signal is stale', () => {
+    const stale = makeNearTerm('amber', 3);
+    const signal = fuseAuroraSignals(stale, makeLongRange([makeCme(36)]), NOW);
+    expect(signal.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('stale')]),
+    );
+  });
+
+  it('warns when DONKI long-range signal is missing', () => {
+    const signal = fuseAuroraSignals(makeNearTerm('green'), null, NOW);
+    expect(signal.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining('NASA DONKI long-range signal missing')]),
+    );
+  });
+
+  it('has no warnings when both providers have fresh data', () => {
+    const signal = fuseAuroraSignals(makeNearTerm('green'), makeLongRange([makeCme(36)]), NOW);
+    expect(signal.warnings).toEqual([]);
   });
 });

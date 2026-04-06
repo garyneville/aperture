@@ -76,6 +76,8 @@ export interface AuroraSignal {
   upcomingCmeCount: number;
   /** Nearest estimated CME arrival time (ISO 8601). Null when none found. */
   nextCmeArrival: string | null;
+  /** Diagnostic warnings for debug output (e.g. missing providers). */
+  warnings: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -103,6 +105,10 @@ const AWUK_STALE_MS = 2 * 60 * 60 * 1000; // 2 hours
  *   </current_status>
  *
  * Accepts either raw XML string or an object with a `data` field (n8n text response).
+ *
+ * Supports two XML formats:
+ * - Legacy: `<current_status><site_status color="green" created="..."/></current_status>`
+ * - Current (status.xml): `<aurorawatch><current><state name="green" .../></current><updated>...</updated></aurorawatch>`
  */
 export function parseAuroraWatchUK(
   raw: unknown,
@@ -112,15 +118,24 @@ export function parseAuroraWatchUK(
     const xmlStr = extractText(raw);
     if (!xmlStr) return null;
 
+    // Try current format first: <state name="green" .../>  with <updated>...</updated>
+    // (Must check name before color — new format's color attr is a hex code like #33ff33)
+    const stateName = extractXmlAttribute(xmlStr, 'name');
+    const updatedMatch = xmlStr.match(/<updated>\s*([^<]+?)\s*<\/updated>/i);
+    const updatedAt = updatedMatch ? updatedMatch[1].trim() : null;
+
+    // Try legacy format: <site_status color="green" created="..."/>
     const color = extractXmlAttribute(xmlStr, 'color');
     const created = extractXmlAttribute(xmlStr, 'created');
 
-    if (!color) return null;
+    // Resolve level: current uses name attr on <state>; legacy uses color attr
+    const levelStr = (stateName && normaliseLevel(stateName)) ? stateName : color;
+    if (!levelStr) return null;
 
-    const level = normaliseLevel(color);
+    const level = normaliseLevel(levelStr);
     if (!level) return null;
 
-    const fetchedAt = created || now.toISOString();
+    const fetchedAt = created || updatedAt || now.toISOString();
     const fetchedDate = new Date(fetchedAt);
     const age = isNaN(fetchedDate.getTime()) ? Infinity : now.getTime() - fetchedDate.getTime();
     const isStale = age > AWUK_STALE_MS;
@@ -318,6 +333,19 @@ export function fuseAuroraSignals(
   if (nearTermOk && longRangeOk) confidence = 'high';
   else if (nearTermOk || longRangeOk) confidence = 'medium';
 
+  // Diagnostic warnings
+  const warnings: string[] = [];
+  if (nearTerm === null) {
+    warnings.push('AuroraWatch UK near-term signal missing — aurora confidence degraded to Kp + DONKI only');
+  } else if (nearTerm.isStale) {
+    warnings.push('AuroraWatch UK near-term signal is stale — ignoring for dominant level');
+  }
+  if (longRange === null) {
+    warnings.push('NASA DONKI long-range signal missing');
+  } else if (longRange.isStale && imminentFromStale.length === 0) {
+    warnings.push('NASA DONKI long-range signal is stale with no imminent CMEs');
+  }
+
   return {
     nearTerm: nearTerm,
     longRange: longRange,
@@ -326,6 +354,7 @@ export function fuseAuroraSignals(
     confidence,
     upcomingCmeCount,
     nextCmeArrival,
+    warnings,
   };
 }
 

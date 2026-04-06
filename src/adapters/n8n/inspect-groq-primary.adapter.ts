@@ -32,6 +32,8 @@ export type GroqPrimaryInspection = {
   groqFallbackReason: string | null;
   /** Structured error message for diagnostic logging. */
   groqErrorDetail: string | null;
+  /** First 200 chars of the raw response body when fallback triggers (diagnostic). */
+  groqRawResponseSnippet: string | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -119,6 +121,11 @@ export function inspectGroqPrimary(item: Record<string, unknown>): GroqPrimaryIn
   const groqStatusCode = getHttpResponseStatusCode(item);
   const groqFallbackReason = getFallbackReason(groqStatusCode, rawText);
 
+  // Capture a raw response snippet when fallback triggers for debugging
+  const groqRawResponseSnippet: string | null = groqFallbackReason
+    ? (serializedPayload || '').slice(0, 200) || null
+    : null;
+
   return {
     choices,
     groqStatusCode,
@@ -132,6 +139,7 @@ export function inspectGroqPrimary(item: Record<string, unknown>): GroqPrimaryIn
       responseByteLength,
       getHttpRetryAfterSeconds(item),
     ),
+    groqRawResponseSnippet,
   };
 }
 

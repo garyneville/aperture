@@ -24,6 +24,7 @@ describe('inspectGroqPrimary', () => {
       groqFallbackRequired: false,
       groqFallbackReason: null,
       groqErrorDetail: null,
+      groqRawResponseSnippet: null,
     });
   });
 
@@ -75,6 +76,7 @@ describe('inspectGroqPrimary', () => {
     });
 
     expect(result.groqErrorDetail).toContain('reason=empty-response');
+    expect(result.groqRawResponseSnippet).not.toBeNull();
   });
 
   it('returns null error detail when response is healthy', () => {
