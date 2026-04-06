@@ -164,6 +164,7 @@ export interface BriefRenderInput {
   sunriseStr: string;
   sunsetStr: string;
   moonPct: number;
+  moonAltAtBestAstro?: number | null;
   metarNote?: string;
   today: string;
   todayBestScore: number;

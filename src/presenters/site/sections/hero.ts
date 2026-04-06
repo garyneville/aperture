@@ -30,6 +30,7 @@ export interface HeroCardProps {
   factStats: SummaryStat[];
   scoreStats: SummaryStat[];
   moonPct: number;
+  moonAltAtBestAstro?: number | null;
   localSummary: string;
   alternativeSummary: string;
   altSummaryTitle: string;
@@ -84,7 +85,7 @@ export function sHeroCard(props: HeroCardProps): string {
     </div>
     <hr class="hero-divider">
     ${sStatGrid(factStats, 'dark')}
-    <div class="moon-context">${moonAstroContext(moonPct, props.hasAstroWindow)}</div>
+    <div class="moon-context">${moonAstroContext(moonPct, props.hasAstroWindow, props.moonAltAtBestAstro)}</div>
     ${sStatGrid(scoreStats, 'dark')}
     ${localSummary || alternativeSummary ? '<hr class="hero-divider" style="margin:12px 0 8px;">' : ''}
     ${localSummary ? `<div style="font-size:12px;line-height:1.55;color:rgba(255,255,255,0.60);">${esc(localSummary.replace(/\n/g, ' · '))}</div>` : ''}

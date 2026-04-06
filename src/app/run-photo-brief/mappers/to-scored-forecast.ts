@@ -95,6 +95,7 @@ export function toScoredForecastContext(
     sunriseStr: safeString(ctx.sunriseStr) ?? '',
     sunsetStr: safeString(ctx.sunsetStr) ?? '',
     moonPct: safeNumber(ctx.moonPct) ?? 0,
+    moonAltAtBestAstro: safeNumber(ctx.moonAltAtBestAstro) ?? null,
     metarNote: safeString(ctx.metarNote) ?? '',
     shSunsetText: safeString(ctx.shSunsetText) ?? null,
     today: safeString(ctx.today) ?? '',

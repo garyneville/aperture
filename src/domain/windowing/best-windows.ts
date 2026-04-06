@@ -126,6 +126,12 @@ export function bestWindows(input: BestWindowsInput): BestWindowsOutput {
     sunrise,
     sunset,
     moonPct: todayHours[0]?.moon ?? 0,
+    moonAltAtBestAstro: (() => {
+      const astroHour = dailySummary[0]?.bestAstroHour;
+      if (!astroHour) return null;
+      const match = todayHours.find(h => h.hour === astroHour);
+      return match?.moonAltDeg ?? null;
+    })(),
     debugContext,
   };
 }

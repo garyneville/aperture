@@ -41,6 +41,7 @@ export interface ScoredHour {
   isBluePm: boolean;
   isNight: boolean;
   moon: number;
+  moonAltDeg?: number | null;
   uv: number;
   tags: string[];
 }
@@ -138,6 +139,7 @@ export interface BestWindowsOutput {
   sunrise: string | undefined;
   sunset: string | undefined;
   moonPct: number;
+  moonAltAtBestAstro: number | null;
   debugContext: DebugContext;
 }
 
