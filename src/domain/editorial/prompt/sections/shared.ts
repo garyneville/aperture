@@ -60,9 +60,9 @@ export function weekSummaryLine(dailySummary: DailySummary[]): string {
 export function moonTimingNote(todayDay: DailySummary | undefined): string {
   if (!todayDay?.darkSkyStartsAt || (todayDay.astroScore ?? 0) <= 0) return '';
   if (todayDay.darkSkyStartsAt === '00:00') {
-    return '\nMoon is already down by 00:00, so dark-sky conditions are in place from the start of the usable night.';
+    return '\nAstronomical darkness begins by 00:00, so dark-sky conditions are in place from the start of the usable night.';
   }
-  return `\nDark-sky conditions improve from ${todayDay.darkSkyStartsAt} once the moon is down.`;
+  return `\nDark-sky conditions begin from ${todayDay.darkSkyStartsAt} once astronomical twilight ends.`;
 }
 
 export function confidenceLabel(confidence: string): string {

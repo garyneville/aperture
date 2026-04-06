@@ -75,8 +75,8 @@ describe('scoreAllDays moon timeline scoring', () => {
     expect(earlyNight?.astro).toBeGreaterThan(0);
     // 05:00 is only in nautical twilight (solar altitude ~-7.75°) — astro must be zero.
     expect(lateNight?.astro).toBe(0);
-    // darkSkyStartsAt reflects moonset time (05:00), not astronomical twilight end.
-    expect(today.darkSkyStartsAt).toBe('05:00');
+    // darkSkyStartsAt reflects astronomical twilight end (sun ≤ -18°), not moonset.
+    expect(today.darkSkyStartsAt).toBe('03:00');
     // Best astro is the genuinely dark hour (03:00), not the post-moonset twilight hour.
     expect(today.bestAstroHour).toBe('03:00');
   });
