@@ -829,6 +829,7 @@ describe('workflow assembly', () => {
         geminiTotalTokenCount: 1006,
         geminiThoughtsTokenCount: 704,
         geminiRetryAfter: null,
+        geminiErrorDetail: 'reason=truncated',
       },
     }]);
   });
@@ -909,6 +910,7 @@ describe('workflow assembly', () => {
         geminiTotalTokenCount: 130,
         geminiThoughtsTokenCount: 19,
         geminiRetryAfter: null,
+        geminiErrorDetail: null,
       },
     }]);
   });
