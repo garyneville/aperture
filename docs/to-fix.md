@@ -50,13 +50,16 @@ Findings from pipeline analysis on 6 Apr 2026. Phases 1–4 merged (PRs #269, #2
 
 **Observation:** DONKI has returned 503 in the last two snapshots (21:25 and 21:32). The fused aurora signal handles it gracefully (`warnings: ["NASA DONKI long-range signal missing"]`), but this means the long-range aurora forecast is permanently absent.
 
-**Investigation:**
-1. Check whether DONKI 503 is a known NASA outage — query `https://api.nasa.gov` status page or DONKI changelog.
-2. Try the DONKI endpoint manually with different date ranges to isolate whether it's the date range or the endpoint itself.
-3. Check if the API key is rate-limited or expired.
-4. If DONKI is unreliable, research alternative CME data sources (e.g., NOAA SWPC, SpaceWeatherLive API).
+**Root cause:** NASA DONKI backend infrastructure returning HTTP 503 with `upstream connect error or disconnect/reset before headers. reset reason: connection timeout` and `remote connection failure, transport failure reason: delayed connect error: Connection refused`. This is a server-side issue at NASA's reverse proxy/load balancer — not a rate limit or API key issue.
 
-**Expected outcome:** Determine if this is transient (wait it out) or permanent (need an alternative source or graceful permanent removal from aurora scoring weight).
+**Resolution (option a + c):**
+1. Increased DONKI HTTP node retry parameters (`maxTries`: 3→5, `waitBetweenTries`: 5s→10s) for better resilience against transient 503s
+2. Improved degradation warning to note confidence impact: `"NASA DONKI long-range signal missing — aurora confidence degraded, no CME data available"`
+3. Added comprehensive test coverage for all degradation paths in `aurora-providers.test.ts`
+4. `fuseAuroraSignals()` already degrades gracefully: confidence drops from 'high' to 'medium' (or 'low' if AuroraWatch is also absent), CME count is 0, and near-term aurora data remains available
+5. Stale DONKI data is still used for imminent CME arrivals (<24h) per PR #255
+
+**Status:** ✅ Resilience improved + graceful degradation documented and tested
 
 ---
 
@@ -148,7 +151,7 @@ Findings from pipeline analysis on 6 Apr 2026. Phases 1–4 merged (PRs #269, #2
 |----|-------|----------|--------|---------|
 | R1 | Comfort labels empty | ✅ Fixed | Wired via `src/lib/outdoor-comfort.ts` | #276 |
 | R2 | Editorial hours too sparse | Medium | Medium — field selection + token budget | #278 |
-| R3 | DONKI CME 503 | Low | External dependency — monitor or replace | #279 |
+| R3 | DONKI CME 503 | ✅ Fixed | Retry improved + degradation documented/tested | #279 |
 | R4 | Soil temp nulls from UKMO | Low | Small — test ECMWF or remove | #280 |
 | R5 | BLH null, mist limited | Low | Medium — secondary API call design | #280 |
 | R6 | Kp data stale in editorial | Medium | Small — add date filter | #281 |

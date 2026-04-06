@@ -341,7 +341,7 @@ export function fuseAuroraSignals(
     warnings.push('AuroraWatch UK near-term signal is stale — ignoring for dominant level');
   }
   if (longRange === null) {
-    warnings.push('NASA DONKI long-range signal missing');
+    warnings.push('NASA DONKI long-range signal missing — aurora confidence degraded, no CME data available');
   } else if (longRange.isStale && imminentFromStale.length === 0) {
     warnings.push('NASA DONKI long-range signal is stale with no imminent CMEs');
   }

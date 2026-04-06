@@ -417,6 +417,21 @@ describe('fuseAuroraSignals', () => {
     );
   });
 
+  it('DONKI 503 scenario: near-term still works, confidence degrades, CME data absent', () => {
+    // Simulates DONKI returning HTTP 503 — longRange is null
+    const signal = fuseAuroraSignals(makeNearTerm('yellow'), null, NOW);
+    expect(signal.dominantLevel).toBe('yellow');
+    expect(signal.horizon).toBe('tonight');
+    expect(signal.confidence).toBe('medium'); // degraded from 'high'
+    expect(signal.upcomingCmeCount).toBe(0);
+    expect(signal.nextCmeArrival).toBeNull();
+    expect(signal.longRange).toBeNull();
+    expect(signal.nearTerm).not.toBeNull();
+    expect(signal.warnings).toEqual(
+      expect.arrayContaining([expect.stringMatching(/NASA DONKI.*confidence degraded/)]),
+    );
+  });
+
   it('has no warnings when both providers have fresh data', () => {
     const signal = fuseAuroraSignals(makeNearTerm('green'), makeLongRange([makeCme(36)]), NOW);
     expect(signal.warnings).toEqual([]);
