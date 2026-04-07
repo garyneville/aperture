@@ -10392,5 +10392,7 @@
       "AuroraWatch UK near-term signal is stale — ignoring for dominant level",
       "NASA DONKI long-range signal missing — aurora confidence degraded, no CME data available"
     ]
-  }
+  },
+  "nowcastSatellite": null,
+  "marine": null
 }

@@ -78,6 +78,8 @@ APIS=(
   "10|AuroraWatch UK|https://aurorawatch.lancs.ac.uk/api/0.1/status.xml"
   "11|NASA DONKI CME|https://api.nasa.gov/DONKI/CME?startDate=${DONKI_START}&endDate=${DONKI_END}&api_key=${NASA_API_KEY}"
   "12|ECMWF Supplement|https://api.open-meteo.com/v1/ecmwf?latitude=${LAT}&longitude=${LON}&hourly=soil_temperature_0cm,boundary_layer_height&models=ecmwf_ifs025&timezone=${TZ_ENC}&forecast_days=5"
+  "13|Satellite Radiation|https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=shortwave_radiation,shortwave_radiation_instant&hourly=shortwave_radiation,shortwave_radiation_instant&models=icon_seamless&forecast_days=1&forecast_hours=6"
+  "14|Marine|https://marine-api.open-meteo.com/v1/marine?latitude=${LAT}&longitude=${LON}&hourly=wave_height,wave_direction,wave_period,wave_peak_period&timezone=${TZ_ENC}&forecast_days=5"
 )
 
 echo "Snapshot → ${DIR}/"
