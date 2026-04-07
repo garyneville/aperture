@@ -67,7 +67,7 @@ export const MONO = TypographyFontFamilyMono;
 export const UTILITY_GLYPHS = '<span aria-hidden="true">&#x1F697; / &#x1F6B6;</span>';
 export const BRAND_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true" style="vertical-align:middle;display:inline-block;"><circle cx="11" cy="11" r="9.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="11" cy="11" r="3.5" fill="currentColor"/></svg>`;
 
-export const SCORE_THRESHOLDS = { excellent: 75, good: 58, marginal: 42 } as const;
+export const SCORE_THRESHOLDS = { excellent: 72, good: 52, marginal: 35 } as const;
 
 export function scoreState(score: number): { label: string; fg: string; bg: string; border: string } {
   if (score >= SCORE_THRESHOLDS.excellent) return { label: 'Excellent', fg: C.success, bg: C.successContainer, border: '#A3D9B1' };
