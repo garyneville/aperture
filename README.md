@@ -10,7 +10,13 @@ This repo owns the application code:
 
 ## What This System Does
 
-Aperture fetches weather forecast data from multiple providers (Open-Meteo, OpenWeather, METAR, etc.), scores the conditions for photography quality, generates editorial content via AI providers (Groq, Gemini), and renders the results as email, web page, Telegram message, and machine-readable JSON. The entire pipeline runs on a schedule via n8n, with output published to GitHub Pages and sent via email/Telegram.
+Aperture fetches weather forecast data from multiple providers (Open-Meteo, Aviation Weather METAR, SunsetHue, AuroraWatch, NOAA, NASA), scores the conditions for photography quality, generates editorial content via AI providers (Groq, Gemini), and renders the results as email, web page, Telegram message, and machine-readable JSON. The entire pipeline runs on a schedule via n8n, with output published to GitHub Pages and sent via email/Telegram.
+
+### How Scoring Works (Summary)
+
+Every forecast hour is scored 0–100 by blending four sub-scores — **Drama** (sky colour/light), **Clarity** (transparency/contrast), **Mist** (atmospheric mood), and **Astro** (night-sky quality) — with weights that change by time of day. The **daily photo score** is the peak golden/blue-hour score plus a small duration bonus (0–8 pts for longer windows). Consecutive hours scoring ≥ 45 are grouped into shooting windows, and nine specialist session evaluators (golden hour, astro, mist, storm, seascape, etc.) provide targeted recommendations.
+
+→ **Full details:** [`docs/scoring-explainer.md`](./docs/scoring-explainer.md) — covers data sources, hourly formulas, daily score derivation, session evaluators, window selection, and alerts.
 
 ## Branch Layout
 
@@ -101,6 +107,7 @@ npm test
 
 ## Documentation
 
+- [`docs/scoring-explainer.md`](./docs/scoring-explainer.md) — How the scoring system works (data sources, hourly formulas, daily scores, sessions, windows, alerts)
 - [`docs/architecture.md`](./docs/architecture.md) — System architecture and data flow
 - [`src/app/README.md`](./src/app/README.md) — App layer orchestration
 - [`src/app/run-photo-brief/README.md`](./src/app/run-photo-brief/README.md) — Main use case

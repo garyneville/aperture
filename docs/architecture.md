@@ -284,6 +284,7 @@ Refactors should keep these green at every step:
 
 ## Documentation Index
 
+- [`docs/scoring-explainer.md`](scoring-explainer.md) — How the scoring system works (data sources, formulas, sessions, windows, alerts)
 - [`src/app/README.md`](../src/app/README.md) — App layer orchestration
 - [`src/app/run-photo-brief/README.md`](../src/app/run-photo-brief/README.md) — Main use case
 - [`src/domain/README.md`](../src/domain/README.md) — Domain layer overview
