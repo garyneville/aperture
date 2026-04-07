@@ -18,12 +18,15 @@ export function run({ $input }: N8nRuntime) {
       rawRows = items.map(item => item.json);
     }
 
+    const today = new Date().toISOString().slice(0, 10); // UTC midnight cutoff
+
     const kpForecast = rawRows
       .filter(row => Array.isArray(row) && row.length >= 2 && !isNaN(parseFloat(String(row[1]))))
       .map(row => ({
         time: String((row as unknown[])[0]),
         kp: parseFloat(String((row as unknown[])[1])),
-      }));
+      }))
+      .filter(entry => entry.time >= today);
 
     return [{ json: { kpForecast } }];
   } catch (err) {
