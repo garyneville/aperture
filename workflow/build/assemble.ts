@@ -41,6 +41,7 @@ export const ADAPTERS: Record<string, string> = {
   'wrap-aurora': 'src/adapters/n8n/wrap-aurora.adapter.ts',
   'wrap-satellite-radiation': 'src/adapters/n8n/wrap-satellite-radiation.adapter.ts',
   'wrap-marine': 'src/adapters/n8n/wrap-marine.adapter.ts',
+  'wrap-ecmwf-supplement': 'src/adapters/n8n/wrap-ecmwf-supplement.adapter.ts',
   'format-messages': 'src/adapters/n8n/format-messages.adapter.ts',
   'prepare-debug-email': 'src/adapters/n8n/prepare-debug-email.adapter.ts',
   'publish-site': 'src/adapters/n8n/publish-site.adapter.ts',

@@ -54,7 +54,7 @@
     },
     {
       "parameters": {
-        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit,direct_radiation,diffuse_radiation,soil_temperature_0cm&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "url": "https://api.open-meteo.com/v1/forecast?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&models=ukmo_seamless&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,visibility,temperature_2m,relativehumidity_2m,dewpoint_2m,precipitation,windspeed_10m,windgusts_10m,winddirection_10m,cape,vapour_pressure_deficit,direct_radiation,diffuse_radiation&daily=sunrise,sunset&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
         "options": {}
       },
       "id": "a1b2c3d4-0003-0003-0003-000000000003",
@@ -1297,6 +1297,54 @@
         2220,
         760
       ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/ecmwf?latitude=__PHOTO_WEATHER_LAT__&longitude=__PHOTO_WEATHER_LON__&hourly=soil_temperature_0cm,boundary_layer_height&models=ecmwf_ifs025&timezone=__PHOTO_WEATHER_TIMEZONE__&forecast_days=5",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0070-0070-0070-000000000070",
+      "name": "HTTP: ECMWF Supplement",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        1800
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "__ADAPTER_wrap-ecmwf-supplement__"
+      },
+      "id": "a1b2c3d4-0071-0071-0071-000000000071",
+      "name": "Code: Wrap ECMWF Supplement",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        1860
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "a1b2c3d4-0072-0072-0072-000000000072",
+      "name": "Merge: Score Input 9",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2340,
+        760
+      ]
     }
   ],
   "connections": {
@@ -1335,6 +1383,11 @@
           },
           {
             "node": "HTTP: Marine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: ECMWF Supplement",
             "type": "main",
             "index": 0
           }
@@ -1376,6 +1429,11 @@
           },
           {
             "node": "HTTP: Marine",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP: ECMWF Supplement",
             "type": "main",
             "index": 0
           }
@@ -2198,6 +2256,39 @@
       ]
     },
     "Merge: Score Input 8": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: ECMWF Supplement": {
+      "main": [
+        [
+          {
+            "node": "Code: Wrap ECMWF Supplement",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Wrap ECMWF Supplement": {
+      "main": [
+        [
+          {
+            "node": "Merge: Score Input 9",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge: Score Input 9": {
       "main": [
         [
           {

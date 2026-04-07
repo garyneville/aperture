@@ -119,7 +119,10 @@ describe('workflow assembly', () => {
     expect(satelliteMergeConnection?.node).toBe('Merge: Score Input 8');
 
     const marineMergeConnection = data.connections['Merge: Score Input 8']?.main?.[0]?.[0];
-    expect(marineMergeConnection?.node).toBe('Code: Build Score Input');
+    expect(marineMergeConnection?.node).toBe('Merge: Score Input 9');
+
+    const ecmwfMergeConnection = data.connections['Merge: Score Input 9']?.main?.[0]?.[0];
+    expect(ecmwfMergeConnection?.node).toBe('Code: Build Score Input');
 
     const node = data.nodes.find((item: { name: string }) => item.name === 'Code: Build Score Input');
     expect(node).toBeTruthy();

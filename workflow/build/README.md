@@ -40,21 +40,20 @@ The following fields are **not** requested in the `HTTP: Weather` node because `
 | `precipitation_probability` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model |
 | `lightning_potential` | Served by `HTTP: Precip Prob` (no model pin) | Real values via best-match model; gated by CAPE ≥ 500 J/kg floor before use |
 | `total_column_integrated_water_vapour` | Falls back to 20 (neutral — no clarity bonus or penalty) | Scoring degraded; real values would improve clarity assessment |
-| `boundary_layer_height` | Falls back to `null` | Mist scoring degrades to dew-point spread only |
+| `boundary_layer_height` | Served by `HTTP: ECMWF Supplement` (ECMWF IFS 0.25°) | Real values enable inversion/mist scoring |
+| `soil_temperature_0cm` | Served by `HTTP: ECMWF Supplement` (ECMWF IFS 0.25°) | Real values enable frost detection (`hasFrost`) |
 
 Alt-location (`prepare-alt-locations.ts`) and long-range (`prepare-long-range.ts`) URLs also pin `models=ukmo_seamless`, so their `HOURLY_FIELDS` arrays must likewise exclude UKMO-incompatible fields. Precipitation probability scoring for these locations degrades gracefully — the field is optional in their scoring contracts.
 
-### boundary_layer_height — future migration path
+### ECMWF Supplement — boundary_layer_height & soil_temperature_0cm
 
-ECMWF IFS HRES provides `boundary_layer_height` via the Open-Meteo ECMWF endpoint:
+The skeleton includes an `HTTP: ECMWF Supplement` node that fetches `boundary_layer_height` and `soil_temperature_0cm` from ECMWF IFS 0.25° via the Open-Meteo ECMWF endpoint:
 
 ```
-https://api.open-meteo.com/v1/ecmwf?latitude=...&longitude=...&hourly=boundary_layer_height&models=ecmwf_ifs&timezone=...&forecast_days=5
+https://api.open-meteo.com/v1/ecmwf?latitude=...&longitude=...&hourly=soil_temperature_0cm,boundary_layer_height&models=ecmwf_ifs025&timezone=...&forecast_days=5
 ```
 
-To unlock this in production, a secondary ECMWF HTTP node would need to be added to the workflow skeleton, with a corresponding wrap-code node and merge into the score input chain. The scoring contract (`WeatherData.hourly.boundary_layer_height`) and `summarize-day.ts` already handle the field — only the data pipeline needs extending.
-
-Current impact: mist/inversion scoring works via dew-point spread heuristic. With `boundary_layer_height`, low-boundary-layer conditions (< 500 m) would boost mist scores and high-boundary-layer conditions (> 1500 m) would penalise them.
+The response is wrapped by `Code: Wrap ECMWF Supplement` and merged into the score input chain via `Merge: Score Input 9`. The `build-score-input` adapter aligns ECMWF timestamps to the primary weather time axis and merges the two fields into the weather object, so `summarize-day.ts` reads them transparently. When the ECMWF fetch fails or returns empty data, the fields degrade gracefully — `boundary_layer_height` falls back to `null` (mist scoring via dew-point spread only) and `soil_temperature_0cm` falls back to `null` (`hasFrost` returns `null`).
 
 The workflow skeleton now contains a conditional editorial branch:
 
