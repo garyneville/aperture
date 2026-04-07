@@ -1,11 +1,14 @@
 import type { N8nRuntime } from './types.js';
 
+type KpEntry = { time: string; kp: number };
+type KpIndexOutput = { kpForecast: KpEntry[]; kpError?: boolean };
+
 /**
  * Wraps NOAA SWPC planetary Kp-index forecast.
  * Endpoint: https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json
  * Response: array-of-arrays, first row is headers ["time_tag", "kp", "observed", "noaa_scale"]
  */
-export function run({ $input }: N8nRuntime) {
+export function run({ $input }: N8nRuntime): [{ json: KpIndexOutput }] {
   try {
     const items = $input.all();
 
