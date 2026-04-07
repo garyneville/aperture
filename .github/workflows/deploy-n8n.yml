@@ -9,7 +9,7 @@
 #   N8N_API_KEY, N8N_BASE_URL,
 #   GROQ_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
 #   SENDGRID_API_KEY, EMAIL_FROM,
-#   PHOTO_WEATHER_EMAIL_TO, PHOTO_WEATHER_EMAIL_TO_2,
+#   PHOTO_WEATHER_EMAIL_TO,
 #   PHOTO_WEATHER_DEBUG_EMAIL_TO,
 #   PHOTO_BRIEF_TRIGGER_PATH,
 #   PHOTO_WEATHER_LAT, PHOTO_WEATHER_LON, PHOTO_WEATHER_LOCATION,
@@ -96,7 +96,6 @@ jobs:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
           PHOTO_WEATHER_EMAIL_TO: ${{ secrets.PHOTO_WEATHER_EMAIL_TO }}
-          PHOTO_WEATHER_EMAIL_TO_2: ${{ secrets.PHOTO_WEATHER_EMAIL_TO_2 }}
           PHOTO_WEATHER_DEBUG_EMAIL_TO: ${{ secrets.PHOTO_WEATHER_DEBUG_EMAIL_TO }}
           PHOTO_BRIEF_TRIGGER_PATH: ${{ secrets.PHOTO_BRIEF_TRIGGER_PATH }}
           PHOTO_WEATHER_LAT: ${{ secrets.PHOTO_WEATHER_LAT }}
@@ -129,7 +128,6 @@ jobs:
               '__SENDGRID_API_KEY__': os.environ['SENDGRID_API_KEY'],
               '__EMAIL_FROM__': os.environ['EMAIL_FROM'],
               '__PHOTO_WEATHER_EMAIL_TO__': os.environ['PHOTO_WEATHER_EMAIL_TO'],
-              '__PHOTO_WEATHER_EMAIL_TO_2__': os.environ['PHOTO_WEATHER_EMAIL_TO_2'],
               '__PHOTO_WEATHER_DEBUG_EMAIL_TO__': os.environ['PHOTO_WEATHER_DEBUG_EMAIL_TO'],
               '__PHOTO_BRIEF_TRIGGER_PATH__': trigger,
               '__PHOTO_WEATHER_LAT__': os.environ['PHOTO_WEATHER_LAT'],
@@ -161,7 +159,6 @@ jobs:
             __SENDGRID_API_KEY__ \
             __EMAIL_FROM__ \
             __PHOTO_WEATHER_EMAIL_TO__ \
-            __PHOTO_WEATHER_EMAIL_TO_2__ \
             __PHOTO_WEATHER_DEBUG_EMAIL_TO__ \
             __PHOTO_BRIEF_TRIGGER_PATH__ \
             __PHOTO_WEATHER_LAT__ \
