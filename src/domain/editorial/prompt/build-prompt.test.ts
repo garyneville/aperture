@@ -160,7 +160,7 @@ describe('buildPrompt', () => {
     expect(result.prompt).toContain('No camera tips, composition advice, hype, or filler.');
     expect(result.prompt).toContain('Do not blame cloud unless the supplied peak-hour cloud cover supports it.');
     expect(result.prompt).toContain('Seasonal context: March — early spring; blossom building; frost on clear nights still likely.');
-    expect(result.prompt).toContain('Dark-sky conditions improve from 22:00 once the moon is down.');
+    expect(result.prompt).toContain('Dark-sky conditions begin from 22:00 once astronomical twilight ends.');
     expect(result.prompt).toContain('Peak local time is around 19:00, right at the start of the window.');
     expect(result.prompt).toContain('The window tops out at 60/100 overall despite a raw astro peak of 75/100 (19:00).');
     expect(result.prompt).not.toContain('Consider Sutton Bank today — better dark sky conditions (75 min drive).');

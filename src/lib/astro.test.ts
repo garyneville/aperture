@@ -17,14 +17,57 @@ describe('shared astro metrics helper', () => {
     expect(moonDown.altitudeDeg).toBeLessThan(0);
   });
 
-  it('finds the first dark-sky timestamp after moonset across midnight', () => {
+  it('finds the first timestamp where astronomical darkness has begun (sun ≤ -18°)', () => {
+    // All three timestamps have sun well below -18° → returns the earliest
     const start = findDarkSkyStart(
       ['2026-03-22T23:00:00Z', '2026-03-23T01:00:00Z', '2026-03-23T03:00:00Z'],
       53.8,
       -1.57,
     );
 
-    expect(start).toBe('2026-03-23T01:00:00Z');
+    expect(start).toBe('2026-03-22T23:00:00Z');
+  });
+
+  it('returns ~22:00 UTC for April evening at 53.8°N (not 00:00)', () => {
+    // In April at Leeds, astronomical twilight ends around 22:00 UTC
+    const start = findDarkSkyStart(
+      [
+        '2026-04-06T19:00:00Z', '2026-04-06T20:00:00Z', '2026-04-06T21:00:00Z',
+        '2026-04-06T22:00:00Z', '2026-04-06T23:00:00Z', '2026-04-07T00:00:00Z',
+      ],
+      53.8,
+      -1.57,
+    );
+
+    expect(start).toBe('2026-04-06T22:00:00Z');
+  });
+
+  it('returns null in summer at 53.8°N when sun never reaches -18°', () => {
+    // Near summer solstice at Leeds latitude, sun never gets below -18°
+    const start = findDarkSkyStart(
+      [
+        '2026-06-21T21:00:00Z', '2026-06-21T22:00:00Z', '2026-06-21T23:00:00Z',
+        '2026-06-22T00:00:00Z', '2026-06-22T01:00:00Z', '2026-06-22T02:00:00Z',
+      ],
+      53.8,
+      -1.57,
+    );
+
+    expect(start).toBeNull();
+  });
+
+  it('returns early evening timestamp in winter at 53.8°N', () => {
+    // In December at Leeds, sun drops below -18° much earlier
+    const start = findDarkSkyStart(
+      [
+        '2026-12-15T16:00:00Z', '2026-12-15T17:00:00Z', '2026-12-15T18:00:00Z',
+        '2026-12-15T19:00:00Z', '2026-12-15T20:00:00Z',
+      ],
+      53.8,
+      -1.57,
+    );
+
+    expect(start).toBe('2026-12-15T19:00:00Z');
   });
 
   it('penalises a bright moon much more when it is high than when it is low', () => {

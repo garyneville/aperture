@@ -67,10 +67,12 @@ export function findDarkSkyStart(
   lat: number,
   lon: number,
 ): string | null {
+  const ASTRO_DARK_ELEVATION = -18;
   const sorted = [...timestamps].sort((a, b) => Date.parse(a) - Date.parse(b));
 
   for (const ts of sorted) {
-    if (!getMoonMetrics(Date.parse(ts), lat, lon).isUp) return ts;
+    const solarAlt = getSolarAltitude(Date.parse(ts), lat, lon);
+    if (solarAlt <= ASTRO_DARK_ELEVATION) return ts;
   }
 
   return null;
