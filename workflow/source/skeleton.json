@@ -1027,8 +1027,8 @@
         860
       ],
       "retryOnFail": true,
-      "maxTries": 3,
-      "waitBetweenTries": 5000,
+      "maxTries": 5,
+      "waitBetweenTries": 10000,
       "onError": "continueRegularOutput"
     },
     {
