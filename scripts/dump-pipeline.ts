@@ -7,7 +7,7 @@
  *   01-normalized-inputs.json   — adapter-normalized payloads (what scoring sees)
  *   02-scoring-output.json      — scoreAllDays() result (hours, daily summary, sessions)
  *   02b-alt-scoring-output.json — scoreAlternatives() result (alt locations, contenders)
- *   03-editorial-request.json   — prompt + context sent to AI providers
+ *   03-editorial-context.json   — scored context that feeds the editorial prompt builder
  *
  * Usage:
  *   node --loader ts-node/esm scripts/dump-pipeline.ts [snapshot-dir]
@@ -54,6 +54,45 @@ function extractJsonFromMd(filePath: string): unknown {
   } catch {
     return body; // raw text (XML etc.)
   }
+}
+
+/**
+ * Merge ECMWF supplement fields (boundary_layer_height, soil_temperature_0cm)
+ * into the primary weather object, aligning by timestamp.
+ * Mirrors the logic in src/adapters/n8n/build-score-input.adapter.ts.
+ */
+function mergeEcmwfSupplement(
+  weather: Record<string, any>,
+  ecmwf: Record<string, any> | null,
+): Record<string, any> {
+  if (!ecmwf) return weather;
+  const ecmwfTimes: string[] = ecmwf?.hourly?.time ?? [];
+  if (!ecmwfTimes.length) return weather;
+
+  const weatherTimes: string[] = weather?.hourly?.time ?? [];
+  if (!weatherTimes.length) return weather;
+
+  const ecmwfIdx: Record<string, number> = {};
+  ecmwfTimes.forEach((t: string, i: number) => { ecmwfIdx[t] = i; });
+
+  const fields = ['boundary_layer_height', 'soil_temperature_0cm'] as const;
+
+  for (const field of fields) {
+    const ecmwfValues: (number | null)[] | undefined = ecmwf?.hourly?.[field];
+    if (!ecmwfValues) continue;
+
+    const aligned: (number | null)[] = weatherTimes.map((t: string) => {
+      const idx = ecmwfIdx[t];
+      return idx != null ? (ecmwfValues[idx] ?? null) : null;
+    });
+
+    if (aligned.some(v => v != null)) {
+      if (!weather.hourly) weather.hourly = {};
+      weather.hourly[field] = aligned;
+    }
+  }
+
+  return weather;
 }
 
 function findLatestSnapshot(debugDir: string): string {
@@ -132,16 +171,19 @@ function main() {
   }
 
   const raw = {
-    weather:     loadFile('weather-ukmo'),
-    airQuality:  loadFile('air-quality'),
-    metar:       loadFile('metar'),
-    sunsetHue:   loadFile('sunsethue'),
-    precipProb:  loadFile('precip-prob'),
-    ensemble:    loadFile('ensemble'),
-    azimuth:     loadFile('azimuth'),
-    kpIndex:     loadFile('kp-index'),
-    auroraWatch: loadFile('aurorawatch'),
-    nasaDonki:   loadFile('nasa-donki'),
+    weather:          loadFile('weather-ukmo'),
+    airQuality:       loadFile('air-quality'),
+    metar:            loadFile('metar'),
+    sunsetHue:        loadFile('sunsethue'),
+    precipProb:       loadFile('precip-prob'),
+    ensemble:         loadFile('ensemble'),
+    azimuth:          loadFile('azimuth'),
+    kpIndex:          loadFile('kp-index'),
+    auroraWatch:      loadFile('aurorawatch'),
+    nasaDonki:        loadFile('nasa-donki'),
+    ecmwfSupplement:  loadFile('ecmwf'),
+    satellite:        loadFile('satellite-radiation'),
+    marine:           loadFile('marine'),
   };
 
   // ── Stage 1: Normalize (replicate adapter layer) ────────────────────────
@@ -151,7 +193,10 @@ function main() {
   const EMPTY_HOURLY = { hourly: { time: [] as string[] } };
   const EMPTY_WEATHER = { hourly: { time: [] as string[] }, daily: { sunrise: [] as string[], sunset: [] as string[], moonrise: [] as string[], moonset: [] as string[] } };
 
-  const weather     = raw.weather ?? EMPTY_WEATHER;
+  const weather     = mergeEcmwfSupplement(
+    { ...(raw.weather ?? EMPTY_WEATHER) } as Record<string, any>,
+    raw.ecmwfSupplement as Record<string, any> | null,
+  );
   const airQuality  = raw.airQuality ?? EMPTY_HOURLY;
   const metarRaw    = Array.isArray(raw.metar) ? raw.metar : [];
   const sunsetHueRaw = raw.sunsetHue as any;
@@ -161,6 +206,8 @@ function main() {
   const precipProb  = raw.precipProb ?? EMPTY_HOURLY;
   const ensemble    = raw.ensemble ?? EMPTY_HOURLY;
   const kpForecast  = parseKpRows(raw.kpIndex);
+  const nowcastSatellite = raw.satellite as any ?? undefined;
+  const marine      = raw.marine as any ?? undefined;
 
   // Aurora: parse from raw provider responses
   const nearTermAurora = parseAuroraWatchUK(raw.auroraWatch);
@@ -183,6 +230,8 @@ function main() {
     azimuthByPhase,
     kpForecast,
     auroraSignal,
+    nowcastSatellite: nowcastSatellite ?? null,
+    marine: marine ?? null,
   };
 
   writeStage(outDir, '01-normalized-inputs.json', normalizedInputs);
@@ -202,6 +251,8 @@ function main() {
     sunsetHue: sunsetHue as any,
     ensemble: ensemble as any,
     azimuthByPhase: azimuthByPhase as any,
+    nowcastSatellite: nowcastSatellite,
+    marine: marine,
   });
 
   // Extract the serializable parts (debugContext can be large)

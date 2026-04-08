@@ -34,9 +34,28 @@ Pipeline dump scores can diverge from production email scores by 10–15 points.
 
 These are inherent limitations of offline replay — the dump is best used for structural verification (are features non-null? do sessions fire?) rather than exact score matching against a specific email run.
 
+### Data sources loaded from snapshot
+
+| Snapshot file pattern | Field | Notes |
+|-----------------------|-------|-------|
+| `weather-ukmo` | `weather` | Merged with ECMWF supplement fields when present |
+| `ecmwf` | ECMWF supplement | Merges `boundary_layer_height` + `soil_temperature_0cm` into weather |
+| `satellite-radiation` | `nowcastSatellite` | Nowcast clearing signal for near-term hours (0–6h) |
+| `marine` | `marine` | Wave data; irrelevant for inland locations |
+| `air-quality` | `airQuality` | |
+| `metar` | `metarRaw` | |
+| `sunsethue` | `sunsetHue` | |
+| `precip-prob` | `precipProb` | |
+| `ensemble` | `ensemble` | |
+| `kp-index` | `kpForecast` | |
+| `aurorawatch` | aurora near-term | |
+| `nasa-donki` | aurora long-range | |
+
+Missing snapshot files produce a `⚠` warning but are handled gracefully (the field is omitted / treated as empty).
+
 ## snapshot-apis.sh
 
-Captures live API responses into a timestamped `debug/api-snapshot-*` directory for offline replay by `dump-pipeline.ts`. The snapshot covers 11 endpoints (items 01–11). A redundant 1-day long-range call for the representative alt-location was removed in #251 — the 5-day alt-weather response is a strict superset.
+Captures live API responses into a timestamped `debug/api-snapshot-*` directory for offline replay by `dump-pipeline.ts`. The snapshot covers 14 endpoints (items 01–14). A redundant 1-day long-range call for the representative alt-location was removed in #251 — the 5-day alt-weather response is a strict superset.
 
 ## esm-compat-loader.mjs
 
