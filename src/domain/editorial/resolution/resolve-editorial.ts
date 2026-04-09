@@ -178,7 +178,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
       fallbackUsed: selection.fallbackUsed,
       aiText,
       compositionBullets: resolvedComponents.compositionBullets,
-      weekInsight: resolvedComponents.weekStandout.text,
+      weekInsight: resolvedComponents.weekStandout.text ?? '',
       spurOfTheMoment: resolvedComponents.spurOfTheMoment,
       geminiInspire: safeGeminiInspire,
       rawFallbackResponse: groqResponse.rawText || undefined,
