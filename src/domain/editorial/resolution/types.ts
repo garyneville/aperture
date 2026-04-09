@@ -165,7 +165,7 @@ export type EditorialModelResponse = {
 export type EditorialCandidatePayload = {
   editorial: string;
   compositionBullets: string[];
-  weekInsight: string;
+  weekInsight: string | null;
   spurRaw: SpurRaw | null;
   /** Explicit parse result state - provider-neutral field */
   parseResult: EditorialParseResult;
@@ -232,7 +232,7 @@ export type EditorialCandidate = {
   rawContent: string;
   editorial: string;
   compositionBullets: string[];
-  weekInsight: string;
+  weekInsight: string | null;
   spurRaw: SpurRaw | null;
   parseResult: EditorialParseResult;
   weekStandoutRawValue: string | null;
@@ -246,7 +246,7 @@ export type EditorialCandidate = {
 export type WeekSummaryDay = NonNullable<BriefContext['dailySummary']>[number];
 
 export type WeekStandoutResolution = {
-  text: string;
+  text: string | null;
   used: boolean;
   decision: WeekStandoutDecision;
   hintAligned: boolean | null;
