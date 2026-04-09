@@ -103,6 +103,8 @@ export interface BuildDebugTraceInput {
   selection: CandidateSelectionResult;
   /** The final AI text used */
   finalAiText: string;
+  /** Whether the hardcoded generic template fallback was used (not time-aware) */
+  templateFallbackUsed: boolean;
   /** Provider gateway payload built at the runtime edge */
   editorialGateway: EditorialGatewayPayload;
   /** Primary rejection reason or null */
@@ -234,7 +236,7 @@ export function buildDebugAiTrace(input: BuildDebugTraceInput): DebugAiTrace {
     weekStandout,
     fallbackUsed: input.selection.fallbackUsed,
     modelFallbackUsed,
-    templateFallbackUsed: input.selection.fallbackUsed,
+    templateFallbackUsed: input.templateFallbackUsed,
     finalAiText: input.finalAiText,
   };
 }

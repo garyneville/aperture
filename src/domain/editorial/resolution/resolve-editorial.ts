@@ -29,7 +29,7 @@ import {
   chooseEditorialCandidate,
   summarizeCandidateRejection,
 } from './candidate-selection.js';
-import { buildFallbackAiText } from './fallbacks.js';
+import { buildFallbackAiText, buildFallbackResult } from './fallbacks.js';
 import { buildDebugAiTrace } from './build-debug-trace.js';
 import { resolveEditorialComponents } from './resolve-components.js';
 
@@ -70,7 +70,8 @@ export {
   chooseEditorialCandidate,
   summarizeCandidateRejection,
 } from './candidate-selection.js';
-export { buildFallbackAiText } from './fallbacks.js';
+export { buildFallbackAiText, buildFallbackResult } from './fallbacks.js';
+export type { FallbackResult } from './fallbacks.js';
 export { buildDebugAiTrace } from './build-debug-trace.js';
 export { resolveEditorialComponents } from './resolve-components.js';
 
@@ -121,9 +122,11 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   });
 
   // Step 4: Determine final AI text (selected candidate or fallback)
+  const fallbackResult = selectedCandidate ? null : buildFallbackResult(ctx);
   const aiText = selectedCandidate
     ? selectedCandidate.normalizedAiText
-    : buildFallbackAiText(ctx);
+    : fallbackResult!.text;
+  const templateFallbackUsed = fallbackResult?.isTemplateFallback ?? false;
 
   // Step 5: Process Gemini inspire
   const safeGeminiInspire = typeof geminiInspire === 'string' && geminiInspire.trim().length > 0
@@ -154,6 +157,7 @@ export function resolveEditorial(input: ResolveEditorialInput): ResolveEditorial
   const debugAiTrace = buildDebugAiTrace({
     selection,
     finalAiText: aiText,
+    templateFallbackUsed,
     editorialGateway,
     primaryRejectionReason,
     secondaryRejectionReason,

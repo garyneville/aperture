@@ -71,6 +71,7 @@ describe('buildDebugAiTrace', () => {
         fallbackUsed: false,
       },
       finalAiText: 'Final AI text',
+      templateFallbackUsed: false,
       editorialGateway: buildEditorialGatewayPayload({
         groqRawText: 'groq raw',
         groqDiagnostics: {
@@ -119,5 +120,128 @@ describe('buildDebugAiTrace', () => {
     expect(trace.geminiDiagnostics?.statusCode).toBe(200);
     expect(trace.groqDiagnostics?.statusCode).toBe(503);
     expect(trace.compositionBullets?.resolved).toEqual(['Resolved bullet']);
+  });
+
+  it('sets templateFallbackUsed=false when time-aware fallback is used (fallbackUsed=true)', () => {
+    const trace = buildDebugAiTrace({
+      selection: {
+        primaryProvider: 'primary',
+        selectedProvider: 'template',
+        primaryCandidate: null,
+        secondaryCandidate: null,
+        selectedCandidate: null,
+        componentCandidate: null,
+        fallbackUsed: true,
+      },
+      finalAiText: 'Local peak is around 04:00 in the overnight astro window.',
+      templateFallbackUsed: false,
+      editorialGateway: buildEditorialGatewayPayload({
+        groqRawText: '',
+        geminiRawText: '',
+      }),
+      primaryRejectionReason: 'empty response body',
+      secondaryRejectionReason: 'empty response body',
+      bestSpurRaw: null,
+      spurOfTheMoment: null,
+      rawCompositionCount: 0,
+      resolvedCompositionBullets: [],
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandoutHintCandidate: null,
+    });
+
+    // fallbackUsed is true because both providers failed
+    expect(trace.fallbackUsed).toBe(true);
+    // but templateFallbackUsed is false because time-aware fallback produced text
+    expect(trace.templateFallbackUsed).toBe(false);
+  });
+
+  it('sets templateFallbackUsed=true when generic template fallback is used', () => {
+    const trace = buildDebugAiTrace({
+      selection: {
+        primaryProvider: 'primary',
+        selectedProvider: 'template',
+        primaryCandidate: null,
+        secondaryCandidate: null,
+        selectedCandidate: null,
+        componentCandidate: null,
+        fallbackUsed: true,
+      },
+      finalAiText: 'No strong local photo window in Leeds today.',
+      templateFallbackUsed: true,
+      editorialGateway: buildEditorialGatewayPayload({
+        groqRawText: '',
+        geminiRawText: '',
+      }),
+      primaryRejectionReason: 'empty response body',
+      secondaryRejectionReason: 'empty response body',
+      bestSpurRaw: null,
+      spurOfTheMoment: null,
+      rawCompositionCount: 0,
+      resolvedCompositionBullets: [],
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandoutHintCandidate: null,
+    });
+
+    expect(trace.fallbackUsed).toBe(true);
+    expect(trace.templateFallbackUsed).toBe(true);
+  });
+
+  it('sets both fallbackUsed and templateFallbackUsed to false when a candidate is selected', () => {
+    const trace = buildDebugAiTrace({
+      selection: {
+        primaryProvider: 'primary',
+        selectedProvider: 'primary',
+        primaryCandidate: {
+          provider: 'groq',
+          rawContent: 'groq raw',
+          editorial: 'Editorial text',
+          compositionBullets: [],
+          weekInsight: null,
+          spurRaw: null,
+          parseResult: 'valid-structured',
+          weekStandoutRawValue: null,
+          normalizedAiText: 'Normalized text',
+          factualCheck: { passed: true, rulesTriggered: [] },
+          editorialCheck: { passed: true, rulesTriggered: [] },
+          passed: true,
+          reusableComponents: true,
+        },
+        secondaryCandidate: null,
+        selectedCandidate: {
+          provider: 'groq',
+          rawContent: 'groq raw',
+          editorial: 'Editorial text',
+          compositionBullets: [],
+          weekInsight: null,
+          spurRaw: null,
+          parseResult: 'valid-structured',
+          weekStandoutRawValue: null,
+          normalizedAiText: 'Normalized text',
+          factualCheck: { passed: true, rulesTriggered: [] },
+          editorialCheck: { passed: true, rulesTriggered: [] },
+          passed: true,
+          reusableComponents: true,
+        },
+        componentCandidate: null,
+        fallbackUsed: false,
+      },
+      finalAiText: 'Normalized text',
+      templateFallbackUsed: false,
+      editorialGateway: buildEditorialGatewayPayload({
+        groqRawText: 'groq raw',
+        geminiRawText: '',
+      }),
+      primaryRejectionReason: null,
+      secondaryRejectionReason: 'empty response body',
+      bestSpurRaw: null,
+      spurOfTheMoment: null,
+      rawCompositionCount: 0,
+      resolvedCompositionBullets: [],
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandoutHintCandidate: null,
+    });
+
+    expect(trace.fallbackUsed).toBe(false);
+    expect(trace.templateFallbackUsed).toBe(false);
   });
 });
