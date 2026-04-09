@@ -145,7 +145,7 @@ describe('buildDebugAiTrace', () => {
       spurOfTheMoment: null,
       rawCompositionCount: 0,
       resolvedCompositionBullets: [],
-      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false, note: null },
       weekStandoutHintCandidate: null,
     });
 
@@ -178,7 +178,7 @@ describe('buildDebugAiTrace', () => {
       spurOfTheMoment: null,
       rawCompositionCount: 0,
       resolvedCompositionBullets: [],
-      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false, note: null },
       weekStandoutHintCandidate: null,
     });
 
@@ -237,7 +237,7 @@ describe('buildDebugAiTrace', () => {
       spurOfTheMoment: null,
       rawCompositionCount: 0,
       resolvedCompositionBullets: [],
-      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false },
+      weekStandout: { text: null, used: false, decision: 'deterministic-used', hintAligned: false, note: null },
       weekStandoutHintCandidate: null,
     });
 
