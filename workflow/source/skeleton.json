@@ -171,7 +171,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; return JSON.stringify(structured ? { model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt }], temperature: 0.4, max_tokens: 4096, response_format: { type: 'json_schema', json_schema: { name: $json.responseSchemaName, strict: true, schema: $json.responseSchema } } } : { model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 4096, response_format: { type: 'json_object' } }); })() }}",
+        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; return JSON.stringify(structured ? { model: 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'system', content: $json.systemPrompt }, { role: 'user', content: $json.userPrompt }], temperature: 0.4, max_tokens: 4096, response_format: { type: 'json_schema', json_schema: { name: $json.responseSchemaName, strict: false, schema: $json.responseSchema } } } : { model: 'meta-llama/llama-4-scout-17b-16e-instruct', messages: [{ role: 'user', content: $json.prompt }], temperature: 0.4, max_tokens: 4096, response_format: { type: 'json_object' } }); })() }}",
         "options": {
           "response": {
             "response": {
@@ -1102,8 +1102,8 @@
         520
       ],
       "retryOnFail": true,
-      "maxTries": 2,
-      "waitBetweenTries": 3000,
+      "maxTries": 3,
+      "waitBetweenTries": 30000,
       "onError": "continueRegularOutput"
     },
     {
@@ -1138,6 +1138,21 @@
     },
     {
       "parameters": {
+        "amount": 60,
+        "unit": "seconds"
+      },
+      "id": "a1b2c3d4-0080-0080-0080-000000000080",
+      "name": "Wait: Inspire Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1650,
+        740
+      ],
+      "webhookId": "inspire-delay-webhook"
+    },
+    {
+      "parameters": {
         "method": "POST",
         "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=__GEMINI_API_KEY__",
         "sendBody": true,
@@ -1154,6 +1169,9 @@
         1760,
         740
       ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 30000,
       "onError": "continueRegularOutput"
     },
     {
@@ -1559,6 +1577,17 @@
       ]
     },
     "Code: Build Inspire Prompt": {
+      "main": [
+        [
+          {
+            "node": "Wait: Inspire Delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait: Inspire Delay": {
       "main": [
         [
           {

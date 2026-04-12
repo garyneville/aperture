@@ -1,0 +1,13 @@
+{
+  "editorial": "Arrive promptly as cloud cover drops to zero percent, offering a narrow window of clarity during the evening astro window (23:00). The window tops out at 61/100 overall despite a raw astro peak of 78/100 (23:00).",
+  "composition": [
+    "Long-exposure star trails centered on Polaris above the Leeds Town Hall clock tower to leverage the zero percent cloud cover.",
+    "Wide-field framing of the 59% moon illuminating the Victorian facades of Park Square, using the exceptional 32km visibility for crisp architectural detail."
+  ],
+  "weekStandout": "Today is the most reliable day of the week due to its high confidence and low spread compared to tomorrow's identical score.",
+  "spurOfTheMoment": {
+    "locationName": "Ribblehead Viaduct",
+    "hookLine": "Capture the iconic arches illuminated by the 59% moon against a backdrop of perfectly clear, high-visibility night skies.",
+    "confidence": 0.8
+  }
+}
