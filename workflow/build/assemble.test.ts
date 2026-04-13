@@ -761,7 +761,7 @@ describe('workflow assembly', () => {
     }]);
   });
 
-  it('assembles Gemini fallback extraction that preserves payload diagnostics through wrapped response shapes', async () => {
+  it('assembles Gemini editorial extraction that preserves payload diagnostics through wrapped response shapes', async () => {
     const workflowJson = await assembleWorkflow();
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
     tempDirs.push(tmpDir);
@@ -770,8 +770,8 @@ describe('workflow assembly', () => {
     writeWorkflow(workflowJson, outputPath);
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
-    const httpNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Gemini Fallback');
-    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Fallback');
+    const httpNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Gemini Editorial');
+    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Editorial');
     expect(httpNode).toBeTruthy();
     expect(extractNode).toBeTruthy();
     expect(httpNode.parameters.body).toContain('maxOutputTokens: 4096');
@@ -837,7 +837,7 @@ describe('workflow assembly', () => {
     }]);
   });
 
-  it('assembles Gemini fallback extraction that decodes buffered full-response bodies', async () => {
+  it('assembles Gemini editorial extraction that decodes buffered full-response bodies', async () => {
     const workflowJson = await assembleWorkflow();
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
     tempDirs.push(tmpDir);
@@ -846,7 +846,7 @@ describe('workflow assembly', () => {
     writeWorkflow(workflowJson, outputPath);
 
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
-    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Fallback');
+    const extractNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Extract Gemini Editorial');
     expect(extractNode).toBeTruthy();
 
     const fn = new Function('$', '$input', extractNode.parameters.jsCode);
@@ -918,7 +918,7 @@ describe('workflow assembly', () => {
     }]);
   });
 
-  it('assembles conditional editorial fallback routing after Groq inspection', async () => {
+  it('assembles parallel editorial routing with both Groq and Gemini', async () => {
     const workflowJson = await assembleWorkflow();
     const tmpDir = mkdtempSync(join(tmpdir(), 'photo-brief-'));
     tempDirs.push(tmpDir);
@@ -929,8 +929,8 @@ describe('workflow assembly', () => {
     const data = JSON.parse(readFileSync(outputPath, 'utf-8'));
     const groqNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Groq');
     const inspectNode = data.nodes.find((item: { name: string }) => item.name === 'Code: Inspect Groq Primary');
-    const ifNode = data.nodes.find((item: { name: string }) => item.name === 'If: Need Gemini Fallback');
     const routeNode = data.nodes.find((item: { name: string }) => item.name === 'Merge: Editorial Route');
+    const geminiEditorialNode = data.nodes.find((item: { name: string }) => item.name === 'HTTP: Gemini Editorial');
 
     expect(groqNode).toBeTruthy();
     expect(groqNode.parameters.options.response.response.fullResponse).toBe(true);
@@ -941,7 +941,7 @@ describe('workflow assembly', () => {
     expect(groqNode.parameters.body).toContain("content: $json.userPrompt");
     expect(groqNode.parameters.body).toContain('schema: $json.responseSchema');
     expect(inspectNode).toBeTruthy();
-    expect(ifNode).toBeTruthy();
+    expect(geminiEditorialNode).toBeTruthy();
     expect(routeNode).toBeTruthy();
     expect(routeNode.parameters.mode).toBe('append');
 
@@ -950,9 +950,8 @@ describe('workflow assembly', () => {
       expect.objectContaining({ node: 'HTTP: Groq', index: 0 }),
       expect.objectContaining({ node: 'Merge: Prompt + Groq', index: 0 }),
       expect.objectContaining({ node: 'If: Run Inspire', index: 0 }),
-    ]));
-    expect(buildPromptConnections).not.toEqual(expect.arrayContaining([
-      expect.objectContaining({ node: 'HTTP: Gemini Fallback' }),
+      expect.objectContaining({ node: 'Wait: Gemini Editorial Delay', index: 0 }),
+      expect.objectContaining({ node: 'Merge: Prompt + Gemini', index: 0 }),
     ]));
 
     const groqConnections = data.connections['HTTP: Groq']?.main?.[0] ?? [];
@@ -960,18 +959,14 @@ describe('workflow assembly', () => {
       expect.objectContaining({ node: 'Code: Inspect Groq Primary', index: 0 }),
     ]);
 
-    const mergeConnections = data.connections['Merge: Prompt + Groq']?.main?.[0] ?? [];
-    expect(mergeConnections).toEqual([
-      expect.objectContaining({ node: 'If: Need Gemini Fallback', index: 0 }),
+    const mergeGroqConnections = data.connections['Merge: Prompt + Groq']?.main?.[0] ?? [];
+    expect(mergeGroqConnections).toEqual([
+      expect.objectContaining({ node: 'Merge: Editorial Route', index: 0 }),
     ]);
 
-    const ifConnections = data.connections['If: Need Gemini Fallback']?.main ?? [];
-    expect(ifConnections[0]).toEqual([
-      expect.objectContaining({ node: 'HTTP: Gemini Fallback', index: 0 }),
-      expect.objectContaining({ node: 'Merge: Prompt + Gemini FB', index: 0 }),
-    ]);
-    expect(ifConnections[1]).toEqual([
-      expect.objectContaining({ node: 'Merge: Editorial Route', index: 0 }),
+    const mergeGeminiConnections = data.connections['Merge: Prompt + Gemini']?.main?.[0] ?? [];
+    expect(mergeGeminiConnections).toEqual([
+      expect.objectContaining({ node: 'Merge: Editorial Route', index: 1 }),
     ]);
 
     const inspectFn = new Function('$', '$input', inspectNode.parameters.jsCode);

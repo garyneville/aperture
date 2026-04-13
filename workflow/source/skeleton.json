@@ -226,23 +226,18 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "boolean": [
-            {
-              "value1": "={{ $json.groqFallbackRequired }}",
-              "value2": true
-            }
-          ]
-        }
+        "amount": 30,
+        "unit": "seconds"
       },
-      "id": "a1b2c3d4-0068-0068-0068-000000000068",
-      "name": "If: Need Gemini Fallback",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 1,
+      "id": "a1b2c3d4-0081-0081-0081-000000000081",
+      "name": "Wait: Gemini Editorial Delay",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
       "position": [
-        2420,
-        300
-      ]
+        1650,
+        520
+      ],
+      "webhookId": "gemini-editorial-delay-webhook"
     },
     {
       "parameters": {
@@ -251,7 +246,7 @@
         "options": {}
       },
       "id": "a1b2c3d4-0065-0065-0065-000000000065",
-      "name": "Merge: Prompt + Gemini FB",
+      "name": "Merge: Prompt + Gemini",
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3,
       "position": [
@@ -1083,7 +1078,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({ contents: [{ parts: [{ text: $json.prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 4096 } }) }}",
+        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; const body = { systemInstruction: { parts: [{ text: $json.systemPrompt || '' }] }, contents: [{ parts: [{ text: $json.userPrompt || $json.prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 4096, responseMimeType: 'application/json' } }; if (structured && $json.responseSchema) { body.generationConfig.responseSchema = $json.responseSchema; } return JSON.stringify(body); })() }}",
         "options": {
           "response": {
             "response": {
@@ -1094,7 +1089,7 @@
         }
       },
       "id": "a1b2c3d4-0060-0060-0060-000000000060",
-      "name": "HTTP: Gemini Fallback",
+      "name": "HTTP: Gemini Editorial",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
@@ -1113,7 +1108,7 @@
         "jsCode": "__ADAPTER_extract-gemini-fallback__"
       },
       "id": "a1b2c3d4-0061-0061-0061-000000000061",
-      "name": "Code: Extract Gemini Fallback",
+      "name": "Code: Extract Gemini Editorial",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -1550,26 +1545,47 @@
             "node": "If: Run Inspire",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "HTTP: Gemini Fallback": {
-      "main": [
-        [
+          },
           {
-            "node": "Code: Extract Gemini Fallback",
+            "node": "Wait: Gemini Editorial Delay",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge: Prompt + Gemini",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code: Extract Gemini Fallback": {
+    "Wait: Gemini Editorial Delay": {
       "main": [
         [
           {
-            "node": "Merge: Prompt + Gemini FB",
+            "node": "HTTP: Gemini Editorial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP: Gemini Editorial": {
+      "main": [
+        [
+          {
+            "node": "Code: Extract Gemini Editorial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code: Extract Gemini Editorial": {
+      "main": [
+        [
+          {
+            "node": "Merge: Prompt + Gemini",
             "type": "main",
             "index": 1
           }
@@ -1675,29 +1691,6 @@
       "main": [
         [
           {
-            "node": "If: Need Gemini Fallback",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If: Need Gemini Fallback": {
-      "main": [
-        [
-          {
-            "node": "HTTP: Gemini Fallback",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Merge: Prompt + Gemini FB",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
             "node": "Merge: Editorial Route",
             "type": "main",
             "index": 0
@@ -1705,7 +1698,7 @@
         ]
       ]
     },
-    "Merge: Prompt + Gemini FB": {
+    "Merge: Prompt + Gemini": {
       "main": [
         [
           {
