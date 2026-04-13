@@ -22,6 +22,10 @@ export function buildLocalWindowResponseSchema(): Record<string, unknown> {
     type: 'object',
     properties: {
       editorial: { type: 'string' },
+      windowExplanation: { type: 'string' },
+      sessionComparison: { type: 'string' },
+      nextDayBridge: { type: 'string' },
+      altLocationHook: { type: 'string' },
       composition: {
         type: 'array',
         minItems: 2,
@@ -44,7 +48,8 @@ export function buildLocalWindowResponseSchema(): Record<string, unknown> {
         additionalProperties: false,
       },
     },
-    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment',
+      'windowExplanation', 'sessionComparison', 'nextDayBridge', 'altLocationHook'],
     additionalProperties: false,
   };
 }
@@ -54,6 +59,9 @@ export function buildDontBotherResponseSchema(): Record<string, unknown> {
     type: 'object',
     properties: {
       editorial: { type: 'string' },
+      sessionComparison: { type: 'string' },
+      nextDayBridge: { type: 'string' },
+      altLocationHook: { type: 'string' },
       composition: {
         type: 'array',
         maxItems: 0,
@@ -75,7 +83,8 @@ export function buildDontBotherResponseSchema(): Record<string, unknown> {
         additionalProperties: false,
       },
     },
-    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+    required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment',
+      'sessionComparison', 'nextDayBridge', 'altLocationHook'],
     additionalProperties: false,
   };
 }
@@ -93,8 +102,12 @@ export function buildEditorialResponseContractText(p: ResponseContractParams): s
     ? '["<shot idea 1>","<shot idea 2>"]'
     : '[]';
 
+  const windowExplanationField = variant === 'local-window'
+    ? ',"windowExplanation":"<1 sentence ≤20 words: why this window scores well, referencing the key weather factor>"'
+    : '';
+
   return `Respond with ONLY a raw JSON object — no markdown, no code fences:
-{"editorial":${editorialField},"composition":${compositionField},"weekStandout":"${weekStandoutSchemaHint()}","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}`;
+{"editorial":${editorialField},"composition":${compositionField},"weekStandout":"${weekStandoutSchemaHint()}"${windowExplanationField},"sessionComparison":"<1 sentence ≤15 words: how today compares to the 5-day outlook>","nextDayBridge":"<1 sentence ≤15 words: tomorrow's outlook as a teaser>","altLocationHook":"<1 sentence ≤20 words: why the top alternative is worth considering, or empty if none>","spurOfTheMoment":{"locationName":"<exact name from list>","hookLine":"<1 sentence ≤25 words>","confidence":<0.0-1.0>}}`;
 }
 
 export interface SpurInstructionsParams {

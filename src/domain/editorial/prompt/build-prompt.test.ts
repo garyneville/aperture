@@ -179,10 +179,15 @@ describe('buildPrompt', () => {
     expect(result.responseSchemaName).toBe('photo_brief_editorial_response');
     expect(result.responseSchema).toMatchObject({
       type: 'object',
-      required: ['editorial', 'composition', 'weekStandout', 'spurOfTheMoment'],
+      required: expect.arrayContaining(['editorial', 'composition', 'weekStandout', 'spurOfTheMoment',
+        'windowExplanation', 'sessionComparison', 'nextDayBridge', 'altLocationHook']),
       additionalProperties: false,
       properties: {
         editorial: { type: 'string' },
+        windowExplanation: { type: 'string' },
+        sessionComparison: { type: 'string' },
+        nextDayBridge: { type: 'string' },
+        altLocationHook: { type: 'string' },
         composition: { type: 'array', items: { type: 'string' } },
         weekStandout: { type: 'string' },
         spurOfTheMoment: {

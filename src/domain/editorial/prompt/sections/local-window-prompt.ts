@@ -202,6 +202,12 @@ COMPOSITION (2 short bullet items):
 Suggest 2 concrete shot ideas for the best window. Each must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to these conditions.
 Avoid generic placeholders like "silhouetted landmark foreground" or "wide-field constellation framing" unless the supplied constraints explicitly support them.
 ${shotConstraints ? `\n${shotConstraints}\n` : ''}
+EXPANDED EDITORIAL FIELDS:
+windowExplanation: 1 sentence ≤20 words — the single key weather factor behind this window's score. Use only supplied data.
+sessionComparison: 1 sentence ≤15 words — how today compares to the 5-day outlook scores.
+nextDayBridge: 1 sentence ≤15 words — tease tomorrow's conditions from the 5-day data.
+altLocationHook: 1 sentence ≤20 words — why the top nearby alternative is worth the drive, or empty if none.
+
 ${buildWeekStandoutInstructions()}
 
 ${buildSpurInstructions({ homeLocationName, locationList: SPUR_LOCATION_NAMES })}
@@ -256,6 +262,12 @@ COMPOSITION RULES
 - Each idea must name a specific subject or foreground candidate plus a framing cue, direction, or technique suited to the supplied conditions.
 - Avoid generic placeholders unless the supplied constraints explicitly support them.
 - Respect the explicit shot constraints in the user message.
+
+EXPANDED EDITORIAL FIELDS
+- windowExplanation: 1 sentence, 20 words max. State the single most important weather factor that makes this window score well (e.g. "Cloud clearing from the west opens a 3-hour gap with visibility above 20 km."). Use only supplied data.
+- sessionComparison: 1 sentence, 15 words max. Compare today to the 5-day outlook using supplied day scores (e.g. "Best day this week — 12 points above the 5-day average.").
+- nextDayBridge: 1 sentence, 15 words max. Tease tomorrow's conditions from the 5-day data (e.g. "Cloud rolls in tomorrow — today is your window.").
+- altLocationHook: 1 sentence, 20 words max. If a nearby alternative scores meaningfully higher, explain why it is worth the drive. If none stand out, return an empty string.
 
 WEEK STANDOUT RULES
 ${buildWeekStandoutInstructions()}

@@ -74,6 +74,11 @@ EDITORIAL RULES
 COMPOSITION RULES
 - composition must be an empty array.
 
+EXPANDED EDITORIAL FIELDS
+- sessionComparison: 1 sentence, 15 words max. Compare today to the 5-day outlook using supplied day scores.
+- nextDayBridge: 1 sentence, 15 words max. Tease tomorrow's conditions from the 5-day data — give the reader hope or set expectations.
+- altLocationHook: 1 sentence, 20 words max. If a nearby alternative scores meaningfully higher, explain why it is worth the drive. If none stand out, return an empty string.
+
 WEEK STANDOUT RULES
 ${buildWeekStandoutInstructions()}
 

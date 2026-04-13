@@ -86,6 +86,8 @@ export interface BuildPromptOutput extends ScoredForecastContext {
   userPrompt: string;
   responseSchemaName: string;
   responseSchema: Record<string, unknown>;
+  /** Stable hash of scoring-critical inputs. Unchanged hash → LLM re-call can be skipped. */
+  scoringHash: string;
 }
 
 export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
@@ -257,12 +259,32 @@ export function buildPrompt(input: BuildPromptInput): BuildPromptOutput {
     }));
   }
 
+  // Build scoring hash from inputs that determine whether the LLM prompt would change.
+  // If the hash is identical to a previous run, the workflow can skip the LLM call.
+  // Uses a simple FNV-1a hash to avoid node:crypto dependency (n8n bundle constraint).
+  const hashInput = JSON.stringify({
+    dontBother: effectiveDontBother,
+    windows: windows.map(w => ({ label: w.label, start: w.start, end: w.end, peak: w.peak })),
+    todayBestScore,
+    moonPct,
+    peakKpTonight,
+    dailySummary: dailySummary.map(d => ({ dayLabel: d.dayLabel, photoScore: d.photoScore })),
+    altLocations: (altLocations || []).map(a => ({ name: a.name, bestScore: a.bestScore })),
+  });
+  let h = 0x811c9dc5;
+  for (let i = 0; i < hashInput.length; i++) {
+    h ^= hashInput.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  const scoringHash = (h >>> 0).toString(16).padStart(8, '0');
+
   return {
     prompt,
     systemPrompt,
     userPrompt,
     responseSchemaName: EDITORIAL_RESPONSE_SCHEMA_NAME,
     responseSchema: buildLocalWindowResponseSchema(),
+    scoringHash,
     dontBother: effectiveDontBother,
     windows,
     todayCarWash,

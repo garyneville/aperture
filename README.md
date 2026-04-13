@@ -57,9 +57,18 @@ Golden fixtures are located in `fixtures/golden/` and provide:
 
 See [`fixtures/golden/README.md`](./fixtures/golden/README.md) for details on available fixtures and when to update them.
 
-## Editorial Prompt Rollout
+## Editorial Pipeline
 
-The primary editorial request now supports two workflow modes:
+The workflow calls two LLM providers **in parallel** for editorial content:
+
+- **Gemini** (`gemini-3.1-flash-lite-preview`) — primary provider, called after a 30-second delay via a Wait node. Uses `systemInstruction`, `responseMimeType: 'application/json'`, and native `responseSchema` (with `additionalProperties` stripped automatically).
+- **Groq** (`meta-llama/llama-4-scout-17b-16e-instruct`) — secondary provider, called immediately. Uses `json_schema` response format with `strict: false`.
+
+Both responses are merged by position into a single payload. The app layer selects the preferred provider (Gemini by default, configured via `PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER`) and falls back to the other if validation fails. If both fail, a deterministic template fallback is used and the debug email subject is prefixed with `[DEGRADED]`.
+
+### Editorial Prompt Modes
+
+The editorial request supports two prompt modes:
 
 - `legacy-json` - existing single-prompt path with JSON-in-prompt instructions
 - `structured-output` - split `system` + `user` prompts plus Groq JSON Schema response enforcement
