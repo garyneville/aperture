@@ -229,6 +229,12 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'no further',
     'narrow window',
     'remaining local option',
+    'despite',
+    'due to',
+    'although',
+    'however',
+    'prime',
+    'light pollution',
   ].some(fragment => lower.includes(fragment));
 
   if (isSingleSentenceCardRestatement(aiText, ctx)) {

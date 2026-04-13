@@ -1078,7 +1078,7 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; const body = { systemInstruction: { parts: [{ text: $json.systemPrompt || '' }] }, contents: [{ parts: [{ text: $json.userPrompt || $json.prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 4096, responseMimeType: 'application/json' } }; if (structured && $json.responseSchema) { body.generationConfig.responseSchema = $json.responseSchema; } return JSON.stringify(body); })() }}",
+        "body": "={{ (() => { const structured = $json.editorialPromptMode === 'structured-output'; const strip = (o) => { if (Array.isArray(o)) return o.map(strip); if (o && typeof o === 'object') { const r = {}; for (const [k,v] of Object.entries(o)) { if (k !== 'additionalProperties') r[k] = strip(v); } return r; } return o; }; const body = { systemInstruction: { parts: [{ text: $json.systemPrompt || '' }] }, contents: [{ parts: [{ text: $json.userPrompt || $json.prompt }] }], generationConfig: { temperature: 0.4, maxOutputTokens: 4096, responseMimeType: 'application/json' } }; if (structured && $json.responseSchema) { body.generationConfig.responseSchema = strip($json.responseSchema); } return JSON.stringify(body); })() }}",
         "options": {
           "response": {
             "response": {
