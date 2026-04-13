@@ -25,16 +25,23 @@ builds the stable `editorialGateway` contract, then hands that to the app
 layer. Finalization orchestration does not live in adapter-only helper modules
 anymore.
 
-The workflow now inspects the Groq primary response before calling Gemini
-fallback. `inspect-groq-primary.adapter.ts` preserves the Groq `choices`
-payload for finalization, emits transport diagnostics, and flags clearly
-unusable primary results (HTTP error/rate limit, empty content, malformed
-structured output) so the workflow only pays for fallback when it needs to.
+The workflow calls both editorial providers in parallel:
+- **Groq** fires immediately after prompt construction
+- **Gemini** fires after a 30-second delay (via `Wait: Gemini Editorial Delay`)
+
+Both results arrive at `Merge: Editorial Route` (combine-by-position mode),
+which merges them into a single item containing Groq fields (`choices`,
+`groqStatusCode`, etc.) and Gemini fields (`geminiResponse`, `geminiStatusCode`,
+etc.). The app layer's `candidateSelection` logic then picks the preferred
+provider (Gemini by default) and falls back to the other if validation fails.
+
+`inspect-groq-primary.adapter.ts` preserves the Groq `choices`
+payload for finalization and emits transport diagnostics.
 
 `build-prompt.adapter.ts` now emits both prompt styles needed by the workflow:
 
 - legacy `prompt` for the existing JSON-in-prompt route
-- structured `systemPrompt` / `userPrompt` plus `responseSchema` metadata for the Groq schema-enforced route
+- structured `systemPrompt` / `userPrompt` plus `responseSchema` metadata for the Groq schema-enforced route and Gemini native structured output
 - `inspireEnabled` flag from the `PHOTO_BRIEF_INSPIRE_ENABLED` config (defaults to `true`)
 
 The workflow chooses between them with `editorialPromptMode` (`legacy-json` or `structured-output`). The default comes from the `PHOTO_BRIEF_EDITORIAL_PROMPT_MODE` secret and can be overridden per webhook request with `editorialPromptMode` in the body or query string.

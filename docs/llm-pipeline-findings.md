@@ -309,7 +309,59 @@ Follow the plan in `docs/openrouter-migration.md`:
 
 ---
 
-## 5. Execution Data Reference
+## 5. Resolution (13 April 2026)
+
+All three failure modes were resolved. The architecture was changed from sequential fallback to **parallel editorial calls**:
+
+### Changes made
+
+1. **Groq model swap**: `llama-3.3-70b-versatile` → `meta-llama/llama-4-scout-17b-16e-instruct` with `strict: false`
+2. **Gemini model swap**: `gemini-3-flash-preview` (20 RPD) → `gemini-3.1-flash-lite-preview` (500 RPD)
+3. **Parallel architecture**: Removed the conditional `If: Need Gemini Fallback` node. Both Groq and Gemini now fire in parallel after prompt construction. Gemini is delayed 30 seconds via `Wait: Gemini Editorial Delay` to avoid rate-limit collisions with Gemini Inspire.
+4. **Gemini native structured output**: Upgraded `HTTP: Gemini Editorial` to use `systemInstruction`, `responseMimeType: 'application/json'`, and native `responseSchema` (with `additionalProperties` stripped recursively, as Gemini rejects it).
+5. **Merge mode fix**: Changed `Merge: Editorial Route` from `append` to `combineByPosition` so both Groq and Gemini fields arrive in a single item to Format Messages.
+6. **Editorial validation**: Added insight keywords (`despite`, `due to`, `although`, `however`, `prime`, `light pollution`, `has passed`, `passed`, `no further`, `narrow window`) to prevent false rejections.
+7. **Gemini as primary**: `PHOTO_BRIEF_EDITORIAL_PRIMARY_PROVIDER=gemini` selects Gemini editorial when both pass validation.
+
+### Current architecture
+
+```
+Schedule: 06:30 Daily
+  → score weather, build prompt
+    ├── HTTP: Groq (parallel)
+    │     → Code: Inspect Groq Primary
+    │       → Merge: Prompt + Groq
+    │         → Merge: Editorial Route (input 0)
+    │
+    ├── Wait: Gemini Editorial Delay (30s)
+    │     → HTTP: Gemini Editorial
+    │       → Code: Extract Gemini Editorial
+    │         → Merge: Prompt + Gemini
+    │           → Merge: Editorial Route (input 1)
+    │
+    └── If: Run Inspire
+          → Wait: Inspire Delay (30s)
+            → HTTP: Gemini Inspire
+```
+
+`Merge: Editorial Route` combines by position → single item with all fields → `Merge: Prompt Context` → `Code: Format Messages` → app layer selects provider.
+
+### Post-fix execution status
+
+| Exec | Date | Groq | Gemini Editorial | Selected | Status |
+|------|------|------|-----------------|----------|--------|
+| 2142 | Apr 13 15:46 | ✅ 200 | ❌ 400 (additionalProperties) | groq (template fallback) | [DEGRADED] — schema bug |
+| 2144 | Apr 13 16:24 | ✅ 200 | ❌ empty (pre-fix deploy) | groq | Clean |
+| 2145 | Apr 13 16:36 | ✅ 200 | ✅ 200 (1304 bytes) | groq (append merge bug) | Clean |
+| 2146 | Apr 13 16:52 | ✅ 200 | ✅ 200 (1304 bytes, 215 tokens) | **gemini** | Clean ✅ |
+
+### Phase 2 status
+
+The OpenRouter migration (Option C) is no longer urgent since both providers are working reliably. It remains a future option for consolidation.
+
+---
+
+## 6. Execution Data Reference
 
 ### Execution status matrix
 
