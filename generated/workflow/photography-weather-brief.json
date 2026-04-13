@@ -256,7 +256,9 @@
     },
     {
       "parameters": {
-        "mode": "append"
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
       },
       "id": "a1b2c3d4-0069-0069-0069-000000000069",
       "name": "Merge: Editorial Route",

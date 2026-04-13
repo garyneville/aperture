@@ -943,7 +943,8 @@ describe('workflow assembly', () => {
     expect(inspectNode).toBeTruthy();
     expect(geminiEditorialNode).toBeTruthy();
     expect(routeNode).toBeTruthy();
-    expect(routeNode.parameters.mode).toBe('append');
+    expect(routeNode.parameters.mode).toBe('combine');
+    expect(routeNode.parameters.combineBy).toBe('combineByPosition');
 
     const buildPromptConnections = data.connections['Code: Build Prompt']?.main?.[0] ?? [];
     expect(buildPromptConnections).toEqual(expect.arrayContaining([
