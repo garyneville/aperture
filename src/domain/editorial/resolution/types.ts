@@ -156,6 +156,14 @@ export type EditorialModelResponse = {
     hookLine: string;
     confidence: number;
   };
+  /** Why this window scores well — key weather factor */
+  windowExplanation?: string;
+  /** How today compares to the 5-day outlook */
+  sessionComparison?: string;
+  /** Tomorrow's outlook teaser */
+  nextDayBridge?: string;
+  /** Why the top alt location is worth considering */
+  altLocationHook?: string;
 };
 
 /**
@@ -170,6 +178,14 @@ export type EditorialCandidatePayload = {
   /** Explicit parse result state - provider-neutral field */
   parseResult: EditorialParseResult;
   weekStandoutRawValue: string | null;
+  /** Why this window scores well */
+  windowExplanation: string | null;
+  /** How today compares to 5-day outlook */
+  sessionComparison: string | null;
+  /** Tomorrow's outlook teaser */
+  nextDayBridge: string | null;
+  /** Why the top alt location is worth considering */
+  altLocationHook: string | null;
 };
 
 
@@ -236,6 +252,10 @@ export type EditorialCandidate = {
   spurRaw: SpurRaw | null;
   parseResult: EditorialParseResult;
   weekStandoutRawValue: string | null;
+  windowExplanation: string | null;
+  sessionComparison: string | null;
+  nextDayBridge: string | null;
+  altLocationHook: string | null;
   normalizedAiText: string;
   factualCheck: DebugAiCheck;
   editorialCheck: DebugAiCheck;

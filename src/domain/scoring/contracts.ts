@@ -178,6 +178,7 @@ export interface ScoredHour {
   diffuseRadiationWm2?: number | null;
   soilTemperature0cmC?: number | null;
   comfort: string;
+  comfortDetail: string | null;
   nowcastSignal?: NowcastSignal | null;
 }
 

@@ -177,6 +177,10 @@ export interface BriefRenderInput {
   aiText: string;
   compositionBullets?: string[];
   weekInsight?: string;
+  windowExplanation?: string;
+  sessionComparison?: string;
+  nextDayBridge?: string;
+  altLocationHook?: string;
   peakKpTonight?: number | null;
   auroraSignal?: AuroraSignal | null;
   longRangeTop?: LongRangeCard | null;

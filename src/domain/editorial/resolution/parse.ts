@@ -73,6 +73,24 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
         ? parsedRecord.weekStandout.trim()
         : null;
 
+      // Extract optional expanded editorial fields
+      const windowExplanation = typeof parsedRecord.windowExplanation === 'string'
+        && parsedRecord.windowExplanation.trim().length > 0
+        ? parsedRecord.windowExplanation.trim()
+        : null;
+      const sessionComparison = typeof parsedRecord.sessionComparison === 'string'
+        && parsedRecord.sessionComparison.trim().length > 0
+        ? parsedRecord.sessionComparison.trim()
+        : null;
+      const nextDayBridge = typeof parsedRecord.nextDayBridge === 'string'
+        && parsedRecord.nextDayBridge.trim().length > 0
+        ? parsedRecord.nextDayBridge.trim()
+        : null;
+      const altLocationHook = typeof parsedRecord.altLocationHook === 'string'
+        && parsedRecord.altLocationHook.trim().length > 0
+        ? parsedRecord.altLocationHook.trim()
+        : null;
+
       // Determine if the structured response was actually valid
       const hasValidEditorial = typeof parsedRecord.editorial === 'string';
       const parseResult: EditorialParseResult = hasValidEditorial ? 'valid-structured' : 'malformed-structured';
@@ -90,6 +108,10 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
         spurRaw,
         parseResult,
         weekStandoutRawValue,
+        windowExplanation,
+        sessionComparison,
+        nextDayBridge,
+        altLocationHook,
       };
     }
   } catch {
@@ -103,6 +125,10 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
       spurRaw: null,
       parseResult,
       weekStandoutRawValue: null,
+      windowExplanation: null,
+      sessionComparison: null,
+      nextDayBridge: null,
+      altLocationHook: null,
     };
   }
 
@@ -116,6 +142,10 @@ export function parseEditorialResponse(rawContent: string): EditorialCandidatePa
     spurRaw: null,
     parseResult,
     weekStandoutRawValue: null,
+    windowExplanation: null,
+    sessionComparison: null,
+    nextDayBridge: null,
+    altLocationHook: null,
   };
 }
 

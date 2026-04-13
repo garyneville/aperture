@@ -25,6 +25,10 @@ export interface ResolveEditorialComponentsOutput {
   compositionBullets: string[];
   weekStandout: WeekStandoutResolution;
   weekStandoutHintCandidate: Pick<EditorialCandidate, 'parseResult' | 'weekStandoutRawValue'> | null;
+  windowExplanation: string | null;
+  sessionComparison: string | null;
+  nextDayBridge: string | null;
+  altLocationHook: string | null;
 }
 
 function pickBestSpurRaw(selection: CandidateSelectionResult): SpurRaw | null {
@@ -49,7 +53,34 @@ function pickWeekStandoutHintCandidate(
           ?? null;
 }
 
-function pickRawCompositionBullets(selection: CandidateSelectionResult): string[] {
+
+function pickStringField(
+  field: 'windowExplanation' | 'sessionComparison' | 'nextDayBridge' | 'altLocationHook',
+  selection: CandidateSelectionResult,
+  preferProvider?: 'groq' | 'gemini',
+): string | null {
+  // If a preferred provider is specified, try that candidate first
+  if (preferProvider) {
+    const preferred = [selection.primaryCandidate, selection.componentCandidate, selection.secondaryCandidate]
+      .find(c => c?.provider === preferProvider);
+    if (preferred?.[field]) return preferred[field];
+  }
+  // Fall back to best-available ordering
+  return selection.primaryCandidate?.[field]
+    || selection.componentCandidate?.[field]
+    || selection.secondaryCandidate?.[field]
+    || null;
+}
+
+function pickRawCompositionBulletsWithPreference(
+  selection: CandidateSelectionResult,
+  preferProvider?: 'groq' | 'gemini',
+): string[] {
+  if (preferProvider) {
+    const preferred = [selection.primaryCandidate, selection.componentCandidate, selection.secondaryCandidate]
+      .find(c => c?.provider === preferProvider && c.compositionBullets?.length);
+    if (preferred?.compositionBullets?.length) return preferred.compositionBullets;
+  }
   return (
     (selection.componentCandidate?.compositionBullets?.length ? selection.componentCandidate.compositionBullets : null)
     ?? (selection.primaryCandidate?.compositionBullets?.length
@@ -74,7 +105,7 @@ export function resolveEditorialComponents(
 
   const bestSpurRaw = pickBestSpurRaw(selection);
   const spurOfTheMoment = resolveSpurSuggestion(bestSpurRaw, nearbyAltNames, longRangePool);
-  const rawCompositionBullets = pickRawCompositionBullets(selection);
+  const rawCompositionBullets = pickRawCompositionBulletsWithPreference(selection, 'groq');
   const weekStandoutHintCandidate = pickWeekStandoutHintCandidate(selection);
 
   return {
@@ -88,5 +119,11 @@ export function resolveEditorialComponents(
       ctx.dailySummary,
     ),
     weekStandoutHintCandidate,
+    // Narrative fields — prefer Gemini (stronger reasoning)
+    windowExplanation: pickStringField('windowExplanation', selection, 'gemini'),
+    sessionComparison: pickStringField('sessionComparison', selection, 'gemini'),
+    nextDayBridge: pickStringField('nextDayBridge', selection, 'gemini'),
+    // Creative field — prefer Groq (faster, punchier hooks)
+    altLocationHook: pickStringField('altLocationHook', selection, 'groq'),
   };
 }

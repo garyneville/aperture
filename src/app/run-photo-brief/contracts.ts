@@ -51,6 +51,14 @@ export interface EditorialDecision {
   weekInsight: string;
   spurOfTheMoment?: SpurSuggestion | null;
   geminiInspire?: string;
+  /** Why this window scores well */
+  windowExplanation?: string;
+  /** How today compares to 5-day outlook */
+  sessionComparison?: string;
+  /** Tomorrow's outlook teaser */
+  nextDayBridge?: string;
+  /** Why the top alt location is worth considering */
+  altLocationHook?: string;
   // Renamed to slot role naming
   rawFallbackResponse?: string;
   rawPrimaryResponse?: string;

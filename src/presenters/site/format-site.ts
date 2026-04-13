@@ -231,9 +231,13 @@ export function formatSite(input: FormatEmailInput): string {
   const weekInsightCard = weekInsight
     ? sCard(`<p class="card-body">${weekInsight}</p>`, { accentSide: 'left', accentColor: C.tertiary })
     : '';
+  const nextDayBridgeCard = input.nextDayBridge
+    ? sCard(`<p class="card-body">\ud83d\udd2e ${input.nextDayBridge}</p>`, { accentSide: 'left', accentColor: C.secondary })
+    : '';
   sections.push(`<div class="section-group">
     ${sSection('Days ahead')}
     ${weekInsightCard}
+    ${nextDayBridgeCard}
     ${sPhotoForecastCards(dailySummary)}
   </div>`);
 

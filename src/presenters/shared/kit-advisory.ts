@@ -28,6 +28,7 @@ interface KitRuleParams {
   moonPct: number;
   astroWindow: Window | undefined;
   astroWindowIsPrimary: boolean;
+  primaryWindowRange: string | null;
 }
 
 interface KitRule {
@@ -63,13 +64,14 @@ function bestAstroWindow(windows: Window[]): Window | undefined {
 }
 
 function buildKitTipText(ruleId: string, params: KitRuleParams): string {
+  const windowCtx = params.primaryWindowRange ? ` during ${params.primaryWindowRange}` : '';
   switch (ruleId) {
     case 'high-wind':
-      return 'High wind: ballast your tripod or avoid long exposures; shoot parallel to gusts.';
+      return `High wind (${Math.round(params.windKmh)} km/h${windowCtx}): ballast your tripod or avoid long exposures; shoot parallel to gusts.`;
     case 'rain-risk':
-      return 'Rain expected: verify weather sealing on body and lens; pack a microfibre cloth for the front element.';
+      return `Rain expected (${Math.round(params.rainPct)}%${windowCtx}): verify weather sealing on body and lens; pack a microfibre cloth for the front element.`;
     case 'fog-mist':
-      return 'Low visibility: telephoto compression will look great; switch to manual focus and bracket exposures.';
+      return `Low visibility (${Math.round(params.visibilityKm!)} km${windowCtx}): telephoto compression will look great; switch to manual focus and bracket exposures.`;
     case 'astro-window': {
       const astroWindow = params.astroWindow;
       const windowLabel = astroWindow
@@ -79,9 +81,9 @@ function buildKitTipText(ruleId: string, params: KitRuleParams): string {
       return `${windowLabel}: fastest wide-aperture lens; intervalometer for star trails; red torch to preserve night vision.${darkPhaseNote}`;
     }
     case 'cold':
-      return 'Near-freezing: battery performance drops - carry spares in an inside pocket.';
+      return `Near-freezing (${params.tempC !== undefined ? Math.round(params.tempC) + '°C' : 'sub-zero'}${windowCtx}): battery performance drops — carry spares in an inside pocket.`;
     case 'high-moisture':
-      return 'High dew risk: atmospheric moisture may cause lens fogging - let glass acclimatise before shooting.';
+      return `High dew risk (moisture ${params.tpwMm !== undefined ? Math.round(params.tpwMm) + 'mm' : 'elevated'}${windowCtx}): atmospheric moisture may cause lens fogging — let glass acclimatise before shooting.`;
     default:
       return '';
   }
@@ -118,6 +120,7 @@ function buildKitRuleParams(
     moonPct,
     astroWindow,
     astroWindowIsPrimary: Boolean(astroWindow && astroWindow === topWindow),
+    primaryWindowRange: topWindow ? windowRange(topWindow) : null,
   };
 }
 

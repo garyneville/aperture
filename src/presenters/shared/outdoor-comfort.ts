@@ -18,13 +18,15 @@ export {
   outdoorComfortScore,
 } from '../../lib/outdoor-comfort.js';
 
-import { outdoorComfortText, RUN_FRIENDLY_THRESHOLDS } from '../../lib/outdoor-comfort.js';
+import { outdoorComfortText, outdoorComfortDetail, RUN_FRIENDLY_THRESHOLDS } from '../../lib/outdoor-comfort.js';
+import type { ComfortWeatherInput } from '../../lib/outdoor-comfort.js';
 
 /**
  * Comfort label with styling information.
  */
 export interface ComfortLabel {
   text: string;
+  detail: string | null;
   fg: string;
   bg: string;
   highlight: boolean;
@@ -42,19 +44,21 @@ export function outdoorComfortLabel(
   score: number,
   h: Pick<NextDayHour, 'wind' | 'tmp' | 'pp'>,
   hour?: string,
+  fullWeather?: ComfortWeatherInput,
 ): ComfortLabel {
   const text = outdoorComfortText(score, h, hour);
+  const detail = fullWeather ? outdoorComfortDetail(score, fullWeather) : null;
 
   if (score >= 75) {
-    return { text, fg: C.success, bg: C.successContainer, highlight: true };
+    return { text, detail, fg: C.success, bg: C.successContainer, highlight: true };
   }
   if (score >= 55) {
-    return { text, fg: C.secondary, bg: C.secondaryContainer, highlight: true };
+    return { text, detail, fg: C.secondary, bg: C.secondaryContainer, highlight: true };
   }
   if (score >= 35) {
-    return { text, fg: C.muted, bg: C.surfaceVariant, highlight: false };
+    return { text, detail, fg: C.muted, bg: C.surfaceVariant, highlight: false };
   }
-  return { text, fg: C.error, bg: C.errorContainer, highlight: false };
+  return { text, detail, fg: C.error, bg: C.errorContainer, highlight: false };
 }
 
 /**

@@ -135,3 +135,41 @@ export function outdoorComfortText(
   if (score >= 35) return 'Acceptable';
   return 'Poor conditions';
 }
+
+/**
+ * Return a short micro-explanation of the dominant comfort factor.
+ * e.g. "Wind 28 km/h", "Rain 65%", "2°C".
+ * Returns null when score is comfortable and no single factor dominates.
+ */
+export function outdoorComfortDetail(
+  score: number,
+  h: ComfortWeatherInput,
+): string | null {
+  if (score >= 75) return null;
+
+  const factors: { label: string; penalty: number }[] = [];
+  const cfg = COMFORT_SCORE_CONFIG;
+
+  if (h.pp > cfg.rain.heavy.threshold) factors.push({ label: `Rain ${Math.round(h.pp)}%`, penalty: cfg.rain.heavy.penalty });
+  else if (h.pp > cfg.rain.moderate.threshold) factors.push({ label: `Rain ${Math.round(h.pp)}%`, penalty: cfg.rain.moderate.penalty });
+
+  if (h.wind > cfg.wind.extreme.threshold) factors.push({ label: `Wind ${Math.round(h.wind)} km/h`, penalty: cfg.wind.extreme.penalty });
+  else if (h.wind > cfg.wind.strong.threshold) factors.push({ label: `Wind ${Math.round(h.wind)} km/h`, penalty: cfg.wind.strong.penalty });
+  else if (h.wind > cfg.wind.moderate.threshold) factors.push({ label: `Wind ${Math.round(h.wind)} km/h`, penalty: cfg.wind.moderate.penalty });
+
+  if (h.tmp < cfg.temperature.freezing.threshold) factors.push({ label: `${Math.round(h.tmp)}°C`, penalty: cfg.temperature.freezing.penalty });
+  else if (h.tmp < cfg.temperature.cold.threshold) factors.push({ label: `${Math.round(h.tmp)}°C`, penalty: cfg.temperature.cold.penalty });
+  else if (h.tmp > cfg.temperature.hot.threshold) factors.push({ label: `${Math.round(h.tmp)}°C`, penalty: cfg.temperature.hot.penalty });
+
+  if (h.visK < cfg.visibility.veryPoor.threshold) factors.push({ label: `Vis ${h.visK.toFixed(1)} km`, penalty: cfg.visibility.veryPoor.penalty });
+  else if (h.visK < cfg.visibility.poor.threshold) factors.push({ label: `Vis ${h.visK.toFixed(1)} km`, penalty: cfg.visibility.poor.penalty });
+
+  if (h.pr > cfg.precipitation.heavy.threshold) factors.push({ label: `Precip ${h.pr.toFixed(1)} mm`, penalty: cfg.precipitation.heavy.penalty });
+  else if (h.pr > cfg.precipitation.moderate.threshold) factors.push({ label: `Precip ${h.pr.toFixed(1)} mm`, penalty: cfg.precipitation.moderate.penalty });
+
+  if (factors.length === 0) return null;
+
+  // Return the dominant factor (highest penalty)
+  factors.sort((a, b) => b.penalty - a.penalty);
+  return factors.slice(0, 2).map(f => f.label).join(' · ');
+}
