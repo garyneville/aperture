@@ -224,6 +224,10 @@ export function getEditorialCheck(aiText: string, ctx: BriefContext): DebugAiChe
     'alternative',
     'earlier today',
     'already passed',
+    'has passed',
+    'passed',
+    'no further',
+    'narrow window',
     'remaining local option',
   ].some(fragment => lower.includes(fragment));
 
