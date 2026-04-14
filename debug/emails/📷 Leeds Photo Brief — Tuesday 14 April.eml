@@ -1,0 +1,3152 @@
+Delivered-To: callmecheez@gmail.com
+Received: by 2002:a05:7011:e17:b0:500:be29:5701 with SMTP id hw23csp201986mdb;
+        Mon, 13 Apr 2026 23:34:45 -0700 (PDT)
+X-Received: by 2002:a17:903:40ca:b0:2b2:42da:25cd with SMTP id d9443c01a7336-2b2d5a88d7bmr171039715ad.45.1776148485627;
+        Mon, 13 Apr 2026 23:34:45 -0700 (PDT)
+ARC-Seal: i=1; a=rsa-sha256; t=1776148485; cv=none;
+        d=google.com; s=arc-20240605;
+        b=cviEQrQBUXcdQ9zW5Zp5d73LT1WaqIFfNJwOzg8t4VPpMUzh1qURkHbwI4xlcLHoZj
+         W2zj/RXVjoAitgry0wdsWnpHIuV2fFgQwLS8lTDc387dhGbwB9Nw872N/kA+uIWx7N6M
+         eduZ0CvvQnRahzM9jhvQFxpWe5EyS8nQmFwMeCP5AWNwwUvI/D5FAH0ASeUt1BO519Pt
+         iLIf4AeiQqWDwl5dshdzwBi72aPsZ9QpvLZ0KgINj5htVBzmrEVvJgEPts9zZOprSEPL
+         RmS2dE7j2a2apDN+tKqrEgkKKoJI+QKcWcCU59cfc2yaqaJMRz+30bWbRSBh89IyWBQ4
+         ObgA==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:mime-version:from:date:dkim-signature
+         :dkim-signature;
+        bh=vNpj/cARFBPze3re6vIKYOTNVq5iSvEXs+1KxOcPqg4=;
+        fh=xwU8udoSBcdX/v8z/F+Wi5IszATn3Ymh89Nf1ZSspd0=;
+        b=SiD+nIS6jx4R7RQLvjYJ7U9ZNJQK1KlWBG59jR+YuQ3gPLwsrG2ac9C+riqTIGZIfc
+         R9XGIXCb+w3czK0Dvd4eEXXkbcf44etricDXYYcL3BhC/wnQHJU/FKTkVSqmPPMpN5QX
+         RV9R1f+0ywBAyXImVZAls8DnN+zurysGVtSYzrh7TQTaChfl57HsSbMrFwy5HbAyWCWW
+         q8NAN8gFaX3OFZa5cojI6a5LumiP8PT2h8w6iEo1eKvM411zEasoyQ11rQf3tnX9vcO8
+         Acfbvb/jzBwD6P3uoWMwScnA8BGbZr9iHtwyroaBM25KrzFC029Spd5VzZUuak8Q+MDm
+         mIHA==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com;
+       dkim=pass header.i=@highburys.uk header.s=s1 header.b=LoUQU5Iv;
+       dkim=pass header.i=@sendgrid.info header.s=smtpapi header.b=kJvY0ZUx;
+       spf=pass (google.com: domain of bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk designates 167.89.83.9 as permitted sender) smtp.mailfrom="bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk"
+Return-Path: <bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk>
+Received: from xtrwrphw.outbound-mail.sendgrid.net (xtrwrphw.outbound-mail.sendgrid.net. [167.89.83.9])
+        by mx.google.com with ESMTPS id d9443c01a7336-2b46a80fe8asi32034965ad.75.2026.04.13.23.34.44
+        for <callmecheez@gmail.com>
+        (version=TLS1_3 cipher=TLS_AES_128_GCM_SHA256 bits=128/128);
+        Mon, 13 Apr 2026 23:34:45 -0700 (PDT)
+Received-SPF: pass (google.com: domain of bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk designates 167.89.83.9 as permitted sender) client-ip=167.89.83.9;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@highburys.uk header.s=s1 header.b=LoUQU5Iv;
+       dkim=pass header.i=@sendgrid.info header.s=smtpapi header.b=kJvY0ZUx;
+       spf=pass (google.com: domain of bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk designates 167.89.83.9 as permitted sender) smtp.mailfrom="bounces+7587209-d028-callmecheez=gmail.com@em8854.highburys.uk"
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=highburys.uk;
+	h=content-type:date:from:mime-version:subject:to:cc:content-type:date:
+	feedback-id:from:subject:to;
+	s=s1; t=1776148484; bh=vNpj/cARFBPze3re6vIKYOTNVq5iSvEXs+1KxOcPqg4=;
+	b=LoUQU5IvFq2Um/uG6oPUOydVsABkFZ/oy/FLBy6k+RGrA7np/lmv2fm9hQWaDSCQxfyn
+	gfIO6XoGV0IyYkJFEJB2MkBPWeexudnQJ9hoaDxoA6yWe9VxS3fUT+CARtZanpl442A4BI
+	T/MdlNzGWhlUAiPjgh2pZ8t9rIjAJVkRn9VbjH4E837d4aNg3kEVV0kE0WHGR21++Cel/R
+	ob9NEogxvsDPjxiITJqGv/QXaWiYP3FFVrXoKgsdPfZ8u4VQ1fOGGLovq7u8o00UD1cF9i
+	cw1abgZdMQVCCd8Rc3mhxbEaDotUuwGoANDS+VkpW0jPPMBuAwPrErVUXoigEBjg==
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=sendgrid.info;
+	h=content-type:date:from:mime-version:subject:to:cc:content-type:date:
+	feedback-id:from:subject:to;
+	s=smtpapi; t=1776148484; bh=vNpj/cARFBPze3re6vIKYOTNVq5iSvEXs+1KxOcPqg4=;
+	b=kJvY0ZUxGOOqsQyTe8tldu7nb/EudqbFzJHGFBVjitp4sDvCFKQbdhUWJ354ePrNoEgm
+	XS8+bKzH7B04HKYCjFYLzGLIzkWO4WqNisHPntN4UxgE50ctZN54pbsNWxQvf+AhnSc15Y
+	t72g8kmhz81IdQ2EwILLk/qt6iP5BIx7A=
+Received: by recvd-6d84ff477d-n8xch with SMTP id recvd-6d84ff477d-n8xch-1-69DDE003-19
+	2026-04-14 06:34:43.996708073 +0000 UTC m=+341444.021990674
+Received: from NzU4NzIwOQ (unknown)
+	by geopod-ismtpd-13 (SG) with HTTP
+	id h9WDaNeEQCm6qxMBdgQpXw
+	Tue, 14 Apr 2026 06:34:43.639 +0000 (UTC)
+Content-Type: multipart/alternative; boundary=9d8b574f5cab477e1b0a9cc44e0530ca6b464691a0dfd97b370a83f5860b
+Date: Tue, 14 Apr 2026 06:34:44 +0000 (UTC)
+From: Photo Brief <octopus-bot@highburys.uk>
+Mime-Version: 1.0
+Message-ID: <h9WDaNeEQCm6qxMBdgQpXw@geopod-ismtpd-13>
+Subject: =?UTF-8?B?8J+TtyBMZWVkcyBQaG90byBCcmllZiDigJQ=?= Tuesday 14 April
+X-SG-EID: 
+ =?us-ascii?Q?u001=2Ehpb21+WseCESWJhp5GFLrn2HIu387kTu6DoPPL5l6c1gnUmiW72ySS2=2Fu?=
+ =?us-ascii?Q?qMkxGrvD0l9QQWAoG8covj51PERi+Bri1zt+gks?=
+ =?us-ascii?Q?1B8tQatUN0v0f5ceXD3H4FhlZp8D6nPKCLDbE54?=
+ =?us-ascii?Q?BlCKxFayQg9QEeErDL6=2F3pUG3JvkBEzBe6t9B2p?=
+ =?us-ascii?Q?QIuiXW9axQy3Gwj1G2jizDI2LilbPn2bvOUNa7y?=
+ =?us-ascii?Q?ZaMbhLe0h0YWfhW4ot3lZUK18BvLjrTSiDWpvei?= =?us-ascii?Q?Iikt?=
+To: callmecheez@gmail.com
+X-Entity-ID: u001.1Dvm9Hxwdgj8pWIUdin37A==
+
+--9d8b574f5cab477e1b0a9cc44e0530ca6b464691a0dfd97b370a83f5860b
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0
+
+=F0=9F=93=B7 Leeds Photo Brief =E2=80=94 Tuesday 14 April
+=F0=9F=8C=85 06:07  =F0=9F=8C=87 20:05  =F0=9F=8C=99 11% moon
+=F0=9F=8E=A8 Hue rise 41%  set 0% (Poor)  =E2=98=80=EF=B8=8F 287=C2=B0  =F0=
+=9F=8C=9F Rays 75/100
+=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=
+=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80
+=F0=9F=94=A5 Best long-exposure session  06:00  [100/100]  [best chance]
+   =E2=98=81=EF=B8=8F 0%hi  =F0=9F=91=81 8.9km  =F0=9F=92=A8 3  =F0=9F=8C=
+=A7 0%  =F0=9F=8C=9F Rays 75/100
+   long exposure
+
+=F0=9F=92=AC The 06:00 long-exposure session offered exceptional conditions=
+ with partly cloudy skies and calm winds. Although the window has passed, i=
+ts high confidence and crepuscular ray potential made it a prime opportunit=
+y.
+=F0=9F=92=A1 Cloud clearing and calm winds made the 06:00 session exception=
+al.
+=F0=9F=94=AE Cloud rolls in tomorrow =E2=80=94 today is your window.
+
+=F0=9F=93=8D Other places to consider today:
+=F0=9F=8C=8C Mam Tor 60min =E2=80=94 [80/100] astrophotography
+=F0=9F=8C=8C Ladybower Reservoir 65min =E2=80=94 [80/100] astrophotography
+=F0=9F=8C=8C Sutton Bank 75min =E2=80=94 [75/100] astrophotography =E2=AD=
+=90 dark sky
+=F0=9F=8C=8C Bolton Abbey 35min =E2=80=94 [73/100] astrophotography
+=F0=9F=8C=8C Brimham Rocks 40min =E2=80=94 [73/100] astrophotography
+=F0=9F=8C=8C Stanage Edge 65min =E2=80=94 [73/100] astrophotography
+=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=
+=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80
+=F0=9F=8C=8D Weekend opportunity
+=F0=9F=94=A5 Ullswater [86/100] Lake District =C2=B7 127min =C2=B7 astro fr=
+om 01:00
+=F0=9F=8C=8C Dark sky alert: Castlerigg Stone Circle =E2=80=94 astro 83/100=
+ from 01:00 (141min)
+
+=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=
+=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80=E2=94=
+=80=E2=94=80=E2=94=80=E2=94=80=E2=94=80
+=F0=9F=93=85 Days Ahead
+=F0=9F=9F=A1 Tomorrow   40 =E2=96=88=E2=96=88=E2=96=91=E2=96=91=E2=96=91 =
+=E2=98=8010 =F0=9F=8C=8740 =F0=9F=8C=8C33~  =F0=9F=93=8DMam
+=E2=9C=85 Thursday   60 =E2=96=88=E2=96=88=E2=96=88=E2=96=91=E2=96=91 =E2=
+=98=8042 =F0=9F=8C=8735 =F0=9F=8C=8C77~  =F0=9F=93=8DBolton
+=E2=9D=8C Friday     32 =E2=96=88=E2=96=88=E2=96=91=E2=96=91=E2=96=91 =E2=
+=98=8036 =F0=9F=8C=8731 =F0=9F=8C=8C29~
+=F0=9F=9F=A1 Saturday   49 =E2=96=88=E2=96=88=E2=96=91=E2=96=91=E2=96=91 =
+=E2=98=8028 =F0=9F=8C=8753 =F0=9F=8C=8C 0~
+
+=F0=9F=9A=97 Car Wash Forecast
+=E2=9C=85 Tomorrow  Great  09:00=E2=80=9311:00  =F0=9F=92=A8 13kmh =F0=9F=
+=8C=A4 21%
+=E2=9C=85 Thursday  Great  17:00=E2=80=9319:00  =F0=9F=92=A8 15kmh =E2=98=
+=80=EF=B8=8F  6%
+=E2=9C=85 Friday    Great  07:00=E2=80=9309:00  =F0=9F=92=A8 13kmh =E2=98=
+=80=EF=B8=8F  8%
+=E2=9C=85 Saturday  Great  07:00=E2=80=9309:00  =F0=9F=92=A8  7kmh =E2=98=
+=80=EF=B8=8F  0%
+--9d8b574f5cab477e1b0a9cc44e0530ca6b464691a0dfd97b370a83f5860b
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/html; charset=utf-8
+Mime-Version: 1.0
+
+<!doctype html>
+<html lang=3D"en" dir=3D"auto" xmlns=3D"http://www.w3.org/1999/xhtml" xmlns=
+:v=3D"urn:schemas-microsoft-com:vml" xmlns:o=3D"urn:schemas-microsoft-com:o=
+ffice:office">
+  <head>
+    <title>Aperture</title>
+    <!--[if !mso]><!-->
+    <meta http-equiv=3D"X-UA-Compatible" content=3D"IE=3Dedge">
+    <!--<![endif]-->
+    <meta http-equiv=3D"Content-Type" content=3D"text/html; charset=3DUTF-8=
+">
+    <meta name=3D"viewport" content=3D"width=3Ddevice-width, initial-scale=
+=3D1">
+    <style type=3D"text/css">
+      #outlook a { padding:0; }
+      body { margin:0;padding:0;-webkit-text-size-adjust:100%;-ms-text-size=
+-adjust:100%; }
+      table, td { border-collapse:collapse;mso-table-lspace:0pt;mso-table-r=
+space:0pt; }
+      img { border:0;height:auto;line-height:100%; outline:none;text-decora=
+tion:none;-ms-interpolation-mode:bicubic; }
+      p { display:block;margin:13px 0; }
+    </style>
+    <!--[if mso]>
+    <noscript>
+    <xml>
+    <o:OfficeDocumentSettings>
+      <o:AllowPNG/>
+      <o:PixelsPerInch>96</o:PixelsPerInch>
+    </o:OfficeDocumentSettings>
+    </xml>
+    </noscript>
+    <![endif]-->
+    <!--[if lte mso 11]>
+    <style type=3D"text/css">
+      .mj-outlook-group-fix { width:100% !important; }
+    </style>
+    <![endif]-->
+   =20
+   =20
+    <style type=3D"text/css">
+      @media only screen and (min-width:480px) {
+        .mj-column-per-100 { width:100% !important; max-width: 100%; }
+      }
+    </style>
+    <style media=3D"screen and (min-width:480px)">
+      .moz-text-html .mj-column-per-100 { width:100% !important; max-width:=
+ 100%; }
+    </style>
+   =20
+   =20
+ =20
+   =20
+    =20
+    <style type=3D"text/css">
+.card-shell > table,
+      .hero-shell > table {
+        box-shadow: 0 1px 3px rgba(26, 22, 20, 0.10), 0 1px 2px rgba(31, 35=
+, 40, 0.06) !important;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #0C0A08 !important;
+        }
+
+        .card-shell > table {
+          background: #1A1612 !important;
+          border-color: #2E2822 !important;
+          box-shadow: none !important;
+        }
+
+        .hero-shell > table {
+          background: #100E0C !important;
+          border-color: #2E2822 !important;
+          box-shadow: none !important;
+        }
+
+        [style*=3D"color:#1A1614"] {
+          color: #F0EBE3 !important;
+        }
+
+        [style*=3D"color:#685E56"],
+        [style*=3D"color:#706A63"] {
+          color: #A89E96 !important;
+        }
+
+        [style*=3D"color:#1D4ED8"] {
+          color: #93C5FD !important;
+        }
+      }
+    </style>
+    <meta name=3D"color-scheme" content=3D"light dark" />
+      <meta name=3D"supported-color-schemes" content=3D"light dark" />
+      <meta name=3D"x-apple-disable-message-reformatting" />
+  </head>
+  <body style=3D"word-spacing:normal;background-color:#FAF9F6;">
+   =20
+   =20
+      <div
+         aria-label=3D"Aperture" aria-roledescription=3D"email" style=3D"ba=
+ckground-color:#FAF9F6;" role=3D"article" lang=3D"en" dir=3D"auto"
+      >
+       =20
+     =20
+      <!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D=
+"0" cellspacing=3D"0" class=3D"" role=3D"presentation" style=3D"width:520px=
+;" width=3D"520" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-h=
+eight-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  style=3D"margin:0px auto;max-width:520px;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"width:100%;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"direction:ltr;font-size:0px;padding:16px 12px;tex=
+t-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:496px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:0;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td><!--[if mso | IE]><table align=3D"center" border=3D"0" ce=
+llpadding=3D"0" cellspacing=3D"0" class=3D"hero-shell-outlook" role=3D"pres=
+entation" style=3D"width:520px;" width=3D"520" bgcolor=3D"#100E0C" ><tr><td=
+ style=3D"line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![e=
+ndif]-->
+   =20
+     =20
+      <div  class=3D"hero-shell" style=3D"background:#100E0C;background-col=
+or:#100E0C;margin:0px auto;max-width:520px;border-radius:16px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#100E0C;background-color:#100E0=
+C;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #2E2822;border-radius:16px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;"><div style=3D"background:linear-grad=
+ient(160deg, #100e0c 0%, #1c1713 100%);border-color:rgba(255,255,255,0.08);=
+">
+  <table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=
+=3D"0">
+    <tr>
+      <td valign=3D"middle">
+        <span style=3D"color:#e07b2a;margin-right:8px;vertical-align:middle=
+;"><svg xmlns=3D"http://www.w3.org/2000/svg" width=3D"22" height=3D"22" vie=
+wBox=3D"0 0 22 22" aria-hidden=3D"true" style=3D"vertical-align:middle;disp=
+lay:inline-block;"><circle cx=3D"11" cy=3D"11" r=3D"9.5" fill=3D"none" stro=
+ke=3D"currentColor" stroke-width=3D"2"/><circle cx=3D"11" cy=3D"11" r=3D"3.=
+5" fill=3D"currentColor"/></svg></span><span style=3D"font-family:'DM Sans'=
+, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Ar=
+ial, sans-serif;font-size:12px;font-weight:700;letter-spacing:0.12em;text-t=
+ransform:uppercase;color:#FFFFFF;vertical-align:middle;">Aperture</span>
+      </td>
+      <td align=3D"right" valign=3D"middle">
+        <span style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystem=
+Font, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;=
+font-weight:400;color:rgba(255,255,255,0.38);">Leeds</span>
+      </td>
+    </tr>
+  </table>
+  <div style=3D"height:1px;background:rgba(255,255,255,0.10);margin:14px 0 =
+16px;"></div>
+  <table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=
+=3D"0">
+    <tr>
+      <td width=3D"38%" valign=3D"top">
+        <div class=3D"hero-score" style=3D"font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:64px;font-weight:700;line-height:1;letter-spacing:-0.04em;co=
+lor:#e07b2a;">42</div>
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:10px;f=
+ont-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:rgba(25=
+5,255,255,0.35);margin-top:4px;">/ 100</div>
+      </td>
+      <td valign=3D"top" style=3D"padding-left:16px;border-left:1px solid r=
+gba(255,255,255,0.10);">
+        <div class=3D"hero-title" style=3D"font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:17px;font-weight:700;line-height:1.2;letter-spacing:0.02em;t=
+ext-transform:uppercase;color:#FFFFFF;">Marginal</div>
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:13px;f=
+ont-weight:600;line-height:1.5;color:rgba(255,255,255,0.70);margin-top:8px;=
+"><span style=3D"font-weight:400;color:rgba(255,255,255,0.40);">Earlier tod=
+ay:</span><br>Best long-exposure session<br><span style=3D"font-weight:400;=
+color:rgba(255,255,255,0.45);font-size:12px;">06:00</span></div>
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;c=
+olor:rgba(255,255,255,0.38);margin-top:10px;">Tuesday 14 April</div>
+      </td>
+    </tr>
+  </table>
+  <div style=3D"height:1px;background:rgba(255,255,255,0.10);margin:16px 0;=
+"></div>
+  <div style=3D"border-radius:8px;background:rgba(255,255,255,0.07);border:=
+1px solid rgba(255,255,255,0.10);overflow:hidden;"><table role=3D"presentat=
+ion" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" style=3D"width:100%=
+;border-collapse:separate;border-spacing:0;">
+   =20
+      <tr>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Sunrise</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">06:07</=
+div>
+            </div>
+          </td>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;border-left:1px s=
+olid rgba(255,255,255,0.2);">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Sunset</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">20:05</=
+div>
+            </div>
+          </td>
+       =20
+       =20
+      </tr>
+   =20
+      <tr>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Moon</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">Crescen=
+t =C2=B7 11% lit</div>
+            </div>
+          </td>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;border-left:1px s=
+olid rgba(255,255,255,0.2);">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Certainty</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">High ce=
+rtainty =C2=B7 spread 9 pts</div>
+            </div>
+          </td>
+       =20
+       =20
+      </tr>
+   =20
+  </table></div>
+  <div style=3D"Margin-top:5px;padding:0 2px;font-family:'DM Sans', -apple-=
+system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans=
+-serif;font-size:11px;color:rgba(255,255,255,0.36);"><svg width=3D"14" heig=
+ht=3D"14" style=3D"vertical-align:middle;" xmlns=3D"http://www.w3.org/2000/=
+svg" viewBox=3D"0 0 512 512"><path fill=3D"none" stroke=3D"#e5e7eb" stroke-=
+dasharray=3D"16.9 56.2" stroke-linecap=3D"round" stroke-linejoin=3D"round" =
+stroke-width=3D"17.4" d=3D"M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 2=
+49.3 0 256a128 128 0 00128-128Z"/></svg> Dark skies =E2=80=94 excellent for=
+ astrophotography</div>
+  <div style=3D"Margin-top:8px;border-radius:8px;background:rgba(255,255,25=
+5,0.07);border:1px solid rgba(255,255,255,0.10);overflow:hidden;"><table ro=
+le=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"0" styl=
+e=3D"width:100%;border-collapse:separate;border-spacing:0;">
+   =20
+      <tr>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">AM light</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">42/100<=
+/div>
+            </div>
+          </td>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;border-left:1px s=
+olid rgba(255,255,255,0.2);">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">PM light</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">39/100<=
+/div>
+            </div>
+          </td>
+       =20
+       =20
+      </tr>
+   =20
+      <tr>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Peak astro</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">30/100<=
+/div>
+            </div>
+          </td>
+       =20
+          <td valign=3D"top" style=3D"width:50%;padding:0;border-left:1px s=
+olid rgba(255,255,255,0.2);">
+            <div style=3D"padding:10px 12px;">
+              <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:r=
+gba(255,255,255,0.7);">Best time</div>
+              <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-sy=
+stem, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-s=
+erif;font-size:15px;font-weight:600;line-height:1.3;color:#FFFFFF;">06:00</=
+div>
+            </div>
+          </td>
+       =20
+       =20
+      </tr>
+   =20
+  </table></div>
+  <div style=3D"height:1px;background:rgba(255,255,255,0.10);margin:14px 0 =
+10px;"></div>
+  <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFont, '=
+Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;line-he=
+ight:1.55;color:rgba(255,255,255,0.60);">Best long-exposure session: 06:00 =
+at 100/100 was the strongest local window earlier today. No local photo win=
+dow remains today.</div>
+  <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFont, '=
+Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-he=
+ight:1.5;color:rgba(255,255,255,0.38);margin-top:5px;">Best nearby astro al=
+ternative: Mam Tor =C2=B7 80/100 =C2=B7 60 min drive =C2=B7 astro from 01:0=
+0</div>
+  </div></td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:8px;line-height:8px;font-size:8px;">&nbsp;</td></tr><tr><td><t=
+able role=3D"presentation" width=3D"100%" cellpadding=3D"0" cellspacing=3D"=
+0" style=3D"width:100%;border-collapse:collapse;background:#f4efe8;border-r=
+adius:10px;">
+    <tr>
+      <td style=3D"padding:10px 14px;">
+        <table role=3D"presentation" width=3D"100%" cellpadding=3D"0" cells=
+pacing=3D"0">
+          <tr>
+            <td valign=3D"middle">
+              <span style=3D"font-family:'DM Sans', -apple-system, BlinkMac=
+SystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size=
+:10px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:=
+#706a63;">Daylight utility</span>
+              <span style=3D"font-family:'DM Sans', -apple-system, BlinkMac=
+SystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size=
+:13px;font-weight:600;color:#1a1614;margin-left:10px;"><span aria-hidden=3D=
+"true">&#x1F697; / &#x1F6B6;</span> 08:00=E2=80=9310:00</span>
+            </td>
+            <td align=3D"right" valign=3D"middle">
+              <span class=3D"pill" style=3D"display:inline-block;padding:4p=
+x 12px;border-radius:20px;background:#d1fae5;border:1px solid #A3D9B1;font-=
+family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans=
+', Helvetica, Arial, sans-serif;font-size:12px;font-weight:600;line-height:=
+1.4;color:#047857;">=E2=9C=85 Great</span>
+            </td>
+          </tr>
+          <tr>
+            <td colspan=3D"2" style=3D"padding-top:7px;">
+              <span class=3D"chip" style=3D"display:inline-block;margin:2px=
+ 4px 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px =
+solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Se=
+goe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-heig=
+ht:1.3;color:#1a1614;"><span style=3D"font-weight:600;color:#7c3aed;">Wind<=
+/span> 5km/h</span>
+              <span class=3D"chip" style=3D"display:inline-block;margin:2px=
+ 4px 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px =
+solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Se=
+goe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-heig=
+ht:1.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">Rain<=
+/span> 0%</span>
+              <span class=3D"chip" style=3D"display:inline-block;margin:2px=
+ 4px 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px =
+solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Se=
+goe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-heig=
+ht:1.3;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Temp<=
+/span> 5=C2=B0C</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table></td></tr><tr><td style=3D"height:8px;line-height:8px;font-size:8=
+px;">&nbsp;</td></tr><tr><td><!--[if mso | IE]><table align=3D"center" bord=
+er=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"card-shell-outlook" r=
+ole=3D"presentation" style=3D"width:520px;" width=3D"520" bgcolor=3D"#FFFFF=
+F" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-height-rule:exa=
+ctly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+      <div style=3D"Margin:0 0 4px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;=
+color:#706a63;">Twilight signal</div>
+      <div class=3D"headline" style=3D"Margin:0;font-family:'DM Sans', -app=
+le-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, s=
+ans-serif;font-size:16px;font-weight:600;line-height:1.3;color:#1a1614;">Su=
+nsetHue outlook</div>
+      <div style=3D"Margin-top:10px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#7c3aed;">Sunrise</sp=
+an> 41%</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#7c3aed;">Sunset</spa=
+n> 0%</span>
+      </div>
+      <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system, B=
+linkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fo=
+nt-size:13px;line-height:1.5;color:#685e56;">
+        Poor Sun direction 287 degrees. Rays 75/100.
+      </div>
+    </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr><tr><td=
+><!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"" role=3D"presentation" style=3D"width:520px;" wi=
+dth=3D"520" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-height=
+-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  style=3D"margin:0px auto;max-width:520px;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"width:100%;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"direction:ltr;font-size:0px;padding:0;text-align:=
+center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:520px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:0;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+         =20
+              <tr>
+                <td
+                   align=3D"left" style=3D"font-size:0px;padding:0 0 12px 0=
+;word-break:break-word;"
+                >
+                 =20
+      <div
+         style=3D"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-siz=
+e:13px;line-height:1;text-align:left;color:#000000;"
+      ><div style=3D"Margin:0;font-family:DM Sans, -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:u=
+ppercase;color:#1A1614;padding-left:11px;border-left:3px solid #E07B2A;">To=
+day&#39;s window</div></div>
+   =20
+                </td>
+              </tr>
+           =20
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td><!-=
+-[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" cells=
+pacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=3D"wi=
+dth:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height=
+:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+    <div style=3D"Margin:0 0 4px;font-family:'DM Sans', -apple-system, Blin=
+kMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-=
+size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;co=
+lor:#706a63;">Earlier today</div>
+    <div class=3D"headline" style=3D"Margin:0;font-family:'DM Sans', -apple=
+-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, san=
+s-serif;font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0.0=
+1em;color:#1a1614;">Best long-exposure session</div>
+    <div style=3D"Margin:4px 0 0;font-family:'DM Sans', -apple-system, Blin=
+kMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-=
+size:14px;line-height:1.4;color:#685e56;">06:00</div>
+    <div style=3D"Margin-top:10px;"><span class=3D"pill" style=3D"display:i=
+nline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:1=
+px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, =
+'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-w=
+eight:600;line-height:1.4;color:#047857;">Excellent - 100/100</span></div>
+    <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system, Bli=
+nkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font=
+-size:13px;line-height:1.5;color:#1a1614;"><span style=3D"display:inline;co=
+lor:#1a1614;"><span style=3D"font-weight:600;color:#2563eb;">Cloud high</sp=
+an> 0%</span><span style=3D"color:#706a63;padding:0 2px;"> &middot; </span>=
+<span style=3D"display:inline;color:#1a1614;"><span style=3D"font-weight:60=
+0;color:#047857;">Visibility</span> 8.9km</span><span style=3D"color:#706a6=
+3;padding:0 2px;"> &middot; </span><span style=3D"display:inline;color:#1a1=
+614;"><span style=3D"font-weight:600;color:#7c3aed;">Wind</span> 3km/h</spa=
+n><span style=3D"color:#706a63;padding:0 2px;"> &middot; </span><span style=
+=3D"display:inline;color:#1a1614;"><span style=3D"font-weight:600;color:#99=
+1b1b;">Rain</span> 0%</span><span style=3D"color:#706a63;padding:0 2px;"> &=
+middot; </span><span style=3D"display:inline;color:#1a1614;"><span style=3D=
+"font-weight:600;color:#047857;">Dew risk</span> Moderate</span></div>
+    <div style=3D"Margin-top:10px;"><span class=3D"chip" style=3D"display:i=
+nline-block;margin:2px 4px 2px 0;padding:3px 8px;border-radius:6px;backgrou=
+nd:#f4efe8;border:1px solid #e2d9cf;font-family:'DM Sans', -apple-system, B=
+linkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fo=
+nt-size:11px;line-height:1.3;color:#1a1614;"><span style=3D"font-weight:600=
+;color:#2563eb;">long exposure</span> </span></div>
+    <div style=3D"Margin-top:10px;padding-top:12px;border-top:1px solid #e2=
+d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', =
+'Noto Sans', Helvetica, Arial, sans-serif;font-size:13px;line-height:1.5;co=
+lor:#685e56;">Most promising narrow stretch rather than a clean standout wi=
+ndow. Crepuscular ray potential: 75/100 (light shafts through broken cloud)=
+.</div>
+  </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--><div style=3D"height:=
+6px;line-height:6px;font-size:6px;">&nbsp;</div><!--[if mso | IE]><table al=
+ign=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"ca=
+rd-shell-outlook" role=3D"presentation" style=3D"width:520px;" width=3D"520=
+" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height:0px;font-size:0px;mso-l=
+ine-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+      <div style=3D"Margin:0 0 8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;=
+color:#706a63;">AI briefing</div>
+      <p style=3D"Margin:0 0 10px;font-family:'DM Sans', -apple-system, Bli=
+nkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font=
+-size:14px;line-height:1.6;color:#1a1614;">Best long-exposure session 06:00=
+ was the strongest local window earlier today. No local photo window remain=
+s today.</p>
+    </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr><tr><td=
+><!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"" role=3D"presentation" style=3D"width:520px;" wi=
+dth=3D"520" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-height=
+-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  style=3D"margin:0px auto;max-width:520px;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"width:100%;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"direction:ltr;font-size:0px;padding:0;text-align:=
+center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:520px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:0;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+         =20
+              <tr>
+                <td
+                   align=3D"left" style=3D"font-size:0px;padding:0 0 12px 0=
+;word-break:break-word;"
+                >
+                 =20
+      <div
+         style=3D"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-siz=
+e:13px;line-height:1;text-align:left;color:#000000;"
+      ><div style=3D"Margin:0;font-family:DM Sans, -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:u=
+ppercase;color:#1A1614;padding-left:11px;border-left:3px solid #E07B2A;">Ou=
+t of town options</div></div>
+   =20
+                </td>
+              </tr>
+           =20
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td><!-=
+-[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" cells=
+pacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=3D"wi=
+dth:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height=
+:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+    <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;font-=
+weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#706a63;Mar=
+gin:0 0 10px;">Nearby astro options</div>
+    <div style=3D"padding:0 0 10px;border-bottom:1px solid #e2d9cf;margin-b=
+ottom:10px;">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Mam Tor</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 80/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+6</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 2=
+5</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 80</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Elev</span>=
+ 517m</span>
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - best 01:00 - 60 min dri=
+ve</div>
+     =20
+    </div><div style=3D"padding:0 0 10px;border-bottom:1px solid #e2d9cf;ma=
+rgin-bottom:10px;">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Ladybower Reservoir</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 80/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+8</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 2=
+8</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 80</span>
+       =20
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - best 01:00 - 65 min dri=
+ve</div>
+     =20
+    </div><div style=3D"padding:0 0 10px;border-bottom:1px solid #e2d9cf;ma=
+rgin-bottom:10px;">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Sutton Bank</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 75/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+8</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 2=
+4</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 75</span>
+       =20
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - dark sky - best 03:00 -=
+ 75 min drive</div>
+     =20
+    </div><div style=3D"padding:0 0 10px;border-bottom:1px solid #e2d9cf;ma=
+rgin-bottom:10px;">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Bolton Abbey</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 73/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+5</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 1=
+8</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 73</span>
+       =20
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - best 03:00 - 35 min dri=
+ve</div>
+     =20
+    </div><div style=3D"padding:0 0 10px;border-bottom:1px solid #e2d9cf;ma=
+rgin-bottom:10px;">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Brimham Rocks</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 73/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+5</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 1=
+7</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 73</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Elev</span>=
+ 320m</span>
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - best 03:00 - 40 min dri=
+ve</div>
+     =20
+    </div><div style=3D"">
+      <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemFon=
+t, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;fon=
+t-weight:600;line-height:1.3;color:#1a1614;">Stanage Edge</div>
+      <div style=3D"Margin-top:8px;"><span class=3D"pill" style=3D"display:=
+inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border:=
+1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont,=
+ 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font-=
+weight:600;line-height:1.4;color:#047857;">Excellent - 73/100</span></div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 2=
+9</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#92400e;">PM</span> 3=
+6</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 73</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Elev</span>=
+ 457m</span>
+      </div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#685e56;">Astro - best 03:00 - 65 min dri=
+ve</div>
+     =20
+    </div>
+  </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:12px;line-height:12px;font-size:12px;">&nbsp;</td></tr><tr><td=
+><!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=
+=3D"width:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-=
+height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;"><div style=3D"border-top:3px solid #=
+047857;">
+      <div style=3D"Margin:0 0 4px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;=
+color:#706a63;">Long-range opportunity</div>
+      <div class=3D"headline" style=3D"Margin:0;font-family:'DM Sans', -app=
+le-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, s=
+ans-serif;font-size:18px;font-weight:600;line-height:1.24;letter-spacing:-0=
+.01em;color:#1a1614;">Ullswater</div>
+      <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:14px;line-height:1.4;color:#685e56;">Lake District &middot; 145m &mi=
+ddot; 127 min drive</div>
+      <div style=3D"Margin-top:10px;"><span class=3D"pill" style=3D"display=
+:inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border=
+:1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont=
+, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font=
+-weight:600;line-height:1.4;color:#047857;">Excellent - 86/100 astro</span>=
+</div>
+      <div style=3D"Margin-top:8px;">
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span> 3=
+0</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span> 2=
+5</span>
+        <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px 2=
+px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px solid =
+#e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI=
+', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1.3=
+;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</span=
+> 86</span>
+      </div>
+      <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system, B=
+linkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fo=
+nt-size:13px;line-height:1.5;color:#685e56;">Best astro around 01:00</div>
+      <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:13px;line-height:1.5;color:#047857;">Long drive - leave by ~22:53 fo=
+r the 01:00 astro window.</div>
+    </div></td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--><div style=3D"height:=
+6px;line-height:6px;font-size:6px;">&nbsp;</div><!--[if mso | IE]><table al=
+ign=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"ca=
+rd-shell-outlook" role=3D"presentation" style=3D"width:520px;" width=3D"520=
+" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height:0px;font-size:0px;mso-l=
+ine-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+      <div style=3D"Margin:0 0 4px;font-family:'DM Sans', -apple-system, Bl=
+inkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fon=
+t-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;=
+color:#706a63;">Dark sky alert</div>
+      <div class=3D"headline" style=3D"Margin:0;font-family:'DM Sans', -app=
+le-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, s=
+ans-serif;font-size:16px;font-weight:600;line-height:1.3;color:#1a1614;">Ca=
+stlerigg Stone Circle</div>
+      <div style=3D"Margin-top:10px;"><span class=3D"pill" style=3D"display=
+:inline-block;padding:4px 12px;border-radius:20px;background:#d1fae5;border=
+:1px solid #A3D9B1;font-family:'DM Sans', -apple-system, BlinkMacSystemFont=
+, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:12px;font=
+-weight:600;line-height:1.4;color:#047857;">Astro 83/100</span></div>
+      <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system, B=
+linkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;fo=
+nt-size:13px;line-height:1.5;color:#685e56;">
+        Perfect conditions tonight from 01:00 &middot; 141 min drive
+      </div>
+    </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr><tr><td=
+><!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"" role=3D"presentation" style=3D"width:520px;" wi=
+dth=3D"520" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-height=
+-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  style=3D"margin:0px auto;max-width:520px;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"width:100%;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"direction:ltr;font-size:0px;padding:0;text-align:=
+center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:520px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:0;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+         =20
+              <tr>
+                <td
+                   align=3D"left" style=3D"font-size:0px;padding:0 0 12px 0=
+;word-break:break-word;"
+                >
+                 =20
+      <div
+         style=3D"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-siz=
+e:13px;line-height:1;text-align:left;color:#000000;"
+      ><div style=3D"Margin:0;font-family:DM Sans, -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:u=
+ppercase;color:#1A1614;padding-left:11px;border-left:3px solid #E07B2A;">Re=
+maining today</div></div>
+   =20
+                </td>
+              </tr>
+           =20
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td><!-=
+-[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" cells=
+pacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=3D"wi=
+dth:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height=
+:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+    <div style=3D"Margin:0 0 6px;font-family:'DM Sans', -apple-system, Blin=
+kMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-=
+size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;co=
+lor:#706a63;">Today from 08:00</div>
+    <div style=3D"Margin-top:4px;font-family:'DM Sans', -apple-system, Blin=
+kMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-=
+size:14px;line-height:1.5;color:#685e56;">Chance of showers. Around 10=C2=
+=B0C. Best remaining outdoor window: 09:00=E2=80=9320:00.</div>
+    <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, Blin=
+kMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-=
+size:12px;line-height:1.5;color:#1a1614;">Next photo windows: Best long-exp=
+osure session 06:00</div>
+    <div style=3D"Margin-top:12px;overflow-x:auto;"><table width=3D"100%" c=
+ellpadding=3D"0" cellspacing=3D"0" style=3D"width:100%;border-collapse:coll=
+apse;">
+    <caption style=3D"font-size:0;line-height:0;visibility:hidden;caption-s=
+ide:top;">Today&apos;s remaining-hours outlook</caption>
+    <thead>
+      <tr>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 8px;border-bo=
+ttom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystem=
+Font, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;=
+font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#685e5=
+6;">Time</th>
+        <th scope=3D"col" align=3D"center" style=3D"padding:6px 4px;border-=
+bottom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSyst=
+emFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11p=
+x;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#685=
+e56;">Sky</th>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 6px;border-bo=
+ttom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystem=
+Font, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;=
+font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#685e5=
+6;">Temp</th>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 6px;border-bo=
+ttom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystem=
+Font, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;=
+font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#685e5=
+6;">Rain</th>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 6px;border-bo=
+ttom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystem=
+Font, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;=
+font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#685e5=
+6;">Wind</th>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 8px 6px 6px;b=
+order-bottom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkM=
+acSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-si=
+ze:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;colo=
+r:#685e56;">Outdoor</th>
+        <th scope=3D"col" align=3D"left" style=3D"padding:6px 8px 6px 2px;b=
+order-bottom:2px solid #e2d9cf;font-family:'DM Sans', -apple-system, BlinkM=
+acSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-si=
+ze:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;colo=
+r:#685e56;">Why</th>
+      </tr>
+    </thead>
+    <tbody><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">08:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"partly-cloudy-day" width=3D"20" h=
+eight=3D"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www=
+.w3.org/1999/xlink" viewBox=3D"0 0 512 512"><defs><symbol id=3D"wx-partly-c=
+loudy-day-d" viewBox=3D"0 0 196 196"><circle cx=3D"98" cy=3D"98" r=3D"40" f=
+ill=3D"url(#wx-partly-cloudy-day-b)" stroke=3D"#f8af18" stroke-miterlimit=
+=3D"10" stroke-width=3D"4"/><path fill=3D"none" stroke=3D"#fbbf24" stroke-l=
+inecap=3D"round" stroke-miterlimit=3D"10" stroke-width=3D"12" d=3D"M98 31.4=
+V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 51 33 33m130.1 130.1-18-1=
+8M6 98h25.4M190 98h-25.4"/></symbol><symbol id=3D"wx-partly-cloudy-day-e" v=
+iewBox=3D"0 0 350 222"><path fill=3D"url(#wx-partly-cloudy-day-a)" stroke=
+=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6" d=3D"m291 107-2.5.=
+1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 21=
+9l4-.2v.2h224a56 56 0 000-112Z"/></symbol><symbol id=3D"wx-partly-cloudy-da=
+y-c" viewBox=3D"0 0 363 258"><use xlink:href=3D"#wx-partly-cloudy-day-wx-pa=
+rtly-cloudy-day-d" width=3D"196" height=3D"196"/><use xlink:href=3D"#wx-par=
+tly-cloudy-day-wx-partly-cloudy-day-e" width=3D"350" height=3D"222" transfo=
+rm=3D"translate(13 36)"/></symbol><linearGradient id=3D"wx-partly-cloudy-da=
+y-a" x1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"use=
+rSpaceOnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5"=
+ stop-color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linea=
+rGradient><linearGradient id=3D"wx-partly-cloudy-day-b" x1=3D"78" x2=3D"118=
+" y1=3D"63.4" y2=3D"132.7" gradientUnits=3D"userSpaceOnUse"><stop offset=3D=
+"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" stop-color=3D"#fbbf24"/><st=
+op offset=3D"1" stop-color=3D"#f59e0b"/></linearGradient></defs><use xlink:=
+href=3D"#wx-partly-cloudy-day-wx-partly-cloudy-day-c" width=3D"363" height=
+=3D"258" transform=3D"translate(68 109)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">4=C2=B0C=
+</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">0%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">4km/h</t=
+d>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Morning walk</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>80/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">09:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"clear-day" width=3D"20" height=3D=
+"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/=
+1999/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-clear-da=
+y-a" x1=3D"150" x2=3D"234" y1=3D"119.2" y2=3D"264.8" gradientUnits=3D"userS=
+paceOnUse"><stop offset=3D"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" s=
+top-color=3D"#fbbf24"/><stop offset=3D"1" stop-color=3D"#f59e0b"/></linearG=
+radient><symbol id=3D"wx-clear-day-b" viewBox=3D"0 0 384 384"><circle cx=3D=
+"192" cy=3D"192" r=3D"84" fill=3D"url(#wx-clear-day-a)" stroke=3D"#f8af18" =
+stroke-miterlimit=3D"10" stroke-width=3D"6"/><path fill=3D"none" stroke=3D"=
+#fbbf24" stroke-linecap=3D"round" stroke-miterlimit=3D"10" stroke-width=3D"=
+24" d=3D"M192 61.7V12m0 360v-49.7m92.2-222.5 35-35M64.8 319.2l35.1-35.1m0-1=
+84.4-35-35m254.5 254.5-35.1-35.1M61.7 192H12m360 0h-49.7"/></symbol></defs>=
+<use xlink:href=3D"#wx-clear-day-wx-clear-day-b" width=3D"384" height=3D"38=
+4" transform=3D"translate(64 64)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">5=C2=B0C=
+</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">0%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">3km/h</t=
+d>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Morning run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">10:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">7=C2=B0C=
+</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">0%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">8km/h</t=
+d>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Morning run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>100/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">11:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">8=C2=B0C=
+</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">0%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">9km/h</t=
+d>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Lunch run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>100/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">12:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"partly-cloudy-day" width=3D"20" h=
+eight=3D"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www=
+.w3.org/1999/xlink" viewBox=3D"0 0 512 512"><defs><symbol id=3D"wx-partly-c=
+loudy-day-d" viewBox=3D"0 0 196 196"><circle cx=3D"98" cy=3D"98" r=3D"40" f=
+ill=3D"url(#wx-partly-cloudy-day-b)" stroke=3D"#f8af18" stroke-miterlimit=
+=3D"10" stroke-width=3D"4"/><path fill=3D"none" stroke=3D"#fbbf24" stroke-l=
+inecap=3D"round" stroke-miterlimit=3D"10" stroke-width=3D"12" d=3D"M98 31.4=
+V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 51 33 33m130.1 130.1-18-1=
+8M6 98h25.4M190 98h-25.4"/></symbol><symbol id=3D"wx-partly-cloudy-day-e" v=
+iewBox=3D"0 0 350 222"><path fill=3D"url(#wx-partly-cloudy-day-a)" stroke=
+=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6" d=3D"m291 107-2.5.=
+1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 21=
+9l4-.2v.2h224a56 56 0 000-112Z"/></symbol><symbol id=3D"wx-partly-cloudy-da=
+y-c" viewBox=3D"0 0 363 258"><use xlink:href=3D"#wx-partly-cloudy-day-wx-pa=
+rtly-cloudy-day-d" width=3D"196" height=3D"196"/><use xlink:href=3D"#wx-par=
+tly-cloudy-day-wx-partly-cloudy-day-e" width=3D"350" height=3D"222" transfo=
+rm=3D"translate(13 36)"/></symbol><linearGradient id=3D"wx-partly-cloudy-da=
+y-a" x1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"use=
+rSpaceOnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5"=
+ stop-color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linea=
+rGradient><linearGradient id=3D"wx-partly-cloudy-day-b" x1=3D"78" x2=3D"118=
+" y1=3D"63.4" y2=3D"132.7" gradientUnits=3D"userSpaceOnUse"><stop offset=3D=
+"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" stop-color=3D"#fbbf24"/><st=
+op offset=3D"1" stop-color=3D"#f59e0b"/></linearGradient></defs><use xlink:=
+href=3D"#wx-partly-cloudy-day-wx-partly-cloudy-day-c" width=3D"363" height=
+=3D"258" transform=3D"translate(68 109)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">10=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">1%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">14km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Lunch run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>95/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">13:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"partly-cloudy-day" width=3D"20" h=
+eight=3D"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www=
+.w3.org/1999/xlink" viewBox=3D"0 0 512 512"><defs><symbol id=3D"wx-partly-c=
+loudy-day-d" viewBox=3D"0 0 196 196"><circle cx=3D"98" cy=3D"98" r=3D"40" f=
+ill=3D"url(#wx-partly-cloudy-day-b)" stroke=3D"#f8af18" stroke-miterlimit=
+=3D"10" stroke-width=3D"4"/><path fill=3D"none" stroke=3D"#fbbf24" stroke-l=
+inecap=3D"round" stroke-miterlimit=3D"10" stroke-width=3D"12" d=3D"M98 31.4=
+V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 51 33 33m130.1 130.1-18-1=
+8M6 98h25.4M190 98h-25.4"/></symbol><symbol id=3D"wx-partly-cloudy-day-e" v=
+iewBox=3D"0 0 350 222"><path fill=3D"url(#wx-partly-cloudy-day-a)" stroke=
+=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6" d=3D"m291 107-2.5.=
+1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.8 9A60 60 0 0063 21=
+9l4-.2v.2h224a56 56 0 000-112Z"/></symbol><symbol id=3D"wx-partly-cloudy-da=
+y-c" viewBox=3D"0 0 363 258"><use xlink:href=3D"#wx-partly-cloudy-day-wx-pa=
+rtly-cloudy-day-d" width=3D"196" height=3D"196"/><use xlink:href=3D"#wx-par=
+tly-cloudy-day-wx-partly-cloudy-day-e" width=3D"350" height=3D"222" transfo=
+rm=3D"translate(13 36)"/></symbol><linearGradient id=3D"wx-partly-cloudy-da=
+y-a" x1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"use=
+rSpaceOnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5"=
+ stop-color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linea=
+rGradient><linearGradient id=3D"wx-partly-cloudy-day-b" x1=3D"78" x2=3D"118=
+" y1=3D"63.4" y2=3D"132.7" gradientUnits=3D"userSpaceOnUse"><stop offset=3D=
+"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" stop-color=3D"#fbbf24"/><st=
+op offset=3D"1" stop-color=3D"#f59e0b"/></linearGradient></defs><use xlink:=
+href=3D"#wx-partly-cloudy-day-wx-partly-cloudy-day-c" width=3D"363" height=
+=3D"258" transform=3D"translate(68 109)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">12=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">2%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">17km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Afternoon run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>95/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">14:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">4%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">19km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Afternoon run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>95/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">15:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">9%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">19km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Afternoon run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">16:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">14%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">19km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Afternoon run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">17:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">18%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">18km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Afternoon run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">18:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">18%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">19km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Evening run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">19:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"partly-cloudy-day-rain" width=3D"=
+20" height=3D"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http:=
+//www.w3.org/1999/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=
+=3D"wx-partly-cloudy-day-rain-a" x1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D=
+"261.4" gradientUnits=3D"userSpaceOnUse"><stop offset=3D"0" stop-color=3D"#=
+f3f7fe"/><stop offset=3D".5" stop-color=3D"#f3f7fe"/><stop offset=3D"1" sto=
+p-color=3D"#deeafb"/></linearGradient><linearGradient id=3D"wx-partly-cloud=
+y-day-rain-b" x1=3D"1381.3" x2=3D"1399.5" y1=3D"-1144.7" y2=3D"-1097.4" gra=
+dientTransform=3D"rotate(-9 8002.567 8233.063)" gradientUnits=3D"userSpaceO=
+nUse"><stop offset=3D"0" stop-color=3D"#0b65ed"/><stop offset=3D".5" stop-c=
+olor=3D"#0a5ad4"/><stop offset=3D"1" stop-color=3D"#0950bc"/></linearGradie=
+nt><linearGradient xlink:href=3D"#wx-partly-cloudy-day-rain-wx-partly-cloud=
+y-day-rain-b" id=3D"wx-partly-cloudy-day-rain-c" x1=3D"1428.4" x2=3D"1446.6=
+" y1=3D"-1084.7" y2=3D"-1037.4" gradientTransform=3D"rotate(-9 8009.537 823=
+3.037)"/><linearGradient xlink:href=3D"#wx-partly-cloudy-day-rain-wx-partly=
+-cloudy-day-rain-b" id=3D"wx-partly-cloudy-day-rain-d" x1=3D"1489.3" x2=3D"=
+1507.5" y1=3D"-1111.6" y2=3D"-1064.3" gradientTransform=3D"rotate(-9 8016.5=
+66 8233.078)"/><linearGradient id=3D"wx-partly-cloudy-day-rain-e" x1=3D"78"=
+ x2=3D"118" y1=3D"63.4" y2=3D"132.7" gradientUnits=3D"userSpaceOnUse"><stop=
+ offset=3D"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" stop-color=3D"#fb=
+bf24"/><stop offset=3D"1" stop-color=3D"#f59e0b"/></linearGradient><symbol =
+id=3D"wx-partly-cloudy-day-rain-g" viewBox=3D"0 0 196 196"><circle cx=3D"98=
+" cy=3D"98" r=3D"40" fill=3D"url(#wx-partly-cloudy-day-rain-e)" stroke=3D"#=
+f8af18" stroke-miterlimit=3D"10" stroke-width=3D"4"/><path fill=3D"none" st=
+roke=3D"#fbbf24" stroke-linecap=3D"round" stroke-miterlimit=3D"10" stroke-w=
+idth=3D"12" d=3D"M98 31.4V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 =
+51 33 33m130.1 130.1-18-18M6 98h25.4M190 98h-25.4"/></symbol><symbol id=3D"=
+wx-partly-cloudy-day-rain-h" viewBox=3D"0 0 350 222"><path fill=3D"url(#wx-=
+partly-cloudy-day-rain-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stro=
+ke-width=3D"6" d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a5=
+6.6 56.6 0 00.8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol>=
+<symbol id=3D"wx-partly-cloudy-day-rain-f" viewBox=3D"0 0 363 258"><use xli=
+nk:href=3D"#wx-partly-cloudy-day-rain-wx-partly-cloudy-day-rain-g" width=3D=
+"196" height=3D"196"/><use xlink:href=3D"#wx-partly-cloudy-day-rain-wx-part=
+ly-cloudy-day-rain-h" width=3D"350" height=3D"222" transform=3D"translate(1=
+3 36)"/></symbol><symbol id=3D"wx-partly-cloudy-day-rain-i" viewBox=3D"0 0 =
+129 110"><path fill=3D"url(#wx-partly-cloudy-day-rain-b)" stroke=3D"#0a5ad4=
+" stroke-miterlimit=3D"10" d=3D"M8.5 56.5a8 8 0 01-8-8v-40a8 8 0 0116 0v40a=
+8 8 0 01-8 8Z"/><path fill=3D"url(#wx-partly-cloudy-day-rain-c)" stroke=3D"=
+#0a5ad4" stroke-miterlimit=3D"10" d=3D"M64.5 109.5a8 8 0 01-8-8v-40a8 8 0 0=
+116 0v40a8 8 0 01-8 8Z"/><path fill=3D"url(#wx-partly-cloudy-day-rain-d)" s=
+troke=3D"#0a5ad4" stroke-miterlimit=3D"10" d=3D"M120.5 74.5a8 8 0 01-8-8v-4=
+0a8 8 0 0116 0v40a8 8 0 01-8 8Z"/></symbol></defs><use xlink:href=3D"#wx-pa=
+rtly-cloudy-day-rain-wx-partly-cloudy-day-rain-f" width=3D"363" height=3D"2=
+58" transform=3D"translate(68 109)"/><use xlink:href=3D"#wx-partly-cloudy-d=
+ay-rain-wx-partly-cloudy-day-rain-i" width=3D"129" height=3D"110" transform=
+=3D"translate(191.5 343.5)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">12=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">15%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">18km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Evening run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">20:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"partly-cloudy-day-rain" width=3D"=
+20" height=3D"20" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http:=
+//www.w3.org/1999/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=
+=3D"wx-partly-cloudy-day-rain-a" x1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D=
+"261.4" gradientUnits=3D"userSpaceOnUse"><stop offset=3D"0" stop-color=3D"#=
+f3f7fe"/><stop offset=3D".5" stop-color=3D"#f3f7fe"/><stop offset=3D"1" sto=
+p-color=3D"#deeafb"/></linearGradient><linearGradient id=3D"wx-partly-cloud=
+y-day-rain-b" x1=3D"1381.3" x2=3D"1399.5" y1=3D"-1144.7" y2=3D"-1097.4" gra=
+dientTransform=3D"rotate(-9 8002.567 8233.063)" gradientUnits=3D"userSpaceO=
+nUse"><stop offset=3D"0" stop-color=3D"#0b65ed"/><stop offset=3D".5" stop-c=
+olor=3D"#0a5ad4"/><stop offset=3D"1" stop-color=3D"#0950bc"/></linearGradie=
+nt><linearGradient xlink:href=3D"#wx-partly-cloudy-day-rain-wx-partly-cloud=
+y-day-rain-b" id=3D"wx-partly-cloudy-day-rain-c" x1=3D"1428.4" x2=3D"1446.6=
+" y1=3D"-1084.7" y2=3D"-1037.4" gradientTransform=3D"rotate(-9 8009.537 823=
+3.037)"/><linearGradient xlink:href=3D"#wx-partly-cloudy-day-rain-wx-partly=
+-cloudy-day-rain-b" id=3D"wx-partly-cloudy-day-rain-d" x1=3D"1489.3" x2=3D"=
+1507.5" y1=3D"-1111.6" y2=3D"-1064.3" gradientTransform=3D"rotate(-9 8016.5=
+66 8233.078)"/><linearGradient id=3D"wx-partly-cloudy-day-rain-e" x1=3D"78"=
+ x2=3D"118" y1=3D"63.4" y2=3D"132.7" gradientUnits=3D"userSpaceOnUse"><stop=
+ offset=3D"0" stop-color=3D"#fbbf24"/><stop offset=3D".5" stop-color=3D"#fb=
+bf24"/><stop offset=3D"1" stop-color=3D"#f59e0b"/></linearGradient><symbol =
+id=3D"wx-partly-cloudy-day-rain-g" viewBox=3D"0 0 196 196"><circle cx=3D"98=
+" cy=3D"98" r=3D"40" fill=3D"url(#wx-partly-cloudy-day-rain-e)" stroke=3D"#=
+f8af18" stroke-miterlimit=3D"10" stroke-width=3D"4"/><path fill=3D"none" st=
+roke=3D"#fbbf24" stroke-linecap=3D"round" stroke-miterlimit=3D"10" stroke-w=
+idth=3D"12" d=3D"M98 31.4V6m0 184v-25.4M145.1 51l18-17.9M33 163l18-17.9M51 =
+51 33 33m130.1 130.1-18-18M6 98h25.4M190 98h-25.4"/></symbol><symbol id=3D"=
+wx-partly-cloudy-day-rain-h" viewBox=3D"0 0 350 222"><path fill=3D"url(#wx-=
+partly-cloudy-day-rain-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stro=
+ke-width=3D"6" d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a5=
+6.6 56.6 0 00.8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol>=
+<symbol id=3D"wx-partly-cloudy-day-rain-f" viewBox=3D"0 0 363 258"><use xli=
+nk:href=3D"#wx-partly-cloudy-day-rain-wx-partly-cloudy-day-rain-g" width=3D=
+"196" height=3D"196"/><use xlink:href=3D"#wx-partly-cloudy-day-rain-wx-part=
+ly-cloudy-day-rain-h" width=3D"350" height=3D"222" transform=3D"translate(1=
+3 36)"/></symbol><symbol id=3D"wx-partly-cloudy-day-rain-i" viewBox=3D"0 0 =
+129 110"><path fill=3D"url(#wx-partly-cloudy-day-rain-b)" stroke=3D"#0a5ad4=
+" stroke-miterlimit=3D"10" d=3D"M8.5 56.5a8 8 0 01-8-8v-40a8 8 0 0116 0v40a=
+8 8 0 01-8 8Z"/><path fill=3D"url(#wx-partly-cloudy-day-rain-c)" stroke=3D"=
+#0a5ad4" stroke-miterlimit=3D"10" d=3D"M64.5 109.5a8 8 0 01-8-8v-40a8 8 0 0=
+116 0v40a8 8 0 01-8 8Z"/><path fill=3D"url(#wx-partly-cloudy-day-rain-d)" s=
+troke=3D"#0a5ad4" stroke-miterlimit=3D"10" d=3D"M120.5 74.5a8 8 0 01-8-8v-4=
+0a8 8 0 0116 0v40a8 8 0 01-8 8Z"/></symbol></defs><use xlink:href=3D"#wx-pa=
+rtly-cloudy-day-rain-wx-partly-cloudy-day-rain-f" width=3D"363" height=3D"2=
+58" transform=3D"translate(68 109)"/><use xlink:href=3D"#wx-partly-cloudy-d=
+ay-rain-wx-partly-cloudy-day-rain-i" width=3D"129" height=3D"110" transform=
+=3D"translate(191.5 343.5)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">12=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">14%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">13km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;Evening run</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">21:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">12=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">14%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">16km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;After-dark stroll</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr><tr style=3D"background:#d1fae5;">
+        <td valign=3D"middle" style=3D"padding:6px 8px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;font-weight:600;color:#1a1614;white-space:n=
+owrap;">22:00</td>
+        <td valign=3D"middle" style=3D"padding:6px 4px;text-align:center;wh=
+ite-space:nowrap;"><svg data-condition=3D"cloudy" width=3D"20" height=3D"20=
+" xmlns=3D"http://www.w3.org/2000/svg" xmlns:xlink=3D"http://www.w3.org/199=
+9/xlink" viewBox=3D"0 0 512 512"><defs><linearGradient id=3D"wx-cloudy-a" x=
+1=3D"99.5" x2=3D"232.6" y1=3D"30.7" y2=3D"261.4" gradientUnits=3D"userSpace=
+OnUse"><stop offset=3D"0" stop-color=3D"#f3f7fe"/><stop offset=3D".5" stop-=
+color=3D"#f3f7fe"/><stop offset=3D"1" stop-color=3D"#deeafb"/></linearGradi=
+ent><symbol id=3D"wx-cloudy-b" viewBox=3D"0 0 350 222"><path fill=3D"url(#w=
+x-cloudy-a)" stroke=3D"#e6effc" stroke-miterlimit=3D"10" stroke-width=3D"6"=
+ d=3D"m291 107-2.5.1A83.9 83.9 0 00135.6 43 56 56 0 0051 91a56.6 56.6 0 00.=
+8 9A60 60 0 0063 219l4-.2v.2h224a56 56 0 000-112Z"/></symbol></defs><use xl=
+ink:href=3D"#wx-cloudy-wx-cloudy-b" width=3D"350" height=3D"222" transform=
+=3D"translate(81 145)"/></svg></td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">12=C2=B0=
+C</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">16%</td>
+        <td valign=3D"middle" style=3D"padding:6px 6px;font-family:'DM Sans=
+', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, A=
+rial, sans-serif;font-size:12px;color:#1a1614;white-space:nowrap;">15km/h</=
+td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 6px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:12px;color:#047857;"><span style=3D"colo=
+r:#047857;font-size:14px;">&#x25CF;</span>&ensp;After-dark stroll</td>
+        <td valign=3D"middle" style=3D"padding:6px 8px 6px 2px;font-family:=
+'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helv=
+etica, Arial, sans-serif;font-size:11px;color:#706a63;white-space:nowrap;">
+          <div>90/100</div>
+         =20
+        </td>
+      </tr></tbody>
+  </table></div>
+  </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr><tr><td=
+><!--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" c=
+ellspacing=3D"0" class=3D"" role=3D"presentation" style=3D"width:520px;" wi=
+dth=3D"520" ><tr><td style=3D"line-height:0px;font-size:0px;mso-line-height=
+-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  style=3D"margin:0px auto;max-width:520px;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"width:100%;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"direction:ltr;font-size:0px;padding:0;text-align:=
+center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:520px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:0;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+         =20
+              <tr>
+                <td
+                   align=3D"left" style=3D"font-size:0px;padding:0 0 12px 0=
+;word-break:break-word;"
+                >
+                 =20
+      <div
+         style=3D"font-family:Ubuntu, Helvetica, Arial, sans-serif;font-siz=
+e:13px;line-height:1;text-align:left;color:#000000;"
+      ><div style=3D"Margin:0;font-family:DM Sans, -apple-system, BlinkMacS=
+ystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:=
+11px;font-weight:700;line-height:1.3;letter-spacing:0.09em;text-transform:u=
+ppercase;color:#1A1614;padding-left:11px;border-left:3px solid #E07B2A;">Da=
+ys ahead</div></div>
+   =20
+                </td>
+              </tr>
+           =20
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td><!-=
+-[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" cells=
+pacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=3D"wi=
+dth:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height=
+:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;"><div style=3D"border-left:3px solid =
+#7c3aed;"><div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSyste=
+mFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:14px=
+;line-height:1.5;color:#685e56;">Today is the most reliable forecast; Thurs=
+day may score higher but with much lower certainty.</div></div></td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:8px;line-height:8px;font-size:8px;">&nbsp;</td></tr><tr><td><!=
+--[if mso | IE]><table align=3D"center" border=3D"0" cellpadding=3D"0" cell=
+spacing=3D"0" class=3D"card-shell-outlook" role=3D"presentation" style=3D"w=
+idth:520px;" width=3D"520" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-heigh=
+t:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;f=
+ont-weight:600;line-height:1.3;color:#1a1614;">Tomorrow - 15 Apr &middot; M=
+arginal (40/100)</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:14px;font-weight:600;line-height:1.5;color:#1a1614;">Best at 20:00=
+ - landscape</div>
+        <div style=3D"Margin-top:10px;">
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span>=
+ 10</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#92400e;">PM</span>=
+ 40</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">Astro</sp=
+an> 33</span>
+          <span style=3D"font-family:'DM Sans', -apple-system, BlinkMacSyst=
+emFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11p=
+x;font-weight:600;margin-left:4px;"><span style=3D"color:#92400e;">Fair cer=
+tainty =C2=B7 spread 15</span></span>
+        </div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:12px;line-height:1.5;color:#047857;"><svg width=3D"12" height=3D"1=
+2" style=3D"vertical-align:middle;" xmlns=3D"http://www.w3.org/2000/svg" vi=
+ewBox=3D"0 0 512 512"><path fill=3D"none" stroke=3D"#e5e7eb" stroke-dasharr=
+ay=3D"16.9 56.2" stroke-linecap=3D"round" stroke-linejoin=3D"round" stroke-=
+width=3D"17.4" d=3D"M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 =
+256a128 128 0 00128-128Z"/></svg> <span style=3D"vertical-align:middle;">Mo=
+on 2% lit</span></div>
+        <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system,=
+ BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;=
+font-size:13px;line-height:1.5;color:#685e56;">Backup: Mam Tor =C2=B7 80/10=
+0 at 23:00 (astro) =C2=B7 60 min drive</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:13px;line-height:1.5;color:#685e56;"><span aria-hidden=3D"true">&#=
+x1F697; / &#x1F6B6;</span> Daylight utility: 09:00-11:00 <span style=3D"col=
+or:#706a63;">&middot;</span> Wind 13km/h <span style=3D"color:#706a63;">&mi=
+ddot;</span> Rain 21% <span style=3D"color:#706a63;">&middot;</span> Temp 1=
+2C</div>
+      </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--><div style=3D"height:=
+6px;line-height:6px;font-size:6px;">&nbsp;</div><!--[if mso | IE]><table al=
+ign=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"ca=
+rd-shell-outlook" role=3D"presentation" style=3D"width:520px;" width=3D"520=
+" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height:0px;font-size:0px;mso-l=
+ine-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;f=
+ont-weight:600;line-height:1.3;color:#1a1614;">Thursday 16 Apr &middot; Goo=
+d (60/100)</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:14px;font-weight:600;line-height:1.5;color:#1a1614;">Best local as=
+tro around 01:00</div>
+        <div style=3D"Margin-top:10px;">
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#92400e;">AM</span>=
+ 42</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#92400e;">PM</span>=
+ 35</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#047857;">Astro</sp=
+an> 77</span>
+          <span style=3D"font-family:'DM Sans', -apple-system, BlinkMacSyst=
+emFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11p=
+x;font-weight:600;margin-left:4px;"><span style=3D"color:#92400e;">Fair cer=
+tainty =C2=B7 spread 18</span></span>
+        </div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:12px;line-height:1.5;color:#047857;"><svg width=3D"12" height=3D"1=
+2" style=3D"vertical-align:middle;" xmlns=3D"http://www.w3.org/2000/svg" vi=
+ewBox=3D"0 0 512 512"><path fill=3D"none" stroke=3D"#e5e7eb" stroke-dasharr=
+ay=3D"16.9 56.2" stroke-linecap=3D"round" stroke-linejoin=3D"round" stroke-=
+width=3D"17.4" d=3D"M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 =
+256a128 128 0 00128-128Z"/></svg> <span style=3D"vertical-align:middle;">Mo=
+on 2% lit</span></div>
+        <div style=3D"Margin-top:10px;font-family:'DM Sans', -apple-system,=
+ BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;=
+font-size:13px;line-height:1.5;color:#685e56;">Backup: Bolton Abbey =C2=B7 =
+80/100 at 00:00 (astro) =C2=B7 35 min drive</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:13px;line-height:1.5;color:#685e56;"><span aria-hidden=3D"true">&#=
+x1F697; / &#x1F6B6;</span> Daylight utility: 17:00-19:00 <span style=3D"col=
+or:#706a63;">&middot;</span> Wind 15km/h <span style=3D"color:#706a63;">&mi=
+ddot;</span> Rain 6% <span style=3D"color:#706a63;">&middot;</span> Temp 15=
+C</div>
+      </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--><div style=3D"height:=
+6px;line-height:6px;font-size:6px;">&nbsp;</div><!--[if mso | IE]><table al=
+ign=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"ca=
+rd-shell-outlook" role=3D"presentation" style=3D"width:520px;" width=3D"520=
+" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height:0px;font-size:0px;mso-l=
+ine-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;f=
+ont-weight:600;line-height:1.3;color:#1a1614;">Friday 17 Apr &middot; Poor =
+(32/100)</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:14px;font-weight:600;line-height:1.5;color:#1a1614;">Best at 07:00=
+ - mixed conditions</div>
+        <div style=3D"Margin-top:10px;">
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#92400e;">AM</span>=
+ 36</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">PM</span>=
+ 31</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">Astro</sp=
+an> 29</span>
+          <span style=3D"font-family:'DM Sans', -apple-system, BlinkMacSyst=
+emFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11p=
+x;font-weight:600;margin-left:4px;"><span style=3D"color:#92400e;">Fair cer=
+tainty =C2=B7 spread 18</span></span>
+        </div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:12px;line-height:1.5;color:#047857;"><svg width=3D"12" height=3D"1=
+2" style=3D"vertical-align:middle;" xmlns=3D"http://www.w3.org/2000/svg" vi=
+ewBox=3D"0 0 512 512"><path fill=3D"none" stroke=3D"#e5e7eb" stroke-dasharr=
+ay=3D"16.9 56.2" stroke-linecap=3D"round" stroke-linejoin=3D"round" stroke-=
+width=3D"17.4" d=3D"M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 =
+256a128 128 0 00128-128Z"/></svg> <span style=3D"vertical-align:middle;">Mo=
+on 0% lit</span></div>
+       =20
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:13px;line-height:1.5;color:#685e56;"><span aria-hidden=3D"true">&#=
+x1F697; / &#x1F6B6;</span> Daylight utility: 07:00-09:00 <span style=3D"col=
+or:#706a63;">&middot;</span> Wind 13km/h <span style=3D"color:#706a63;">&mi=
+ddot;</span> Rain 8% <span style=3D"color:#706a63;">&middot;</span> Temp 10=
+C</div>
+      </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--><div style=3D"height:=
+6px;line-height:6px;font-size:6px;">&nbsp;</div><!--[if mso | IE]><table al=
+ign=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0" class=3D"ca=
+rd-shell-outlook" role=3D"presentation" style=3D"width:520px;" width=3D"520=
+" bgcolor=3D"#FFFFFF" ><tr><td style=3D"line-height:0px;font-size:0px;mso-l=
+ine-height-rule:exactly;"><![endif]-->
+   =20
+     =20
+      <div  class=3D"card-shell" style=3D"background:#FFFFFF;background-col=
+or:#FFFFFF;margin:0px auto;max-width:520px;border-radius:12px;overflow:hidd=
+en;">
+       =20
+        <table
+           align=3D"center" border=3D"0" cellpadding=3D"0" cellspacing=3D"0=
+" role=3D"presentation" style=3D"background:#FFFFFF;background-color:#FFFFF=
+F;width:100%;border-collapse:separate;"
+        >
+          <tbody>
+            <tr>
+              <td
+                 style=3D"border:1px solid #E2D9CF;border-radius:12px;direc=
+tion:ltr;font-size:0px;padding:0;text-align:center;"
+              >
+                <!--[if mso | IE]><table role=3D"presentation" border=3D"0"=
+ cellpadding=3D"0" cellspacing=3D"0"><tr><td class=3D"" style=3D"vertical-a=
+lign:top;width:518px;" ><![endif]-->
+           =20
+      <div
+         class=3D"mj-column-per-100 mj-outlook-group-fix" style=3D"font-siz=
+e:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top=
+;width:100%;"
+      >
+       =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" width=3D"100%"
+      >
+        <tbody>
+          <tr>
+            <td  style=3D"vertical-align:top;padding:16px;">
+             =20
+      <table
+         border=3D"0" cellpadding=3D"0" cellspacing=3D"0" role=3D"presentat=
+ion" style=3D"" width=3D"100%"
+      >
+        <tbody>
+          <tr><td style=3D"padding:0;">
+        <div style=3D"font-family:'DM Sans', -apple-system, BlinkMacSystemF=
+ont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:16px;f=
+ont-weight:600;line-height:1.3;color:#1a1614;">Saturday 18 Apr &middot; Mar=
+ginal (49/100)</div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:14px;font-weight:600;line-height:1.5;color:#1a1614;">Best at 21:00=
+ - golden hour</div>
+        <div style=3D"Margin-top:10px;">
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">AM</span>=
+ 28</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#1d4ed8;">PM</span>=
+ 53</span>
+          <span class=3D"chip" style=3D"display:inline-block;margin:2px 4px=
+ 2px 0;padding:3px 8px;border-radius:6px;background:#f4efe8;border:1px soli=
+d #e2d9cf;font-family:'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe =
+UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11px;line-height:1=
+.3;color:#1a1614;"><span style=3D"font-weight:600;color:#991b1b;">Astro</sp=
+an> 0</span>
+          <span style=3D"font-family:'DM Sans', -apple-system, BlinkMacSyst=
+emFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;font-size:11p=
+x;font-weight:600;margin-left:4px;"><span style=3D"color:#92400e;">Fair cer=
+tainty =C2=B7 spread 30</span></span>
+        </div>
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:12px;line-height:1.5;color:#047857;"><svg width=3D"12" height=3D"1=
+2" style=3D"vertical-align:middle;" xmlns=3D"http://www.w3.org/2000/svg" vi=
+ewBox=3D"0 0 512 512"><path fill=3D"none" stroke=3D"#e5e7eb" stroke-dasharr=
+ay=3D"16.9 56.2" stroke-linecap=3D"round" stroke-linejoin=3D"round" stroke-=
+width=3D"17.4" d=3D"M384 256a128 128 0 00-128-128c-169.8 6.7-169.7 249.3 0 =
+256a128 128 0 00128-128Z"/></svg> <span style=3D"vertical-align:middle;">Mo=
+on 1% lit</span></div>
+       =20
+        <div style=3D"Margin-top:8px;font-family:'DM Sans', -apple-system, =
+BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;f=
+ont-size:13px;line-height:1.5;color:#685e56;"><span aria-hidden=3D"true">&#=
+x1F697; / &#x1F6B6;</span> Daylight utility: 07:00-09:00 <span style=3D"col=
+or:#706a63;">&middot;</span> Wind 7km/h <span style=3D"color:#706a63;">&mid=
+dot;</span> Rain 0% <span style=3D"color:#706a63;">&middot;</span> Temp 10C=
+</div>
+      </td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]--></td></tr><tr><td sty=
+le=3D"height:16px;line-height:16px;font-size:16px;">&nbsp;</td></tr><tr><td=
+><div style=3D"padding:12px 4px;border-top:1px solid #e2d9cf;font-family:'D=
+M Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvet=
+ica, Arial, sans-serif;font-size:11px;line-height:1.6;color:#706a63;">
+    <b>Key</b> &middot;
+    <b>Score bands</b> Excellent &ge; 72 &middot; Good 52&ndash;71 &middot;=
+ Marginal 35&ndash;51 &middot; Poor &lt; 35 &middot;
+    AM/PM =3D sunrise &amp; sunset light quality &middot;
+    Astro =3D night sky potential (clear skies + dark moon) &middot;
+    Outdoor comfort =3D walk/run practicality, independent of photography s=
+coring &middot;
+    Crepuscular rays =3D shafts of light through broken cloud near the hori=
+zon &middot;
+    Spread =3D how much forecast models disagree (lower is more reliable) &=
+middot;
+    Certainty bands =3D High &lt; 12 pts &middot; Fair 12&ndash;24 pts &mid=
+dot; Low &ge; 25 pts &middot;
+    Daylight spread =3D based on golden-hour ensemble &middot; Astro spread=
+ =3D based on night-hour ensemble
+  </div></td></tr>
+        </tbody>
+      </table>
+   =20
+            </td>
+          </tr>
+        </tbody>
+      </table>
+   =20
+      </div>
+   =20
+          <!--[if mso | IE]></td></tr></table><![endif]-->
+              </td>
+            </tr>
+          </tbody>
+        </table>
+       =20
+      </div>
+   =20
+     =20
+      <!--[if mso | IE]></td></tr></table><![endif]-->
+   =20
+   =20
+      </div>
+   =20
+  <img src=3D"https://u7587209.ct.sendgrid.net/wf/open?upn=3Du001.Hg3gFnlPi=
+NJIbPlf5emqdVoMm-2BT7ziJmEc6uxFEziSCEVF6BR7wN0FMCn733GEp2zWgt-2B4RUyHtTda-2=
+FzOzr74LvQ-2BN7wtKr57C-2FHfJ6MZI8ndyqG92NbeU2wgkWex-2F6nvjj9hlI3GwSTraqtTie=
+bXb60gSv8CxoZn7unY8E9CjlgBDRxRuAAHXPj4myMRMBzY3kGOVzn0ZibjDlouJjVFA-3D-3D" =
+alt=3D"" width=3D"1" height=3D"1" border=3D"0" style=3D"height:1px !importa=
+nt;width:1px !important;border-width:0 !important;margin-top:0 !important;m=
+argin-bottom:0 !important;margin-right:0 !important;margin-left:0 !importan=
+t;padding-top:0 !important;padding-bottom:0 !important;padding-right:0 !imp=
+ortant;padding-left:0 !important;"/></body>
+</html>
+ =20=
+
+--9d8b574f5cab477e1b0a9cc44e0530ca6b464691a0dfd97b370a83f5860b--
